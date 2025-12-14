@@ -36,6 +36,7 @@ export interface CoreSidebarProps {
   features?: {
     aiChat?: boolean
     companyDropdown?: boolean
+    showOrgSection?: boolean
   }
   bottomMenuActions?: {
     label: string
@@ -84,6 +85,7 @@ interface SidebarComponentProps {
   features: {
     aiChat?: boolean
     companyDropdown?: boolean
+    showOrgSection?: boolean
   }
   bottomMenuActions: {
     label: string
@@ -117,7 +119,10 @@ function DesktopSidebar({
       <div className="flex h-full flex-col justify-between">
         <div className="py-2">
           <SidebarItems>
-            <OrgSection isCollapsed={isCollapsed} />
+            <OrgSection
+              isCollapsed={isCollapsed}
+              showOrgSection={features.showOrgSection}
+            />
             <SidebarItemGroup className="mt-0 border-t-0 pt-2 pb-1">
               {navigationItems.map((item) => (
                 <CustomSidebarItem
@@ -170,7 +175,10 @@ function MobileSidebar({
               </div>
             )}
             <SidebarItems>
-              <OrgSection isCollapsed={false} />
+              <OrgSection
+                isCollapsed={false}
+                showOrgSection={features.showOrgSection}
+              />
               <SidebarItemGroup className="mt-0 border-t-0 pt-2 pb-1">
                 {navigationItems.map((item) => (
                   <CustomSidebarItem
@@ -296,12 +304,18 @@ function CustomSidebarItem({
   )
 }
 
-function OrgSection({ isCollapsed }: { isCollapsed: boolean }) {
+function OrgSection({
+  isCollapsed,
+  showOrgSection = true,
+}: {
+  isCollapsed: boolean
+  showOrgSection?: boolean
+}) {
   const { currentOrg } = useOrg()
   const pathname = usePathname()
   const isActive = pathname === '/organization'
 
-  if (!currentOrg) return null
+  if (!showOrgSection || !currentOrg) return null
 
   return (
     <SidebarItemGroup className="border-b border-gray-200 pb-2 dark:border-gray-700">
@@ -328,6 +342,7 @@ interface BottomMenuProps {
   features: {
     aiChat?: boolean
     companyDropdown?: boolean
+    showOrgSection?: boolean
   }
   bottomMenuActions: {
     label: string
