@@ -1,0 +1,68 @@
+{
+  "name": "@robosystems/core",
+  "version": "0.1.1",
+  "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "flowbite-react": "^0.12.5",
+    "flowbite": "^3.1",
+    "next": "^15.4",
+    "react-dom": "^18",
+    "react": "^18",
+    "react-icons": "^4",
+    "tailwind-merge": "^3"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.80.2",
+    "@next/eslint-plugin-next": "^15.4.1",
+    "@tailwindcss/postcss": "^4.1.11",
+    "@tailwindcss/typography": "^0.5",
+    "@testing-library/jest-dom": "^6",
+    "@testing-library/react": "^16",
+    "@testing-library/user-event": "^14",
+    "@types/node": "^22",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@typescript-eslint/eslint-plugin": "^7",
+    "@typescript-eslint/parser": "^7",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^3",
+    "eslint": "^8",
+    "eslint-config-next": "^15.4.1",
+    "eslint-config-prettier": "^10",
+    "eslint-plugin-jsx-a11y": "^6",
+    "eslint-plugin-prettier": "^5",
+    "eslint-plugin-react": "^7",
+    "eslint-plugin-react-hooks": "^5",
+    "jsdom": "^26.0.0",
+    "postcss": "^8",
+    "prettier": "^3",
+    "prettier-plugin-organize-imports": "^4",
+    "prettier-plugin-tailwindcss": "^0.6.14",
+    "tailwindcss": "^4.1.11",
+    "ts-node": "^10",
+    "typescript": "^5",
+    "vitest": "^3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RoboFinSystems/robosystems-core.git"
+  },
+  "files": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "README.md"
+  ]
+}
