@@ -1,0 +1,69 @@
+name: Test
+
+on:
+  workflow_call:
+    inputs:
+      runner_config:
+        required: true
+        type: string
+        description: 'Runner configuration JSON (from runner availability check)'
+    secrets:
+      ACTIONS_TOKEN:
+        required: true
+
+jobs:
+  action:
+    runs-on: ${{ fromJSON(inputs.runner_config) }}
+    timeout-minutes: 10
+    env:
+      # Use fixed port for roboledger-app (port 5434)
+      DATABASE_URL: postgres://postgres:postgres@localhost:5434/robosystems_test
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: robosystems_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5434:5432
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          ref: ${{ github.ref }}
+          token: ${{ secrets.ACTIONS_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Dependencies
+        timeout-minutes: 3
+        run: |
+          # Use isolated cache directory to avoid conflicts between concurrent runs
+          export npm_config_cache="${{ github.workspace }}/.npm-cache"
+          npm install
+
+      - name: Run Tests
+        timeout-minutes: 2
+        run: npm test
+
+      - name: Run Type Check
+        timeout-minutes: 2
+        run: npm run typecheck
+
+      - name: Run Lint
+        timeout-minutes: 2
+        run: npm run lint
+
+      - name: Run Build
+        timeout-minutes: 5
+        run: npm run build

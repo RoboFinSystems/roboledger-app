@@ -1,0 +1,259 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      region:
+        required: true
+        type: string
+        default: 'us-east-1'
+      robosystems_api_url:
+        required: true
+        type: string
+      roboledger_app_url:
+        required: true
+        type: string
+      roboinvestor_app_url:
+        required: true
+        type: string
+      robosystems_app_url:
+        required: true
+        type: string
+      maintenance_mode:
+        required: true
+        type: string
+        default: 'false'
+      turnstile_site_key:
+        required: false
+        type: string
+        default: ''
+      publish_to_dockerhub:
+        required: false
+        type: boolean
+        default: false
+        description: 'Whether to publish images to Docker Hub'
+    outputs:
+      image:
+        description: 'Built image reference'
+        value: ${{ jobs.action.outputs.image }}
+      ecr_repository_url:
+        description: 'ECR repository URL'
+        value: ${{ jobs.action.outputs.ecr_repository_url }}
+      version_tag:
+        description: 'Version tag used for the build'
+        value: ${{ jobs.action.outputs.version_tag }}
+      is_release:
+        description: 'Whether this is a release build'
+        value: ${{ jobs.action.outputs.is_release }}
+    secrets:
+      ACTIONS_TOKEN:
+        required: true
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      DOCKERHUB_USERNAME:
+        required: false
+      DOCKERHUB_TOKEN:
+        required: false
+
+concurrency:
+  group: roboledger-build
+  cancel-in-progress: false
+
+jobs:
+  action:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    outputs:
+      image: ${{ steps.build-and-push.outputs.image }}
+      ecr_repository_url: ${{ steps.build-and-push.outputs.ecr_repository_url }}
+      version_tag: ${{ steps.build-and-push.outputs.version_tag }}
+      is_release: ${{ steps.build-and-push.outputs.is_release }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          ref: ${{ github.ref }}
+          token: ${{ secrets.ACTIONS_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:master
+            network=host
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ inputs.region }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Login to Docker Hub
+        if: ${{ inputs.publish_to_dockerhub == true }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies and build Next.js
+        env:
+          NEXT_PUBLIC_ROBOSYSTEMS_API_URL: ${{ inputs.robosystems_api_url }}
+          NEXT_PUBLIC_ROBOLEDGER_APP_URL: ${{ inputs.roboledger_app_url }}
+          NEXT_PUBLIC_ROBOINVESTOR_APP_URL: ${{ inputs.roboinvestor_app_url }}
+          NEXT_PUBLIC_ROBOSYSTEMS_APP_URL: ${{ inputs.robosystems_app_url }}
+          NEXT_PUBLIC_MAINTENANCE_MODE: ${{ inputs.maintenance_mode }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ inputs.turnstile_site_key }}
+        run: |
+          npm ci
+          npm run build
+
+          # Create a tarball of the build output for Docker to use
+          tar -czf next-build.tar.gz .next
+
+      - name: Sync static assets to S3
+        env:
+          S3_BUCKET: roboledger-app-${{ inputs.environment }}-static-assets
+        run: |
+          # Check if S3 bucket exists
+          if aws s3api head-bucket --bucket "$S3_BUCKET" 2>/dev/null; then
+            echo "S3 bucket exists, syncing static assets..."
+
+            # Sync public folder (images, etc)
+            echo "Syncing public folder..."
+            aws s3 sync ./public s3://$S3_BUCKET/ \
+              --cache-control "public, max-age=31536000, immutable" \
+              --exclude ".git/*" \
+              --exclude "node_modules/*"
+
+            # Sync Next.js static build output
+            echo "Syncing Next.js static files..."
+            aws s3 sync ./.next/static s3://$S3_BUCKET/_next/static/ \
+              --cache-control "public, max-age=31536000, immutable"
+
+            # Get stack name based on environment
+            if [ "${{ inputs.environment }}" == "prod" ]; then
+              STACK_NAME="RoboLedgerAppProd"
+            else
+              STACK_NAME="RoboLedgerAppStaging"
+            fi
+
+            # Check if the main application stack exists
+            if aws cloudformation describe-stacks --stack-name $STACK_NAME >/dev/null 2>&1; then
+              echo "Stack $STACK_NAME exists, looking up CloudFront distribution ID..."
+
+              # Try to get CloudFront distribution ID from CloudFormation stack outputs
+              CLOUDFRONT_DISTRIBUTION_ID=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDistributionId'].OutputValue" --output text 2>/dev/null)
+
+              # Invalidate CloudFront cache if we found the distribution ID
+              if [ -n "$CLOUDFRONT_DISTRIBUTION_ID" ] && [ "$CLOUDFRONT_DISTRIBUTION_ID" != "None" ]; then
+                echo "Found CloudFront distribution ID: $CLOUDFRONT_DISTRIBUTION_ID"
+                echo "Invalidating CloudFront cache..."
+                aws cloudfront create-invalidation \
+                  --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
+                  --paths "/*"
+              else
+                echo "CloudFront distribution ID not found in stack outputs."
+                echo "Continuing without cache invalidation."
+              fi
+            else
+              echo "Stack $STACK_NAME does not exist yet."
+              echo "This is expected for first-time deployments."
+              echo "CloudFront cache invalidation will be skipped."
+            fi
+          else
+            echo "S3 bucket doesn't exist yet. Skipping static asset sync."
+            echo "Please deploy the CloudFormation stack first to create the bucket."
+          fi
+
+      - name: Build, tag, and push Docker image
+        id: build-and-push
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+        run: |
+          export DOCKER_BUILDKIT=1
+          export COMPOSE_DOCKER_CLI_BUILD=1
+
+          # Prepare platforms
+          PLATFORMS="linux/amd64"
+          if [[ "${{ inputs.publish_to_dockerhub }}" == "true" ]]; then
+            PLATFORMS="linux/amd64,linux/arm64"
+          fi
+
+          # Determine version information
+          VERSION_TAG=""
+          IS_RELEASE="false"
+
+          # Check if this is a version tag (v*.*.*)
+          if [[ "$GITHUB_REF" == refs/tags/v*.*.* ]]; then
+            VERSION_TAG=${GITHUB_REF#refs/tags/}
+            IS_RELEASE="true"
+            echo "📦 Building release version: $VERSION_TAG"
+          else
+            # For non-release builds, use commit SHA
+            VERSION_TAG="git-${GITHUB_SHA:0:8}"
+            echo "🔧 Building development version: $VERSION_TAG"
+          fi
+
+          # Prepare tags
+          TAGS=""
+
+          # ECR tags (always push to ECR for internal use)
+          TAGS="$TAGS -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ inputs.environment }}"
+          TAGS="$TAGS -t $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION_TAG"
+
+          if [[ "${{ inputs.environment }}" == "prod" ]]; then
+            TAGS="$TAGS -t $ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          fi
+
+          # Docker Hub tags (only for releases when explicitly enabled)
+          if [[ "${{ inputs.publish_to_dockerhub }}" == "true" ]] && [[ "$IS_RELEASE" == "true" ]]; then
+            echo "🚀 Publishing release to Docker Hub"
+            if [[ "${{ inputs.environment }}" == "prod" ]]; then
+              TAGS="$TAGS -t robofinsystems/roboledger-app:latest"
+              TAGS="$TAGS -t robofinsystems/roboledger-app:$VERSION_TAG"
+            fi
+          elif [[ "${{ inputs.publish_to_dockerhub }}" == "true" ]]; then
+            echo "⏭️ Skipping Docker Hub publication (non-release build)"
+          fi
+
+          # Build and push with enhanced caching
+          docker buildx build \
+            --platform $PLATFORMS \
+            --push \
+            --cache-from type=registry,ref=$ECR_REGISTRY/$ECR_REPOSITORY:buildcache \
+            --cache-from type=registry,ref=$ECR_REGISTRY/$ECR_REPOSITORY:deps-cache \
+            --cache-to type=registry,ref=$ECR_REGISTRY/$ECR_REPOSITORY:buildcache,mode=max \
+            --cache-to type=registry,ref=$ECR_REGISTRY/$ECR_REPOSITORY:deps-cache,mode=max \
+            $TAGS \
+            -f Dockerfile .
+
+          # Verify the image was pushed successfully to ECR
+          aws ecr describe-images --repository-name $ECR_REPOSITORY --image-ids imageTag=${{ inputs.environment }} || exit 1
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:${{ inputs.environment }}" >> $GITHUB_OUTPUT
+          echo "ecr_repository_url=$ECR_REGISTRY/$ECR_REPOSITORY" >> $GITHUB_OUTPUT
+          echo "version_tag=$VERSION_TAG" >> $GITHUB_OUTPUT
+          echo "is_release=$IS_RELEASE" >> $GITHUB_OUTPUT
+
+          # Log the tags that were created
+          echo "📋 Image tags created:"
+          echo "$TAGS" | tr ' ' '\n' | grep -E '^-t' | sed 's/-t /  - /'

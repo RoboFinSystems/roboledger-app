@@ -1,0 +1,170 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "RoboLedger App Dev",
+      "type": "shell",
+      "command": "npm run dev -- --port ${input:port}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Install Dependencies",
+      "type": "shell",
+      "command": "npm install",
+      "problemMatcher": []
+    },
+    {
+      "label": "Update Dependencies",
+      "type": "shell",
+      "command": "npm update",
+      "problemMatcher": []
+    },
+    {
+      "label": "Test",
+      "type": "shell",
+      "command": "npm run test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Test All",
+      "type": "shell",
+      "command": "npm run test:all",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint",
+      "type": "shell",
+      "command": "npm run lint",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint Fix",
+      "type": "shell",
+      "command": "npm run lint:fix",
+      "problemMatcher": []
+    },
+    {
+      "label": "Format",
+      "type": "shell",
+      "command": "npm run format",
+      "problemMatcher": []
+    },
+    {
+      "label": "Type Check",
+      "type": "shell",
+      "command": "npm run typecheck",
+      "problemMatcher": []
+    },
+    {
+      "label": "Create Feature",
+      "type": "shell",
+      "command": "npm run feature:create ${input:branchType} ${input:branchName} ${input:baseBranch}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Create PR",
+      "type": "shell",
+      "command": "npm run pr:create ${input:targetBranch} ${input:claudeReview}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Create Release",
+      "type": "shell",
+      "command": "npm run release:create ${input:versionType} ${input:deployTarget}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Deploy",
+      "type": "shell",
+      "command": "npm run deploy:${input:environment}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Core Pull",
+      "type": "shell",
+      "command": "npm run core:pull",
+      "problemMatcher": []
+    },
+    {
+      "label": "Core Push",
+      "type": "shell",
+      "command": "npm run core:push",
+      "problemMatcher": []
+    },
+    {
+      "label": "Setup GitHub Actions",
+      "type": "shell",
+      "command": "npm run setup:gha",
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "port",
+      "type": "pickString",
+      "description": "Select which port to run on:",
+      "options": ["3000", "3001", "3002", "3003"],
+      "default": "3001"
+    },
+    {
+      "id": "versionType",
+      "type": "pickString",
+      "description": "Choose version type:",
+      "default": "patch",
+      "options": ["major", "minor", "patch"]
+    },
+    {
+      "id": "deployTarget",
+      "type": "pickString",
+      "description": "Choose initial deployment target:",
+      "default": "staging",
+      "options": ["staging", "prod", "all", "none"]
+    },
+    {
+      "id": "branchType",
+      "type": "pickString",
+      "description": "Choose branch type:",
+      "default": "feature",
+      "options": ["feature", "bugfix", "hotfix", "chore", "refactor"]
+    },
+    {
+      "id": "branchName",
+      "type": "promptString",
+      "description": "Enter branch name (will be prefixed with type/):",
+      "default": ""
+    },
+    {
+      "id": "baseBranch",
+      "type": "promptString",
+      "description": "Enter base branch (default: main):",
+      "default": "main"
+    },
+    {
+      "id": "targetBranch",
+      "type": "promptString",
+      "description": "Choose target branch:",
+      "default": "main"
+    },
+    {
+      "id": "claudeReview",
+      "type": "pickString",
+      "description": "Request Claude review automatically:",
+      "default": "true",
+      "options": ["true", "false"]
+    },
+    {
+      "id": "claudeModel",
+      "type": "pickString",
+      "description": "Choose model:",
+      "default": "opus",
+      "options": ["opus", "sonnet"]
+    },
+    {
+      "id": "environment",
+      "type": "pickString",
+      "description": "Choose environment:",
+      "default": "staging",
+      "options": ["staging", "prod"]
+    }
+  ]
+}
