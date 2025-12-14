@@ -28,9 +28,6 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       <div className="mt-16 flex items-start">
         <CoreSidebar
           navigationItems={roboLedgerNavigationItems}
-          features={{
-            showOrgSection: false,
-          }}
           additionalMobileComponents={<EntitySelector />}
           borderColorClass="dark:border-gray-800"
         />
