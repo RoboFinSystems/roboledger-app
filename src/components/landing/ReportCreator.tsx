@@ -3,13 +3,13 @@ export default function ReportCreator() {
     <section className="relative overflow-hidden bg-black py-16 sm:py-24">
       {/* Animated background */}
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-linear-to-br from-blue-900/20 via-purple-900/20 to-pink-900/20"></div>
+        <div className="absolute inset-0 bg-linear-to-br from-violet-900/20 via-purple-900/20 to-pink-900/20"></div>
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10"></div>
       </div>
 
       {/* Floating elements */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="animate-float-slow absolute -top-20 left-1/4 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl"></div>
+        <div className="animate-float-slow absolute -top-20 left-1/4 h-96 w-96 rounded-full bg-violet-500/10 blur-3xl"></div>
         <div className="animate-float-slower absolute right-1/4 -bottom-20 h-96 w-96 rounded-full bg-purple-500/10 blur-3xl"></div>
         <div className="animate-float absolute top-1/2 left-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-500/5 blur-3xl"></div>
       </div>
@@ -27,7 +27,7 @@ export default function ReportCreator() {
 
         <div className="mb-12 grid gap-8 lg:grid-cols-2">
           {/* Fact Grid Visualization */}
-          <div className="rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-900/20 to-zinc-900 p-8">
+          <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-900/20 to-zinc-900 p-8">
             <h3 className="mb-6 text-xl font-bold text-white">
               Fact Grid: Your Data Foundation
             </h3>
@@ -40,7 +40,7 @@ export default function ReportCreator() {
                   <span className="text-xs text-gray-500">Multi-axis view</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded bg-blue-950/50 px-3 py-2 text-sm text-blue-300">
+                  <div className="rounded bg-violet-950/50 px-3 py-2 text-sm text-violet-300">
                     Time Period
                   </div>
                   <div className="rounded bg-purple-950/50 px-3 py-2 text-sm text-purple-300">
@@ -154,8 +154,8 @@ export default function ReportCreator() {
                   CONFIGURE PERIODS
                 </div>
                 <div className="flex gap-2">
-                  <div className="flex-1 rounded border border-blue-500/50 bg-blue-950/30 px-3 py-2 text-center">
-                    <div className="text-xs text-blue-300">Q4 2024</div>
+                  <div className="flex-1 rounded border border-violet-500/50 bg-violet-950/30 px-3 py-2 text-center">
+                    <div className="text-xs text-violet-300">Q4 2024</div>
                   </div>
                   <div className="flex-1 rounded border border-gray-600 bg-gray-800/30 px-3 py-2 text-center">
                     <div className="text-xs text-gray-400">Q3 2024</div>
@@ -189,9 +189,9 @@ export default function ReportCreator() {
         {/* Features Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-gray-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-6">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/20">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-violet-500/20">
               <svg
-                className="h-6 w-6 text-blue-400"
+                className="h-6 w-6 text-violet-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

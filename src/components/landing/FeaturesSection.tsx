@@ -19,7 +19,7 @@ export default function FeaturesSection() {
       title: 'QuickBooks Integration',
       description:
         'Sync your existing accounting data from QuickBooks into your knowledge graph',
-      color: 'cyan',
+      color: 'violet',
     },
     {
       icon: (
@@ -40,7 +40,7 @@ export default function FeaturesSection() {
       title: 'Plaid Bank Feeds',
       description:
         'Direct bank account integration for real-time transaction data',
-      color: 'blue',
+      color: 'purple',
     },
     {
       icon: (
@@ -61,7 +61,7 @@ export default function FeaturesSection() {
       title: 'Chart of Accounts',
       description:
         'Full chart of accounts with journal entries and AI-assisted categorization',
-      color: 'purple',
+      color: 'fuchsia',
     },
     {
       icon: (
@@ -129,10 +129,12 @@ export default function FeaturesSection() {
   ]
 
   const colorClasses = {
-    cyan: 'from-cyan-500/20 to-blue-500/20 border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400',
-    blue: 'from-blue-500/20 to-purple-500/20 border-blue-500/30 hover:border-blue-500/50 text-blue-400',
+    violet:
+      'from-violet-500/20 to-purple-500/20 border-violet-500/30 hover:border-violet-500/50 text-violet-400',
     purple:
-      'from-purple-500/20 to-pink-500/20 border-purple-500/30 hover:border-purple-500/50 text-purple-400',
+      'from-purple-500/20 to-fuchsia-500/20 border-purple-500/30 hover:border-purple-500/50 text-purple-400',
+    fuchsia:
+      'from-fuchsia-500/20 to-pink-500/20 border-fuchsia-500/30 hover:border-fuchsia-500/50 text-fuchsia-400',
     green:
       'from-green-500/20 to-emerald-500/20 border-green-500/30 hover:border-green-500/50 text-green-400',
     orange:

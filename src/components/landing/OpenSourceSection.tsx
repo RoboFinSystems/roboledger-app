@@ -15,9 +15,9 @@ export default function OpenSourceSection() {
 
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Local Development */}
-          <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-900/20 to-blue-900/20 p-6 md:p-8">
+          <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-900/20 to-purple-900/20 p-6 md:p-8">
             <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-600 to-blue-600">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-purple-600">
                 <svg
                   className="h-6 w-6 text-white"
                   fill="none"
@@ -44,7 +44,7 @@ export default function OpenSourceSection() {
 
             <div className="space-y-4">
               <div className="rounded-lg bg-zinc-900 p-4">
-                <h4 className="mb-3 text-sm font-semibold text-cyan-300">
+                <h4 className="mb-3 text-sm font-semibold text-violet-300">
                   Quick Start
                 </h4>
                 <pre className="overflow-x-auto text-xs text-gray-300">
@@ -93,7 +93,7 @@ npm run dev
                   href="https://github.com/RoboFinSystems/roboledger-app"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-cyan-700"
+                  className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-violet-700"
                 >
                   <svg
                     className="h-4 w-4"
@@ -112,7 +112,7 @@ npm run dev
                   href="https://hub.docker.com/r/robofinsystems/roboledger-app"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg border border-cyan-600 px-4 py-2 text-sm font-medium text-cyan-400 transition-all hover:bg-cyan-600/10"
+                  className="inline-flex items-center gap-2 rounded-lg border border-violet-600 px-4 py-2 text-sm font-medium text-violet-400 transition-all hover:bg-violet-600/10"
                 >
                   <svg
                     className="h-4 w-4"
@@ -241,11 +241,13 @@ npm run dev
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-lg border border-gray-800 bg-zinc-900 p-4 text-center">
-                <div className="text-2xl font-bold text-cyan-400">Next.js</div>
+                <div className="text-2xl font-bold text-violet-400">
+                  Next.js
+                </div>
                 <div className="text-sm text-gray-400">React Framework</div>
               </div>
               <div className="rounded-lg border border-gray-800 bg-zinc-900 p-4 text-center">
-                <div className="text-2xl font-bold text-blue-400">
+                <div className="text-2xl font-bold text-purple-400">
                   TypeScript
                 </div>
                 <div className="text-sm text-gray-400">Type Safety</div>

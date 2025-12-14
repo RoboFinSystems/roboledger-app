@@ -1,7 +1,7 @@
 export default function FinalCTA() {
   return (
     <section className="relative overflow-hidden bg-black py-24">
-      <div className="absolute inset-0 bg-linear-to-br from-cyan-900/20 via-blue-900/20 to-purple-900/20"></div>
+      <div className="absolute inset-0 bg-linear-to-br from-violet-900/20 via-purple-900/20 to-fuchsia-900/20"></div>
       <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
         <h2 className="font-heading mb-6 text-4xl font-bold text-white md:text-5xl">
           Ready for AI-Native Financial Reporting?
@@ -15,7 +15,7 @@ export default function FinalCTA() {
             href="https://github.com/RoboFinSystems/roboledger-app"
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative overflow-hidden rounded-lg bg-linear-to-r from-cyan-500 to-blue-500 px-8 py-4 text-lg font-medium text-white shadow-2xl shadow-cyan-500/25 transition-all duration-300 hover:shadow-cyan-500/40"
+            className="group relative overflow-hidden rounded-lg bg-linear-to-r from-violet-500 to-purple-500 px-8 py-4 text-lg font-medium text-white shadow-2xl shadow-violet-500/25 transition-all duration-300 hover:shadow-violet-500/40"
           >
             <span className="relative z-10 flex items-center justify-center gap-2">
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
