@@ -1,0 +1,115 @@
+Description: RoboLedger App S3 Buckets - Static Assets and WWW Redirect
+
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues:
+      - prod
+      - staging
+      - dev
+    Description: Environment name (prod, staging, or dev)
+    ConstraintDescription: Environment must be prod, staging, or dev
+
+  DomainName:
+    Type: String
+    Description: Full domain name for the application (e.g., roboledger.ai)
+
+  ServiceTag:
+    Type: String
+    Default: RoboLedger
+    Description: Tag value for Service identification
+
+  ComponentTag:
+    Type: String
+    Default: App
+    Description: Tag value for Component identification
+
+Conditions:
+  # Check if we're in production environment for www redirect
+  IsProduction: !Equals
+    - !Ref Environment
+    - prod
+
+Resources:
+  # S3 Bucket for Static Assets
+  StaticAssetsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub roboledger-app-${Environment}-static-assets
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # S3 Bucket for www redirect
+  WwwRedirectBucket:
+    Type: AWS::S3::Bucket
+    Condition: IsProduction
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub roboledger-app-${Environment}-www-redirect
+      WebsiteConfiguration:
+        RedirectAllRequestsTo:
+          HostName: !Ref DomainName
+          Protocol: https
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+Outputs:
+  StaticAssetsBucketName:
+    Description: S3 Bucket for static assets
+    Value: !Ref StaticAssetsBucket
+    Export:
+      Name: !Sub ${AWS::StackName}-StaticAssetsBucketName
+
+  StaticAssetsBucketArn:
+    Description: S3 Bucket ARN for static assets
+    Value: !GetAtt StaticAssetsBucket.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-StaticAssetsBucketArn
+
+  StaticAssetsBucketDomainName:
+    Description: S3 Bucket Regional Domain Name for static assets
+    Value: !GetAtt StaticAssetsBucket.RegionalDomainName
+    Export:
+      Name: !Sub ${AWS::StackName}-StaticAssetsBucketDomainName
+
+  WwwRedirectBucketName:
+    Condition: IsProduction
+    Description: S3 Bucket for www redirect
+    Value: !Ref WwwRedirectBucket
+    Export:
+      Name: !Sub ${AWS::StackName}-WwwRedirectBucketName
+
+  WwwRedirectBucketWebsiteURL:
+    Condition: IsProduction
+    Description: S3 Bucket Website URL for www redirect
+    Value: !Sub ${WwwRedirectBucket}.s3-website-${AWS::Region}.amazonaws.com
+    Export:
+      Name: !Sub ${AWS::StackName}-WwwRedirectBucketWebsiteURL

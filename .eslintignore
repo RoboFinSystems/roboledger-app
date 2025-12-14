@@ -1,0 +1,11 @@
+# Next.js auto-generated files
+next-env.d.ts
+.next/
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+out/

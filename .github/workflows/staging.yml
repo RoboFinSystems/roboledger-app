@@ -1,0 +1,165 @@
+name: Deploy Staging
+
+concurrency:
+  group: roboledger-app-deploy-staging
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-runner-availability:
+    if: vars.ENVIRONMENT_STAGING_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      runners_available: ${{ steps.check.outputs.runners_available }}
+      runner_type: ${{ steps.check.outputs.runner_type }}
+      runner_config: ${{ steps.check.outputs.runner_config }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          ref: ${{ github.ref }}
+          token: ${{ secrets.ACTIONS_TOKEN }}
+
+      - name: Check runner availability
+        id: check
+        uses: ./.github/actions/runner-availability
+        with:
+          repository_name: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          runner_labels: 'self-hosted,Linux,X64,AL2023,ci'
+          timeout_minutes: '2'
+          github_token: ${{ secrets.ACTIONS_TOKEN }}
+
+  test:
+    needs: [check-runner-availability]
+    uses: ./.github/workflows/test.yml
+    with:
+      runner_config: ${{ needs.check-runner-availability.outputs.runner_config }}
+    secrets:
+      ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+
+  create-deployment:
+    needs: [check-runner-availability, test]
+    runs-on: ${{ fromJSON(needs.check-runner-availability.outputs.runner_config) }}
+    outputs:
+      deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+    steps:
+      - name: Create GitHub Deployment
+        id: deployment
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: ${{ secrets.ACTIONS_TOKEN }}
+          environment: staging
+          description: 'Staging Deployment Created'
+      - name: Update Deployment Status
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ secrets.ACTIONS_TOKEN }}
+          state: in_progress
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          description: 'Staging Deployment In Progress'
+
+  deploy-s3:
+    needs: [test, create-deployment]
+    uses: ./.github/workflows/deploy-s3.yml
+    with:
+      stack_name: RoboLedgerAppS3Staging
+      environment: ${{ vars.ENVIRONMENT_STAGING || 'staging' }}
+      aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
+      aws_region: ${{ vars.AWS_REGION || 'us-east-1' }}
+      domain_name: ${{ vars.DOMAIN_NAME_STAGING || 'staging.roboledger.ai' }}
+    secrets:
+      ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  build:
+    needs: [test, deploy-s3]
+    uses: ./.github/workflows/build.yml
+    with:
+      environment: ${{ vars.ENVIRONMENT_STAGING || 'staging' }}
+      region: ${{ vars.AWS_REGION || 'us-east-1' }}
+      robosystems_api_url: ${{ vars.ROBOSYSTEMS_API_URL_STAGING || 'https://staging.api.robosystems.ai' }}
+      roboledger_app_url: ${{ vars.ROBOLEDGER_APP_URL_STAGING || 'https://staging.roboledger.ai' }}
+      roboinvestor_app_url: ${{ vars.ROBOINVESTOR_APP_URL_STAGING || 'https://staging.roboinvestor.ai' }}
+      robosystems_app_url: ${{ vars.ROBOSYSTEMS_APP_URL_STAGING || 'https://staging.robosystems.ai' }}
+      maintenance_mode: ${{ vars.MAINTENANCE_MODE_STAGING || 'false' }}
+      turnstile_site_key: ${{ vars.TURNSTILE_SITE_KEY || '' }}
+      # Docker Hub publishing for staging: disabled (staging builds should not go to Docker Hub)
+      publish_to_dockerhub: false
+    secrets:
+      ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  deploy-app:
+    needs: [check-runner-availability, create-deployment, build]
+    uses: ./.github/workflows/deploy-app.yml
+    with:
+      # GHA Runner Configuration
+      runner_config: ${{ needs.check-runner-availability.outputs.runner_config }}
+      # Environment & AWS Configuration
+      environment: ${{ vars.ENVIRONMENT_STAGING || 'staging' }}
+      aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
+      aws_region: ${{ vars.AWS_REGION || 'us-east-1' }}
+      stack_name: RoboLedgerAppStaging
+      s3_stack_name: RoboLedgerAppS3Staging
+      # Container & Application Configuration
+      ecr_repository: ${{ vars.ECR_REPOSITORY || 'roboledger-app' }}
+      ecr_image_tag: staging
+      # ECS & Compute Configuration
+      cpu: ${{ vars.CPU_STAGING || '256' }}
+      memory: ${{ vars.MEMORY_STAGING || '512' }}
+      fargate_weight: ${{ vars.FARGATE_WEIGHT_STAGING || '20' }}
+      fargate_spot_weight: ${{ vars.FARGATE_SPOT_WEIGHT_STAGING || '80' }}
+      # Auto-scaling Configuration
+      capacity_min: ${{ vars.CAPACITY_MIN_STAGING || '1' }}
+      capacity_max: ${{ vars.CAPACITY_MAX_STAGING || '2' }}
+      scale_up_cpu_threshold: ${{ vars.SCALE_UP_CPU_THRESHOLD_STAGING || '60' }}
+      scale_down_cpu_threshold: ${{ vars.SCALE_DOWN_CPU_THRESHOLD_STAGING || '40' }}
+      scale_up_memory_threshold: ${{ vars.SCALE_UP_MEMORY_THRESHOLD_STAGING || '60' }}
+      scale_down_memory_threshold: ${{ vars.SCALE_DOWN_MEMORY_THRESHOLD_STAGING || '30' }}
+      # Domain & DNS Configuration
+      domain_name: ${{ vars.DOMAIN_NAME_STAGING || 'staging.roboledger.ai' }}
+      domain_name_root: ${{ vars.DOMAIN_NAME_ROOT || 'roboledger.ai' }}
+    secrets:
+      ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  deployment-successful:
+    needs: [check-runner-availability, create-deployment, build, deploy-app]
+    runs-on: ${{ fromJSON(needs.check-runner-availability.outputs.runner_config) }}
+    outputs:
+      deployment_id: ${{ needs.create-deployment.outputs.deployment_id }}
+    steps:
+      - name: Update Deployment Status
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ secrets.ACTIONS_TOKEN }}
+          state: success
+          deployment-id: ${{ needs.create-deployment.outputs.deployment_id }}
+          description: 'Staging Deployment Succeeded'
+
+  handle-deployment-failure:
+    needs: [check-runner-availability, create-deployment, build, deploy-app]
+    if: always() && contains(needs.*.result, 'failure')
+    runs-on: ${{ fromJSON(needs.check-runner-availability.outputs.runner_config) }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          ref: ${{ github.ref }}
+          token: ${{ secrets.ACTIONS_TOKEN }}
+
+      - name: Handle Deployment Failure
+        uses: ./.github/actions/handle-deployment-failure
+        with:
+          deployment-id: ${{ needs.create-deployment.outputs.deployment_id }}
+          environment: staging
+          github-token: ${{ secrets.ACTIONS_TOKEN }}

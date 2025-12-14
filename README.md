@@ -1,4 +1,4 @@
-# RoboLedger
+# RoboLedger App
 
 RoboLedger is an AI-native accounting platform that builds a semantic knowledge graph of your financial data, enabling intelligent automation and natural language financial analysis powered by Claude AI.
 

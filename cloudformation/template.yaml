@@ -1,0 +1,1022 @@
+Description: RoboLedger App Service - ECS Fargate
+
+Parameters:
+  # Environment & AWS Configuration
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues:
+      - prod
+      - staging
+      - dev
+    Description: Environment name (prod, staging, dev)
+    ConstraintDescription: Must be prod, staging, or dev
+
+  AWSAccountId:
+    Type: String
+    Description: AWS Account ID for cross-account resources
+    AllowedPattern: '[0-9]{12}'
+
+  # Infrastructure & Networking
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID for ECS tasks
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Private subnet IDs for ECS tasks (comma-separated)
+
+  PublicSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Public subnet IDs for ALB (comma-separated)
+
+  CloudFrontManagedPrefixListId:
+    Type: String
+    Default: pl-3b927c52 # CloudFront origin facing prefix list (global)
+    Description: Managed prefix list ID for CloudFront origins
+
+  # Domain & DNS Configuration
+  DomainName:
+    Type: String
+    Description: Full domain name for the application (e.g., roboledger.ai)
+
+  HostedZoneId:
+    Type: String
+    Description: Route53 Hosted Zone ID for the domain
+
+  S3StackName:
+    Type: String
+    Description: Name of the S3 stack to import bucket resources from (e.g., RoboLedgerAppS3Prod)
+
+  # Container & Application Configuration
+  ECRRepository:
+    Type: String
+    Description: ECR repository name
+    Default: roboledger-app
+
+  ECRImageTag:
+    Type: String
+    Description: Docker image tag
+    Default: latest
+
+  ContainerPort:
+    Type: Number
+    Default: 3000
+    MinValue: 1
+    MaxValue: 65535
+    Description: Port the container listens on
+
+  # ECS & Compute Configuration
+  Cpu:
+    Type: String
+    Default: '256'
+    Description: CPU units for ECS task (256 = 0.25 vCPU)
+    AllowedValues:
+      - '256'
+      - '512'
+      - '1024'
+
+  Memory:
+    Type: String
+    Default: '512'
+    Description: Memory in MiB for ECS task
+    AllowedValues:
+      - '512'
+      - '1024'
+      - '2048'
+
+  FargateWeight:
+    Type: Number
+    Default: 20
+    MinValue: 0
+    MaxValue: 100
+    Description: Weight for FARGATE capacity provider (On-Demand instances)
+
+  FargateSpotWeight:
+    Type: Number
+    Default: 80
+    MinValue: 0
+    MaxValue: 100
+    Description: Weight for FARGATE_SPOT capacity provider (Spot instances)
+
+  # Auto-scaling Configuration
+  CapacityMin:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    MaxValue: 100
+    Description: Minimum number of tasks for auto scaling
+
+  CapacityMax:
+    Type: Number
+    Default: 10
+    MinValue: 2
+    MaxValue: 100
+    Description: Maximum number of tasks for auto scaling
+
+  ScaleUpCPUThreshold:
+    Type: Number
+    Default: 70
+    MinValue: 1
+    MaxValue: 100
+    Description: CPU utilization percentage to trigger scale up
+
+  ScaleDownCPUThreshold:
+    Type: Number
+    Default: 30
+    MinValue: 1
+    MaxValue: 100
+    Description: CPU utilization percentage to trigger scale down
+
+  ScaleUpMemoryThreshold:
+    Type: Number
+    Default: 65
+    MinValue: 1
+    MaxValue: 100
+    Description: Memory utilization percentage to trigger scale up
+
+  ScaleDownMemoryThreshold:
+    Type: Number
+    Default: 25
+    MinValue: 1
+    MaxValue: 100
+    Description: Memory utilization percentage to trigger scale down
+
+  # Observability & Monitoring
+  LogRetentionDays:
+    Type: Number
+    Default: 30
+    MinValue: 1
+    MaxValue: 365
+    Description: CloudWatch log retention in days
+
+  ContainerInsightsEnabled:
+    Type: String
+    Default: disabled
+    AllowedValues:
+      - enabled
+      - disabled
+    Description: Enable/disable ECS Container Insights (adds ~$30-40/month in CloudWatch costs per cluster)
+
+  # Tagging Configuration
+  ServiceTag:
+    Type: String
+    Default: RoboLedger
+    Description: Tag value for Service identification
+
+  ComponentTag:
+    Type: String
+    Default: App
+    Description: Tag value for Component identification
+
+Conditions:
+  # Check if we're in production environment for www redirect
+  IsProduction: !Equals
+    - !Ref Environment
+    - prod
+
+Resources:
+  # ACM Certificate
+  # Note: CloudFront requires certificates to be in us-east-1
+  AppCertificate:
+    Type: AWS::CertificateManager::Certificate
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      DomainName: !Ref DomainName
+      DomainValidationOptions:
+        - DomainName: !Ref DomainName
+          HostedZoneId: !Ref HostedZoneId
+      ValidationMethod: DNS
+      SubjectAlternativeNames:
+        - !Sub '*.${DomainName}'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # ECS Cluster
+  AppCluster:
+    Type: AWS::ECS::Cluster
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      ClusterName: !Sub roboledger-${Environment}-cluster
+      ClusterSettings:
+        - Name: containerInsights
+          Value: !Ref ContainerInsightsEnabled
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # IAM Role for ECS Task Execution
+  AppEcsExecutionRole:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # IAM Role for ECS Task
+  AppTaskRole:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # Log Group
+  AppLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Sub /roboledger/${Environment}/app
+      RetentionInDays: !Ref LogRetentionDays
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # Security Group
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      GroupDescription: Security group for RoboLedger app
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub sg-roboledger-${Environment}
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # Security Group for ALB
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      GroupDescription: Security group for RoboLedger Application Load Balancer
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub sg-roboledger-${Environment}-alb
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # Security Group Rule - CloudFront to ALB
+  CloudFrontToALBSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourcePrefixListId: !Ref CloudFrontManagedPrefixListId
+      Description: Allow HTTPS traffic from CloudFront
+
+  # Security Group Rule - Public HTTP to ALB (for redirect)
+  PublicHTTPToALBSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIp: 0.0.0.0/0
+      Description: Allow HTTP traffic for redirect to HTTPS
+
+  # Security Group Rule - ALB to App
+  ALBToAppSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref AppSecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref ContainerPort
+      ToPort: !Ref ContainerPort
+      SourceSecurityGroupId: !Ref ALBSecurityGroup
+      Description: Allow traffic from ALB to application
+
+  # Application Load Balancer
+  AppLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      Name: !Sub roboledger-${Environment}-alb
+      Subnets: !Ref PublicSubnetIds
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Scheme: internet-facing
+      IpAddressType: ipv4
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '60'
+      Tags:
+        - Key: Name
+          Value: !Sub roboledger-app-${Environment}-alb
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # HTTP Listener (redirects to HTTPS)
+  AppHTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      LoadBalancerArn: !Ref AppLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: '443'
+            StatusCode: HTTP_301
+
+  # HTTPS Listener
+  AppHTTPSListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      LoadBalancerArn: !Ref AppLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref AppCertificate
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref AppTargetGroup
+
+  # Target Group
+  AppTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      Name: !Sub roboledger-${Environment}-tg
+      Port: !Ref ContainerPort
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: ip
+      HealthCheckEnabled: true
+      HealthCheckPath: /api/utilities/health
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: !Ref ContainerPort
+      HealthCheckTimeoutSeconds: 10
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: 200-399
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # ECS Service
+  EcsService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - AppHTTPSListener
+      - AppHTTPListener
+    Properties:
+      Cluster: !Ref AppCluster
+      TaskDefinition: !Ref TaskDefinition
+      ServiceName: !Sub roboledger-${Environment}-service
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets: !Ref SubnetIds
+          SecurityGroups:
+            - !Ref AppSecurityGroup
+          AssignPublicIp: DISABLED
+      LoadBalancers:
+        - ContainerName: roboledger-app
+          ContainerPort: !Ref ContainerPort
+          TargetGroupArn: !Ref AppTargetGroup
+      CapacityProviderStrategy:
+        - CapacityProvider: FARGATE_SPOT
+          Weight: !Ref FargateSpotWeight
+          Base: 0
+        - CapacityProvider: FARGATE
+          Weight: !Ref FargateWeight
+          Base: 0
+      DesiredCount: !Ref CapacityMin
+      HealthCheckGracePeriodSeconds: 60
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # Task Definition
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      Family: !Sub roboledger-${Environment}
+      ExecutionRoleArn: !GetAtt AppEcsExecutionRole.Arn
+      TaskRoleArn: !GetAtt AppTaskRole.Arn
+      RequiresCompatibilities:
+        - FARGATE
+      NetworkMode: awsvpc
+      Cpu: !Ref Cpu
+      Memory: !Ref Memory
+      ContainerDefinitions:
+        - Name: roboledger-app
+          Image: !Sub ${AWSAccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:${ECRImageTag}
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref AppLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: app
+          Essential: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # Auto Scaling
+  AppScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    DependsOn: EcsService
+    Properties:
+      MaxCapacity: !Ref CapacityMax
+      MinCapacity: !Ref CapacityMin
+      ResourceId: !Sub service/roboledger-${Environment}-cluster/roboledger-${Environment}-service
+      RoleARN: !GetAtt AppAutoScalingRole.Arn
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+
+  # IAM Role for Auto Scaling
+  AppAutoScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: application-autoscaling.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # Scale Up Policy for CPU
+  ServiceScaleUpCPUPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      PolicyName: !Sub roboledger-${Environment}-cpu-scale-up
+      PolicyType: StepScaling
+      ScalingTargetId: !Ref AppScalingTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 60
+        MetricAggregationType: Average
+        StepAdjustments:
+          - MetricIntervalLowerBound: 0
+            ScalingAdjustment: 1
+
+  # Scale Down Policy for CPU
+  ServiceScaleDownCPUPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      PolicyName: !Sub roboledger-${Environment}-cpu-scale-down
+      PolicyType: StepScaling
+      ScalingTargetId: !Ref AppScalingTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 300
+        MetricAggregationType: Average
+        StepAdjustments:
+          - MetricIntervalUpperBound: 0
+            ScalingAdjustment: -1
+
+  # Scale Up Policy for Memory
+  ServiceScaleUpMemoryPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      PolicyName: !Sub roboledger-${Environment}-memory-scale-up
+      PolicyType: StepScaling
+      ScalingTargetId: !Ref AppScalingTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 60
+        MetricAggregationType: Average
+        StepAdjustments:
+          - MetricIntervalLowerBound: 0
+            ScalingAdjustment: 1
+
+  # Scale Down Policy for Memory
+  ServiceScaleDownMemoryPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      PolicyName: !Sub roboledger-${Environment}-memory-scale-down
+      PolicyType: StepScaling
+      ScalingTargetId: !Ref AppScalingTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 300
+        MetricAggregationType: Average
+        StepAdjustments:
+          - MetricIntervalUpperBound: 0
+            ScalingAdjustment: -1
+
+  # CloudWatch Alarms for Scaling
+  HighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-app-cpu-high-alarm
+      AlarmDescription: !Sub Scale up if CPU utilization is above ${ScaleUpCPUThreshold}%
+      MetricName: CPUUtilization
+      Namespace: AWS/ECS
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: !Ref ScaleUpCPUThreshold
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref AppCluster
+        - Name: ServiceName
+          Value: !GetAtt EcsService.Name
+      AlarmActions:
+        - !Ref ServiceScaleUpCPUPolicy
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  LowCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-app-cpu-low-alarm
+      AlarmDescription: !Sub Scale down if CPU utilization is below ${ScaleDownCPUThreshold}%
+      MetricName: CPUUtilization
+      Namespace: AWS/ECS
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: !Ref ScaleDownCPUThreshold
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref AppCluster
+        - Name: ServiceName
+          Value: !GetAtt EcsService.Name
+      AlarmActions:
+        - !Ref ServiceScaleDownCPUPolicy
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  HighMemoryAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-app-memory-high-alarm
+      AlarmDescription: !Sub Scale up if Memory utilization is above ${ScaleUpMemoryThreshold}%
+      MetricName: MemoryUtilization
+      Namespace: AWS/ECS
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: !Ref ScaleUpMemoryThreshold
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref AppCluster
+        - Name: ServiceName
+          Value: !GetAtt EcsService.Name
+      AlarmActions:
+        - !Ref ServiceScaleUpMemoryPolicy
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  LowMemoryAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-app-memory-low-alarm
+      AlarmDescription: !Sub Scale down if Memory utilization is below ${ScaleDownMemoryThreshold}%
+      MetricName: MemoryUtilization
+      Namespace: AWS/ECS
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: !Ref ScaleDownMemoryThreshold
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref AppCluster
+        - Name: ServiceName
+          Value: !GetAtt EcsService.Name
+      AlarmActions:
+        - !Ref ServiceScaleDownMemoryPolicy
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # Bucket Policy for CloudFront Access
+  StaticAssetsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Fn::ImportValue: !Sub ${S3StackName}-StaticAssetsBucketName
+      PolicyDocument:
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipal
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub
+              - ${BucketArn}/*
+              - BucketArn:
+                  Fn::ImportValue: !Sub ${S3StackName}-StaticAssetsBucketArn
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
+
+  # CloudFront Origin Access Control
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub roboledger-${Environment}-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # CloudFront Distribution
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: !Sub RoboLedger ${Environment} Distribution
+        Enabled: true
+        PriceClass: PriceClass_100 # Use only North America and Europe for cost savings
+        HttpVersion: http2
+        Aliases:
+          - !Ref DomainName
+        ViewerCertificate:
+          AcmCertificateArn: !Ref AppCertificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+        DefaultRootObject: ''
+        Origins:
+          # Origin for static assets (S3)
+          - Id: S3-Static-Assets
+            DomainName:
+              Fn::ImportValue: !Sub ${S3StackName}-StaticAssetsBucketDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+            OriginAccessControlId: !Ref CloudFrontOAC
+          # Origin for dynamic content (ALB)
+          - Id: ALB-Dynamic-Content
+            DomainName: !GetAtt AppLoadBalancer.DNSName
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols:
+                - TLSv1.2
+        DefaultCacheBehavior:
+          TargetOriginId: ALB-Dynamic-Content
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          ForwardedValues:
+            QueryString: true
+            Cookies:
+              Forward: all
+            Headers:
+              - Host
+              - CloudFront-Forwarded-Proto
+              - CloudFront-Is-Mobile-Viewer
+              - CloudFront-Is-Desktop-Viewer
+              - CloudFront-Is-Tablet-Viewer
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled managed policy
+          OriginRequestPolicyId: 216adef6-5c7f-47e4-b989-5492eafa07d3 # AllViewer managed policy
+        CacheBehaviors:
+          # Cache behavior for static assets
+          - PathPattern: /images/*
+            TargetOriginId: S3-Static-Assets
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: true
+            CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized managed policy
+          - PathPattern: /fonts/*
+            TargetOriginId: S3-Static-Assets
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: false # Don't compress fonts as they're already optimized
+            CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized managed policy
+            ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03 # CORS-With-Preflight-And-SecurityHeadersPolicy
+          - PathPattern: /_next/static/*
+            TargetOriginId: S3-Static-Assets
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: true
+            CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized managed policy
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # CloudFront Distribution for www redirect
+  WwwCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Condition: IsProduction
+    Properties:
+      DistributionConfig:
+        Comment: !Sub RoboLedger ${Environment} WWW Redirect Distribution
+        Enabled: true
+        PriceClass: PriceClass_100 # Use only North America and Europe for cost savings
+        HttpVersion: http2
+        Aliases:
+          - !Sub www.${DomainName}
+        ViewerCertificate:
+          AcmCertificateArn: !Ref AppCertificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+        Origins:
+          - Id: S3-WWW-Redirect
+            DomainName:
+              Fn::ImportValue: !Sub ${S3StackName}-WwwRedirectBucketWebsiteURL
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+        DefaultCacheBehavior:
+          TargetOriginId: S3-WWW-Redirect
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: false
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized managed policy
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # Route 53 Record
+  Route53Record:
+    Type: AWS::Route53::RecordSet
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Type: A
+      Name: !Ref DomainName
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2 # CloudFront's hosted zone ID
+        EvaluateTargetHealth: false
+
+  # Route 53 Record for www subdomain
+  WwwRoute53Record:
+    Type: AWS::Route53::RecordSet
+    Condition: IsProduction
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Type: A
+      Name: !Sub www.${DomainName}
+      AliasTarget:
+        DNSName: !GetAtt WwwCloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2 # CloudFront's hosted zone ID
+        EvaluateTargetHealth: false
+
+Outputs:
+  AppURL:
+    Description: URL of the Application
+    Value: !Sub https://${DomainName}
+  ALBEndpoint:
+    Description: ALB endpoint DNS name
+    Value: !GetAtt AppLoadBalancer.DNSName
+  ClusterName:
+    Description: ECS Cluster Name
+    Value: !Ref AppCluster
+  ServiceName:
+    Description: ECS Service Name
+    Value: !GetAtt EcsService.Name
+  CertificateArn:
+    Description: ACM Certificate ARN
+    Value: !Ref AppCertificate
+    Export:
+      Name: !Sub ${AWS::StackName}-CertificateArn
+  CloudFrontDistributionId:
+    Description: CloudFront Distribution ID
+    Value: !Ref CloudFrontDistribution
+  CloudFrontDomainName:
+    Description: CloudFront Distribution Domain Name
+    Value: !GetAtt CloudFrontDistribution.DomainName
+  WwwCloudFrontDistributionId:
+    Condition: IsProduction
+    Description: CloudFront Distribution ID for WWW redirect
+    Value: !Ref WwwCloudFrontDistribution
+  WwwCloudFrontDomainName:
+    Condition: IsProduction
+    Description: CloudFront Distribution Domain Name for WWW redirect
+    Value: !GetAtt WwwCloudFrontDistribution.DomainName
+  StaticAssetsBucketName:
+    Description: S3 Bucket for static assets
+    Value: !Sub ${S3StackName}-StaticAssetsBucketName
+  WwwRedirectBucketName:
+    Condition: IsProduction
+    Description: S3 Bucket for www redirect
+    Value: !Sub ${S3StackName}-WwwRedirectBucketName
+  Region:
+    Description: AWS Region where the stack is deployed
+    Value: !Ref AWS::Region

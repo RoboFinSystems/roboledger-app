@@ -1,0 +1,27 @@
+{
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "files.exclude": {
+    "node_modules/**": true,
+    "**/.git/**": true,
+    "__mocks__/**": true,
+    ".next/**": true,
+    ".swc/**": true,
+    "tsconfig.tsbuildinfo": true
+  },
+  "search.exclude": {
+    "node_modules/**": true,
+    ".next/**": true,
+    ".swc/**": true,
+    "tsconfig.tsbuildinfo": true
+  },
+  "tailwindCSS.classAttributes": ["class", "className", "theme"],
+  "tailwindCSS.experimental.classRegex": [
+    ["twMerge\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    [
+      "createTheme(?:<\\w+>)?\\s*\\(([^)]*)\\)",
+      "{?\\s?[\\w].*:\\s*?[\"'`]([^\"'`]*).*?,?\\s?}?"
+    ]
+  ]
+}

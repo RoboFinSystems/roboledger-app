@@ -1,0 +1,225 @@
+name: Deploy S3
+
+on:
+  workflow_call:
+    inputs:
+      # Stack & Environment Configuration
+      stack_name:
+        description: 'CloudFormation stack name'
+        required: true
+        type: string
+      environment:
+        description: 'Environment to deploy to (prod, staging, or dev)'
+        required: true
+        type: string
+
+      # AWS Configuration
+      aws_account_id:
+        description: 'AWS Account ID for cross-account resources'
+        required: true
+        type: string
+      aws_region:
+        description: 'AWS region for deployment'
+        required: true
+        type: string
+
+      # Domain Configuration
+      domain_name:
+        description: 'Full domain name for the application (e.g., roboledger.ai)'
+        required: true
+        type: string
+
+    outputs:
+      static_assets_bucket_name:
+        description: 'Name of the static assets S3 bucket'
+        value: ${{ jobs.action.outputs.static_assets_bucket_name }}
+      static_assets_bucket_arn:
+        description: 'ARN of the static assets S3 bucket'
+        value: ${{ jobs.action.outputs.static_assets_bucket_arn }}
+      static_assets_bucket_domain:
+        description: 'Regional domain name of the static assets S3 bucket'
+        value: ${{ jobs.action.outputs.static_assets_bucket_domain }}
+      www_redirect_bucket_name:
+        description: 'Name of the www redirect S3 bucket'
+        value: ${{ jobs.action.outputs.www_redirect_bucket_name }}
+      www_redirect_bucket_url:
+        description: 'Website URL of the www redirect S3 bucket'
+        value: ${{ jobs.action.outputs.www_redirect_bucket_url }}
+
+    secrets:
+      ACTIONS_TOKEN:
+        required: true
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+
+jobs:
+  action:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      static_assets_bucket_name: ${{ steps.stack-outputs.outputs.static_assets_bucket_name }}
+      static_assets_bucket_arn: ${{ steps.stack-outputs.outputs.static_assets_bucket_arn }}
+      static_assets_bucket_domain: ${{ steps.stack-outputs.outputs.static_assets_bucket_domain }}
+      www_redirect_bucket_name: ${{ steps.stack-outputs.outputs.www_redirect_bucket_name }}
+      www_redirect_bucket_url: ${{ steps.stack-outputs.outputs.www_redirect_bucket_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          ref: ${{ github.ref }}
+          token: ${{ secrets.ACTIONS_TOKEN }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Deploy S3 CloudFormation Stack
+        id: deploy-stack
+        run: |
+          if aws cloudformation describe-stacks --stack-name ${{ inputs.stack_name }} 2>&1 | grep -q 'Stack with id ${{ inputs.stack_name }} does not exist'; then
+            STACK_ACTION="create-stack"
+            echo "Creating new stack ${{ inputs.stack_name }}"
+            echo "is_new_stack=true" >> $GITHUB_OUTPUT
+          else
+            STACK_ACTION="update-stack"
+            echo "Updating existing stack ${{ inputs.stack_name }}"
+            echo "is_new_stack=false" >> $GITHUB_OUTPUT
+          fi
+
+          S3_STACK_PARAMS="ParameterKey=Environment,ParameterValue=${{ inputs.environment }} \
+                ParameterKey=DomainName,ParameterValue=${{ inputs.domain_name }}"
+
+          # Deploy or update the stack
+          if [ "$STACK_ACTION" = "create-stack" ]; then
+            # Create new stack
+            aws cloudformation $STACK_ACTION \
+              --stack-name ${{ inputs.stack_name }} \
+              --template-body file://cloudformation/s3.yaml \
+              --capabilities CAPABILITY_IAM \
+              --parameters $S3_STACK_PARAMS \
+              --tags \
+                Key=Environment,Value=${{ inputs.environment }} \
+                Key=Service,Value=RoboLedger \
+                Key=Component,Value=S3 \
+                Key=CreatedBy,Value=GitHubActions
+          else
+            # Update existing stack, handling "No updates" error
+            UPDATE_OUTPUT=$(aws cloudformation $STACK_ACTION \
+              --stack-name ${{ inputs.stack_name }} \
+              --template-body file://cloudformation/s3.yaml \
+              --capabilities CAPABILITY_IAM \
+              --parameters $S3_STACK_PARAMS \
+              --tags \
+                Key=Environment,Value=${{ inputs.environment }} \
+                Key=Service,Value=RoboLedger \
+                Key=Component,Value=S3 \
+                Key=CreatedBy,Value=GitHubActions 2>&1) || true
+
+            # Check if the error was "No updates are to be performed"
+            if echo "$UPDATE_OUTPUT" | grep -q "No updates are to be performed"; then
+              echo "Stack is already up to date - no changes needed"
+              echo "is_new_stack=false" >> $GITHUB_OUTPUT
+            elif echo "$UPDATE_OUTPUT" | grep -q "error"; then
+              echo "Error updating stack: $UPDATE_OUTPUT"
+              exit 1
+            else
+              echo "Stack update initiated successfully"
+              echo "is_new_stack=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Monitor Stack Deployment
+        uses: ./.github/actions/monitor-stack-deployment
+        with:
+          stack-name: ${{ inputs.stack_name }}
+          timeout: '1800'
+          interval: '10'
+
+      - name: Get Stack Outputs
+        id: stack-outputs
+        run: |
+          echo "Retrieving stack outputs..."
+
+          # Get Static Assets Bucket Name
+          STATIC_ASSETS_BUCKET_NAME=$(aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.stack_name }} \
+            --query "Stacks[0].Outputs[?OutputKey=='StaticAssetsBucketName'].OutputValue" \
+            --output text)
+
+          if [ -n "$STATIC_ASSETS_BUCKET_NAME" ]; then
+            echo "static_assets_bucket_name=$STATIC_ASSETS_BUCKET_NAME" >> $GITHUB_OUTPUT
+            echo "Found Static Assets Bucket Name: $STATIC_ASSETS_BUCKET_NAME"
+          else
+            echo "Warning: Could not retrieve Static Assets Bucket Name"
+          fi
+
+          # Get Static Assets Bucket ARN
+          STATIC_ASSETS_BUCKET_ARN=$(aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.stack_name }} \
+            --query "Stacks[0].Outputs[?OutputKey=='StaticAssetsBucketArn'].OutputValue" \
+            --output text)
+
+          if [ -n "$STATIC_ASSETS_BUCKET_ARN" ]; then
+            echo "static_assets_bucket_arn=$STATIC_ASSETS_BUCKET_ARN" >> $GITHUB_OUTPUT
+            echo "Found Static Assets Bucket ARN: $STATIC_ASSETS_BUCKET_ARN"
+          else
+            echo "Warning: Could not retrieve Static Assets Bucket ARN"
+          fi
+
+          # Get Static Assets Bucket Domain Name
+          STATIC_ASSETS_BUCKET_DOMAIN=$(aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.stack_name }} \
+            --query "Stacks[0].Outputs[?OutputKey=='StaticAssetsBucketDomainName'].OutputValue" \
+            --output text)
+
+          if [ -n "$STATIC_ASSETS_BUCKET_DOMAIN" ]; then
+            echo "static_assets_bucket_domain=$STATIC_ASSETS_BUCKET_DOMAIN" >> $GITHUB_OUTPUT
+            echo "Found Static Assets Bucket Domain: $STATIC_ASSETS_BUCKET_DOMAIN"
+          else
+            echo "Warning: Could not retrieve Static Assets Bucket Domain Name"
+          fi
+
+          # Get WWW Redirect Bucket Name (production only)
+          if [ "${{ inputs.environment }}" == "prod" ]; then
+            WWW_REDIRECT_BUCKET_NAME=$(aws cloudformation describe-stacks \
+              --stack-name ${{ inputs.stack_name }} \
+              --query "Stacks[0].Outputs[?OutputKey=='WwwRedirectBucketName'].OutputValue" \
+              --output text)
+
+            if [ -n "$WWW_REDIRECT_BUCKET_NAME" ]; then
+              echo "www_redirect_bucket_name=$WWW_REDIRECT_BUCKET_NAME" >> $GITHUB_OUTPUT
+              echo "Found WWW Redirect Bucket Name: $WWW_REDIRECT_BUCKET_NAME"
+            else
+              echo "Warning: Could not retrieve WWW Redirect Bucket Name"
+            fi
+
+            # Get WWW Redirect Bucket Website URL
+            WWW_REDIRECT_BUCKET_URL=$(aws cloudformation describe-stacks \
+              --stack-name ${{ inputs.stack_name }} \
+              --query "Stacks[0].Outputs[?OutputKey=='WwwRedirectBucketWebsiteURL'].OutputValue" \
+              --output text)
+
+            if [ -n "$WWW_REDIRECT_BUCKET_URL" ]; then
+              echo "www_redirect_bucket_url=$WWW_REDIRECT_BUCKET_URL" >> $GITHUB_OUTPUT
+              echo "Found WWW Redirect Bucket Website URL: $WWW_REDIRECT_BUCKET_URL"
+            else
+              echo "Warning: Could not retrieve WWW Redirect Bucket Website URL"
+            fi
+          fi
+
+      - name: Update Deployment Status
+        if: always()
+        run: |
+          # Output deployment status for the main workflow
+          if [ "${{ steps.deploy-stack.outputs.is_new_stack }}" == "true" ]; then
+            echo "S3 buckets stack creation completed"
+          else
+            echo "S3 buckets stack update completed"
+          fi

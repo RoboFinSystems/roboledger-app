@@ -1,0 +1,244 @@
+name: Claude Create PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: 'Source branch to create PR from (defaults to current branch)'
+        required: false
+        type: string
+      target_branch:
+        description: 'Target branch for PR'
+        required: false
+        default: 'main'
+        type: string
+      pr_type:
+        description: 'Type of PR'
+        required: true
+        type: choice
+        options:
+          - feature
+          - bugfix
+          - hotfix
+          - chore
+          - refactor
+        default: feature
+      claude_review:
+        description: 'Request Claude review'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.ACTIONS_TOKEN }}
+
+      - name: Determine source branch
+        id: source-branch
+        run: |
+          if [ -n "${{ inputs.source_branch }}" ]; then
+            SOURCE_BRANCH="${{ inputs.source_branch }}"
+            echo "Using specified source branch: $SOURCE_BRANCH"
+            git checkout "$SOURCE_BRANCH"
+          else
+            SOURCE_BRANCH=$(git branch --show-current)
+            echo "Using current branch: $SOURCE_BRANCH"
+          fi
+          echo "source_branch=$SOURCE_BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Get branch info
+        id: branch-info
+        run: |
+          CURRENT_BRANCH="${{ steps.source-branch.outputs.source_branch }}"
+          echo "current_branch=$CURRENT_BRANCH" >> $GITHUB_OUTPUT
+
+          # Auto-detect PR type from branch name
+          if [[ "$CURRENT_BRANCH" == feature/* ]]; then
+            PR_TYPE="feat"
+          elif [[ "$CURRENT_BRANCH" == bugfix/* ]]; then
+            PR_TYPE="fix"
+          elif [[ "$CURRENT_BRANCH" == hotfix/* ]]; then
+            PR_TYPE="hotfix"
+          elif [[ "$CURRENT_BRANCH" == chore/* ]]; then
+            PR_TYPE="chore"
+          elif [[ "$CURRENT_BRANCH" == refactor/* ]]; then
+            PR_TYPE="refactor"
+          elif [[ "$CURRENT_BRANCH" == release/* ]]; then
+            PR_TYPE="release"
+          else
+            PR_TYPE="other"
+          fi
+
+          echo "pr_type=$PR_TYPE" >> $GITHUB_OUTPUT
+
+      - name: Analyze changes
+        id: analyze
+        run: |
+          # Get list of changed files
+          FILES_CHANGED=$(git diff --name-only origin/${{ inputs.target_branch }}...HEAD | head -20 | sed 's/`//g')
+          FILES_COUNT=$(git diff --name-only origin/${{ inputs.target_branch }}...HEAD | wc -l)
+
+          # Get commit messages
+          COMMITS=$(git log --oneline origin/${{ inputs.target_branch }}..HEAD | head -10 | sed 's/`//g')
+          COMMITS_COUNT=$(git log --oneline origin/${{ inputs.target_branch }}..HEAD | wc -l)
+
+          # Export for PR description
+          echo "files_changed<<EOF" >> $GITHUB_OUTPUT
+          echo "$FILES_CHANGED" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "files_count=$FILES_COUNT" >> $GITHUB_OUTPUT
+          echo "commits_count=$COMMITS_COUNT" >> $GITHUB_OUTPUT
+
+          echo "commits<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Generate PR description with Claude
+        if: inputs.claude_review == 'true'
+        id: claude-description
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # Function to call Claude API with retry logic
+          call_claude_api() {
+            local attempt=1
+            local max_attempts=5
+            local delay=2
+
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempt $attempt of $max_attempts..."
+
+              response=$(curl -s -w "\n%{http_code}" https://api.anthropic.com/v1/messages \
+                -H "x-api-key: $ANTHROPIC_API_KEY" \
+                -H "anthropic-version: 2023-06-01" \
+                -H "content-type: application/json" \
+                -d @- <<EOF
+          {
+            "model": "claude-3-haiku-20240307",
+            "max_tokens": 1000,
+            "messages": [{
+              "role": "user",
+              "content": "You are a helpful assistant that creates clear, concise pull request descriptions for a React/Next.js application.\n\nBranch: ${{ steps.branch-info.outputs.current_branch }}\nPR Type: ${{ steps.branch-info.outputs.pr_type }}\nTarget: ${{ inputs.target_branch }}\n\nFiles changed (${{ steps.analyze.outputs.files_count }} total):\n${{ steps.analyze.outputs.files_changed }}\n\nCommits (${{ steps.analyze.outputs.commits_count }} total):\n${{ steps.analyze.outputs.commits }}\n\nPlease write a pull request description with:\n1. A clear title (one line)\n2. A summary section (2-3 sentences)\n3. A 'Changes' section with bullet points of what changed\n4. A 'Testing' section suggesting how to test these changes\n\nFormat the output as:\nTITLE: <title here>\n\n## Summary\n<summary here>\n\n## Changes\n<bullet points here>\n\n## Testing\n<testing steps here>"
+            }]
+          }
+          EOF
+              )
+
+              http_code=$(echo "$response" | tail -n1)
+              body=$(echo "$response" | sed '$d')
+
+              if [ "$http_code" = "200" ]; then
+                echo "Claude API call successful"
+                description=$(echo "$body" | jq -r '.content[0].text // "Could not generate description"')
+
+                # Extract title and body
+                title=$(echo "$description" | grep "^TITLE:" | sed 's/^TITLE: //')
+                body=$(echo "$description" | sed '1,/^$/d')  # Remove title line
+
+                if [ -z "$title" ]; then
+                  title="${{ steps.branch-info.outputs.pr_type }}: ${{ steps.branch-info.outputs.current_branch }}"
+                fi
+
+                echo "title<<EOF" >> $GITHUB_OUTPUT
+                echo "$title" >> $GITHUB_OUTPUT
+                echo "EOF" >> $GITHUB_OUTPUT
+
+                echo "body<<EOF" >> $GITHUB_OUTPUT
+                echo "$body" >> $GITHUB_OUTPUT
+                echo "EOF" >> $GITHUB_OUTPUT
+
+                return 0
+              elif [ "$http_code" = "529" ] || [ "$http_code" = "429" ]; then
+                echo "API overloaded or rate limited (HTTP $http_code), waiting ${delay}s before retry..."
+                sleep $delay
+                delay=$((delay * 2))  # Exponential backoff
+                attempt=$((attempt + 1))
+              else
+                echo "API call failed with HTTP $http_code"
+                echo "Response body: $body"
+                return 1
+              fi
+            done
+
+            echo "Max attempts reached, giving up"
+            return 1
+          }
+
+          # Try to call Claude API
+          if call_claude_api; then
+            echo "Successfully generated PR description"
+          else
+            echo "Failed to generate PR description with Claude, using fallback"
+
+            # Fallback description
+            title="${{ steps.branch-info.outputs.pr_type }}: ${{ steps.branch-info.outputs.current_branch }}"
+            body="## Summary\nChanges from ${{ steps.branch-info.outputs.current_branch }} to ${{ inputs.target_branch }}\n\n## Changes\n- Modified ${{ steps.analyze.outputs.files_count }} files\n- ${{ steps.analyze.outputs.commits_count }} commits\n\n## Testing\nPlease review the changes and test accordingly."
+
+            echo "title<<EOF" >> $GITHUB_OUTPUT
+            echo "$title" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+
+            echo "body<<EOF" >> $GITHUB_OUTPUT
+            echo "$body" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+          CLAUDE_TITLE: ${{ steps.claude-description.outputs.title }}
+          CLAUDE_BODY: ${{ steps.claude-description.outputs.body }}
+          FILES_CHANGED_CONTENT: ${{ steps.analyze.outputs.files_changed }}
+        run: |
+          SOURCE_BRANCH="${{ steps.branch-info.outputs.current_branch }}"
+          TARGET_BRANCH="${{ inputs.target_branch }}"
+
+          # Check if PR already exists
+          EXISTING_PR=$(gh pr list --head "$SOURCE_BRANCH" --base "$TARGET_BRANCH" --json url --jq '.[0].url' 2>/dev/null || echo "")
+
+          if [ -n "$EXISTING_PR" ] && [ "$EXISTING_PR" != "null" ]; then
+            echo "✅ PR already exists: $EXISTING_PR"
+            exit 0
+          fi
+
+          # Use Claude description if available, otherwise use defaults
+          if [ "${{ inputs.claude_review }}" = "true" ] && [ -n "$CLAUDE_TITLE" ]; then
+            PR_TITLE="$CLAUDE_TITLE"
+            PR_BODY="$CLAUDE_BODY"
+          else
+            PR_TITLE="${{ steps.branch-info.outputs.pr_type }}: $SOURCE_BRANCH"
+            PR_BODY="## Summary
+          Changes from $SOURCE_BRANCH to $TARGET_BRANCH
+
+          ## Changes
+          - Modified ${{ steps.analyze.outputs.files_count }} files
+          - ${{ steps.analyze.outputs.commits_count }} commits
+
+          ## Files Changed
+          \`\`\`
+          $FILES_CHANGED_CONTENT
+          \`\`\`
+
+          ## Testing
+          Please review the changes and test accordingly."
+          fi
+
+          # Create the PR
+          gh pr create \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY" \
+            --base "$TARGET_BRANCH" \
+            --head "${{ steps.branch-info.outputs.current_branch }}"
+
+          echo "✅ Pull request created successfully"

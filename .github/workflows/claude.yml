@@ -1,0 +1,62 @@
+name: Claude Code Review
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  check-runner-availability:
+    runs-on: ubuntu-latest
+    outputs:
+      runners_available: ${{ steps.check.outputs.runners_available }}
+      runner_type: ${{ steps.check.outputs.runner_type }}
+      runner_config: ${{ steps.check.outputs.runner_config }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          ref: ${{ github.ref }}
+          token: ${{ secrets.ACTIONS_TOKEN }}
+
+      - name: Check runner availability
+        id: check
+        uses: ./.github/actions/runner-availability
+        with:
+          repository_name: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          runner_labels: 'self-hosted,Linux,X64,AL2023,ci'
+          timeout_minutes: '2'
+          github_token: ${{ secrets.ACTIONS_TOKEN }}
+
+  claude:
+    needs: [check-runner-availability]
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+    runs-on: ${{ fromJSON(needs.check-runner-availability.outputs.runner_config) }}
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          ref: ${{ github.ref }}
+          token: ${{ secrets.ACTIONS_TOKEN }}
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
