@@ -127,6 +127,8 @@ jobs:
       # Domain & DNS Configuration
       domain_name: ${{ vars.DOMAIN_NAME_PROD || 'roboledger.ai' }}
       domain_name_root: ${{ vars.DOMAIN_NAME_ROOT || 'roboledger.ai' }}
+      # SNS Configuration
+      notification_email: ${{ vars.AWS_SNS_ALERT_EMAIL || '' }}
     secrets:
       ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

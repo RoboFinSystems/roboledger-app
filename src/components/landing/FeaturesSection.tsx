@@ -19,7 +19,7 @@ export default function FeaturesSection() {
       title: 'QuickBooks Integration',
       description:
         'Sync your existing accounting data from QuickBooks into your knowledge graph',
-      color: 'cyan',
+      color: 'violet',
     },
     {
       icon: (
@@ -40,7 +40,7 @@ export default function FeaturesSection() {
       title: 'Plaid Bank Feeds',
       description:
         'Direct bank account integration for real-time transaction data',
-      color: 'blue',
+      color: 'purple',
     },
     {
       icon: (
@@ -61,7 +61,7 @@ export default function FeaturesSection() {
       title: 'Chart of Accounts',
       description:
         'Full chart of accounts with journal entries and AI-assisted categorization',
-      color: 'purple',
+      color: 'fuchsia',
     },
     {
       icon: (
@@ -129,10 +129,12 @@ export default function FeaturesSection() {
   ]
 
   const colorClasses = {
-    cyan: 'from-cyan-500/20 to-blue-500/20 border-cyan-500/30 hover:border-cyan-500/50 text-cyan-400',
-    blue: 'from-blue-500/20 to-purple-500/20 border-blue-500/30 hover:border-blue-500/50 text-blue-400',
+    violet:
+      'from-violet-500/20 to-purple-500/20 border-violet-500/30 hover:border-violet-500/50 text-violet-400',
     purple:
-      'from-purple-500/20 to-pink-500/20 border-purple-500/30 hover:border-purple-500/50 text-purple-400',
+      'from-purple-500/20 to-fuchsia-500/20 border-purple-500/30 hover:border-purple-500/50 text-purple-400',
+    fuchsia:
+      'from-fuchsia-500/20 to-pink-500/20 border-fuchsia-500/30 hover:border-fuchsia-500/50 text-fuchsia-400',
     green:
       'from-green-500/20 to-emerald-500/20 border-green-500/30 hover:border-green-500/50 text-green-400',
     orange:
@@ -141,23 +143,227 @@ export default function FeaturesSection() {
   }
 
   return (
-    <section id="features" className="relative bg-zinc-950 py-16 sm:py-24">
+    <section
+      id="features"
+      className="relative bg-linear-to-b from-black to-zinc-900 py-16 sm:py-24"
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-16 text-center">
+        {/* Paradigm Shift Header */}
+        <div className="mb-12 text-center">
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-            Complete Accounting Platform
+            A New Way to Create Financial Reports
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Everything you need for modern financial management, powered by a
-            knowledge graph that AI agents can understand and reason over
+            Moving from manual configuration to intelligent automation
           </p>
         </div>
 
+        {/* Traditional vs AI-Native Comparison */}
+        <div className="mb-16 grid gap-8 lg:grid-cols-2">
+          {/* Traditional Way */}
+          <div className="rounded-2xl border border-red-500/30 bg-linear-to-br from-red-900/20 to-zinc-900 p-8">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-500/20">
+                <svg
+                  className="h-6 w-6 text-red-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white">
+                Traditional Reporting
+              </h3>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-sm font-semibold text-red-400">
+                  1
+                </div>
+                <div>
+                  <div className="font-semibold text-white">
+                    Build Mapping Tables
+                  </div>
+                  <p className="text-sm text-gray-400">
+                    VLOOKUP hell: manual account-to-line-item mapping in Excel,
+                    breaks every time chart of accounts changes
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-sm font-semibold text-red-400">
+                  2
+                </div>
+                <div>
+                  <div className="font-semibold text-white">
+                    Extract & Transform
+                  </div>
+                  <p className="text-sm text-gray-400">
+                    Export trial balance, copy/paste into Excel templates, pray
+                    formulas still work
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-sm font-semibold text-red-400">
+                  3
+                </div>
+                <div>
+                  <div className="font-semibold text-white">
+                    Manual Reconciliation
+                  </div>
+                  <p className="text-sm text-gray-400">
+                    Hunt for #REF! errors, fix broken formulas, reconcile
+                    totals, adjust for new accounts
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-sm font-semibold text-red-400">
+                  4
+                </div>
+                <div>
+                  <div className="font-semibold text-white">Publish & Pray</div>
+                  <p className="text-sm text-gray-400">
+                    Lock cells, save as PDF, hope nothing changed since you
+                    started
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-lg bg-red-950/50 p-4">
+              <div className="text-sm font-semibold text-red-400">
+                Result: 5-10 Days
+              </div>
+              <p className="mt-1 text-xs text-gray-400">
+                Manual work, error-prone, time-consuming close process
+              </p>
+            </div>
+          </div>
+
+          {/* AI-Native Way */}
+          <div className="rounded-2xl border border-green-500/30 bg-linear-to-br from-green-900/20 to-zinc-900 p-8">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/20">
+                <svg
+                  className="h-6 w-6 text-green-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white">
+                AI-Native RoboLedger
+              </h3>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-500/20 text-sm font-semibold text-green-400">
+                  1
+                </div>
+                <div>
+                  <div className="font-semibold text-white">State Intent</div>
+                  <p className="text-sm text-gray-400">
+                    "Create Q4 balance sheet" or use Report Creator interface
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-500/20 text-sm font-semibold text-green-400">
+                  2
+                </div>
+                <div>
+                  <div className="font-semibold text-white">AI Creates</div>
+                  <p className="text-sm text-gray-400">
+                    Discovers accounts, builds fact grid, applies XBRL taxonomy
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-500/20 text-sm font-semibold text-green-400">
+                  3
+                </div>
+                <div>
+                  <div className="font-semibold text-white">AI Validates</div>
+                  <p className="text-sm text-gray-400">
+                    Checks accounting equation, XBRL compliance, semantic rules
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-500/20 text-sm font-semibold text-green-400">
+                  4
+                </div>
+                <div>
+                  <div className="font-semibold text-white">
+                    Approve & Publish
+                  </div>
+                  <p className="text-sm text-gray-400">
+                    Review exceptions only, export to multiple formats
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-lg bg-green-950/50 p-4">
+              <div className="text-sm font-semibold text-green-400">
+                Result: Minutes to Hours
+              </div>
+              <p className="mt-1 text-xs text-gray-400">
+                Automated intelligence, validated accuracy, continuous close
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-16 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-950/50 px-6 py-3 text-sm text-green-200">
+            <svg
+              className="h-5 w-5 text-green-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
+            10x faster financial reporting - the end of spreadsheet hell
+          </div>
+        </div>
+
+        {/* Feature Cards Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, idx) => (
             <div
               key={idx}
-              className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-6 transition-all duration-300 ${colorClasses[feature.color as keyof typeof colorClasses]}`}
+              className={`group relative overflow-hidden rounded-2xl border bg-linear-to-br p-6 transition-all duration-300 ${colorClasses[feature.color as keyof typeof colorClasses]}`}
             >
               <div
                 className={`mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-${feature.color}-500/20`}

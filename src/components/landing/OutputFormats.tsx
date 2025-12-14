@@ -19,7 +19,7 @@ export default function OutputFormats() {
       title: 'Formatted Statement',
       description:
         'Traditional financial statement layout with proper formatting',
-      color: 'from-blue-500 to-cyan-500',
+      color: 'from-violet-500 to-purple-500',
       badge: 'Current',
     },
     {
@@ -105,7 +105,7 @@ export default function OutputFormats() {
       ),
       title: 'AI Narrative',
       description: 'Executive summary with natural language explanations',
-      color: 'from-cyan-500 to-blue-500',
+      color: 'from-purple-500 to-violet-500',
       badge: 'Coming Soon',
     },
     {
@@ -147,9 +147,9 @@ export default function OutputFormats() {
 
         {/* Central Fact Grid */}
         <div className="relative mb-16">
-          <div className="mx-auto max-w-2xl rounded-2xl border-2 border-cyan-500/50 bg-gradient-to-br from-cyan-900/30 to-blue-900/30 p-8">
+          <div className="mx-auto max-w-2xl rounded-2xl border-2 border-violet-500/50 bg-gradient-to-br from-violet-900/30 to-purple-900/30 p-8">
             <div className="mb-4 text-center">
-              <div className="inline-flex items-center gap-2 rounded-full bg-cyan-500/20 px-4 py-1 text-sm font-semibold text-cyan-300">
+              <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/20 px-4 py-1 text-sm font-semibold text-violet-300">
                 <svg
                   className="h-4 w-4"
                   fill="none"
@@ -174,19 +174,19 @@ export default function OutputFormats() {
                 <span className="text-sm text-gray-300">
                   127 Financial Facts
                 </span>
-                <span className="font-mono text-xs text-cyan-400">
+                <span className="font-mono text-xs text-violet-400">
                   validated
                 </span>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-black/30 px-4 py-3">
                 <span className="text-sm text-gray-300">4 Dimensions</span>
-                <span className="font-mono text-xs text-cyan-400">
+                <span className="font-mono text-xs text-violet-400">
                   configured
                 </span>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-black/30 px-4 py-3">
                 <span className="text-sm text-gray-300">XBRL US-GAAP</span>
-                <span className="font-mono text-xs text-cyan-400">
+                <span className="font-mono text-xs text-violet-400">
                   compliant
                 </span>
               </div>
@@ -194,7 +194,7 @@ export default function OutputFormats() {
           </div>
 
           {/* Connecting Lines */}
-          <div className="absolute top-full left-1/2 h-12 w-0.5 -translate-x-1/2 bg-gradient-to-b from-cyan-500/50 to-transparent"></div>
+          <div className="absolute top-full left-1/2 h-12 w-0.5 -translate-x-1/2 bg-gradient-to-b from-violet-500/50 to-transparent"></div>
         </div>
 
         {/* Output Formats Grid */}
@@ -204,15 +204,9 @@ export default function OutputFormats() {
               key={idx}
               className="group relative overflow-hidden rounded-2xl border border-gray-800 bg-gradient-to-br from-zinc-900 to-black p-6 transition-all hover:border-gray-700"
             >
-              {format.badge && (
+              {format.badge && format.badge == 'Coming Soon' && (
                 <div className="absolute top-4 right-4">
-                  <span
-                    className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                      format.badge === 'Current'
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-amber-500/20 text-amber-400'
-                    }`}
-                  >
+                  <span className="rounded-full bg-amber-500/20 px-2 py-1 text-xs font-semibold text-amber-400">
                     {format.badge}
                   </span>
                 </div>
@@ -230,23 +224,6 @@ export default function OutputFormats() {
                 {format.title}
               </h3>
               <p className="text-sm text-gray-400">{format.description}</p>
-
-              <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-                <span>Same data source</span>
-              </div>
             </div>
           ))}
         </div>
@@ -254,7 +231,7 @@ export default function OutputFormats() {
         <div className="mt-12 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-zinc-900 px-6 py-3 text-sm text-gray-300">
             <svg
-              className="h-5 w-5 text-cyan-400"
+              className="h-5 w-5 text-violet-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

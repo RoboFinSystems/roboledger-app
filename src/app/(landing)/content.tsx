@@ -8,7 +8,6 @@ import Header from '@/components/landing/Header'
 import HeroSection from '@/components/landing/HeroSection'
 import OpenSourceSection from '@/components/landing/OpenSourceSection'
 import OutputFormats from '@/components/landing/OutputFormats'
-import ParadigmShift from '@/components/landing/ParadigmShift'
 import PlatformSection from '@/components/landing/PlatformSection'
 import ReportCreator from '@/components/landing/ReportCreator'
 
@@ -17,9 +16,8 @@ export default function LandingPageContent() {
     <div className="min-h-screen bg-black">
       <Header />
 
-      <main className="pt-16">
+      <main>
         <HeroSection />
-        <ParadigmShift />
         <FeaturesSection />
         <ReportCreator />
         <OutputFormats />

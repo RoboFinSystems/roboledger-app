@@ -15,9 +15,9 @@ export default function OpenSourceSection() {
 
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Local Development */}
-          <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-900/20 to-blue-900/20 p-6 md:p-8">
+          <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-900/20 to-purple-900/20 p-6 md:p-8">
             <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-600 to-blue-600">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-purple-600">
                 <svg
                   className="h-6 w-6 text-white"
                   fill="none"
@@ -44,7 +44,7 @@ export default function OpenSourceSection() {
 
             <div className="space-y-4">
               <div className="rounded-lg bg-zinc-900 p-4">
-                <h4 className="mb-3 text-sm font-semibold text-cyan-300">
+                <h4 className="mb-3 text-sm font-semibold text-violet-300">
                   Quick Start
                 </h4>
                 <pre className="overflow-x-auto text-xs text-gray-300">
@@ -93,7 +93,7 @@ npm run dev
                   href="https://github.com/RoboFinSystems/roboledger-app"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-cyan-700"
+                  className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-violet-700"
                 >
                   <svg
                     className="h-4 w-4"
@@ -109,23 +109,19 @@ npm run dev
                   View on GitHub
                 </a>
                 <a
-                  href="https://github.com/RoboFinSystems"
+                  href="https://hub.docker.com/r/robofinsystems/roboledger-app"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg border border-cyan-600 px-4 py-2 text-sm font-medium text-cyan-400 transition-all hover:bg-cyan-600/10"
+                  className="inline-flex items-center gap-2 rounded-lg border border-violet-600 px-4 py-2 text-sm font-medium text-violet-400 transition-all hover:bg-violet-600/10"
                 >
                   <svg
                     className="h-4 w-4"
                     fill="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path
-                      fillRule="evenodd"
-                      d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-                      clipRule="evenodd"
-                    />
+                    <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.186m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.185-.186h-2.119a.185.185 0 00-.186.185v1.888c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.186.185v1.888c0 .102.084.185.186.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288z" />
                   </svg>
-                  RoboSystems Platform
+                  View on Docker Hub
                 </a>
               </div>
             </div>
@@ -240,16 +236,18 @@ npm run dev
             </h3>
             <p className="mb-6 text-center text-gray-300">
               RoboLedger is a Next.js application that connects to the
-              RoboSystems API platform
+              RoboSystems Knowledge Graph platform
             </p>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-lg border border-gray-800 bg-zinc-900 p-4 text-center">
-                <div className="text-2xl font-bold text-cyan-400">Next.js</div>
+                <div className="text-2xl font-bold text-violet-400">
+                  Next.js
+                </div>
                 <div className="text-sm text-gray-400">React Framework</div>
               </div>
               <div className="rounded-lg border border-gray-800 bg-zinc-900 p-4 text-center">
-                <div className="text-2xl font-bold text-blue-400">
+                <div className="text-2xl font-bold text-purple-400">
                   TypeScript
                 </div>
                 <div className="text-sm text-gray-400">Type Safety</div>
@@ -262,9 +260,9 @@ npm run dev
               </div>
               <div className="rounded-lg border border-gray-800 bg-zinc-900 p-4 text-center">
                 <div className="text-2xl font-bold text-green-400">
-                  RoboSystems
+                  Flowbite
                 </div>
-                <div className="text-sm text-gray-400">API Platform</div>
+                <div className="text-sm text-gray-400">Design System</div>
               </div>
             </div>
 

@@ -20,7 +20,7 @@ export default function PlatformSection() {
                 Data Sources
               </h3>
               <div className="space-y-4">
-                <div className="rounded-lg border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 p-4">
+                <div className="rounded-lg border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-purple-500/10 p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-600">
                       <span className="text-xs font-bold text-white">QB</span>
@@ -56,7 +56,7 @@ export default function PlatformSection() {
 
                 <div className="rounded-lg border border-green-500/30 bg-gradient-to-br from-green-500/10 to-emerald-500/10 p-4">
                   <div className="mb-2 flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600">
                       <span className="text-xs font-bold text-white">$</span>
                     </div>
                     <div>
@@ -83,7 +83,7 @@ export default function PlatformSection() {
                     <div className="flex h-full items-center justify-center">
                       <div className="text-center">
                         <div className="mb-1 text-sm font-semibold text-white">
-                          <div>Accounting</div>
+                          <div>RoboLedger Schema</div>
                           <div>Knowledge Graph</div>
                         </div>
                         <div className="text-xs text-gray-400">
@@ -142,9 +142,9 @@ export default function PlatformSection() {
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-blue-500/30 bg-blue-950/20 p-3">
+                <div className="rounded-lg border border-violet-500/30 bg-violet-950/20 p-3">
                   <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold text-blue-300">
+                    <span className="font-semibold text-violet-300">
                       Report Schema
                     </span>
                   </div>
@@ -156,7 +156,7 @@ export default function PlatformSection() {
                       (comp, cidx) => (
                         <span
                           key={cidx}
-                          className="rounded bg-blue-900/50 px-2 py-0.5 text-xs text-blue-300"
+                          className="rounded bg-violet-900/50 px-2 py-0.5 text-xs text-violet-300"
                         >
                           {comp}
                         </span>
@@ -172,9 +172,9 @@ export default function PlatformSection() {
                 Applications
               </h3>
               <div className="space-y-4">
-                <div className="rounded-lg border border-gray-800 bg-gradient-to-br from-zinc-900 to-cyan-950/20 p-4">
+                <div className="rounded-lg border border-gray-800 bg-gradient-to-br from-zinc-900 to-violet-950/20 p-4">
                   <div className="mb-2 flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-600">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600">
                       <svg
                         className="h-4 w-4 text-white"
                         fill="none"
@@ -227,8 +227,8 @@ export default function PlatformSection() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
-          <div className="group rounded-xl border border-gray-800 bg-gradient-to-br from-cyan-500/10 to-zinc-900 p-6 transition-all hover:border-cyan-500/50">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500">
+          <div className="group rounded-xl border border-gray-800 bg-gradient-to-br from-violet-500/10 to-zinc-900 p-6 transition-all hover:border-violet-500/50">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-purple-500">
               <svg
                 className="h-6 w-6 text-white"
                 fill="none"

@@ -106,6 +106,12 @@ on:
         required: true
         type: string
 
+      # SNS Configuration
+      notification_email:
+        description: 'Email address for admin notifications (contact form)'
+        required: true
+        type: string
+
     secrets:
       ACTIONS_TOKEN:
         required: true
@@ -189,6 +195,17 @@ jobs:
           echo "  Private Subnets: $PRIVATE_SUBNET_IDS"
           echo "  NAT Gateway IP: $NAT_GATEWAY_IP"
 
+      - name: Get Secret ARNs
+        id: get-arns
+        run: |
+          # Get RoboSystems secrets ARN (shared across all RoboFin apps)
+          ROBOSYSTEMS_SECRETS_ARN=$(aws secretsmanager describe-secret \
+            --secret-id "robosystems/${{ inputs.environment }}" \
+            --query "ARN" --output text)
+
+          echo "robosystems_secrets_arn=$ROBOSYSTEMS_SECRETS_ARN" >> $GITHUB_OUTPUT
+          echo "Found RoboSystems secret ARN: $ROBOSYSTEMS_SECRETS_ARN"
+
       - name: Deploy RoboLedger CloudFormation Stack
         id: deploy-stack
         run: |
@@ -214,6 +231,7 @@ jobs:
 
           APP_STACK_PARAMS="ParameterKey=Environment,ParameterValue=${{ inputs.environment }} \
                 ParameterKey=AWSAccountId,ParameterValue=${{ inputs.aws_account_id }} \
+                ParameterKey=RoboLedgerSecretsArn,ParameterValue=${{ steps.get-arns.outputs.robosystems_secrets_arn }} \
                 ParameterKey=VpcId,ParameterValue=${{ steps.get-vpc-info.outputs.vpc_id }} \
                 ParameterKey=SubnetIds,ParameterValue=\"${{ steps.get-vpc-info.outputs.private_subnet_ids }}\" \
                 ParameterKey=PublicSubnetIds,ParameterValue=\"${{ steps.get-vpc-info.outputs.public_subnet_ids }}\" \
@@ -231,7 +249,8 @@ jobs:
                 ParameterKey=ScaleDownMemoryThreshold,ParameterValue=${{ inputs.scale_down_memory_threshold }} \
                 ParameterKey=FargateSpotWeight,ParameterValue=${{ inputs.fargate_spot_weight }} \
                 ParameterKey=FargateWeight,ParameterValue=${{ inputs.fargate_weight }} \
-                ParameterKey=S3StackName,ParameterValue=${{ inputs.s3_stack_name }}"
+                ParameterKey=S3StackName,ParameterValue=${{ inputs.s3_stack_name }} \
+                ParameterKey=NotificationEmail,ParameterValue=${{ inputs.notification_email }}"
 
           # Deploy or update the stack
           if [ "$STACK_ACTION" = "create-stack" ]; then

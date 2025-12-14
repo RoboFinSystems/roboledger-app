@@ -17,6 +17,13 @@ Parameters:
     Description: AWS Account ID for cross-account resources
     AllowedPattern: '[0-9]{12}'
 
+  # Secrets Configuration
+  RoboLedgerSecretsArn:
+    Type: String
+    Description: ARN of the main application configuration secret
+    AllowedPattern: ^arn:aws:secretsmanager:[a-z0-9-]+:[0-9]+:secret:.*$
+    ConstraintDescription: Must be a valid Secrets Manager ARN
+
   # Infrastructure & Networking
   VpcId:
     Type: AWS::EC2::VPC::Id
@@ -169,11 +176,23 @@ Parameters:
     Default: App
     Description: Tag value for Component identification
 
+  # SNS Configuration
+  NotificationEmail:
+    Type: String
+    Default: ''
+    Description: Email address for admin notifications (leave empty to skip SNS setup)
+
 Conditions:
   # Check if we're in production environment for www redirect
   IsProduction: !Equals
     - !Ref Environment
     - prod
+
+  # Check if SNS notification should be created
+  CreateSNSTopic: !Not
+    - !Equals
+      - !Ref NotificationEmail
+      - ''
 
 Resources:
   # ACM Certificate
@@ -235,6 +254,16 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: SecretsManagerAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Ref RoboLedgerSecretsArn
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -258,6 +287,19 @@ Resources:
             Principal:
               Service: ecs-tasks.amazonaws.com
             Action: sts:AssumeRole
+      Policies:
+        - !If
+          - CreateSNSTopic
+          - PolicyName: SNSPublishPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - sns:Publish
+                  Resource:
+                    - !Ref ContactFormTopic
+          - !Ref AWS::NoValue
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -285,6 +327,32 @@ Resources:
           Value: !Ref ComponentTag
         - Key: CreatedBy
           Value: CloudFormation
+
+  # SNS Topic for Contact Form Notifications
+  ContactFormTopic:
+    Type: AWS::SNS::Topic
+    Condition: CreateSNSTopic
+    Properties:
+      TopicName: !Sub roboledger-${Environment}-contact-form
+      DisplayName: !Sub RoboLedger ${Environment} Contact Form
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # Email Subscription for Contact Form
+  ContactFormEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: CreateSNSTopic
+    Properties:
+      Protocol: email
+      TopicArn: !Ref ContactFormTopic
+      Endpoint: !Ref NotificationEmail
 
   # Security Group
   AppSecurityGroup:
@@ -521,6 +589,16 @@ Resources:
           Environment:
             - Name: NODE_ENV
               Value: production
+            - Name: SNS_CONTACT_TOPIC_ARN
+              Value: !If [CreateSNSTopic, !Ref ContactFormTopic, '']
+            - Name: REQUIRE_CAPTCHA
+              Value: 'true'
+          Secrets:
+            # Turnstile CAPTCHA secrets from AWS Secrets Manager
+            - Name: TURNSTILE_SECRET_KEY
+              ValueFrom: !Sub '${RoboLedgerSecretsArn}:TURNSTILE_SECRET_KEY::'
+            - Name: TURNSTILE_SITE_KEY
+              ValueFrom: !Sub '${RoboLedgerSecretsArn}:TURNSTILE_SITE_KEY::'
           LogConfiguration:
             LogDriver: awslogs
             Options:
