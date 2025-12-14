@@ -67,13 +67,25 @@ concurrency:
 jobs:
   action:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     outputs:
       image: ${{ steps.build-and-push.outputs.image }}
       ecr_repository_url: ${{ steps.build-and-push.outputs.ecr_repository_url }}
       version_tag: ${{ steps.build-and-push.outputs.version_tag }}
       is_release: ${{ steps.build-and-push.outputs.is_release }}
     steps:
+      - name: Free disk space
+        if: ${{ inputs.publish_to_dockerhub == true }}
+        run: |
+          echo "Disk space before cleanup:"
+          df -h /
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          echo "Disk space after cleanup:"
+          df -h /
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -208,6 +220,13 @@ jobs:
             VERSION_TAG=${GITHUB_REF#refs/tags/}
             IS_RELEASE="true"
             echo "📦 Building release version: $VERSION_TAG"
+          # Check if this is a release branch (release/*)
+          elif [[ "$GITHUB_REF" == refs/heads/release/* ]]; then
+            # Extract version from branch name (e.g., release/1.0.0 -> v1.0.0)
+            BRANCH_VERSION=${GITHUB_REF#refs/heads/release/}
+            VERSION_TAG="v${BRANCH_VERSION}-hotfix.${GITHUB_SHA:0:8}"
+            IS_RELEASE="true"
+            echo "🔥 Building hotfix version: $VERSION_TAG (from release/$BRANCH_VERSION)"
           else
             # For non-release builds, use commit SHA
             VERSION_TAG="git-${GITHUB_SHA:0:8}"
