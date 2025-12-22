@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-sns": "^3.948.0",
-    "@robosystems/client": "0.2.23",
+    "@robosystems/client": "0.2.24",
     "flowbite": "^3.1",
     "flowbite-react": "^0.12.5",
     "intuit-oauth": "^4.1.0",
