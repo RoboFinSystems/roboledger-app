@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          repository: ${{ github.repository }}
           ref: ${{ github.ref }}
           token: ${{ secrets.ACTIONS_TOKEN }}
 
@@ -24,8 +24,8 @@ jobs:
         id: check
         uses: ./.github/actions/runner-availability
         with:
-          repository_name: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
-          runner_labels: 'self-hosted,Linux,X64,AL2023,ci'
+          runner_labels: ${{ vars.RUNNER_LABELS || 'github-hosted' }}
+          runner_scope: ${{ vars.RUNNER_SCOPE || 'both' }}
           timeout_minutes: '2'
           github_token: ${{ secrets.ACTIONS_TOKEN }}
 
