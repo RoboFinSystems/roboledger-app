@@ -1,5 +1,10 @@
 name: Deploy Production
 
+permissions:
+  contents: read
+  deployments: write
+  id-token: write
+
 concurrency:
   group: roboledger-app-deploy-prod
   cancel-in-progress: false
@@ -8,7 +13,7 @@ on:
   workflow_dispatch: # Manual triggering only
 
 jobs:
-  check-runner-availability:
+  runner:
     runs-on: ubuntu-latest
     outputs:
       runners_available: ${{ steps.check.outputs.runners_available }}
@@ -18,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          repository: ${{ github.repository }}
           ref: ${{ github.ref }}
           token: ${{ secrets.ACTIONS_TOKEN }}
 
@@ -26,22 +31,22 @@ jobs:
         id: check
         uses: ./.github/actions/runner-availability
         with:
-          repository_name: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
-          runner_labels: 'self-hosted,Linux,X64,AL2023,ci'
+          runner_labels: ${{ vars.RUNNER_LABELS || 'github-hosted' }}
+          runner_scope: ${{ vars.RUNNER_SCOPE || 'both' }}
           timeout_minutes: '2'
           github_token: ${{ secrets.ACTIONS_TOKEN }}
 
   test:
-    needs: [check-runner-availability]
+    needs: [runner]
     uses: ./.github/workflows/test.yml
     with:
-      runner_config: ${{ needs.check-runner-availability.outputs.runner_config }}
+      runner_config: ${{ needs.runner.outputs.runner_config }}
     secrets:
       ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
 
   create-deployment:
-    needs: [check-runner-availability, test]
-    runs-on: ${{ fromJSON(needs.check-runner-availability.outputs.runner_config) }}
+    needs: [runner, test]
+    runs-on: ${{ fromJSON(needs.runner.outputs.runner_config) }}
     outputs:
       deployment_id: ${{ steps.deployment.outputs.deployment_id }}
     steps:
@@ -61,7 +66,7 @@ jobs:
           description: 'Production Deployment In Progress'
 
   deploy-s3:
-    needs: [test, create-deployment]
+    needs: [runner, test, create-deployment]
     uses: ./.github/workflows/deploy-s3.yml
     with:
       stack_name: RoboLedgerAppS3Prod
@@ -76,7 +81,7 @@ jobs:
 
   build:
     uses: ./.github/workflows/build.yml
-    needs: [test, deploy-s3]
+    needs: [runner, test, deploy-s3]
     with:
       environment: ${{ vars.ENVIRONMENT_PROD || 'prod' }}
       region: ${{ vars.AWS_REGION || 'us-east-1' }}
@@ -98,11 +103,11 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   deploy-app:
-    needs: [check-runner-availability, create-deployment, build]
+    needs: [runner, create-deployment, build]
     uses: ./.github/workflows/deploy-app.yml
     with:
       # GHA Runner Configuration
-      runner_config: ${{ needs.check-runner-availability.outputs.runner_config }}
+      runner_config: ${{ needs.runner.outputs.runner_config }}
       # Environment & AWS Configuration
       environment: ${{ vars.ENVIRONMENT_PROD || 'prod' }}
       aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
@@ -135,8 +140,8 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   deployment-successful:
-    needs: [check-runner-availability, create-deployment, build, deploy-app]
-    runs-on: ${{ fromJSON(needs.check-runner-availability.outputs.runner_config) }}
+    needs: [runner, create-deployment, build, deploy-app]
+    runs-on: ${{ fromJSON(needs.runner.outputs.runner_config) }}
     outputs:
       deployment_id: ${{ needs.create-deployment.outputs.deployment_id }}
     steps:
@@ -149,14 +154,14 @@ jobs:
           description: 'Production Deployment Succeeded'
 
   handle-deployment-failure:
-    needs: [check-runner-availability, create-deployment, build, deploy-app]
+    needs: [runner, create-deployment, build, deploy-app]
     if: always() && contains(needs.*.result, 'failure')
-    runs-on: ${{ fromJSON(needs.check-runner-availability.outputs.runner_config) }}
+    runs-on: ${{ fromJSON(needs.runner.outputs.runner_config) }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          repository: ${{ github.repository }}
           ref: ${{ github.ref }}
           token: ${{ secrets.ACTIONS_TOKEN }}
 
