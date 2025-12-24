@@ -3,7 +3,7 @@
 RoboLedger is an AI-native accounting platform that builds a semantic knowledge graph of your financial data, enabling intelligent automation and natural language financial analysis powered by Claude AI.
 
 - **Semantic Financial Intelligence**: Every transaction connected semantically, preserving relationships and context for AI-powered insights
-- **Flexible Deployment Options**: QuickBooks integration layer, standalone with Plaid bank feeds, or self-hosted Docker deployment
+- **Flexible Deployment Options**: QuickBooks integration layer, standalone with Plaid bank feeds, or fork and deploy to your own AWS infrastructure
 - **Natural Language Queries**: Ask questions in plain English and get instant, intelligent answers about your finances
 - **AI-Powered Automation**: Leverage Claude AI for intelligent financial analysis that understands business context
 - **Enterprise-Ready**: SEC integration, process automation, report sharing, and API key authentication
