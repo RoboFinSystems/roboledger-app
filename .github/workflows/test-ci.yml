@@ -1,8 +1,11 @@
-name: Test Pull Request
+name: Test CI
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
 
 jobs:
   runner:
