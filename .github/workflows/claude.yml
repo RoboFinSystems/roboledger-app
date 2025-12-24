@@ -29,9 +29,8 @@ jobs:
         id: check
         uses: ./.github/actions/runner-availability
         with:
-          repository_name: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
-          runner_labels: 'self-hosted,Linux,X64,AL2023,ci'
-          timeout_minutes: '2'
+          runner_labels: ${{ vars.RUNNER_LABELS || 'github-hosted' }}
+          runner_scope: ${{ vars.RUNNER_SCOPE || 'both' }}
           github_token: ${{ secrets.ACTIONS_TOKEN }}
 
   claude:

@@ -255,7 +255,7 @@ export default function BetaWaitlistForm({
               <option value="quickbooks">QuickBooks Integration</option>
               <option value="standalone">Standalone with Bank Feeds</option>
               <option value="both">Both Options</option>
-              <option value="docker">Self-Hosted Docker</option>
+              <option value="self-hosted">Self-Hosted (Fork & Deploy)</option>
             </select>
           </div>
 
