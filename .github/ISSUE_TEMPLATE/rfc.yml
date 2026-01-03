@@ -14,7 +14,7 @@ body:
   - type: textarea
     id: problem
     attributes:
-      label: "Motivation: Problem"
+      label: 'Motivation: Problem'
       description: What problem does this solve?
       placeholder: Currently, we have...
     validations:
@@ -23,14 +23,14 @@ body:
   - type: textarea
     id: why-now
     attributes:
-      label: "Motivation: Why Now?"
+      label: 'Motivation: Why Now?'
       description: Why is this the right time?
       placeholder: This is urgent because...
 
   - type: textarea
     id: overview
     attributes:
-      label: "Proposed Design: Overview"
+      label: 'Proposed Design: Overview'
       description: High-level approach
       placeholder: The proposed solution is to...
     validations:
@@ -39,7 +39,7 @@ body:
   - type: textarea
     id: detailed-design
     attributes:
-      label: "Proposed Design: Detailed Design"
+      label: 'Proposed Design: Detailed Design'
       description: Technical details, architecture, component structure
       placeholder: |
         ## Architecture
@@ -65,7 +65,7 @@ body:
   - type: textarea
     id: phases
     attributes:
-      label: "Implementation: Phases"
+      label: 'Implementation: Phases'
       placeholder: |
         1. **Phase 1:**
         2. **Phase 2:**
@@ -73,7 +73,7 @@ body:
   - type: textarea
     id: dependencies
     attributes:
-      label: "Implementation: Dependencies"
+      label: 'Implementation: Dependencies'
       placeholder: List any dependencies or blockers
 
   - type: textarea

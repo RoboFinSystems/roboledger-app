@@ -3,22 +3,26 @@ Review all staged changes (`git diff --cached`) with focus on these contexts:
 ## Application Context (src/app/, src/components/, src/lib/)
 
 **Code Quality:**
+
 - Does the code follow existing patterns in the codebase?
 - Are components properly typed with TypeScript?
 - Is error handling appropriate with user feedback?
 
 **React & Next.js 15:**
+
 - Are React hooks used correctly (dependencies, cleanup)?
 - Is `'use client'` directive used appropriately?
 - Are Server Components vs Client Components split correctly?
 - Is state management appropriate (local vs context)?
 
 **UI Consistency:**
+
 - Are Flowbite React components used consistently?
 - Do Tailwind classes follow existing patterns?
 - Is dark mode properly supported?
 
 **Security:**
+
 - Are there XSS vulnerabilities (dangerouslySetInnerHTML, unescaped user input)?
 - Is authentication checked before rendering protected content?
 - Is sensitive data exposed to the client unnecessarily?
@@ -37,7 +41,7 @@ Review all staged changes (`git diff --cached`) with focus on these contexts:
 - Is session validation handled properly?
 - Are redirects configured correctly?
 
-## Testing Context (src/**/__tests__/)
+## Testing Context (src/\*\*/**tests**/)
 
 - Do new components have corresponding tests?
 - Are tests using React Testing Library patterns correctly?
@@ -53,6 +57,7 @@ Review all staged changes (`git diff --cached`) with focus on these contexts:
 ## Output
 
 Provide a summary with:
+
 1. **Issues**: Problems that should be fixed before commit
 2. **Suggestions**: Improvements that aren't blocking
 3. **Questions**: Anything unclear that needs clarification

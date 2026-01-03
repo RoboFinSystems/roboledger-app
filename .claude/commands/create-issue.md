@@ -35,6 +35,7 @@ Create a GitHub issue for the current repository based on the user's input.
    - Appropriate metadata labels (see below)
 
 6. **Set Issue Type** - After creation, set the issue type via GraphQL:
+
    ```bash
    # Get repo info from current directory
    REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
@@ -56,16 +57,19 @@ Create a GitHub issue for the current repository based on the user's input.
 Issue types handle primary categorization. Use labels for metadata (varies by repo):
 
 **Priority** (when to do it):
+
 - `priority:critical` - Drop everything
 - `priority:high` - Next up
 - `priority:low` - Backlog
 
 **Size** (how long):
+
 - `size:small` - < 1 day
 - `size:medium` - 1-3 days
 - `size:large` - > 3 days
 
 **Status**:
+
 - `blocked` - Waiting on something
 - `needs-review` - Ready for review
 
@@ -86,6 +90,7 @@ Response: I'll create a feature issue for export functionality. Let me first und
 ## Output Format
 
 After creating the issue, provide:
+
 1. The issue URL
 2. Brief summary of what was created
 3. Issue type and labels applied
