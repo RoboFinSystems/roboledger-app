@@ -36,9 +36,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# AI
-.claude/
+# AI - Claude Code
+.claude/settings.local.json
 CLAUDE.local.md
+
+.gemini/
+GEMINI.md
 
 # npm
 .npmrc
