@@ -233,21 +233,33 @@ check_role_permissions() {
         return 0
     }
 
-    # Check if the policy allows this repo
-    if echo "$TRUST_POLICY" | grep -q "repo:${REPO_OWNER}/${REPO_NAME}:"; then
+    # Check if the policy allows this repo (flexible pattern matching)
+    if echo "$TRUST_POLICY" | grep -qE "repo:${REPO_OWNER}/${REPO_NAME}(:|\\*)"; then
         print_success "Role trust policy allows this repository"
     else
-        print_warning "Role trust policy may not allow this repository"
-        echo ""
-        echo "  The frontend OIDC role allows these repositories:"
-        echo "    - robosystems-app"
-        echo "    - roboledger-app"
-        echo "    - roboinvestor-app"
-        echo ""
-        echo "  Current repository: ${REPO_NAME}"
-        echo ""
-        echo "  If this is a new frontend app, update the CloudFormation template"
-        echo "  (cloudformation/bootstrap-oidc.yaml) to add this repository."
+        # Check if repo is one of the known frontend apps
+        KNOWN_FRONTEND_APPS="robosystems-app roboledger-app roboinvestor-app"
+        if echo "$KNOWN_FRONTEND_APPS" | grep -qw "$REPO_NAME"; then
+            print_warning "Repository '${REPO_NAME}' is a known frontend app but not found in trust policy"
+            echo ""
+            echo "  This likely means the OIDC CloudFormation stack needs to be updated."
+            echo "  The role may use a wildcard pattern that wasn't matched."
+            echo ""
+            echo "  Try running the deployment - OIDC will fail with a clear error if"
+            echo "  the repository is truly not authorized."
+        else
+            print_warning "Repository '${REPO_NAME}' is not a known frontend app"
+            echo ""
+            echo "  The frontend OIDC role is configured for these repositories:"
+            echo "    - robosystems-app"
+            echo "    - roboledger-app"
+            echo "    - roboinvestor-app"
+            echo ""
+            echo "  Current repository: ${REPO_NAME}"
+            echo ""
+            echo "  To add this repository, update the CloudFormation template"
+            echo "  (cloudformation/bootstrap-oidc.yaml) in the main robosystems repo."
+        fi
         echo ""
         read -p "Continue anyway? (y/N): " -n 1 -r
         echo ""

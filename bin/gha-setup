@@ -66,6 +66,13 @@ function check_prerequisites() {
         exit 1
     fi
 
+    # Check jq (JSON parser) - needed for JSON queries
+    if ! command -v jq >/dev/null 2>&1; then
+        print_error "jq is not installed. Please install it first."
+        echo "   Install: brew install jq (macOS) or apt install jq (Linux)"
+        exit 1
+    fi
+
     # Check if we're in a git repository
     if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         print_error "Not in a git repository"
