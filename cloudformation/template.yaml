@@ -554,6 +554,8 @@ Resources:
           Base: 0
       DesiredCount: !Ref CapacityMin
       HealthCheckGracePeriodSeconds: 60
+      EnableECSManagedTags: true
+      PropagateTags: SERVICE
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
