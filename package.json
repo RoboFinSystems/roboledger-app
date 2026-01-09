@@ -7,6 +7,7 @@
     "node": ">=22.0.0"
   },
   "bin": {
+    "bootstrap": "./bin/bootstrap",
     "create-feature": "./bin/create-feature",
     "create-release": "./bin/create-release",
     "create-pr": "./bin/create-pr",
@@ -35,7 +36,8 @@
     "feature:create": "./bin/create-feature",
     "release:create": "./bin/create-release",
     "pr:create": "./bin/create-pr",
-    "setup:gha": "./bin/gha-setup"
+    "setup:gha": "./bin/gha-setup",
+    "setup:bootstrap": "./bin/bootstrap"
   },
   "dependencies": {
     "@aws-sdk/client-sns": "^3.948.0",
