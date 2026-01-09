@@ -56,6 +56,18 @@
       "problemMatcher": []
     },
     {
+      "label": "Bootstrap OIDC",
+      "type": "shell",
+      "command": "npm run setup:bootstrap",
+      "problemMatcher": []
+    },
+    {
+      "label": "Setup GitHub Actions",
+      "type": "shell",
+      "command": "npm run setup:gha",
+      "problemMatcher": []
+    },
+    {
       "label": "Create Feature",
       "type": "shell",
       "command": "npm run feature:create ${input:branchType} ${input:branchName} ${input:baseBranch}",

@@ -66,6 +66,13 @@ function check_prerequisites() {
         exit 1
     fi
 
+    # Check jq (JSON parser) - needed for JSON queries
+    if ! command -v jq >/dev/null 2>&1; then
+        print_error "jq is not installed. Please install it first."
+        echo "   Install: brew install jq (macOS) or apt install jq (Linux)"
+        exit 1
+    fi
+
     # Check if we're in a git repository
     if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         print_error "Not in a git repository"
@@ -90,31 +97,20 @@ function setup_secrets() {
     echo "⚠️  Many secrets may be set at the ORGANIZATION level and inherited."
     echo "    Check existing secrets first: gh secret list"
     echo ""
-    echo "📋 ORGANIZATION-LEVEL secrets (typically already set):"
-    echo "  • ACTIONS_TOKEN - GitHub token for automation"
-    echo "  • AWS_ACCESS_KEY_ID - AWS deployment credentials"
-    echo "  • AWS_SECRET_ACCESS_KEY - AWS deployment credentials"
-    echo "  • ANTHROPIC_API_KEY - Claude AI features (optional)"
+    echo "📋 With OIDC authentication, AWS credentials are NOT needed!"
+    echo "   Workflows authenticate via AWS_ROLE_ARN (set by bootstrap)"
     echo ""
-    echo "If these are NOT inherited from org, set them with:"
+    echo "📋 OPTIONAL secrets (enable additional features):"
     echo ""
-    echo "# Required for deployments"
-    echo "gh secret set AWS_ACCESS_KEY_ID --body \"your_aws_access_key_id\""
-    echo "gh secret set AWS_SECRET_ACCESS_KEY --body \"your_aws_secret_access_key\""
-    echo ""
-    echo "# Required for workflow automation"
+    echo "# Enables workflow automations (deploy after release, gh CLI in workflows)"
     echo "gh secret set ACTIONS_TOKEN --body \"your_github_personal_access_token\""
     echo ""
-    echo "# Optional - enables AI features"
+    echo "# Enables Claude-powered PR/release workflows"
     echo "gh secret set ANTHROPIC_API_KEY --body \"your_anthropic_api_key\""
-    echo ""
-    echo "# Optional - for DockerHub publishing"
-    echo "gh secret set DOCKERHUB_TOKEN --body \"your_dockerhub_token\""
     echo ""
     echo "💡 ACTIONS_TOKEN needs these permissions:"
     echo "   - repo (full control)"
     echo "   - workflow (update workflows)"
-    echo "   - packages (if using GitHub packages)"
     echo ""
     echo "Secrets information completed!"
 }
@@ -242,12 +238,12 @@ function setup_minimum_config() {
     echo "💡 All settings use cost-optimized defaults."
     echo ""
     echo "📋 Next steps:"
-    echo "1. Check if secrets are inherited from org: gh secret list"
-    echo "2. If not inherited, set required secrets:"
-    echo "   - AWS_ACCESS_KEY_ID"
-    echo "   - AWS_SECRET_ACCESS_KEY"
-    echo "   - ACTIONS_TOKEN"
-    echo "3. Test with: gh workflow run staging.yml"
+    echo "1. Run bootstrap first if not done: ./bin/bootstrap"
+    echo "   (Sets AWS_ROLE_ARN for OIDC authentication)"
+    echo "2. Optional secrets for additional features: gh secret list"
+    echo "   - ACTIONS_TOKEN (workflow automations)"
+    echo "   - ANTHROPIC_API_KEY (Claude PR/release workflows)"
+    echo "3. Test with: gh workflow run prod.yml"
 }
 
 function setup_full_config() {
