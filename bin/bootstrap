@@ -92,6 +92,14 @@ check_prerequisites() {
     fi
     print_success "GitHub CLI installed"
 
+    # Check jq (JSON parser)
+    if ! command -v jq &>/dev/null; then
+        print_error "jq not installed"
+        echo "  Install: brew install jq (macOS) or apt install jq (Linux)"
+        exit 1
+    fi
+    print_success "jq installed"
+
     # Check GitHub authentication
     if ! gh auth status &>/dev/null; then
         print_error "GitHub CLI not authenticated"
@@ -225,19 +233,21 @@ check_role_permissions() {
         return 0
     }
 
-    # Check if the policy allows this repo (either wildcard or specific)
-    if echo "$TRUST_POLICY" | grep -q "repo:${REPO_OWNER}/\*:" || \
-       echo "$TRUST_POLICY" | grep -q "repo:${REPO_OWNER}/${REPO_NAME}:"; then
+    # Check if the policy allows this repo
+    if echo "$TRUST_POLICY" | grep -q "repo:${REPO_OWNER}/${REPO_NAME}:"; then
         print_success "Role trust policy allows this repository"
     else
         print_warning "Role trust policy may not allow this repository"
         echo ""
-        echo "  The OIDC role was created with a specific repository pattern."
-        echo "  You may need to update the role to allow: ${REPO_OWNER}/${REPO_NAME}"
+        echo "  The frontend OIDC role allows these repositories:"
+        echo "    - robosystems-app"
+        echo "    - roboledger-app"
+        echo "    - roboinvestor-app"
         echo ""
-        echo "  Options:"
-        echo "  1. Update the OIDC stack with RepositoryName=* (allows all org repos)"
-        echo "  2. Create a separate OIDC role for this repository"
+        echo "  Current repository: ${REPO_NAME}"
+        echo ""
+        echo "  If this is a new frontend app, update the CloudFormation template"
+        echo "  (cloudformation/bootstrap-oidc.yaml) to add this repository."
         echo ""
         read -p "Continue anyway? (y/N): " -n 1 -r
         echo ""
@@ -288,43 +298,56 @@ configure_github() {
 # =============================================================================
 
 check_secrets() {
-    print_header "Checking Required Secrets"
+    print_header "Checking Secrets"
 
-    print_step "Checking for required secrets (repo-level)..."
+    print_step "Checking for secrets (repo and org level)..."
 
-    # Get list of secrets
-    SECRETS=$(gh secret list 2>/dev/null || echo "")
+    # Get repo-level secrets
+    REPO_SECRETS=$(gh secret list 2>/dev/null || echo "")
 
-    # Check for ACTIONS_TOKEN
-    if echo "$SECRETS" | grep -q "ACTIONS_TOKEN"; then
-        print_success "ACTIONS_TOKEN exists"
+    # Get org-level secrets (may fail if user doesn't have org admin access)
+    ORG_SECRETS=$(gh secret list --org "${REPO_OWNER}" 2>/dev/null || echo "")
+
+    # Combine both lists for checking
+    ALL_SECRETS="${REPO_SECRETS}"$'\n'"${ORG_SECRETS}"
+
+    # Check for ACTIONS_TOKEN (optional - enables workflow automations)
+    if echo "$ALL_SECRETS" | grep -q "ACTIONS_TOKEN"; then
+        if echo "$REPO_SECRETS" | grep -q "ACTIONS_TOKEN"; then
+            print_success "ACTIONS_TOKEN exists (repo-level)"
+        else
+            print_success "ACTIONS_TOKEN exists (org-level)"
+        fi
     else
-        print_warning "ACTIONS_TOKEN not found"
+        print_info "ACTIONS_TOKEN not set (optional - enables workflow automations)"
         echo ""
-        echo "  This secret is required for workflow automation."
-        echo "  Create a GitHub Personal Access Token with 'repo' and 'workflow' scopes."
+        echo "  Not required for core CI/CD, but enables additional automations:"
+        echo "    - Triggering deploy workflows after release"
+        echo "    - Using gh CLI within workflows"
+        echo "    - Cross-workflow triggers"
         echo ""
-        echo "  To set it:"
+        echo "  To set it (repo-level):"
         echo "    gh secret set ACTIONS_TOKEN"
         echo ""
-        MISSING_SECRETS=true
+        echo "  Or set at org-level (shared across repos):"
+        echo "    gh secret set ACTIONS_TOKEN --org ${REPO_OWNER}"
+        echo ""
     fi
 
-    # Check for optional secrets
-    if echo "$SECRETS" | grep -q "ANTHROPIC_API_KEY"; then
-        print_success "ANTHROPIC_API_KEY exists (optional)"
+    # Check for ANTHROPIC_API_KEY (optional - enables Claude PR/release workflows)
+    if echo "$ALL_SECRETS" | grep -q "ANTHROPIC_API_KEY"; then
+        if echo "$REPO_SECRETS" | grep -q "ANTHROPIC_API_KEY"; then
+            print_success "ANTHROPIC_API_KEY exists (repo-level)"
+        else
+            print_success "ANTHROPIC_API_KEY exists (org-level)"
+        fi
     else
-        print_info "ANTHROPIC_API_KEY not set (optional - enables AI features)"
+        print_info "ANTHROPIC_API_KEY not set (optional - enables Claude PR/release workflows)"
     fi
 
     echo ""
     print_info "Note: AWS credentials (access keys) are NOT needed with OIDC"
     print_info "Workflows authenticate via AWS_ROLE_ARN instead"
-
-    if [ "${MISSING_SECRETS:-false}" = "true" ]; then
-        echo ""
-        print_warning "Some required secrets are missing. Set them before deploying."
-    fi
 }
 
 # =============================================================================
