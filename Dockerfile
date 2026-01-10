@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # --- Build Stage ---
-FROM public.ecr.aws/docker/library/node:22.15.0-alpine AS builder
+FROM public.ecr.aws/docker/library/node:22.21.1-alpine AS builder
 WORKDIR /app
 
 # Install git for private repository access
@@ -23,7 +23,7 @@ RUN if [ -f next-build.tar.gz ]; then \
     fi
 
 # --- Production Stage ---
-FROM public.ecr.aws/docker/library/node:22.15.0-alpine AS runner
+FROM public.ecr.aws/docker/library/node:22.21.1-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
