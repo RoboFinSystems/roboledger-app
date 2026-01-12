@@ -3,64 +3,71 @@ import FloatingElementsVariant from '../landing/FloatingElementsVariant'
 export default function BusinessServices() {
   const primaryServices = [
     {
-      title: 'QuickBooks',
+      title: 'QuickBooks Integration',
       icon: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z',
       color: 'cyan',
       highlight: 'OAuth2 Secure Connection',
       description:
-        'Real-time synchronization of your QuickBooks accounting data into the RoboLedger schema, enabling unified financial reporting and AI-powered analysis.',
+        'Synchronize your QuickBooks accounting data into the RoboLedger schema for unified reporting and analysis.',
       features: [
-        'Chart of accounts and journal entry synchronization',
-        'Transaction and invoice data import with categorization',
-        'Report generation and analysis',
-      ],
-    },
-    {
-      title: 'SEC XBRL Filings',
-      icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-      color: 'purple',
-      highlight: 'EDGAR Direct Integration',
-      description:
-        'Automated ingestion of SEC filings into the RoboLedger reporting schema, creating a queryable repository of financial statements and disclosures.',
-      features: [
-        'Automated 10-K and 10-Q filing downloads',
-        'XBRL fact extraction with dimensional data',
-        'Financial statement taxonomy structures and associations',
-        'US GAAP XBRL Taxonomy support',
+        'Chart of accounts synchronization',
+        'Journal entries and transactions',
+        'Trial balance import',
       ],
     },
   ]
 
   const dataManagementServices = [
     {
-      title: 'Banking Data Integration',
-      icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
-      gradient: 'from-green-600 to-emerald-600',
-      capabilities: [
-        'Plaid Bank Feeds',
-        'Transaction Import',
-        'Balance Tracking',
-      ],
-    },
-    {
-      title: 'AI-Native Intelligence',
-      icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z',
-      gradient: 'from-purple-600 to-pink-600',
-      capabilities: [
-        'Autonomous Report Generation',
-        'Multi-Layer Validation Guard Rails',
-        'Claude AI + MCP Integration',
-      ],
-    },
-    {
       title: 'RoboLedger Application',
       icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
       gradient: 'from-indigo-600 to-blue-600',
       capabilities: [
-        'Financial Reports',
-        'Journal Management',
-        'Data Visualization',
+        'Financial report builder',
+        'Ledger and journal management',
+        'Entity data visualization',
       ],
+    },
+    {
+      title: 'MCP Agent Access',
+      icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z',
+      gradient: 'from-purple-600 to-pink-600',
+      capabilities: [
+        'Natural language queries',
+        'Claude AI integration',
+        'Cypher query generation',
+      ],
+    },
+  ]
+
+  const roadmapServices = [
+    {
+      title: 'SEC Filing Import',
+      description:
+        "Import your company's 10-K/10-Q filings by CIK for normalized financial statement analysis",
+    },
+    {
+      title: 'Plaid Banking',
+      description:
+        'Connect bank accounts for automated transaction feeds and reconciliation',
+    },
+    {
+      title: 'XBRL-Native Reports',
+      description:
+        'Generate reports as structured data—comparable, portable, and machine-readable',
+    },
+  ]
+
+  const visionHighlights = [
+    {
+      title: 'Reports as Structured Data',
+      description:
+        'Unlike traditional PDF reports, RoboLedger creates XBRL-native financial reports that are inherently queryable and comparable across periods.',
+    },
+    {
+      title: 'AI-Native Report Builder',
+      description:
+        'Claude generates financial reports from natural language requests. AI handles the mechanical work at machine speed—humans apply judgment on what matters.',
     },
   ]
 
@@ -75,38 +82,80 @@ export default function BusinessServices() {
           <p className="mx-auto max-w-3xl text-gray-400">
             Powered by the RoboLedger schema that unifies QuickBooks
             transactions, SEC XBRL filings, and banking data into a single,
-            queryable Knowledge Graph
+            queryable context graph
           </p>
         </div>
 
-        {/* Primary Services - Large Cards */}
-        <div className="mb-12 grid gap-8 lg:grid-cols-2">
+        {/* Primary Service */}
+        <div className="mx-auto mb-12 max-w-2xl">
           {primaryServices.map((service, idx) => (
             <PrimaryServiceCard key={idx} {...service} />
           ))}
         </div>
 
         {/* Secondary Services - Compact Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mx-auto mb-12 grid max-w-3xl gap-6 md:grid-cols-2">
           {dataManagementServices.map((service, idx) => (
             <SecondaryServiceCard key={idx} {...service} index={idx} />
           ))}
         </div>
 
+        {/* Vision Highlights */}
+        <div className="mx-auto mb-12 max-w-4xl">
+          <h3 className="mb-6 text-center text-lg font-semibold text-white">
+            The Vision: Knowledge Graph Driven Financial Reporting
+          </h3>
+          <div className="grid gap-6 md:grid-cols-2">
+            {visionHighlights.map((item, idx) => (
+              <div
+                key={idx}
+                className="rounded-xl border border-gray-800 bg-gradient-to-br from-zinc-900 to-cyan-950/10 p-6"
+              >
+                <h4 className="mb-2 font-semibold text-cyan-400">
+                  {item.title}
+                </h4>
+                <p className="text-sm text-gray-400">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Roadmap */}
+        <div className="mx-auto mb-12 max-w-4xl">
+          <h3 className="mb-4 text-center text-sm font-semibold tracking-wider text-gray-500 uppercase">
+            Coming Soon
+          </h3>
+          <div className="grid gap-4 md:grid-cols-3">
+            {roadmapServices.map((service, idx) => (
+              <div
+                key={idx}
+                className="rounded-lg border border-dashed border-gray-700 bg-zinc-900/30 p-4 text-center"
+              >
+                <h4 className="font-medium text-gray-400">{service.title}</h4>
+                <p className="mt-1 text-sm text-gray-500">
+                  {service.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* How It Works */}
-        <div className="mt-12 rounded-2xl border border-gray-800 bg-zinc-900 p-8">
+        <div className="rounded-2xl border border-gray-800 bg-zinc-900 p-8">
           <h3 className="mb-6 text-center text-xl font-bold text-white">
-            How RoboLedger Data Synchronization Works
+            How It Works
           </h3>
           <div className="grid gap-6 md:grid-cols-3">
             <div className="group rounded-lg border border-gray-800 bg-gradient-to-br from-zinc-900 to-cyan-950/20 p-4 text-center transition-all hover:border-cyan-500/30">
               <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-400">
                 <span className="text-xl font-bold">1</span>
               </div>
-              <h4 className="mb-2 font-semibold text-white">Connect Sources</h4>
+              <h4 className="mb-2 font-semibold text-white">
+                Connect QuickBooks
+              </h4>
               <p className="text-sm text-gray-400">
-                Securely authenticate with QuickBooks, link bank accounts via
-                Plaid, or configure SEC entity CIKs
+                Securely authenticate with QuickBooks via OAuth to grant
+                RoboLedger read access to your accounting data
               </p>
             </div>
             <div className="group rounded-lg border border-gray-800 bg-gradient-to-br from-zinc-900 to-purple-950/20 p-4 text-center transition-all hover:border-purple-500/30">
@@ -116,7 +165,7 @@ export default function BusinessServices() {
               <h4 className="mb-2 font-semibold text-white">Sync to Graph</h4>
               <p className="text-sm text-gray-400">
                 Data flows into the RoboLedger schema within your company's
-                isolated Knowledge Graph database
+                isolated knowledge graph
               </p>
             </div>
             <div className="group rounded-lg border border-gray-800 bg-gradient-to-br from-zinc-900 to-green-950/20 p-4 text-center transition-all hover:border-green-500/30">
@@ -124,11 +173,11 @@ export default function BusinessServices() {
                 <span className="text-xl font-bold">3</span>
               </div>
               <h4 className="mb-2 font-semibold text-white">
-                Access & Analyze
+                Analyze & Report
               </h4>
               <p className="text-sm text-gray-400">
-                Use the RoboLedger app to manage data, run reports, or query via
-                MCP agents for AI-powered insights
+                Use RoboLedger to build reports, or query via MCP agents for
+                AI-powered insights
               </p>
             </div>
           </div>

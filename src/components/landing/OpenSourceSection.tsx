@@ -182,48 +182,64 @@ export default function OpenSourceSection() {
               </ul>
             </div>
 
-            {/* Self-Hosting Support */}
-            <div className="group overflow-hidden rounded-2xl border border-gray-800 bg-linear-to-br from-zinc-900 to-blue-950/20 p-4 transition-all hover:border-blue-500/50 sm:p-6 md:p-8">
-              <h3 className="font-heading mb-4 text-xl font-semibold text-white">
-                Self-Hosting & Enterprise Support
-              </h3>
-              <p className="mb-6 text-gray-300">
-                Need help deploying RoboSystems in your own infrastructure? We
-                offer:
+            {/* Enterprise Services */}
+            <div className="group overflow-hidden rounded-2xl border border-gray-800 bg-linear-to-br from-zinc-900 to-purple-950/20 p-4 transition-all hover:border-purple-500/50 sm:p-6 md:p-8">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20">
+                  <svg
+                    className="h-5 w-5 text-purple-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="font-heading text-xl font-semibold text-white">
+                  Enterprise Services
+                </h3>
+              </div>
+              <p className="mb-4 text-sm text-gray-300">
+                The platform is free. We help you succeed with it.
               </p>
-              <ul className="space-y-3 text-sm text-gray-300">
+
+              <ul className="mb-4 space-y-2 text-sm text-gray-400">
                 <li className="flex items-start">
-                  <span className="mr-2 flex-shrink-0 text-cyan-400">•</span>
-                  <span className="break-words">
-                    Professional services for deployment in your own AWS
-                    infrastructure
+                  <span className="mr-2 text-purple-400">•</span>
+                  <span>
+                    <strong className="text-white">Custom Integrations</strong>
+                    —connect your ERP, banking, or proprietary data sources
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="mr-2 flex-shrink-0 text-cyan-400">•</span>
-                  <span className="break-words">
-                    Training and onboarding for your team to use RoboSystems
+                  <span className="mr-2 text-purple-400">•</span>
+                  <span>
+                    <strong className="text-white">
+                      Implementation Support
+                    </strong>
+                    —deployment, training, and onboarding for your team
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="mr-2 flex-shrink-0 text-cyan-400">•</span>
-                  <span className="break-words">
-                    Custom development and integration support for your use
-                    cases
-                  </span>
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2 flex-shrink-0 text-cyan-400">•</span>
-                  <span className="break-words">
-                    Priority support and SLAs for your production environment
+                  <span className="mr-2 text-purple-400">•</span>
+                  <span>
+                    <strong className="text-white">AI Support Agents</strong>
+                    —ongoing maintenance and optimization of your knowledge
+                    graph
                   </span>
                 </li>
               </ul>
+
               <button
                 onClick={() => setShowEnterpriseContact(true)}
-                className="mt-6 inline-flex items-center gap-2 rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
+                className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700"
               >
-                Contact Enterprise Sales
+                Contact Us
                 <svg
                   className="h-4 w-4"
                   fill="none"
@@ -241,153 +257,173 @@ export default function OpenSourceSection() {
             </div>
           </div>
 
-          {/* Right Column - Download */}
-          <div className="group overflow-hidden rounded-2xl border border-cyan-500/30 bg-linear-to-br from-cyan-900/30 to-blue-900/20 p-4 transition-all hover:border-cyan-500/50 sm:p-6 md:p-8">
-            <div className="mb-6 flex items-center justify-between">
-              <h3 className="font-heading text-xl font-semibold text-white sm:text-2xl">
-                Download RoboSystems
-              </h3>
+          {/* Right Column */}
+          <div className="space-y-6 sm:space-y-8">
+            {/* Fork & Deploy */}
+            <div className="group overflow-hidden rounded-2xl border border-emerald-500/30 bg-linear-to-br from-zinc-900 to-emerald-950/20 p-4 transition-all hover:border-emerald-500/50 sm:p-6 md:p-8">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20">
+                  <svg
+                    className="h-5 w-5 text-emerald-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="font-heading text-xl font-semibold text-white">
+                  Fork & Deploy
+                </h3>
+              </div>
+              <p className="mb-4 text-sm text-gray-300">
+                Deploy your own instance with secure GitHub OIDC—no AWS
+                credentials stored in GitHub. Full CloudFormation templates and
+                GitHub Actions workflows included.
+              </p>
+
+              <a
+                href="https://github.com/RoboFinSystems/robosystems/wiki/Bootstrap-Guide"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  />
+                </svg>
+                Bootstrap Guide
+              </a>
             </div>
 
-            <div className="space-y-4 overflow-x-hidden">
-              {/* Docker Images */}
-              <div className="rounded-lg bg-zinc-800/50 p-3 sm:p-4">
-                <h4 className="mb-2 font-semibold text-white">
-                  Docker Containers
-                </h4>
-                <p className="mb-3 text-sm break-words text-gray-400">
-                  Platform with all services ready to run locally or in your
-                  cloud.
-                </p>
-                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                  <a
-                    href="https://hub.docker.com/r/robofinsystems/robosystems"
-                    className="inline-flex items-center gap-2 rounded-md bg-zinc-700 px-3 py-1.5 text-sm text-white transition-colors hover:bg-zinc-600"
-                  >
-                    <svg
-                      className="h-4 w-4"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.186.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288Z" />
-                    </svg>
-                    API Container
-                  </a>
-                  <a
-                    href="https://hub.docker.com/r/robofinsystems/robosystems-app"
-                    className="inline-flex items-center gap-2 rounded-md bg-zinc-700 px-3 py-1.5 text-sm text-white transition-colors hover:bg-zinc-600"
-                  >
-                    <svg
-                      className="h-4 w-4"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.186.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288Z" />
-                    </svg>
-                    App Container
-                  </a>
-                </div>
+            {/* Download */}
+            <div className="group overflow-hidden rounded-2xl border border-cyan-500/30 bg-linear-to-br from-cyan-900/30 to-blue-900/20 p-4 transition-all hover:border-cyan-500/50 sm:p-6 md:p-8">
+              <div className="mb-6 flex items-center justify-between">
+                <h3 className="font-heading text-xl font-semibold text-white sm:text-2xl">
+                  Download RoboSystems
+                </h3>
               </div>
 
-              {/* SDKs */}
-              <div className="rounded-lg bg-zinc-800/50 p-3 sm:p-4">
-                <h4 className="mb-2 font-semibold text-white">
-                  MCP Client and Developer Tools
-                </h4>
-                <p className="mb-3 text-sm break-words text-gray-400">
-                  Official packages for integrating with RoboSystems.
-                </p>
-                <div className="space-y-3">
-                  {/* MCP Tools */}
-                  <div>
-                    <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-4 overflow-x-hidden">
+                {/* SDKs */}
+                <div className="rounded-lg bg-zinc-800/50 p-3 sm:p-4">
+                  <h4 className="mb-2 font-semibold text-white">
+                    MCP Client and Developer Tools
+                  </h4>
+                  <p className="mb-3 text-sm break-words text-gray-400">
+                    Official packages for integrating with RoboSystems.
+                  </p>
+                  <div className="space-y-3">
+                    {/* MCP Tools */}
+                    <div>
+                      <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <a
+                          href="https://www.npmjs.com/package/@robosystems/mcp"
+                          className="inline-flex items-center gap-2 rounded-md bg-zinc-700 px-3 py-1.5 text-sm text-white transition-colors hover:bg-zinc-600"
+                        >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                            />
+                          </svg>
+                          @robosystems/mcp
+                        </a>
+                        <span className="self-start text-xs text-gray-500 sm:self-auto">
+                          MCP Client
+                        </span>
+                      </div>
+                    </div>
+                    {/* Typescript Client */}
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <a
-                        href="https://www.npmjs.com/package/@robosystems/mcp"
+                        href="https://www.npmjs.com/package/@robosystems/client"
                         className="inline-flex items-center gap-2 rounded-md bg-zinc-700 px-3 py-1.5 text-sm text-white transition-colors hover:bg-zinc-600"
                       >
                         <svg
                           className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
+                          fill="currentColor"
                           viewBox="0 0 24 24"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                          />
+                          <path d="M0 0v24h24v-24h-24zm19.5 16.5h-3v3h-9v-3h-3v-9h15v9z" />
                         </svg>
-                        @robosystems/mcp
+                        @robosystems/client
                       </a>
                       <span className="self-start text-xs text-gray-500 sm:self-auto">
-                        MCP Client
+                        TypeScript/React
+                      </span>
+                    </div>
+
+                    {/* Python Client */}
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <a
+                        href="https://pypi.org/project/robosystems-client/"
+                        className="inline-flex items-center gap-2 rounded-md bg-zinc-700 px-3 py-1.5 text-sm text-white transition-colors hover:bg-zinc-600"
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M14.25.18l.9.2.73.26.59.3.45.32.34.34.25.34.16.33.1.3.04.26.02.2-.01.13V8.5l-.05.63-.13.55-.21.46-.26.38-.3.31-.33.25-.35.19-.35.14-.33.1-.3.07-.26.04-.21.02H8.77l-.69.05-.59.14-.5.22-.41.27-.33.32-.27.35-.2.36-.15.37-.1.35-.07.32-.04.27-.02.21v3.06H3.17l-.21-.03-.28-.07-.32-.12-.35-.18-.36-.26-.36-.36-.35-.46-.32-.59-.28-.73-.21-.88-.14-1.05-.05-1.23.06-1.22.16-1.04.24-.87.32-.71.36-.57.4-.44.42-.33.42-.24.4-.16.36-.1.32-.05.24-.01h.16l.06.01h8.16v-.83H6.18l-.01-2.75-.02-.37.05-.34.11-.31.17-.28.25-.26.31-.23.38-.2.44-.18.51-.15.58-.12.64-.1.71-.06.77-.04.84-.02 1.27.05zm-6.3 1.98l-.23.33-.08.41.08.41.23.34.33.22.41.09.41-.09.33-.22.23-.34.08-.41-.08-.41-.23-.33-.33-.22-.41-.09-.41.09zm13.09 3.95l.28.06.32.12.35.18.36.27.36.35.35.47.32.59.28.73.21.88.14 1.04.05 1.23-.06 1.23-.16 1.04-.24.86-.32.71-.36.57-.4.45-.42.33-.42.24-.4.16-.36.09-.32.05-.24.02-.16-.01h-8.22v.82h5.84l.01 2.76.02.36-.05.34-.11.31-.17.29-.25.25-.31.24-.38.2-.44.17-.51.15-.58.13-.64.09-.71.07-.77.04-.84.01-1.27-.04-1.07-.14-.9-.2-.73-.25-.59-.3-.45-.33-.34-.34-.25-.34-.16-.33-.1-.3-.04-.25-.02-.2.01-.13v-5.34l.05-.64.13-.54.21-.46.26-.38.3-.32.33-.24.35-.2.35-.14.33-.1.3-.06.26-.04.21-.02.13-.01h5.84l.69-.05.59-.14.5-.21.41-.28.33-.32.27-.35.2-.36.15-.36.1-.35.07-.32.04-.28.02-.21V6.07h2.09l.14.01zm-6.47 14.25l-.23.33-.08.41.08.41.23.33.33.23.41.08.41-.08.33-.23.23-.33.08-.41-.08-.41-.23-.33-.33-.23-.41-.08-.41.08z" />
+                        </svg>
+                        robosystems-client
+                      </a>
+                      <span className="self-start text-xs text-gray-500 sm:self-auto">
+                        Python/Jupyter
                       </span>
                     </div>
                   </div>
-                  {/* Typescript Client */}
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <a
-                      href="https://www.npmjs.com/package/@robosystems/client"
-                      className="inline-flex items-center gap-2 rounded-md bg-zinc-700 px-3 py-1.5 text-sm text-white transition-colors hover:bg-zinc-600"
-                    >
-                      <svg
-                        className="h-4 w-4"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M0 0v24h24v-24h-24zm19.5 16.5h-3v3h-9v-3h-3v-9h15v9z" />
-                      </svg>
-                      @robosystems/client
-                    </a>
-                    <span className="self-start text-xs text-gray-500 sm:self-auto">
-                      TypeScript/React
-                    </span>
-                  </div>
-
-                  {/* Python Client */}
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <a
-                      href="https://pypi.org/project/robosystems-client/"
-                      className="inline-flex items-center gap-2 rounded-md bg-zinc-700 px-3 py-1.5 text-sm text-white transition-colors hover:bg-zinc-600"
-                    >
-                      <svg
-                        className="h-4 w-4"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M14.25.18l.9.2.73.26.59.3.45.32.34.34.25.34.16.33.1.3.04.26.02.2-.01.13V8.5l-.05.63-.13.55-.21.46-.26.38-.3.31-.33.25-.35.19-.35.14-.33.1-.3.07-.26.04-.21.02H8.77l-.69.05-.59.14-.5.22-.41.27-.33.32-.27.35-.2.36-.15.37-.1.35-.07.32-.04.27-.02.21v3.06H3.17l-.21-.03-.28-.07-.32-.12-.35-.18-.36-.26-.36-.36-.35-.46-.32-.59-.28-.73-.21-.88-.14-1.05-.05-1.23.06-1.22.16-1.04.24-.87.32-.71.36-.57.4-.44.42-.33.42-.24.4-.16.36-.1.32-.05.24-.01h.16l.06.01h8.16v-.83H6.18l-.01-2.75-.02-.37.05-.34.11-.31.17-.28.25-.26.31-.23.38-.2.44-.18.51-.15.58-.12.64-.1.71-.06.77-.04.84-.02 1.27.05zm-6.3 1.98l-.23.33-.08.41.08.41.23.34.33.22.41.09.41-.09.33-.22.23-.34.08-.41-.08-.41-.23-.33-.33-.22-.41-.09-.41.09zm13.09 3.95l.28.06.32.12.35.18.36.27.36.35.35.47.32.59.28.73.21.88.14 1.04.05 1.23-.06 1.23-.16 1.04-.24.86-.32.71-.36.57-.4.45-.42.33-.42.24-.4.16-.36.09-.32.05-.24.02-.16-.01h-8.22v.82h5.84l.01 2.76.02.36-.05.34-.11.31-.17.29-.25.25-.31.24-.38.2-.44.17-.51.15-.58.13-.64.09-.71.07-.77.04-.84.01-1.27-.04-1.07-.14-.9-.2-.73-.25-.59-.3-.45-.33-.34-.34-.25-.34-.16-.33-.1-.3-.04-.25-.02-.2.01-.13v-5.34l.05-.64.13-.54.21-.46.26-.38.3-.32.33-.24.35-.2.35-.14.33-.1.3-.06.26-.04.21-.02.13-.01h5.84l.69-.05.59-.14.5-.21.41-.28.33-.32.27-.35.2-.36.15-.36.1-.35.07-.32.04-.28.02-.21V6.07h2.09l.14.01zm-6.47 14.25l-.23.33-.08.41.08.41.23.33.33.23.41.08.41-.08.33-.23.23-.33.08-.41-.08-.41-.23-.33-.33-.23-.41-.08-.41.08z" />
-                      </svg>
-                      robosystems-client
-                    </a>
-                    <span className="self-start text-xs text-gray-500 sm:self-auto">
-                      Python/Jupyter
-                    </span>
-                  </div>
                 </div>
-              </div>
 
-              {/* Quick Start */}
-              <div className="mt-4 rounded-lg bg-blue-900/20 p-3 sm:p-4">
-                <h4 className="mb-2 font-semibold text-blue-300">
-                  Quick Start
-                </h4>
-                <pre className="overflow-x-auto rounded-sm bg-zinc-900 p-2 text-xs text-gray-300 sm:p-3">
-                  <code>{`# Clone the repository
+                {/* Quick Start */}
+                <div className="mt-4 rounded-lg bg-blue-900/20 p-3 sm:p-4">
+                  <h4 className="mb-2 font-semibold text-blue-300">
+                    Local Development
+                  </h4>
+                  <pre className="overflow-x-auto rounded-sm bg-zinc-900 p-2 text-xs text-gray-300 sm:p-3">
+                    <code>{`# Clone and install tools
 git clone https://github.com/RoboFinSystems/robosystems
 cd robosystems
+brew install uv just  # or: pip install uv && cargo install just
 
-# Install uv (Python package and version manager)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install just (command runner)
-uv tool install rust-just
-
-# Start all services
+# Start local Docker stack
 just start
 
-# Access the API at http://localhost:8000`}</code>
-                </pre>
+# API at http://localhost:8000`}</code>
+                  </pre>
+                  <p className="mt-2 text-xs text-gray-500">
+                    For production deployment, see the{' '}
+                    <a
+                      href="https://github.com/RoboFinSystems/robosystems/wiki/Bootstrap-Guide"
+                      className="text-blue-400 hover:text-blue-300"
+                    >
+                      Bootstrap Guide
+                    </a>
+                    .
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -483,6 +519,27 @@ just start
 
             <div className="flex flex-wrap justify-center gap-4">
               <a
+                href="https://github.com/orgs/RoboFinSystems/projects/3"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-6 py-3 font-medium text-white transition-all duration-300 hover:bg-cyan-700"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                  />
+                </svg>
+                Roadmap
+              </a>
+              <a
                 href="https://github.com/RoboFinSystems/robosystems/discussions"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -500,27 +557,6 @@ just start
                   />
                 </svg>
                 GitHub Discussions
-              </a>
-              <a
-                href="https://github.com/RoboFinSystems/robosystems/wiki"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg bg-zinc-700 px-6 py-3 font-medium text-white transition-all duration-300 hover:bg-zinc-600"
-              >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                  />
-                </svg>
-                Documentation Wiki
               </a>
               <a
                 href="https://github.com/RoboFinSystems/robosystems/issues"
@@ -552,8 +588,8 @@ just start
       <ContactModal
         isOpen={showEnterpriseContact}
         onClose={() => setShowEnterpriseContact(false)}
-        title="Contact Enterprise Sales"
-        description="Let us know about your enterprise needs and we'll help you deploy RoboSystems in your infrastructure."
+        title="Enterprise Services"
+        description="Tell us about your project and we'll help you build your knowledge graph."
         formType="enterprise_sales"
       />
     </section>

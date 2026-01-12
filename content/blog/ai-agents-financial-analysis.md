@@ -14,8 +14,7 @@ keywords:
     'financial automation',
     'automated financial reporting',
   ]
-featured: true
-coverVideo: '/videos/ai-powered-financial-insights.mp4'
+featured: false
 canonicalUrl: 'https://robosystems.ai/blog/ai-agents-financial-analysis'
 ---
 

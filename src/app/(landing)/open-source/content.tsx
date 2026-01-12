@@ -3,6 +3,7 @@ import Footer from '@/components/landing/Footer'
 import Header from '@/components/landing/Header'
 import AiIntegrationMcp from '@/components/open-source/AiIntegrationMcp'
 import AwsInfrastructure from '@/components/open-source/AwsInfrastructure'
+import BootstrapGuide from '@/components/open-source/BootstrapGuide'
 import ClientLibraries from '@/components/open-source/ClientLibraries'
 import GettingStarted from '@/components/open-source/GettingStarted'
 import SecXbrlPipeline from '@/components/open-source/SecXbrlPipeline'
@@ -57,6 +58,7 @@ export default function OpenSourceContent() {
 
         <ClientLibraries />
         <AwsInfrastructure />
+        <BootstrapGuide />
 
         {/* CTA Section */}
         <section className="relative overflow-hidden bg-linear-to-b from-black via-zinc-950 to-black py-16">

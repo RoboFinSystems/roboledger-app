@@ -71,7 +71,7 @@ export default function AwsInfrastructure() {
                   </li>
                   <li className="flex items-start">
                     <span className="mr-2 text-purple-400">✓</span>
-                    EC2 auto-scaling group for Dagster run workers
+                    ECS Fargate Dagster orchestration with Spot capacity
                   </li>
                   <li className="flex items-start">
                     <span className="mr-2 text-purple-400">✓</span>
@@ -161,6 +161,10 @@ export default function AwsInfrastructure() {
                 <ul className="space-y-2 text-gray-400">
                   <li className="flex items-start">
                     <span className="mr-2 text-cyan-400">✓</span>
+                    Secure OIDC authentication - no AWS credentials in GitHub
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-2 text-cyan-400">✓</span>
                     CloudFormation stack deployment workflows for infrastructure
                   </li>
                   <li className="flex items-start">
@@ -206,74 +210,6 @@ export default function AwsInfrastructure() {
                 View GitHub Actions Workflows →
               </a>
             </div>
-          </div>
-        </div>
-
-        {/* Quick Deploy Section */}
-        <div className="mt-12 overflow-hidden rounded-2xl border border-gray-800 bg-linear-to-br from-zinc-900 to-zinc-800 p-8">
-          <div className="mb-8 text-center">
-            <h3 className="mb-3 text-2xl font-bold text-white">
-              Deploy Your Own RoboSystems in Minutes
-            </h3>
-            <p className="text-gray-400">
-              Fork our repository and have your own production environment
-              running on AWS within the hour. Add custom data sources in the{' '}
-              <code className="rounded bg-zinc-700 px-1.5 py-0.5 text-cyan-300">
-                custom_*
-              </code>{' '}
-              namespace and pull upstream updates without merge conflicts.
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="text-center">
-              <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-400">
-                <span className="text-xl font-bold">1</span>
-              </div>
-              <h4 className="mb-2 font-semibold text-white">Fork Repository</h4>
-              <p className="text-sm text-gray-400">
-                Click "Fork" on GitHub to create your own fork of the
-                RoboSystems repository
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-purple-500/20 text-purple-400">
-                <span className="text-xl font-bold">2</span>
-              </div>
-              <h4 className="mb-2 font-semibold text-white">Configure AWS</h4>
-              <p className="text-sm text-gray-400">
-                Add your AWS and GitHub credentials as GHA Secrets and Variables
-                for automated infrastructure deployment
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/20 text-green-400">
-                <span className="text-xl font-bold">3</span>
-              </div>
-              <h4 className="mb-2 font-semibold text-white">
-                Deploy Infrastructure
-              </h4>
-              <p className="text-sm text-gray-400">
-                Trigger the production workflow and watch the CloudFormation
-                stacks deploy automatically
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <a
-              href="https://github.com/RoboFinSystems/robosystems/fork"
-              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 px-6 py-3 font-medium text-white transition-all hover:from-cyan-700 hover:to-blue-700"
-            >
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                <path
-                  fillRule="evenodd"
-                  d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Fork on GitHub
-            </a>
           </div>
         </div>
       </div>

@@ -104,9 +104,9 @@ export default function SchemaArchitecture() {
             Intelligent Graph Schema Architecture
           </h2>
           <p className="mx-auto max-w-3xl text-gray-400">
-            Our proprietary Knowledge Graph technology unifies disparate
-            financial data sources into a cohesive, queryable structure that
-            powers advanced analytics and automated reporting
+            Unify disparate financial data sources into a cohesive, queryable
+            context graph that powers advanced analytics and AI-native
+            applications
           </p>
         </div>
 
@@ -275,12 +275,10 @@ export default function SchemaArchitecture() {
           </div>
         </div>
 
-        {/* Key Benefits */}
+        {/* Schema Capabilities */}
         <div className="grid gap-6 md:grid-cols-3">
           <div className="group rounded-xl border border-gray-800 bg-gradient-to-br from-cyan-500/10 to-zinc-900 p-6 transition-all hover:border-cyan-500/50">
-            <div
-              className={`mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500`}
-            >
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500">
               <svg
                 className="h-6 w-6 text-white"
                 fill="none"
@@ -291,21 +289,20 @@ export default function SchemaArchitecture() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                  d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
                 />
               </svg>
             </div>
             <h3 className="mb-2 text-lg font-semibold text-white">
-              Daily Processing
+              Extensible Schemas
             </h3>
             <p className="text-sm text-gray-400">
-              Daily data synchronization across all connected sources
+              Start with Base, RoboLedger, or RoboInvestor schemas—then extend
+              with custom nodes and relationships for your domain
             </p>
           </div>
           <div className="group rounded-xl border border-gray-800 bg-gradient-to-br from-purple-500/10 to-zinc-900 p-6 transition-all hover:border-purple-500/50">
-            <div
-              className={`mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500`}
-            >
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
               <svg
                 className="h-6 w-6 text-white"
                 fill="none"
@@ -316,22 +313,20 @@ export default function SchemaArchitecture() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                 />
               </svg>
             </div>
             <h3 className="mb-2 text-lg font-semibold text-white">
-              Unified Data Model
+              Multi-Tenant Isolation
             </h3>
             <p className="text-sm text-gray-400">
-              Single source of truth that connects accounting, investments,
-              reporting, and public datasets seamlessly
+              Each company operates in their own isolated knowledge graph—your
+              data never mixes with other organizations
             </p>
           </div>
           <div className="group rounded-xl border border-gray-800 bg-gradient-to-br from-green-500/10 to-zinc-900 p-6 transition-all hover:border-green-500/50">
-            <div
-              className={`mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-emerald-500`}
-            >
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-emerald-500">
               <svg
                 className="h-6 w-6 text-white"
                 fill="none"
@@ -342,16 +337,16 @@ export default function SchemaArchitecture() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                  d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
             </div>
             <h3 className="mb-2 text-lg font-semibold text-white">
-              AI-Native Design
+              Cypher Query Language
             </h3>
             <p className="text-sm text-gray-400">
-              Built for AI agents with MCP protocol support enabling advanced
-              automation and insights
+              Traverse relationships with expressive graph queries—or let Claude
+              generate them from natural language via MCP
             </p>
           </div>
         </div>

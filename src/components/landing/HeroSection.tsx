@@ -80,11 +80,11 @@ export default function HeroSection() {
                   </svg>
                 </div>
                 <h3 className="mb-2 text-center text-lg font-semibold text-white">
-                  GraphRAG Architecture
+                  Context Graph
                 </h3>
                 <p className="text-center text-sm text-gray-400">
-                  Advanced retrieval with semantic understanding of financial
-                  relationships and entity resolution
+                  Semantic understanding of financial relationships, entities,
+                  and meaning—structured for AI reasoning
                 </p>
               </div>
             </div>
@@ -136,11 +136,11 @@ export default function HeroSection() {
                   </svg>
                 </div>
                 <h3 className="mb-2 text-center text-lg font-semibold text-white">
-                  SEC Financial Agent
+                  Data Integrations
                 </h3>
                 <p className="text-center text-sm text-gray-400">
-                  AI-powered analysis of 100,000+ SEC XBRL filings with natural
-                  language inquiries
+                  Connect QuickBooks, SEC filings, banking data, and custom
+                  sources with extensible pipelines
                 </p>
               </div>
             </div>

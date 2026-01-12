@@ -28,9 +28,9 @@ export default function PlatformContent() {
                 RoboSystems Platform
               </h1>
               <p className="mx-auto max-w-3xl text-lg text-gray-300 sm:text-xl">
-                A knowledge graph platform that transforms your Company's
-                financial and operational data into a unified, AI-ready
-                intelligence layer for advanced analytics and automation
+                A context graph platform that transforms your financial and
+                operational data into a semantic layer where AI doesn't just
+                retrieve information—it understands meaning.
               </p>
             </div>
           </div>
@@ -42,13 +42,12 @@ export default function PlatformContent() {
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-12 text-center">
               <h2 className="font-heading mb-4 text-3xl font-bold text-white sm:text-4xl">
-                Knowledge Graph Management Platform
+                Knowledge Graph Management
               </h2>
               <p className="mx-auto max-w-3xl text-gray-400">
-                Enterprise-grade knowledge graph infrastructure that connects
-                your financial data sources, maintains semantic relationships,
-                and powers AI-native applications. Built on LadybugDB for
-                blazing-fast analytical performance.
+                Connect your financial data sources, maintain semantic
+                relationships, and power AI-native applications. Built on
+                LadybugDB for blazing-fast analytical performance.
               </p>
             </div>
 
@@ -164,11 +163,11 @@ export default function PlatformContent() {
         <section className="bg-zinc-950 py-16">
           <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
             <h2 className="font-heading mb-4 text-3xl font-bold text-white">
-              Ready to Transform Your Financial Data?
+              Ready to Build Your Context Graph?
             </h2>
             <p className="mb-8 text-lg text-gray-400">
-              Build your financial knowledge graph with enterprise-grade
-              infrastructure and AI-native capabilities
+              Transform your financial data into a semantic layer that AI can
+              truly understand
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <a
