@@ -1015,19 +1015,20 @@ Resources:
           var newHost = host.replace(/^www\./, '');
           var qs = '';
 
-          // Reconstruct query string if present
+          // Reconstruct query string if present (URL encode to prevent malformed redirects)
           if (Object.keys(querystring).length > 0) {
             var params = [];
             for (var key in querystring) {
               var param = querystring[key];
+              var encodedKey = encodeURIComponent(key);
               if (param.multiValue) {
                 param.multiValue.forEach(function(v) {
-                  params.push(key + '=' + v.value);
+                  params.push(encodedKey + '=' + encodeURIComponent(v.value));
                 });
               } else if (param.value) {
-                params.push(key + '=' + param.value);
+                params.push(encodedKey + '=' + encodeURIComponent(param.value));
               } else {
-                params.push(key);
+                params.push(encodedKey);
               }
             }
             qs = '?' + params.join('&');
