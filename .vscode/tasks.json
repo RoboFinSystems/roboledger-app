@@ -56,10 +56,23 @@
       "problemMatcher": []
     },
     {
+      "label": "AWS Configure SSO",
+      "type": "shell",
+      "command": "aws",
+      "args": ["configure", "sso", "--profile", "${input:awsProfile}"],
+      "problemMatcher": []
+    },
+    {
       "label": "AWS SSO Login",
       "type": "shell",
       "command": "aws",
       "args": ["sso", "login"],
+      "options": {
+        "env": {
+          "AWS_PROFILE": "${input:awsProfile}",
+          "AWS_REGION": "${input:awsRegion}"
+        }
+      },
       "problemMatcher": []
     },
     {
@@ -67,6 +80,12 @@
       "type": "shell",
       "command": "aws",
       "args": ["sts", "get-caller-identity"],
+      "options": {
+        "env": {
+          "AWS_PROFILE": "${input:awsProfile}",
+          "AWS_REGION": "${input:awsRegion}"
+        }
+      },
       "problemMatcher": []
     },
     {
@@ -205,6 +224,18 @@
       "description": "Choose environment:",
       "default": "staging",
       "options": ["staging", "prod"]
+    },
+    {
+      "id": "awsProfile",
+      "type": "promptString",
+      "description": "AWS Profile:",
+      "default": "robosystems-sso"
+    },
+    {
+      "id": "awsRegion",
+      "type": "promptString",
+      "description": "AWS Region:",
+      "default": "us-east-1"
     }
   ]
 }
