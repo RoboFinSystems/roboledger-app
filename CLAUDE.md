@@ -107,3 +107,34 @@ npm run format:check # Check code formatting
 - Use `npm run dev` for full development setup
 - Format code before submitting PRs
 - Test coverage should be maintained for new components
+
+## Core Library (Git Subtree)
+
+The `/src/lib/core/` directory is a shared library maintained as a git subtree across all RoboSystems frontend apps (robosystems-app, roboledger-app, roboinvestor-app).
+
+### Subtree Commands
+
+```bash
+npm run core:pull        # Pull latest changes from core repository
+npm run core:push        # Push local core changes back to repository
+npm run core:add         # Initial setup (only needed once)
+```
+
+### Important Guidelines
+
+- **Pull before making changes**: Always run `npm run core:pull` before modifying core components
+- **Test locally first**: Verify changes work in this app before pushing to core
+- **Push changes back**: After testing, use `npm run core:push` to share improvements
+- **Sync other apps**: After pushing, other apps need to run `core:pull` to get updates
+- **Avoid conflicts**: Coordinate with team when making significant core changes
+
+### What's in Core
+
+- **auth-components/**: Login, register, password reset forms
+- **auth-core/**: Session management and JWT handling
+- **components/**: Graph creation wizard and shared components
+- **ui-components/**: Layout, forms, settings components
+- **contexts/**: User, company, graph, credit contexts
+- **task-monitoring/**: SSE-based background job tracking
+- **hooks/**: Shared React hooks
+- **theme/**: Flowbite theme customization
