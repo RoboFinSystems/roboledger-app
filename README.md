@@ -1,54 +1,46 @@
 # RoboLedger App
 
-RoboLedger is an AI-native accounting platform that builds a semantic knowledge graph of your financial data, enabling intelligent automation and natural language financial analysis powered by Claude AI.
+> **Version 0.2 (Beta)** — Core accounting features available, expanding integrations and automation
+
+RoboLedger App is the web interface for AI-native accounting, building semantic knowledge graphs from financial data for intelligent automation and natural language analysis powered by Claude AI.
 
 - **Semantic Financial Intelligence**: Every transaction connected semantically, preserving relationships and context for AI-powered insights
-- **Flexible Deployment Options**: QuickBooks integration layer, standalone with Plaid bank feeds, or fork and deploy to your own AWS infrastructure
+- **QuickBooks Integration**: Sync with existing QuickBooks data and add AI automation without changing workflows
 - **Natural Language Queries**: Ask questions in plain English and get instant, intelligent answers about your finances
 - **AI-Powered Automation**: Leverage Claude AI for intelligent financial analysis that understands business context
+- **Multi-Source Data**: QuickBooks, Plaid bank feeds, SEC XBRL filings, and custom datasets
 - **Enterprise-Ready**: SEC integration, process automation, report sharing, and API key authentication
 
 ## Core Features
 
-RoboLedger transforms traditional financial data storage from isolated tables into a connected, intelligent system that enables AI agents to understand business context, not just rules.
+### Available Now
 
-- **Knowledge Graph Architecture**: Financial data modeled as a semantic graph preserving relationships and context
-- **QuickBooks Intelligence Layer**: Sync with existing QuickBooks data and add AI automation without changing workflows
-- **Complete Financial Platform**: Direct bank connections via Plaid with built-in double-entry accounting
-- **SEC Integration**: Process SEC XBRL filings with intelligent automation
-- **Process Automation**: RPA tools for automating reporting processes and schedules
-- **Report Sharing**: Create and share reports with shareholders and stakeholders
-- **API Key Authentication**: Secure programmatic access for integrations
+- **Dashboard**: Financial overview with quick actions and AI insights
+- **Ledger**: Chart of accounts, journal entries, trial balance, and account mappings
+- **QuickBooks Sync**: Connect and synchronize with QuickBooks data
+- **Console**: Interactive Cypher query terminal for graph exploration
+- **Entities**: Multi-entity management across all graphs
+- **AI Chat**: Natural language interface for financial queries and analysis
+- **API Keys**: Secure programmatic access with `rlap_` bearer tokens
+- **Settings**: User profile and notification preferences
+
+### In Development
+
+- **Reports**: Custom report builder with fact grids, templates, and multi-format export (PDF, Excel, CSV)
+- **Plaid Connections**: Direct bank feeds for transaction synchronization
+- **SEC XBRL**: Process SEC filings with US-GAAP taxonomy element mapping
+- **Process Automation**: Visual workflow builder with scheduled tasks and triggers
+- **Scheduled Reports**: Automated report generation and distribution
 
 ## Quick Start
 
-### Development Environment
-
 ```bash
-# Clone the repository
-git clone https://github.com/RoboFinSystems/roboledger-app.git
-cd roboledger-app
-
-# Install dependencies
-npm install
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your API credentials
-
-# Start development server
-npm run dev
+npm install              # Install dependencies
+cp .env.example .env     # Configure environment (edit with your API endpoint)
+npm run dev              # Start development server
 ```
 
-The application will be available at: http://localhost:3001
-
-### Docker Development
-
-```bash
-# Build and run with Docker
-docker build -t roboledger-app .
-docker run -p 3001:3000 --env-file .env roboledger-app
-```
+The application will be available at http://localhost:3001
 
 ## Development Commands
 
@@ -56,25 +48,34 @@ docker run -p 3001:3000 --env-file .env roboledger-app
 
 ```bash
 npm run dev              # Start development server (port 3001)
-npm run build           # Production build with optimization
-```
-
-### Code Quality
-
-```bash
-npm run lint            # ESLint validation
-npm run lint:fix        # Auto-fix linting issues
-npm run format          # Prettier code formatting
-npm run format:check    # Check formatting compliance
-npm run typecheck       # TypeScript type checking
+npm run build            # Production build
+npm run build:dev        # Development build test
 ```
 
 ### Testing
 
 ```bash
-npm run test            # Run Vitest test suite
-npm run test:watch      # Interactive test watch mode
-npm run test:coverage   # Generate coverage report
+npm run test:all         # All tests and code quality checks
+npm run test             # Run Vitest test suite
+npm run test:coverage    # Generate coverage report
+```
+
+### Code Quality
+
+```bash
+npm run lint             # ESLint validation
+npm run lint:fix         # Auto-fix linting issues
+npm run format           # Prettier code formatting
+npm run format:check     # Check formatting compliance
+npm run typecheck        # TypeScript type checking
+```
+
+### Core Subtree Management
+
+```bash
+npm run core:pull        # Pull latest core subtree updates
+npm run core:push        # Push core subtree changes
+npm run core:add         # Add core subtree (initial setup)
 ```
 
 ### Prerequisites
@@ -82,119 +83,91 @@ npm run test:coverage   # Generate coverage report
 #### System Requirements
 
 - Node.js 22+ (LTS recommended)
-- npm 10+ or yarn 1.22+
+- npm 10+
 - 4GB RAM minimum
 - Modern browser (Chrome, Firefox, Safari, Edge)
 
 #### Required Services
 
-- RoboSystems API endpoint (production or development)
+- RoboSystems API endpoint (local development or production)
 - Intuit Developer account (for QuickBooks OAuth)
-- Optional: AWS account for production deployment
+- Plaid account (for bank connections) — optional
+
+#### Deployment Requirements
+
+- Fork this repo (and the [robosystems](https://github.com/RoboFinSystems/robosystems) backend)
+- AWS account with IAM Identity Center (SSO)
+- Run `npm run setup:bootstrap` to configure OIDC and GitHub variables
+
+See the **[Bootstrap Guide](https://github.com/RoboFinSystems/robosystems/wiki/Bootstrap-Guide)** for complete instructions including access modes (internal, public-http, public).
 
 ## Architecture
 
-### Application Layer
+**Application Layer:**
 
-- **Next.js 15 App Router** with React Server Components for optimal performance
-- **TypeScript 5** for type safety and developer experience
-- **Flowbite React Components** with Tailwind CSS for consistent UI
-- **RoboSystems Client SDK** for API communication and authentication
+- Next.js 15 App Router with React Server Components
+- TypeScript 5 for type safety
+- Flowbite React with Tailwind CSS for UI components
+- NextAuth.js for authentication with OAuth providers (QuickBooks)
+- RoboSystems Client SDK for API communication
 
-### Key Application Features
+**Key Features:**
 
-#### Dashboard (`/app/(app)/dashboard/`)
+- **Dashboard**: Financial overview with account balances, recent transactions, and AI-powered insights
+- **Ledger**: Double-entry accounting with chart of accounts, journal entries, trial balance, and account mappings
+- **Reports**: Custom report builder with fact grids, templates, and multi-format export (PDF, Excel, CSV) — *in development*
+- **Connections**: Data source management for QuickBooks sync, Plaid bank feeds, and SEC filings
+- **Console**: Interactive Cypher query terminal for direct graph exploration
+- **Entities**: Multi-entity management across all graphs with parent/subsidiary relationships
+- **AI Chat**: Natural language interface for financial queries and analysis
 
-The primary interface for financial overview:
+**Data Integrations:**
 
-- **Financial Summary**: Key metrics and account balances at a glance
-- **Recent Transactions**: Latest activity across all accounts
-- **AI Insights**: Claude-powered analysis of financial trends
+- **QuickBooks**: OAuth 2.0 authentication, company data import, transaction sync, automatic trial balance
+- **Plaid**: Bank authentication via Plaid Link, multi-institution support, transaction feeds — *in development*
+- **SEC XBRL**: CIK lookup, filing downloads (10-K, 10-Q, 8-K), US-GAAP element mapping — *in development*
 
-#### Ledger (`/app/(app)/ledger/`)
+**Core Library (`/src/lib/core/`):**
 
-Double-entry accounting interface:
+Shared modules maintained as a git subtree across RoboSystems frontend apps:
 
-- **Chart of Accounts**: Hierarchical account structure management
-- **Journal Entries**: Create and review journal entries
-- **Trial Balance**: Real-time trial balance with drill-down capability
-- **Financial Statements**: Balance sheet, income statement, cash flow
+- Auth components (login, register, password reset)
+- Session management and JWT handling
+- Graph creation wizard and shared components
+- Layout, forms, chat, and settings components
+- User, company, graph, and credit contexts
+- SSE-based background job progress tracking
 
-#### Reports (`/app/(app)/reports/`)
+**Infrastructure:**
 
-Financial reporting and analysis:
+- ECS Fargate with auto-scaling and Spot capacity
+- S3 + CloudFront for static asset hosting
+- CloudFormation templates in `/cloudformation/`
 
-- **Report Builder**: Create custom financial reports
-- **Report Templates**: Pre-built templates for common reports
-- **Export Options**: PDF, Excel, and CSV export
-- **Scheduled Reports**: Automated report generation and distribution
+## CI/CD
 
-#### Process Automation (`/app/(app)/processes/`)
+### Workflows
 
-RPA tools for workflow automation:
+- **`prod.yml`**: Production deployment to roboledger.ai
+- **`staging.yml`**: Staging deployment to staging.roboledger.ai
+- **`test.yml`**: Automated testing on pull requests
+- **`build.yml`**: Docker image building for ECR
 
-- **Process Designer**: Visual workflow builder
-- **Scheduled Tasks**: Automated recurring processes
-- **Integration Triggers**: Event-driven automation
+### Infrastructure
 
-#### Companies (`/app/(app)/companies/`)
-
-Multi-company management:
-
-- **Company Setup**: Configure company settings and preferences
-- **QuickBooks Sync**: Connect and sync with QuickBooks
-- **Bank Connections**: Plaid integration for bank feeds
-
-### Core Library (`/src/lib/core/`)
-
-Shared authentication and utility modules maintained as a git subtree:
-
-- **Auth Components**: Login/register forms with RoboLedger branding
-- **Auth Core**: Session management and JWT handling
-- **UI Components**: Consistent interface elements across RoboSystems apps
-- **Contexts**: User, company, and credit system contexts
-
-### GitHub Actions Workflows
-
-#### Primary Deployment Workflows
-
-- **`prod.yml`**: Production deployment pipeline
-  - Manual deployment via workflow_dispatch
-  - Deploys to roboledger.ai with S3 static hosting
-  - Full testing, build, and ECS deployment
-  - Auto-scaling configuration with Fargate Spot
-
-- **`staging.yml`**: Staging environment deployment
-  - Manual workflow dispatch
-  - Deploys to staging.roboledger.ai
-  - Integration testing environment
-
-- **`test.yml`**: Automated testing suite
-  - Runs on pull requests and main branch
-  - TypeScript, ESLint, and Prettier checks
-  - Vitest unit and integration tests
-  - Build verification
-
-- **`build.yml`**: Docker image building
-  - Multi-architecture support (AMD64/ARM64)
-  - Pushes to Amazon ECR
-  - Static asset upload to S3
-
-### CloudFormation Templates
-
-Infrastructure as Code templates in `/cloudformation/`:
-
-- **`template.yaml`**: Complete ECS Fargate stack with auto-scaling
-- **`s3.yaml`**: Static asset hosting for CloudFront CDN
+- **ECS Fargate** with auto-scaling and Spot capacity
+- **S3 + CloudFront** for static asset hosting
+- **CloudFormation** templates in `/cloudformation/`
 
 ## Support
 
-- Issues: [GitHub Issues](https://github.com/RoboFinSystems/roboledger-app/issues)
-- Discussions: [GitHub Discussions](https://github.com/RoboFinSystems/roboledger-app/discussions)
-- Wiki: [GitHub Wiki](https://github.com/RoboFinSystems/roboledger-app/wiki)
+- [Issues](https://github.com/RoboFinSystems/roboledger-app/issues)
+- [Wiki](https://github.com/RoboFinSystems/robosystems/wiki)
+- [Projects](https://github.com/orgs/RoboFinSystems/projects)
+- [Discussions](https://github.com/orgs/RoboFinSystems/discussions)
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+Apache License 2.0 - see [LICENSE](LICENSE) for details.
 
 Apache-2.0 © 2025 RFS LLC
