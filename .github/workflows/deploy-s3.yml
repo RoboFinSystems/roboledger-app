@@ -3,6 +3,12 @@ name: Deploy S3
 on:
   workflow_call:
     inputs:
+      runner_config:
+        required: false
+        type: string
+        description: 'Runner configuration JSON (from runner availability check)'
+        default: '["ubuntu-latest"]'
+
       # Stack & Environment Configuration
       stack_name:
         description: 'CloudFormation stack name'
@@ -39,12 +45,6 @@ on:
       static_assets_bucket_domain:
         description: 'Regional domain name of the static assets S3 bucket'
         value: ${{ jobs.action.outputs.static_assets_bucket_domain }}
-      www_redirect_bucket_name:
-        description: 'Name of the www redirect S3 bucket'
-        value: ${{ jobs.action.outputs.www_redirect_bucket_name }}
-      www_redirect_bucket_url:
-        description: 'Website URL of the www redirect S3 bucket'
-        value: ${{ jobs.action.outputs.www_redirect_bucket_url }}
 
     secrets:
       ACTIONS_TOKEN:
@@ -52,7 +52,7 @@ on:
 
 jobs:
   action:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(inputs.runner_config) }}
     timeout-minutes: 15
     permissions:
       id-token: write
@@ -61,8 +61,6 @@ jobs:
       static_assets_bucket_name: ${{ steps.stack-outputs.outputs.static_assets_bucket_name }}
       static_assets_bucket_arn: ${{ steps.stack-outputs.outputs.static_assets_bucket_arn }}
       static_assets_bucket_domain: ${{ steps.stack-outputs.outputs.static_assets_bucket_domain }}
-      www_redirect_bucket_name: ${{ steps.stack-outputs.outputs.www_redirect_bucket_name }}
-      www_redirect_bucket_url: ${{ steps.stack-outputs.outputs.www_redirect_bucket_url }}
 
     steps:
       - name: Checkout
@@ -182,34 +180,6 @@ jobs:
             echo "Found Static Assets Bucket Domain: $STATIC_ASSETS_BUCKET_DOMAIN"
           else
             echo "Warning: Could not retrieve Static Assets Bucket Domain Name"
-          fi
-
-          # Get WWW Redirect Bucket Name (production only)
-          if [ "${{ inputs.environment }}" == "prod" ]; then
-            WWW_REDIRECT_BUCKET_NAME=$(aws cloudformation describe-stacks \
-              --stack-name ${{ inputs.stack_name }} \
-              --query "Stacks[0].Outputs[?OutputKey=='WwwRedirectBucketName'].OutputValue" \
-              --output text)
-
-            if [ -n "$WWW_REDIRECT_BUCKET_NAME" ]; then
-              echo "www_redirect_bucket_name=$WWW_REDIRECT_BUCKET_NAME" >> $GITHUB_OUTPUT
-              echo "Found WWW Redirect Bucket Name: $WWW_REDIRECT_BUCKET_NAME"
-            else
-              echo "Warning: Could not retrieve WWW Redirect Bucket Name"
-            fi
-
-            # Get WWW Redirect Bucket Website URL
-            WWW_REDIRECT_BUCKET_URL=$(aws cloudformation describe-stacks \
-              --stack-name ${{ inputs.stack_name }} \
-              --query "Stacks[0].Outputs[?OutputKey=='WwwRedirectBucketWebsiteURL'].OutputValue" \
-              --output text)
-
-            if [ -n "$WWW_REDIRECT_BUCKET_URL" ]; then
-              echo "www_redirect_bucket_url=$WWW_REDIRECT_BUCKET_URL" >> $GITHUB_OUTPUT
-              echo "Found WWW Redirect Bucket Website URL: $WWW_REDIRECT_BUCKET_URL"
-            else
-              echo "Warning: Could not retrieve WWW Redirect Bucket Website URL"
-            fi
           fi
 
       - name: Update Deployment Status

@@ -68,6 +68,7 @@ jobs:
     needs: [runner, test, create-deployment]
     uses: ./.github/workflows/deploy-s3.yml
     with:
+      runner_config: ${{ needs.runner.outputs.runner_config }}
       stack_name: RoboLedgerAppS3Prod
       environment: ${{ vars.ENVIRONMENT_PROD || 'prod' }}
       aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
@@ -80,6 +81,7 @@ jobs:
     uses: ./.github/workflows/build.yml
     needs: [runner, test, deploy-s3]
     with:
+      runner_config: ${{ needs.runner.outputs.runner_config }}
       environment: ${{ vars.ENVIRONMENT_PROD || 'prod' }}
       region: ${{ vars.AWS_REGION || 'us-east-1' }}
       robosystems_api_url: ${{ vars.ROBOSYSTEMS_API_URL_PROD || 'https://api.robosystems.ai' }}

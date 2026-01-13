@@ -56,7 +56,21 @@
       "problemMatcher": []
     },
     {
-      "label": "Bootstrap OIDC",
+      "label": "AWS SSO Login",
+      "type": "shell",
+      "command": "aws",
+      "args": ["sso", "login"],
+      "problemMatcher": []
+    },
+    {
+      "label": "AWS STS Identity",
+      "type": "shell",
+      "command": "aws",
+      "args": ["sts", "get-caller-identity"],
+      "problemMatcher": []
+    },
+    {
+      "label": "RoboLedger App Bootstrap OIDC",
       "type": "shell",
       "command": "npm run setup:bootstrap",
       "problemMatcher": []
