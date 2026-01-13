@@ -73,7 +73,7 @@ jobs:
       environment: ${{ vars.ENVIRONMENT_PROD || 'prod' }}
       aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
       aws_region: ${{ vars.AWS_REGION || 'us-east-1' }}
-      domain_name: ${{ vars.DOMAIN_NAME_PROD || 'roboledger.ai' }}
+      namespace: ${{ vars.AWS_ACCOUNT_ID }}
     secrets:
       ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
 
@@ -90,6 +90,7 @@ jobs:
       robosystems_app_url: ${{ vars.ROBOSYSTEMS_APP_URL_PROD || 'https://robosystems.ai' }}
       maintenance_mode: ${{ vars.MAINTENANCE_MODE_PROD || 'false' }}
       turnstile_site_key: ${{ vars.TURNSTILE_SITE_KEY || '' }}
+      static_assets_bucket_name: ${{ needs.deploy-s3.outputs.static_assets_bucket_name }}
       # Docker Hub publishing: only when explicitly enabled AND deploying from a version tag or release branch
       # Set DOCKERHUB_PUBLISHING_ENABLED to 'true' in GitHub variables when ready to publish
       # Supports: refs/tags/v*.*.* (releases) and refs/heads/release/* (hotfixes)
@@ -100,7 +101,7 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   deploy-app:
-    needs: [runner, create-deployment, build]
+    needs: [runner, create-deployment, deploy-s3, build]
     uses: ./.github/workflows/deploy-app.yml
     with:
       # GHA Runner Configuration
@@ -110,7 +111,12 @@ jobs:
       aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
       aws_region: ${{ vars.AWS_REGION || 'us-east-1' }}
       stack_name: RoboLedgerAppProd
-      s3_stack_name: RoboLedgerAppS3Prod
+      # Access Mode Configuration
+      app_access_mode: ${{ vars.APP_ACCESS_MODE_PROD || 'public' }}
+      # S3 Bucket Configuration (from deploy-s3 outputs)
+      static_assets_bucket_name: ${{ needs.deploy-s3.outputs.static_assets_bucket_name }}
+      static_assets_bucket_arn: ${{ needs.deploy-s3.outputs.static_assets_bucket_arn }}
+      static_assets_bucket_domain: ${{ needs.deploy-s3.outputs.static_assets_bucket_domain }}
       # Container & Application Configuration
       ecr_repository: ${{ vars.ECR_REPOSITORY || 'roboledger-app' }}
       ecr_image_tag: latest
@@ -126,7 +132,7 @@ jobs:
       scale_down_cpu_threshold: ${{ vars.SCALE_DOWN_CPU_THRESHOLD_PROD || '30' }}
       scale_up_memory_threshold: ${{ vars.SCALE_UP_MEMORY_THRESHOLD_PROD || '65' }}
       scale_down_memory_threshold: ${{ vars.SCALE_DOWN_MEMORY_THRESHOLD_PROD || '25' }}
-      # Domain & DNS Configuration
+      # Domain & DNS Configuration (required for public mode)
       domain_name: ${{ vars.DOMAIN_NAME_PROD || 'roboledger.ai' }}
       domain_name_root: ${{ vars.DOMAIN_NAME_ROOT || 'roboledger.ai' }}
       # SNS Configuration

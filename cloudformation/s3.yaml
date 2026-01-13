@@ -11,9 +11,13 @@ Parameters:
     Description: Environment name (prod, staging, or dev)
     ConstraintDescription: Environment must be prod, staging, or dev
 
-  DomainName:
+  Namespace:
     Type: String
-    Description: Full domain name for the application (e.g., roboledger.ai)
+    Default: ""
+    Description: |
+      S3 bucket namespace (typically AWS account ID) for globally unique bucket names.
+      When provided, creates buckets like: roboledger-app-{namespace}-{env}-static-assets
+      When empty (default), uses: roboledger-app-{env}-static-assets (backwards compatible)
 
   ServiceTag:
     Type: String
@@ -25,6 +29,9 @@ Parameters:
     Default: App
     Description: Tag value for Component identification
 
+Conditions:
+  HasNamespace: !Not [!Equals [!Ref Namespace, ""]]
+
 Resources:
   # S3 Bucket for Static Assets
   StaticAssetsBucket:
@@ -32,7 +39,10 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Properties:
-      BucketName: !Sub roboledger-app-${Environment}-static-assets
+      BucketName: !If
+        - HasNamespace
+        - !Sub roboledger-app-${Namespace}-${Environment}-static-assets
+        - !Sub roboledger-app-${Environment}-static-assets
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -52,17 +62,11 @@ Outputs:
   StaticAssetsBucketName:
     Description: S3 Bucket for static assets
     Value: !Ref StaticAssetsBucket
-    Export:
-      Name: !Sub ${AWS::StackName}-StaticAssetsBucketName
 
   StaticAssetsBucketArn:
     Description: S3 Bucket ARN for static assets
     Value: !GetAtt StaticAssetsBucket.Arn
-    Export:
-      Name: !Sub ${AWS::StackName}-StaticAssetsBucketArn
 
   StaticAssetsBucketDomainName:
     Description: S3 Bucket Regional Domain Name for static assets
     Value: !GetAtt StaticAssetsBucket.RegionalDomainName
-    Export:
-      Name: !Sub ${AWS::StackName}-StaticAssetsBucketDomainName
