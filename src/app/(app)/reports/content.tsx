@@ -43,122 +43,6 @@ const REPORT_TYPE_COLORS: Record<string, string> = {
   '8-K': 'purple',
 }
 
-// Mock data for screenshots
-const MOCK_REPORTS: ReportWithGraph[] = [
-  {
-    identifier: 'rpt-2025-q4-001',
-    uri: 'urn:report:2025-q4-001',
-    name: 'Q4 2025 Financial Statements',
-    accessionNumber: '0001234567-25-000001',
-    form: '10-Q',
-    filingDate: '2025-01-15',
-    reportDate: '2025-01-15',
-    periodEndDate: '2025-12-31',
-    processed: true,
-    updatedAt: '2025-01-15T10:30:00Z',
-    entityName: 'Acme Corporation',
-    factCount: 1247,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'rpt-2025-10k-001',
-    uri: 'urn:report:2025-10k-001',
-    name: '2025 Annual Report',
-    accessionNumber: '0001234567-25-000002',
-    form: '10-K',
-    filingDate: '2025-02-28',
-    reportDate: '2025-02-28',
-    periodEndDate: '2025-12-31',
-    processed: true,
-    updatedAt: '2025-02-28T14:00:00Z',
-    entityName: 'Acme Corporation',
-    factCount: 3856,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'rpt-2025-q3-001',
-    uri: 'urn:report:2025-q3-001',
-    name: 'Q3 2025 Financial Statements',
-    accessionNumber: '0001234567-24-000045',
-    form: '10-Q',
-    filingDate: '2025-10-30',
-    reportDate: '2025-10-30',
-    periodEndDate: '2025-09-30',
-    processed: true,
-    updatedAt: '2025-10-30T09:15:00Z',
-    entityName: 'Acme Corporation',
-    factCount: 1189,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'rpt-2025-q2-001',
-    uri: 'urn:report:2025-q2-001',
-    name: 'Q2 2025 Financial Statements',
-    accessionNumber: '0001234567-24-000032',
-    form: '10-Q',
-    filingDate: '2025-07-31',
-    reportDate: '2025-07-31',
-    periodEndDate: '2025-06-30',
-    processed: true,
-    updatedAt: '2025-07-31T11:45:00Z',
-    entityName: 'Acme Corporation',
-    factCount: 1156,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'rpt-2025-8k-001',
-    uri: 'urn:report:2025-8k-001',
-    name: 'Current Report - Material Event',
-    accessionNumber: '0001234567-24-000028',
-    form: '8-K',
-    filingDate: '2025-06-15',
-    reportDate: '2025-06-15',
-    periodEndDate: '2025-06-15',
-    processed: true,
-    updatedAt: '2025-06-15T16:30:00Z',
-    entityName: 'Acme Corporation',
-    factCount: 45,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'rpt-2025-monthly-dec',
-    uri: 'urn:report:2025-monthly-dec',
-    name: 'December 2025 Monthly Report',
-    accessionNumber: '',
-    form: 'MONTHLY',
-    filingDate: '2025-01-05',
-    reportDate: '2025-01-05',
-    periodEndDate: '2025-12-31',
-    processed: true,
-    updatedAt: '2025-01-05T08:00:00Z',
-    entityName: 'Acme Corporation',
-    factCount: 328,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'rpt-2025-monthly-nov',
-    uri: 'urn:report:2025-monthly-nov',
-    name: 'November 2025 Monthly Report',
-    accessionNumber: '',
-    form: 'MONTHLY',
-    filingDate: '2025-12-05',
-    reportDate: '2025-12-05',
-    periodEndDate: '2025-11-30',
-    processed: true,
-    updatedAt: '2025-12-05T08:00:00Z',
-    entityName: 'Acme Corporation',
-    factCount: 312,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-]
-
 interface ReportWithGraph extends Report {
   _graphId: string
   _graphName: string
@@ -269,12 +153,7 @@ const ReportsContent: FC = function () {
             new Date(b.reportDate).getTime() - new Date(a.reportDate).getTime()
         )
 
-        // Use mock data if no real reports found (for screenshots)
-        if (allReports.length === 0) {
-          setReports(MOCK_REPORTS)
-        } else {
-          setReports(allReports)
-        }
+        setReports(allReports)
       } catch (err) {
         console.error('Error loading reports:', err)
         setError('Failed to load reports. Please try again.')
