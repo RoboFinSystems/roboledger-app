@@ -84,7 +84,7 @@
     {
       "label": "Create Feature",
       "type": "shell",
-      "command": "npm run feature:create ${input:branchType} ${input:branchName} ${input:baseBranch}",
+      "command": "npm run feature:create ${input:branchType} ${input:branchName} ${input:baseBranch} ${input:updateDependencies}",
       "problemMatcher": []
     },
     {
@@ -121,6 +121,13 @@
       "label": "Setup GitHub Actions",
       "type": "shell",
       "command": "npm run setup:gha",
+      "problemMatcher": []
+    },
+    {
+      "label": "Claude Code",
+      "type": "shell",
+      "command": "claude",
+      "args": [],
       "problemMatcher": []
     }
   ],
@@ -164,6 +171,13 @@
       "type": "promptString",
       "description": "Enter base branch (default: main):",
       "default": "main"
+    },
+    {
+      "id": "updateDependencies",
+      "type": "pickString",
+      "description": "Update dependencies after creating branch:",
+      "default": "yes",
+      "options": ["yes", "no"]
     },
     {
       "id": "targetBranch",
