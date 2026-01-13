@@ -35,6 +35,11 @@ on:
         required: false
         type: string
         default: ''
+      static_assets_bucket_name:
+        required: false
+        type: string
+        description: 'S3 bucket name for static assets (from deploy-s3 outputs). If not provided, uses legacy naming pattern.'
+        default: ''
       publish_to_dockerhub:
         required: false
         type: boolean
@@ -134,7 +139,8 @@ jobs:
 
       - name: Sync static assets to S3
         env:
-          S3_BUCKET: roboledger-app-${{ inputs.environment }}-static-assets
+          # Use bucket name from deploy-s3 outputs if provided, otherwise use legacy naming
+          S3_BUCKET: ${{ inputs.static_assets_bucket_name || format('roboledger-app-{0}-static-assets', inputs.environment) }}
         run: |
           # Check if S3 bucket exists
           if aws s3api head-bucket --bucket "$S3_BUCKET" 2>/dev/null; then

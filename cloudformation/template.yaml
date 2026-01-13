@@ -9,8 +9,8 @@ Parameters:
       - prod
       - staging
       - dev
-    Description: Environment name (prod, staging, dev)
-    ConstraintDescription: Must be prod, staging, or dev
+    Description: Environment name (prod, staging, or dev)
+    ConstraintDescription: Environment must be prod, staging, or dev
 
   AWSAccountId:
     Type: String
@@ -42,18 +42,43 @@ Parameters:
     Default: pl-3b927c52 # CloudFront origin facing prefix list (global)
     Description: Managed prefix list ID for CloudFront origins
 
-  # Domain & DNS Configuration
+  # Access Mode Configuration
+  AppAccessMode:
+    Type: String
+    Default: public
+    AllowedValues:
+      - public
+      - public-http
+      - internal
+    Description: |
+      App access mode:
+      - public: CloudFront + custom domain + HTTPS (requires DomainName and HostedZoneId)
+      - public-http: CloudFront with AWS DNS, no custom domain needed
+      - internal: Internal ALB only, access via bastion tunnel
+
+  # Domain & DNS Configuration (required only when AppAccessMode=public)
   DomainName:
     Type: String
-    Description: Full domain name for the application (e.g., roboledger.ai)
+    Default: ''
+    Description: Full domain name for the application (e.g., roboledger.ai). Required for public mode.
 
   HostedZoneId:
     Type: String
-    Description: Route53 Hosted Zone ID for the domain
+    Default: ''
+    Description: Route53 Hosted Zone ID for the domain. Required for public mode.
 
-  S3StackName:
+  # S3 Bucket Configuration (passed from deploy-s3 workflow outputs)
+  StaticAssetsBucketName:
     Type: String
-    Description: Name of the S3 stack to import bucket resources from (e.g., RoboLedgerAppS3Prod)
+    Description: S3 bucket name for static assets (from deploy-s3 workflow)
+
+  StaticAssetsBucketArn:
+    Type: String
+    Description: S3 bucket ARN for static assets (from deploy-s3 workflow)
+
+  StaticAssetsBucketDomainName:
+    Type: String
+    Description: S3 bucket regional domain name for static assets (from deploy-s3 workflow)
 
   # Container & Application Configuration
   ECRRepository:
@@ -183,10 +208,21 @@ Parameters:
     Description: Email address for admin notifications (leave empty to skip SNS setup)
 
 Conditions:
-  # Check if we're in production environment for www redirect
-  IsProduction: !Equals
-    - !Ref Environment
-    - prod
+  # Access mode conditions
+  IsPublicMode: !Equals [!Ref AppAccessMode, 'public']
+  IsPublicHttpMode: !Equals [!Ref AppAccessMode, 'public-http']
+  IsInternalMode: !Equals [!Ref AppAccessMode, 'internal']
+
+  # CloudFront is used in public and public-http modes
+  HasCloudFront: !Or
+    - !Equals [!Ref AppAccessMode, 'public']
+    - !Equals [!Ref AppAccessMode, 'public-http']
+
+  # Check if we're in production environment for www redirect (only applies to public mode)
+  IsProduction: !Equals [!Ref Environment, 'prod']
+  IsProductionPublic: !And
+    - !Equals [!Ref Environment, 'prod']
+    - !Equals [!Ref AppAccessMode, 'public']
 
   # Check if SNS notification should be created
   CreateSNSTopic: !Not
@@ -195,10 +231,11 @@ Conditions:
       - ''
 
 Resources:
-  # ACM Certificate
+  # ACM Certificate (only for public mode with custom domain)
   # Note: CloudFront requires certificates to be in us-east-1
   AppCertificate:
     Type: AWS::CertificateManager::Certificate
+    Condition: IsPublicMode
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Properties:
@@ -400,27 +437,44 @@ Resources:
         - Key: CreatedBy
           Value: CloudFormation
 
-  # Security Group Rule - CloudFront to ALB
-  CloudFrontToALBSecurityGroupIngress:
+  # Security Group Rule - CloudFront HTTPS to ALB (public mode only)
+  # In public mode, CloudFront connects to ALB via HTTPS
+  CloudFrontHTTPSToALBSecurityGroupIngress:
     Type: AWS::EC2::SecurityGroupIngress
+    Condition: IsPublicMode
     Properties:
       GroupId: !Ref ALBSecurityGroup
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
       SourcePrefixListId: !Ref CloudFrontManagedPrefixListId
-      Description: Allow HTTPS traffic from CloudFront
+      Description: Allow HTTPS traffic from CloudFront (public mode)
 
-  # Security Group Rule - Public HTTP to ALB (for redirect)
-  PublicHTTPToALBSecurityGroupIngress:
+  # Security Group Rule - CloudFront HTTP to ALB (public-http mode only)
+  # In public-http mode, CloudFront connects to ALB via HTTP (no cert on ALB)
+  CloudFrontHTTPToALBSecurityGroupIngress:
     Type: AWS::EC2::SecurityGroupIngress
+    Condition: IsPublicHttpMode
     Properties:
       GroupId: !Ref ALBSecurityGroup
       IpProtocol: tcp
       FromPort: 80
       ToPort: 80
-      CidrIp: 0.0.0.0/0
-      Description: Allow HTTP traffic for redirect to HTTPS
+      SourcePrefixListId: !Ref CloudFrontManagedPrefixListId
+      Description: Allow HTTP traffic from CloudFront (public-http mode)
+
+  # Security Group Rule - VPC to Internal ALB (internal mode only)
+  # In internal mode, access via bastion tunnel only
+  VPCToInternalALBSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: IsInternalMode
+    Properties:
+      GroupId: !Ref ALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIp: 10.0.0.0/8
+      Description: Allow HTTP traffic from VPC (internal mode via bastion tunnel)
 
   # Security Group Rule - ALB to App
   ALBToAppSecurityGroupIngress:
@@ -440,10 +494,12 @@ Resources:
     UpdateReplacePolicy: Retain
     Properties:
       Name: !Sub roboledger-${Environment}-alb
-      Subnets: !Ref PublicSubnetIds
+      # Use private subnets for internal mode, public subnets otherwise
+      Subnets: !If [IsInternalMode, !Ref SubnetIds, !Ref PublicSubnetIds]
       SecurityGroups:
         - !Ref ALBSecurityGroup
-      Scheme: internet-facing
+      # Internal scheme for internal mode, internet-facing otherwise
+      Scheme: !If [IsInternalMode, 'internal', 'internet-facing']
       IpAddressType: ipv4
       LoadBalancerAttributes:
         - Key: idle_timeout.timeout_seconds
@@ -460,7 +516,9 @@ Resources:
         - Key: CreatedBy
           Value: CloudFormation
 
-  # HTTP Listener (redirects to HTTPS)
+  # HTTP Listener - behavior depends on access mode:
+  # - public mode: redirects to HTTPS
+  # - public-http/internal mode: forwards to target group
   AppHTTPListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     DeletionPolicy: Delete
@@ -470,15 +528,20 @@ Resources:
       Port: 80
       Protocol: HTTP
       DefaultActions:
-        - Type: redirect
-          RedirectConfig:
-            Protocol: HTTPS
-            Port: '443'
-            StatusCode: HTTP_301
+        - !If
+          - IsPublicMode
+          - Type: redirect
+            RedirectConfig:
+              Protocol: HTTPS
+              Port: '443'
+              StatusCode: HTTP_301
+          - Type: forward
+            TargetGroupArn: !Ref AppTargetGroup
 
-  # HTTPS Listener
+  # HTTPS Listener (only for public mode with custom domain and certificate)
   AppHTTPSListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: IsPublicMode
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Properties:
@@ -528,8 +591,8 @@ Resources:
   # ECS Service
   EcsService:
     Type: AWS::ECS::Service
+    # Note: DependsOn cannot be conditional, but HTTP listener always exists
     DependsOn:
-      - AppHTTPSListener
       - AppHTTPListener
     Properties:
       Cluster: !Ref AppCluster
@@ -840,12 +903,12 @@ Resources:
         - Key: CreatedBy
           Value: CloudFormation
 
-  # Bucket Policy for CloudFront Access
+  # Bucket Policy for CloudFront Access (only when CloudFront is used)
   StaticAssetsBucketPolicy:
     Type: AWS::S3::BucketPolicy
+    Condition: HasCloudFront
     Properties:
-      Bucket:
-        Fn::ImportValue: !Sub ${S3StackName}-StaticAssetsBucketName
+      Bucket: !Ref StaticAssetsBucketName
       PolicyDocument:
         Statement:
           - Sid: AllowCloudFrontServicePrincipal
@@ -853,17 +916,15 @@ Resources:
             Principal:
               Service: cloudfront.amazonaws.com
             Action: s3:GetObject
-            Resource: !Sub
-              - ${BucketArn}/*
-              - BucketArn:
-                  Fn::ImportValue: !Sub ${S3StackName}-StaticAssetsBucketArn
+            Resource: !Sub ${StaticAssetsBucketArn}/*
             Condition:
               StringEquals:
                 AWS:SourceArn: !Sub arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
 
-  # CloudFront Origin Access Control
+  # CloudFront Origin Access Control (only when CloudFront is used)
   CloudFrontOAC:
     Type: AWS::CloudFront::OriginAccessControl
+    Condition: HasCloudFront
     Properties:
       OriginAccessControlConfig:
         Name: !Sub roboledger-${Environment}-oac
@@ -871,37 +932,44 @@ Resources:
         SigningBehavior: always
         SigningProtocol: sigv4
 
-  # CloudFront Distribution
+  # CloudFront Distribution (only when CloudFront is used - public or public-http modes)
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
+    Condition: HasCloudFront
     Properties:
       DistributionConfig:
         Comment: !Sub RoboLedger ${Environment} Distribution
         Enabled: true
         PriceClass: PriceClass_100 # Use only North America and Europe for cost savings
         HttpVersion: http2
-        Aliases:
-          - !Ref DomainName
-        ViewerCertificate:
-          AcmCertificateArn: !Ref AppCertificate
-          SslSupportMethod: sni-only
-          MinimumProtocolVersion: TLSv1.2_2021
+        # Aliases only for public mode (custom domain)
+        Aliases: !If
+          - IsPublicMode
+          - [!Ref DomainName]
+          - !Ref AWS::NoValue
+        # Certificate configuration depends on mode
+        ViewerCertificate: !If
+          - IsPublicMode
+          - AcmCertificateArn: !Ref AppCertificate
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+          - CloudFrontDefaultCertificate: true
         DefaultRootObject: ''
         Origins:
           # Origin for static assets (S3)
           - Id: S3-Static-Assets
-            DomainName:
-              Fn::ImportValue: !Sub ${S3StackName}-StaticAssetsBucketDomainName
+            DomainName: !Ref StaticAssetsBucketDomainName
             S3OriginConfig:
               OriginAccessIdentity: ''
             OriginAccessControlId: !Ref CloudFrontOAC
           # Origin for dynamic content (ALB)
+          # For public mode: HTTPS, for public-http: HTTP (no cert on ALB)
           - Id: ALB-Dynamic-Content
             DomainName: !GetAtt AppLoadBalancer.DNSName
             CustomOriginConfig:
               HTTPPort: 80
               HTTPSPort: 443
-              OriginProtocolPolicy: https-only
+              OriginProtocolPolicy: !If [IsPublicMode, 'https-only', 'http-only']
               OriginSSLProtocols:
                 - TLSv1.2
         DefaultCacheBehavior:
@@ -981,9 +1049,11 @@ Resources:
           Value: CloudFormation
 
   # CloudFront Function for www to apex redirect
+  # This function runs at the edge and redirects www.domain.com to domain.com
+  # Only created for production + public mode (requires custom domain)
   WwwRedirectFunction:
     Type: AWS::CloudFront::Function
-    Condition: IsProduction
+    Condition: IsProductionPublic
     Properties:
       Name: !Sub roboledger-app-${Environment}-www-redirect
       AutoPublish: true
@@ -992,16 +1062,17 @@ Resources:
           var request = event.request;
           var host = request.headers.host.value;
           var uri = request.uri;
+          var querystring = request.querystring;
 
-          // Remove www. prefix from the host
+          // Build the redirect URL
           var newHost = host.replace(/^www\./, '');
-
-          // Preserve query string if present (URL encode to prevent malformed redirects)
           var qs = '';
-          if (Object.keys(request.querystring).length > 0) {
+
+          // Reconstruct query string if present (URL encode to prevent malformed redirects)
+          if (Object.keys(querystring).length > 0) {
             var params = [];
-            for (var key in request.querystring) {
-              var param = request.querystring[key];
+            for (var key in querystring) {
+              var param = querystring[key];
               var encodedKey = encodeURIComponent(key);
               if (param.multiValue) {
                 param.multiValue.forEach(function(v) {
@@ -1013,9 +1084,7 @@ Resources:
                 params.push(encodedKey);
               }
             }
-            if (params.length > 0) {
-              qs = '?' + params.join('&');
-            }
+            qs = '?' + params.join('&');
           }
 
           return {
@@ -1028,13 +1097,15 @@ Resources:
           };
         }
       FunctionConfig:
-        Comment: !Sub Redirect www.${DomainName} to ${DomainName}
+        Comment: Redirects www.roboledger.ai to roboledger.ai
         Runtime: cloudfront-js-2.0
 
   # CloudFront Distribution for www redirect
+  # Uses a CloudFront Function to redirect at the edge - no origin is actually hit
+  # Only created for production + public mode (requires custom domain)
   WwwCloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
-    Condition: IsProduction
+    Condition: IsProductionPublic
     Properties:
       DistributionConfig:
         Comment: !Sub RoboLedger ${Environment} WWW Redirect Distribution
@@ -1048,13 +1119,15 @@ Resources:
           SslSupportMethod: sni-only
           MinimumProtocolVersion: TLSv1.2_2021
         Origins:
-          # Dummy origin - the CloudFront Function handles the redirect before reaching origin
+          # Dummy origin - required by CloudFront but never hit because the function redirects
           - Id: Dummy-Origin
-            DomainName: !Ref DomainName
+            DomainName: !GetAtt AppLoadBalancer.DNSName
             CustomOriginConfig:
               HTTPPort: 80
               HTTPSPort: 443
               OriginProtocolPolicy: https-only
+              OriginSSLProtocols:
+                - TLSv1.2
         DefaultCacheBehavior:
           TargetOriginId: Dummy-Origin
           ViewerProtocolPolicy: redirect-to-https
@@ -1079,9 +1152,10 @@ Resources:
         - Key: CreatedBy
           Value: CloudFormation
 
-  # Route 53 Record
+  # Route 53 App Domain Record (only for public mode with custom domain)
   Route53Record:
     Type: AWS::Route53::RecordSet
+    Condition: IsPublicMode
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Properties:
@@ -1093,10 +1167,10 @@ Resources:
         HostedZoneId: Z2FDTNDATAQYW2 # CloudFront's hosted zone ID
         EvaluateTargetHealth: false
 
-  # Route 53 Record for www subdomain
+  # Route 53 Record for www subdomain (only for production + public mode)
   WwwRoute53Record:
     Type: AWS::Route53::RecordSet
-    Condition: IsProduction
+    Condition: IsProductionPublic
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Properties:
@@ -1109,44 +1183,105 @@ Resources:
         EvaluateTargetHealth: false
 
 Outputs:
+  AppAccessMode:
+    Description: Access mode for the application
+    Value: !Ref AppAccessMode
+
   AppURL:
     Description: URL of the Application
-    Value: !Sub https://${DomainName}
+    Value: !If
+      - IsPublicMode
+      - !Sub https://${DomainName}
+      - !If
+        - HasCloudFront
+        - !Sub https://${CloudFrontDistribution.DomainName}
+        - !Sub http://${AppLoadBalancer.DNSName}
+
   ALBEndpoint:
     Description: ALB endpoint DNS name
     Value: !GetAtt AppLoadBalancer.DNSName
+
   ClusterName:
     Description: ECS Cluster Name
     Value: !Ref AppCluster
+
   ServiceName:
     Description: ECS Service Name
     Value: !GetAtt EcsService.Name
+
   CertificateArn:
+    Condition: IsPublicMode
     Description: ACM Certificate ARN
     Value: !Ref AppCertificate
-    Export:
-      Name: !Sub ${AWS::StackName}-CertificateArn
+
   CloudFrontDistributionId:
+    Condition: HasCloudFront
     Description: CloudFront Distribution ID
     Value: !Ref CloudFrontDistribution
+
   CloudFrontDomainName:
+    Condition: HasCloudFront
     Description: CloudFront Distribution Domain Name
     Value: !GetAtt CloudFrontDistribution.DomainName
+
   WwwCloudFrontDistributionId:
-    Condition: IsProduction
+    Condition: IsProductionPublic
     Description: CloudFront Distribution ID for WWW redirect
     Value: !Ref WwwCloudFrontDistribution
+
   WwwCloudFrontDomainName:
-    Condition: IsProduction
+    Condition: IsProductionPublic
     Description: CloudFront Distribution Domain Name for WWW redirect
     Value: !GetAtt WwwCloudFrontDistribution.DomainName
+
   StaticAssetsBucketName:
     Description: S3 Bucket for static assets
-    Value: !Sub ${S3StackName}-StaticAssetsBucketName
-  WwwRedirectBucketName:
-    Condition: IsProduction
-    Description: S3 Bucket for www redirect
-    Value: !Sub ${S3StackName}-WwwRedirectBucketName
+    Value: !Ref StaticAssetsBucketName
+
   Region:
     Description: AWS Region where the stack is deployed
     Value: !Ref AWS::Region
+
+  # Access Mode Instructions
+  PublicAccessInstructions:
+    Condition: IsPublicMode
+    Description: Instructions for accessing the app (public mode with custom domain)
+    Value: !Sub |
+      App is configured for public access with custom domain.
+
+      URL: https://${DomainName}
+
+      CloudFront Distribution: ${CloudFrontDistribution.DomainName}
+      ALB Endpoint: ${AppLoadBalancer.DNSName}
+
+  PublicHttpAccessInstructions:
+    Condition: IsPublicHttpMode
+    Description: Instructions for accessing the app (public-http mode)
+    Value: !Sub |
+      App is configured for public HTTP access (no custom domain).
+
+      URL: https://${CloudFrontDistribution.DomainName}
+
+      This uses CloudFront's default domain with HTTPS.
+      ALB Endpoint: ${AppLoadBalancer.DNSName}
+
+      LIMITATIONS (public-http mode):
+      - No custom domain - uses CloudFront's d123.cloudfront.net domain
+      - Some OAuth integrations may require a custom domain
+
+  InternalAccessInstructions:
+    Condition: IsInternalMode
+    Description: Instructions for accessing the app (internal mode via bastion tunnel)
+    Value: !Sub |
+      App is configured for internal access only (no public domain).
+
+      To access via bastion tunnel:
+      1. Start the tunnel: just bastion-tunnel ${Environment} app
+      2. Access app at: http://localhost:3000
+
+      ALB Endpoint: ${AppLoadBalancer.DNSName}
+
+      LIMITATIONS (internal mode):
+      - No CloudFront CDN - static assets served from ALB/ECS
+      - No HTTPS - traffic is HTTP within VPC
+      - Access requires VPN/bastion tunnel

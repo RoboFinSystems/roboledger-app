@@ -74,7 +74,7 @@ jobs:
       environment: ${{ vars.ENVIRONMENT_STAGING || 'staging' }}
       aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
       aws_region: ${{ vars.AWS_REGION || 'us-east-1' }}
-      domain_name: ${{ vars.DOMAIN_NAME_STAGING || 'staging.roboledger.ai' }}
+      namespace: ${{ vars.AWS_ACCOUNT_ID }}
     secrets:
       ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
 
@@ -91,6 +91,7 @@ jobs:
       robosystems_app_url: ${{ vars.ROBOSYSTEMS_APP_URL_STAGING || 'https://staging.robosystems.ai' }}
       maintenance_mode: ${{ vars.MAINTENANCE_MODE_STAGING || 'false' }}
       turnstile_site_key: ${{ vars.TURNSTILE_SITE_KEY || '' }}
+      static_assets_bucket_name: ${{ needs.deploy-s3.outputs.static_assets_bucket_name }}
       # Docker Hub publishing for staging: disabled (staging builds should not go to Docker Hub)
       publish_to_dockerhub: false
     secrets:
@@ -99,7 +100,7 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   deploy-app:
-    needs: [runner, create-deployment, build]
+    needs: [runner, create-deployment, deploy-s3, build]
     uses: ./.github/workflows/deploy-app.yml
     with:
       # GHA Runner Configuration
@@ -109,7 +110,12 @@ jobs:
       aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
       aws_region: ${{ vars.AWS_REGION || 'us-east-1' }}
       stack_name: RoboLedgerAppStaging
-      s3_stack_name: RoboLedgerAppS3Staging
+      # Access Mode Configuration
+      app_access_mode: ${{ vars.APP_ACCESS_MODE_STAGING || 'public' }}
+      # S3 Bucket Configuration (from deploy-s3 outputs)
+      static_assets_bucket_name: ${{ needs.deploy-s3.outputs.static_assets_bucket_name }}
+      static_assets_bucket_arn: ${{ needs.deploy-s3.outputs.static_assets_bucket_arn }}
+      static_assets_bucket_domain: ${{ needs.deploy-s3.outputs.static_assets_bucket_domain }}
       # Container & Application Configuration
       ecr_repository: ${{ vars.ECR_REPOSITORY || 'roboledger-app' }}
       ecr_image_tag: staging
@@ -125,7 +131,7 @@ jobs:
       scale_down_cpu_threshold: ${{ vars.SCALE_DOWN_CPU_THRESHOLD_STAGING || '40' }}
       scale_up_memory_threshold: ${{ vars.SCALE_UP_MEMORY_THRESHOLD_STAGING || '60' }}
       scale_down_memory_threshold: ${{ vars.SCALE_DOWN_MEMORY_THRESHOLD_STAGING || '30' }}
-      # Domain & DNS Configuration
+      # Domain & DNS Configuration (required for public mode)
       domain_name: ${{ vars.DOMAIN_NAME_STAGING || 'staging.roboledger.ai' }}
       domain_name_root: ${{ vars.DOMAIN_NAME_ROOT || 'roboledger.ai' }}
       # SNS Configuration

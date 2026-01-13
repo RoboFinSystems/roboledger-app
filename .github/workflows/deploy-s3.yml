@@ -3,10 +3,11 @@ name: Deploy S3
 on:
   workflow_call:
     inputs:
+      # GHA Runner Configuration
       runner_config:
+        description: 'GitHub Actions runner configuration (JSON array)'
         required: false
         type: string
-        description: 'Runner configuration JSON (from runner availability check)'
         default: '["ubuntu-latest"]'
 
       # Stack & Environment Configuration
@@ -29,11 +30,12 @@ on:
         required: true
         type: string
 
-      # Domain Configuration
-      domain_name:
-        description: 'Full domain name for the application (e.g., roboledger.ai)'
-        required: true
+      # Namespace Configuration (for forkability)
+      namespace:
+        description: 'S3 bucket namespace (AWS account ID). Creates globally unique bucket names.'
+        required: false
         type: string
+        default: ''
 
     outputs:
       static_assets_bucket_name:
@@ -89,8 +91,12 @@ jobs:
             echo "is_new_stack=false" >> $GITHUB_OUTPUT
           fi
 
-          S3_STACK_PARAMS="ParameterKey=Environment,ParameterValue=${{ inputs.environment }} \
-                ParameterKey=DomainName,ParameterValue=${{ inputs.domain_name }}"
+          S3_STACK_PARAMS="ParameterKey=Environment,ParameterValue=${{ inputs.environment }}"
+
+          # Add namespace parameter if provided (for forkability)
+          if [ -n "${{ inputs.namespace }}" ]; then
+            S3_STACK_PARAMS="$S3_STACK_PARAMS ParameterKey=Namespace,ParameterValue=${{ inputs.namespace }}"
+          fi
 
           # Deploy or update the stack
           if [ "$STACK_ACTION" = "create-stack" ]; then
