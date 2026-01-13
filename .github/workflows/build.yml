@@ -3,6 +3,11 @@ name: Build
 on:
   workflow_call:
     inputs:
+      runner_config:
+        required: false
+        type: string
+        description: 'Runner configuration JSON (from runner availability check)'
+        default: '["ubuntu-latest"]'
       environment:
         required: true
         type: string
@@ -23,7 +28,7 @@ on:
         required: true
         type: string
       maintenance_mode:
-        required: true
+        required: false
         type: string
         default: 'false'
       turnstile_site_key:
@@ -38,16 +43,16 @@ on:
     outputs:
       image:
         description: 'Built image reference'
-        value: ${{ jobs.action.outputs.image }}
+        value: ${{ jobs.ecr-build.outputs.image }}
       ecr_repository_url:
         description: 'ECR repository URL'
-        value: ${{ jobs.action.outputs.ecr_repository_url }}
+        value: ${{ jobs.ecr-build.outputs.ecr_repository_url }}
       version_tag:
         description: 'Version tag used for the build'
-        value: ${{ jobs.action.outputs.version_tag }}
+        value: ${{ jobs.ecr-build.outputs.version_tag }}
       is_release:
         description: 'Whether this is a release build'
-        value: ${{ jobs.action.outputs.is_release }}
+        value: ${{ jobs.ecr-build.outputs.is_release }}
     secrets:
       ACTIONS_TOKEN:
         required: true
@@ -57,8 +62,11 @@ on:
         required: false
 
 jobs:
-  action:
-    runs-on: ubuntu-latest
+  # ===========================================================================
+  # ECR Build - Production/Staging deployments with baked-in environment values
+  # ===========================================================================
+  ecr-build:
+    runs-on: ${{ fromJSON(inputs.runner_config) }}
     timeout-minutes: 20
     permissions:
       id-token: write
@@ -70,7 +78,6 @@ jobs:
       is_release: ${{ steps.build-and-push.outputs.is_release }}
     steps:
       - name: Free disk space
-        if: ${{ inputs.publish_to_dockerhub == true }}
         run: |
           echo "Disk space before cleanup:"
           df -h /
@@ -88,9 +95,6 @@ jobs:
           ref: ${{ github.ref }}
           token: ${{ secrets.ACTIONS_TOKEN }}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -107,13 +111,6 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Login to Docker Hub
-        if: ${{ inputs.publish_to_dockerhub == true }}
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -190,7 +187,7 @@ jobs:
             echo "Please deploy the CloudFormation stack first to create the bucket."
           fi
 
-      - name: Build, tag, and push Docker image
+      - name: Build, tag, and push Docker image to ECR
         id: build-and-push
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -198,12 +195,6 @@ jobs:
         run: |
           export DOCKER_BUILDKIT=1
           export COMPOSE_DOCKER_CLI_BUILD=1
-
-          # Prepare platforms
-          PLATFORMS="linux/amd64"
-          if [[ "${{ inputs.publish_to_dockerhub }}" == "true" ]]; then
-            PLATFORMS="linux/amd64,linux/arm64"
-          fi
 
           # Determine version information
           VERSION_TAG=""
@@ -227,31 +218,17 @@ jobs:
             echo "🔧 Building development version: $VERSION_TAG"
           fi
 
-          # Prepare tags
-          TAGS=""
-
-          # ECR tags (always push to ECR for internal use)
-          TAGS="$TAGS -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ inputs.environment }}"
+          # Prepare ECR tags
+          TAGS="-t $ECR_REGISTRY/$ECR_REPOSITORY:${{ inputs.environment }}"
           TAGS="$TAGS -t $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION_TAG"
 
           if [[ "${{ inputs.environment }}" == "prod" ]]; then
             TAGS="$TAGS -t $ECR_REGISTRY/$ECR_REPOSITORY:latest"
           fi
 
-          # Docker Hub tags (only for releases when explicitly enabled)
-          if [[ "${{ inputs.publish_to_dockerhub }}" == "true" ]] && [[ "$IS_RELEASE" == "true" ]]; then
-            echo "🚀 Publishing release to Docker Hub"
-            if [[ "${{ inputs.environment }}" == "prod" ]]; then
-              TAGS="$TAGS -t robofinsystems/roboledger-app:latest"
-              TAGS="$TAGS -t robofinsystems/roboledger-app:$VERSION_TAG"
-            fi
-          elif [[ "${{ inputs.publish_to_dockerhub }}" == "true" ]]; then
-            echo "⏭️ Skipping Docker Hub publication (non-release build)"
-          fi
-
-          # Build and push with enhanced caching
+          # Build and push to ECR (amd64 only for ECS/Fargate)
           docker buildx build \
-            --platform $PLATFORMS \
+            --platform linux/amd64 \
             --push \
             --cache-from type=registry,ref=$ECR_REGISTRY/$ECR_REPOSITORY:buildcache \
             --cache-from type=registry,ref=$ECR_REGISTRY/$ECR_REPOSITORY:deps-cache \
@@ -268,5 +245,130 @@ jobs:
           echo "is_release=$IS_RELEASE" >> $GITHUB_OUTPUT
 
           # Log the tags that were created
-          echo "📋 Image tags created:"
+          echo "📋 ECR image tags created:"
           echo "$TAGS" | tr ' ' '\n' | grep -E '^-t' | sed 's/-t /  - /'
+
+  # ===========================================================================
+  # Docker Hub Build - Configurable image with runtime environment injection
+  # ===========================================================================
+  # This job builds a separate image with placeholder values that get replaced
+  # at container startup via entrypoint.sh. This allows users to configure
+  # the image for any environment (local dev, self-hosted, etc.)
+  # ===========================================================================
+  dockerhub-build:
+    if: ${{ inputs.publish_to_dockerhub == true }}
+    runs-on: ${{ fromJSON(inputs.runner_config) }}
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Free disk space
+        run: |
+          echo "Disk space before cleanup:"
+          df -h /
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          echo "Disk space after cleanup:"
+          df -h /
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          ref: ${{ github.ref }}
+          token: ${{ secrets.ACTIONS_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:master
+            network=host
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies and build Next.js with placeholders
+        env:
+          # Use placeholder values that will be replaced at runtime by entrypoint.sh
+          NEXT_PUBLIC_ROBOSYSTEMS_API_URL: '__PLACEHOLDER_ROBOSYSTEMS_API_URL__'
+          NEXT_PUBLIC_ROBOLEDGER_APP_URL: '__PLACEHOLDER_ROBOLEDGER_APP_URL__'
+          NEXT_PUBLIC_ROBOINVESTOR_APP_URL: '__PLACEHOLDER_ROBOINVESTOR_APP_URL__'
+          NEXT_PUBLIC_ROBOSYSTEMS_APP_URL: '__PLACEHOLDER_ROBOSYSTEMS_APP_URL__'
+          NEXT_PUBLIC_MAINTENANCE_MODE: '__PLACEHOLDER_MAINTENANCE_MODE__'
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: '__PLACEHOLDER_TURNSTILE_SITE_KEY__'
+          NEXT_PUBLIC_S3_ENDPOINT_URL: '__PLACEHOLDER_S3_ENDPOINT_URL__'
+        run: |
+          npm ci
+          npm run build
+
+          # Create a tarball of the build output for Docker to use
+          tar -czf next-build.tar.gz .next
+
+      - name: Determine version tag
+        id: version
+        run: |
+          VERSION_TAG=""
+          IS_RELEASE="false"
+
+          # Check if this is a version tag (v*.*.*)
+          if [[ "$GITHUB_REF" == refs/tags/v*.*.* ]]; then
+            VERSION_TAG=${GITHUB_REF#refs/tags/}
+            IS_RELEASE="true"
+            echo "📦 Release version: $VERSION_TAG"
+          # Check if this is a release branch (release/*)
+          elif [[ "$GITHUB_REF" == refs/heads/release/* ]]; then
+            BRANCH_VERSION=${GITHUB_REF#refs/heads/release/}
+            VERSION_TAG="v${BRANCH_VERSION}-hotfix.${GITHUB_SHA:0:8}"
+            IS_RELEASE="true"
+            echo "🔥 Hotfix version: $VERSION_TAG"
+          else
+            VERSION_TAG="git-${GITHUB_SHA:0:8}"
+            echo "🔧 Development version: $VERSION_TAG"
+          fi
+
+          echo "version_tag=$VERSION_TAG" >> $GITHUB_OUTPUT
+          echo "is_release=$IS_RELEASE" >> $GITHUB_OUTPUT
+
+      - name: Build and push to Docker Hub
+        if: steps.version.outputs.is_release == 'true'
+        run: |
+          export DOCKER_BUILDKIT=1
+          export COMPOSE_DOCKER_CLI_BUILD=1
+
+          VERSION_TAG="${{ steps.version.outputs.version_tag }}"
+
+          # Prepare Docker Hub tags
+          TAGS="-t robofinsystems/roboledger-app:latest"
+          TAGS="$TAGS -t robofinsystems/roboledger-app:$VERSION_TAG"
+
+          echo "🚀 Publishing configurable image to Docker Hub"
+
+          # Build for both amd64 and arm64 (for Mac M1/M2 users)
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --push \
+            $TAGS \
+            -f Dockerfile .
+
+          echo "📋 Docker Hub image tags created:"
+          echo "$TAGS" | tr ' ' '\n' | grep -E '^-t' | sed 's/-t /  - /'
+
+      - name: Skip non-release build
+        if: steps.version.outputs.is_release != 'true'
+        run: |
+          echo "⏭️ Skipping Docker Hub publication (non-release build)"
+          echo "Docker Hub images are only published for version tags (v*.*.*) and release branches"

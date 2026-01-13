@@ -980,6 +980,57 @@ Resources:
         - Key: CreatedBy
           Value: CloudFormation
 
+  # CloudFront Function for www to apex redirect
+  WwwRedirectFunction:
+    Type: AWS::CloudFront::Function
+    Condition: IsProduction
+    Properties:
+      Name: !Sub roboledger-app-${Environment}-www-redirect
+      AutoPublish: true
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          var host = request.headers.host.value;
+          var uri = request.uri;
+
+          // Remove www. prefix from the host
+          var newHost = host.replace(/^www\./, '');
+
+          // Preserve query string if present (URL encode to prevent malformed redirects)
+          var qs = '';
+          if (Object.keys(request.querystring).length > 0) {
+            var params = [];
+            for (var key in request.querystring) {
+              var param = request.querystring[key];
+              var encodedKey = encodeURIComponent(key);
+              if (param.multiValue) {
+                param.multiValue.forEach(function(v) {
+                  params.push(encodedKey + '=' + encodeURIComponent(v.value));
+                });
+              } else if (param.value) {
+                params.push(encodedKey + '=' + encodeURIComponent(param.value));
+              } else {
+                params.push(encodedKey);
+              }
+            }
+            if (params.length > 0) {
+              qs = '?' + params.join('&');
+            }
+          }
+
+          return {
+            statusCode: 301,
+            statusDescription: 'Moved Permanently',
+            headers: {
+              'location': { value: 'https://' + newHost + uri + qs },
+              'cache-control': { value: 'max-age=31536000' }
+            }
+          };
+        }
+      FunctionConfig:
+        Comment: !Sub Redirect www.${DomainName} to ${DomainName}
+        Runtime: cloudfront-js-2.0
+
   # CloudFront Distribution for www redirect
   WwwCloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
@@ -997,15 +1048,15 @@ Resources:
           SslSupportMethod: sni-only
           MinimumProtocolVersion: TLSv1.2_2021
         Origins:
-          - Id: S3-WWW-Redirect
-            DomainName:
-              Fn::ImportValue: !Sub ${S3StackName}-WwwRedirectBucketWebsiteURL
+          # Dummy origin - the CloudFront Function handles the redirect before reaching origin
+          - Id: Dummy-Origin
+            DomainName: !Ref DomainName
             CustomOriginConfig:
               HTTPPort: 80
               HTTPSPort: 443
-              OriginProtocolPolicy: http-only
+              OriginProtocolPolicy: https-only
         DefaultCacheBehavior:
-          TargetOriginId: S3-WWW-Redirect
+          TargetOriginId: Dummy-Origin
           ViewerProtocolPolicy: redirect-to-https
           AllowedMethods:
             - GET
@@ -1014,11 +1065,10 @@ Resources:
             - GET
             - HEAD
           Compress: false
-          ForwardedValues:
-            QueryString: false
-            Cookies:
-              Forward: none
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized managed policy
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt WwwRedirectFunction.FunctionARN
       Tags:
         - Key: Environment
           Value: !Ref Environment
