@@ -91,7 +91,7 @@ inject_runtime_env() {
 
     # Find all JS files in .next and replace placeholders
     # Using find + sed for POSIX compatibility (Alpine doesn't have GNU tools by default)
-    find /app/.next -type f \( -name "*.js" -o -name "*.json" \) -exec sed -i \
+    if ! find /app/.next -type f \( -name "*.js" -o -name "*.json" \) -exec sed -i \
         -e "s|__PLACEHOLDER_ROBOSYSTEMS_API_URL__|${NEXT_PUBLIC_ROBOSYSTEMS_API_URL}|g" \
         -e "s|__PLACEHOLDER_ROBOSYSTEMS_APP_URL__|${NEXT_PUBLIC_ROBOSYSTEMS_APP_URL}|g" \
         -e "s|__PLACEHOLDER_ROBOLEDGER_APP_URL__|${NEXT_PUBLIC_ROBOLEDGER_APP_URL}|g" \
@@ -99,7 +99,16 @@ inject_runtime_env() {
         -e "s|__PLACEHOLDER_MAINTENANCE_MODE__|${NEXT_PUBLIC_MAINTENANCE_MODE:-false}|g" \
         -e "s|__PLACEHOLDER_TURNSTILE_SITE_KEY__|${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}|g" \
         -e "s|__PLACEHOLDER_S3_ENDPOINT_URL__|${NEXT_PUBLIC_S3_ENDPOINT_URL:-}|g" \
-        {} \;
+        {} \; ; then
+        echo "Error: Failed to inject runtime configuration"
+        exit 1
+    fi
+
+    # Verify at least one placeholder was replaced (sanity check)
+    if grep -r "__PLACEHOLDER_ROBOSYSTEMS_API_URL__" /app/.next >/dev/null 2>&1; then
+        echo "Error: Placeholder replacement failed - API URL placeholder still present"
+        exit 1
+    fi
 
     echo "Runtime environment configuration complete."
 }
