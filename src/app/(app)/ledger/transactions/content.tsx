@@ -51,181 +51,6 @@ interface LineItemWithGraph extends LineItem {
   _graphId: string
 }
 
-// Mock data for screenshots
-const MOCK_TRANSACTIONS: TransactionWithGraph[] = [
-  {
-    identifier: 'txn-001',
-    uri: 'urn:transaction:txn-001',
-    transactionNumber: 'JE-2025-001245',
-    date: '2025-12-31',
-    description: 'Monthly revenue recognition - December 2025',
-    transactionType: 'Revenue',
-    amount: 245000,
-    referenceNumber: 'REV-DEC-2025',
-    currency: 'USD',
-    updatedAt: '2025-12-31T23:59:59Z',
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'txn-002',
-    uri: 'urn:transaction:txn-002',
-    transactionNumber: 'JE-2025-001244',
-    date: '2025-12-31',
-    description: 'Payroll expense accrual',
-    transactionType: 'Expense',
-    amount: 125000,
-    referenceNumber: 'PR-DEC-2025',
-    currency: 'USD',
-    updatedAt: '2025-12-31T18:00:00Z',
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'txn-003',
-    uri: 'urn:transaction:txn-003',
-    transactionNumber: 'JE-2025-001243',
-    date: '2025-12-28',
-    description: 'Office supplies purchase',
-    transactionType: 'Expense',
-    amount: 3500,
-    referenceNumber: 'PO-2025-0892',
-    currency: 'USD',
-    updatedAt: '2025-12-28T14:30:00Z',
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'txn-004',
-    uri: 'urn:transaction:txn-004',
-    transactionNumber: 'JE-2025-001242',
-    date: '2025-12-27',
-    description: 'Cash transfer to savings account',
-    transactionType: 'Transfer',
-    amount: 500000,
-    referenceNumber: 'TRF-2025-0156',
-    currency: 'USD',
-    updatedAt: '2025-12-27T10:15:00Z',
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'txn-005',
-    uri: 'urn:transaction:txn-005',
-    transactionNumber: 'JE-2025-001241',
-    date: '2025-12-23',
-    description: 'Client payment received - Invoice #INV-2025-089',
-    transactionType: 'Revenue',
-    amount: 87500,
-    referenceNumber: 'REC-2025-0445',
-    currency: 'USD',
-    updatedAt: '2025-12-23T16:45:00Z',
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'txn-006',
-    uri: 'urn:transaction:txn-006',
-    transactionNumber: 'JE-2025-001240',
-    date: '2025-12-20',
-    description: 'Depreciation expense - Q4 2025',
-    transactionType: 'Adjustment',
-    amount: 45000,
-    referenceNumber: 'DEP-Q4-2025',
-    currency: 'USD',
-    updatedAt: '2025-12-20T09:00:00Z',
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'txn-007',
-    uri: 'urn:transaction:txn-007',
-    transactionNumber: 'JE-2025-001239',
-    date: '2025-12-15',
-    description: 'Software subscription renewal - Annual',
-    transactionType: 'Expense',
-    amount: 24000,
-    referenceNumber: 'SUB-2025-0078',
-    currency: 'USD',
-    updatedAt: '2025-12-15T11:30:00Z',
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-]
-
-const MOCK_LINE_ITEMS: Record<string, LineItemWithGraph[]> = {
-  'demo-graph-1-txn-001': [
-    {
-      identifier: 'li-001-1',
-      uri: 'urn:lineitem:li-001-1',
-      description: 'Product revenue - Enterprise licenses',
-      debitAmount: 0,
-      creditAmount: 185000,
-      accountName: 'Product Revenue',
-      accountId: 'product-revenue',
-      updatedAt: '2025-12-31T23:59:59Z',
-      _graphId: 'demo-graph-1',
-    },
-    {
-      identifier: 'li-001-2',
-      uri: 'urn:lineitem:li-001-2',
-      description: 'Service revenue - Implementation fees',
-      debitAmount: 0,
-      creditAmount: 60000,
-      accountName: 'Service Revenue',
-      accountId: 'service-revenue',
-      updatedAt: '2025-12-31T23:59:59Z',
-      _graphId: 'demo-graph-1',
-    },
-    {
-      identifier: 'li-001-3',
-      uri: 'urn:lineitem:li-001-3',
-      description: 'Accounts receivable increase',
-      debitAmount: 245000,
-      creditAmount: 0,
-      accountName: 'Accounts Receivable, Net',
-      accountId: 'accounts-receivable',
-      updatedAt: '2025-12-31T23:59:59Z',
-      _graphId: 'demo-graph-1',
-    },
-  ],
-  'demo-graph-1-txn-002': [
-    {
-      identifier: 'li-002-1',
-      uri: 'urn:lineitem:li-002-1',
-      description: 'Salaries expense',
-      debitAmount: 95000,
-      creditAmount: 0,
-      accountName: 'General and Administrative',
-      accountId: 'general-administrative',
-      updatedAt: '2025-12-31T18:00:00Z',
-      _graphId: 'demo-graph-1',
-    },
-    {
-      identifier: 'li-002-2',
-      uri: 'urn:lineitem:li-002-2',
-      description: 'Benefits expense',
-      debitAmount: 30000,
-      creditAmount: 0,
-      accountName: 'General and Administrative',
-      accountId: 'general-administrative',
-      updatedAt: '2025-12-31T18:00:00Z',
-      _graphId: 'demo-graph-1',
-    },
-    {
-      identifier: 'li-002-3',
-      uri: 'urn:lineitem:li-002-3',
-      description: 'Accrued payroll liability',
-      debitAmount: 0,
-      creditAmount: 125000,
-      accountName: 'Accrued Expenses',
-      accountId: 'accrued-expenses',
-      updatedAt: '2025-12-31T18:00:00Z',
-      _graphId: 'demo-graph-1',
-    },
-  ],
-}
-
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -347,13 +172,7 @@ const TransactionsContent: FC = function () {
           (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         )
 
-        // Use mock data if no real transactions found (for screenshots)
-        if (allTransactions.length === 0) {
-          setTransactions(MOCK_TRANSACTIONS)
-          setLineItemsMap(MOCK_LINE_ITEMS)
-        } else {
-          setTransactions(allTransactions)
-        }
+        setTransactions(allTransactions)
       } catch (err) {
         console.error('Error loading transactions:', err)
         setError('Failed to load transactions. Please try again.')
@@ -372,15 +191,6 @@ const TransactionsContent: FC = function () {
 
       if (lineItemsMap[key]) {
         return // Already loaded
-      }
-
-      // Check if we have mock data for this transaction
-      if (MOCK_LINE_ITEMS[key]) {
-        setLineItemsMap((prev) => ({
-          ...prev,
-          [key]: MOCK_LINE_ITEMS[key],
-        }))
-        return
       }
 
       setLoadingLineItems((prev) => new Set(prev).add(key))

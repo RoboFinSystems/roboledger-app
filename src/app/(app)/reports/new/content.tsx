@@ -72,43 +72,33 @@ interface MappingStructureWithGraph extends MappingStructure {
   _graphName: string
 }
 
-// Mock data for the Fact Grid visualization
-const MOCK_FACT_GRID = {
-  dimensions: [
-    {
-      id: 'time',
-      name: 'Time Period',
-      bgClass: 'bg-blue-900/50',
-      textClass: 'text-blue-300',
-    },
-    {
-      id: 'account',
-      name: 'Account',
-      bgClass: 'bg-purple-900/50',
-      textClass: 'text-purple-300',
-    },
-    {
-      id: 'entity',
-      name: 'Entity',
-      bgClass: 'bg-green-900/50',
-      textClass: 'text-green-300',
-    },
-    {
-      id: 'segment',
-      name: 'Segment',
-      bgClass: 'bg-orange-900/50',
-      textClass: 'text-orange-300',
-    },
-  ],
-  facts: [
-    { element: 'Cash and Cash Equivalents', value: 1245890 },
-    { element: 'Accounts Receivable', value: 892450 },
-    { element: 'Inventory', value: 456120 },
-    { element: 'Total Current Assets', value: 2594460 },
-    { element: 'Property & Equipment', value: 1850000 },
-    { element: 'Total Assets', value: 4444460 },
-  ],
-}
+// Fact Grid dimension configuration
+const FACT_GRID_DIMENSIONS = [
+  {
+    id: 'time',
+    name: 'Time Period',
+    bgClass: 'bg-blue-900/50',
+    textClass: 'text-blue-300',
+  },
+  {
+    id: 'account',
+    name: 'Account',
+    bgClass: 'bg-purple-900/50',
+    textClass: 'text-purple-300',
+  },
+  {
+    id: 'entity',
+    name: 'Entity',
+    bgClass: 'bg-green-900/50',
+    textClass: 'text-green-300',
+  },
+  {
+    id: 'segment',
+    name: 'Segment',
+    bgClass: 'bg-orange-900/50',
+    textClass: 'text-orange-300',
+  },
+]
 
 // Report templates with pre-configured sections
 const REPORT_TEMPLATES = [
@@ -138,174 +128,7 @@ const REPORT_TEMPLATES = [
   },
 ]
 
-// Mock preview data for different report types
-const MOCK_PREVIEW_DATA: Record<string, PreviewData> = {
-  balance_sheet: {
-    headers: ['Element', 'Dec 31, 2025', 'Dec 31, 2023', 'Change'],
-    rows: [
-      { label: 'Assets', values: [null, null, null], isHeader: true },
-      {
-        label: 'Cash and Cash Equivalents',
-        values: [1245890, 982340, 263550],
-        isHeader: false,
-      },
-      {
-        label: 'Accounts Receivable',
-        values: [892450, 756230, 136220],
-        isHeader: false,
-      },
-      { label: 'Inventory', values: [456120, 412890, 43230], isHeader: false },
-      {
-        label: 'Total Current Assets',
-        values: [2594460, 2151460, 443000],
-        isHeader: false,
-      },
-      {
-        label: 'Property & Equipment, net',
-        values: [1850000, 1650000, 200000],
-        isHeader: false,
-      },
-      {
-        label: 'Total Assets',
-        values: [4444460, 3801460, 643000],
-        isHeader: false,
-      },
-      { label: 'Liabilities', values: [null, null, null], isHeader: true },
-      {
-        label: 'Accounts Payable',
-        values: [425680, 382450, 43230],
-        isHeader: false,
-      },
-      {
-        label: 'Accrued Expenses',
-        values: [185230, 156780, 28450],
-        isHeader: false,
-      },
-      {
-        label: 'Total Current Liabilities',
-        values: [610910, 539230, 71680],
-        isHeader: false,
-      },
-      {
-        label: 'Long-term Debt',
-        values: [850000, 950000, -100000],
-        isHeader: false,
-      },
-      {
-        label: 'Total Liabilities',
-        values: [1460910, 1489230, -28320],
-        isHeader: false,
-      },
-      {
-        label: 'Stockholders Equity',
-        values: [null, null, null],
-        isHeader: true,
-      },
-      { label: 'Common Stock', values: [100000, 100000, 0], isHeader: false },
-      {
-        label: 'Retained Earnings',
-        values: [2883550, 2212230, 671320],
-        isHeader: false,
-      },
-      {
-        label: 'Total Stockholders Equity',
-        values: [2983550, 2312230, 671320],
-        isHeader: false,
-      },
-    ],
-  },
-  income_statement: {
-    headers: ['Element', 'Q4 2025', 'Q4 2023', 'Change %'],
-    rows: [
-      { label: 'Revenue', values: [2450000, 1980000, 23.7], isHeader: false },
-      {
-        label: 'Cost of Revenue',
-        values: [1225000, 1010000, 21.3],
-        isHeader: false,
-      },
-      {
-        label: 'Gross Profit',
-        values: [1225000, 970000, 26.3],
-        isHeader: true,
-      },
-      {
-        label: 'Operating Expenses',
-        values: [null, null, null],
-        isHeader: true,
-      },
-      {
-        label: 'Research & Development',
-        values: [285000, 245000, 16.3],
-        isHeader: false,
-      },
-      {
-        label: 'Sales & Marketing',
-        values: [312000, 268000, 16.4],
-        isHeader: false,
-      },
-      {
-        label: 'General & Administrative',
-        values: [178000, 162000, 9.9],
-        isHeader: false,
-      },
-      {
-        label: 'Total Operating Expenses',
-        values: [775000, 675000, 14.8],
-        isHeader: false,
-      },
-      {
-        label: 'Operating Income',
-        values: [450000, 295000, 52.5],
-        isHeader: true,
-      },
-      {
-        label: 'Interest Expense',
-        values: [42500, 47500, -10.5],
-        isHeader: false,
-      },
-      { label: 'Net Income', values: [407500, 247500, 64.6], isHeader: true },
-    ],
-  },
-  cash_flow: {
-    headers: ['Element', 'Q4 2025', 'Q4 2023'],
-    rows: [
-      { label: 'Operating Activities', values: [null, null], isHeader: true },
-      { label: 'Net Income', values: [407500, 247500], isHeader: false },
-      { label: 'Depreciation', values: [45000, 42000], isHeader: false },
-      {
-        label: 'Changes in Working Capital',
-        values: [-85230, -62450],
-        isHeader: false,
-      },
-      {
-        label: 'Net Cash from Operating',
-        values: [367270, 227050],
-        isHeader: true,
-      },
-      { label: 'Investing Activities', values: [null, null], isHeader: true },
-      {
-        label: 'Capital Expenditures',
-        values: [-125000, -98000],
-        isHeader: false,
-      },
-      {
-        label: 'Net Cash from Investing',
-        values: [-125000, -98000],
-        isHeader: true,
-      },
-      { label: 'Financing Activities', values: [null, null], isHeader: true },
-      { label: 'Debt Repayment', values: [-25000, -25000], isHeader: false },
-      {
-        label: 'Net Cash from Financing',
-        values: [-25000, -25000],
-        isHeader: true,
-      },
-      { label: 'Net Change in Cash', values: [217270, 104050], isHeader: true },
-    ],
-  },
-}
-
-// AI validation mock results
+// AI validation results
 interface ValidationResult {
   status: 'valid' | 'warning' | 'error'
   checks: Array<{
@@ -313,37 +136,6 @@ interface ValidationResult {
     status: 'pass' | 'warn' | 'fail'
     message: string
   }>
-}
-
-const MOCK_VALIDATION: ValidationResult = {
-  status: 'valid',
-  checks: [
-    {
-      name: 'Accounting Equation',
-      status: 'pass',
-      message: 'Assets = Liabilities + Equity ✓',
-    },
-    {
-      name: 'XBRL Compliance',
-      status: 'pass',
-      message: 'All elements valid in US-GAAP taxonomy',
-    },
-    {
-      name: 'Period Types',
-      status: 'pass',
-      message: 'Instant/Duration types match elements',
-    },
-    {
-      name: 'Sign Conventions',
-      status: 'pass',
-      message: 'Debit/Credit signs correct',
-    },
-    {
-      name: 'Completeness',
-      status: 'warn',
-      message: 'Consider adding EPS disclosure',
-    },
-  ],
 }
 
 const generateId = () => Math.random().toString(36).substring(2, 9)
@@ -505,7 +297,7 @@ const ReportBuilderContent: FC = function () {
           mappingStructureId: null,
           rowDimension: 'element',
           columnDimension: 'period',
-          previewData: MOCK_PREVIEW_DATA[templateId] || null,
+          previewData: null,
           isPreviewLoading: false,
         })
       )
@@ -539,15 +331,8 @@ const ReportBuilderContent: FC = function () {
       setGenerationStep(step)
     }
 
-    // Apply mock preview data to all sections
-    setSections((prev) =>
-      prev.map((section) => ({
-        ...section,
-        previewData: MOCK_PREVIEW_DATA[selectedTemplate] || null,
-      }))
-    )
-
-    setValidation(MOCK_VALIDATION)
+    // TODO: Fetch actual preview data from API
+    // For now, just mark generation as complete
     setIsGenerating(false)
   }, [selectedTemplate])
 
@@ -562,24 +347,13 @@ const ReportBuilderContent: FC = function () {
       updateSection(sectionId, { isPreviewLoading: true, previewData: null })
 
       try {
-        // Simulate API call
+        // TODO: Call backend /views API to get actual preview data
         await new Promise((resolve) => setTimeout(resolve, 1000))
 
-        // Use template-specific mock data if available
-        const previewData = selectedTemplate
-          ? MOCK_PREVIEW_DATA[selectedTemplate]
-          : {
-              headers: ['Element', section.periodEnd],
-              rows: [
-                { label: 'Revenue', values: [125000] },
-                { label: 'Operating Expenses', values: [85000] },
-                { label: 'Net Income', values: [40000] },
-              ],
-            }
-
+        // No preview data available until API is implemented
         updateSection(sectionId, {
           isPreviewLoading: false,
-          previewData: previewData || null,
+          previewData: null,
         })
       } catch (err) {
         console.error('Error generating preview:', err)
@@ -748,7 +522,7 @@ const ReportBuilderContent: FC = function () {
                   <span className="text-xs text-gray-400">Multi-axis view</span>
                 </div>
                 <div className="grid grid-cols-2 gap-1.5">
-                  {MOCK_FACT_GRID.dimensions.map((dim) => (
+                  {FACT_GRID_DIMENSIONS.map((dim) => (
                     <div
                       key={dim.id}
                       className={`rounded px-2 py-1.5 text-xs font-medium ${dim.bgClass} ${dim.textClass}`}
@@ -769,20 +543,8 @@ const ReportBuilderContent: FC = function () {
                     Validated values
                   </span>
                 </div>
-                <div className="space-y-1">
-                  {MOCK_FACT_GRID.facts.slice(0, 4).map((fact) => (
-                    <div
-                      key={fact.element}
-                      className="flex items-center justify-between rounded border border-gray-200 px-2 py-1 dark:border-gray-700"
-                    >
-                      <span className="max-w-[120px] truncate text-xs text-gray-500 dark:text-gray-400">
-                        {fact.element}
-                      </span>
-                      <span className="font-mono text-xs text-gray-900 dark:text-white">
-                        ${(fact.value / 1000).toFixed(0)}K
-                      </span>
-                    </div>
-                  ))}
+                <div className="py-2 text-center text-xs text-gray-400">
+                  No facts loaded
                 </div>
               </div>
 

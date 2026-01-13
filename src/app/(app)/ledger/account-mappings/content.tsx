@@ -85,214 +85,6 @@ interface ElementWithGraph extends Element {
   _graphName: string
 }
 
-// Mock data for screenshots
-const MOCK_STRUCTURES: MappingStructureWithGraph[] = [
-  {
-    identifier: 'ms-us-gaap-2025',
-    name: 'US-GAAP Mapping (2025)',
-    description: 'Standard US-GAAP financial statement mapping',
-    taxonomyUri: 'urn:taxonomy:company-coa',
-    targetTaxonomyUri: 'urn:taxonomy:us-gaap-2025',
-    associationCount: 17,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'ms-internal-reporting',
-    name: 'Internal Reporting',
-    description: 'Management reporting structure',
-    taxonomyUri: 'urn:taxonomy:company-coa',
-    targetTaxonomyUri: 'urn:taxonomy:internal',
-    associationCount: 12,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-]
-
-const MOCK_ASSOCIATIONS: Record<string, ElementAssociation[]> = {
-  'demo-graph-1-ms-us-gaap-2025': [
-    {
-      identifier: 'assoc-001',
-      sourceElement: 'cash-and-equivalents',
-      sourceElementName: 'Cash and Cash Equivalents',
-      targetElement: 'us-gaap:CashAndCashEquivalentsAtCarryingValue',
-      targetElementName: 'Cash and Cash Equivalents at Carrying Value',
-      aggregationMethod: 'sum',
-      weight: 1,
-      orderValue: 1,
-    },
-    {
-      identifier: 'assoc-002',
-      sourceElement: 'accounts-receivable',
-      sourceElementName: 'Accounts Receivable, Net',
-      targetElement: 'us-gaap:AccountsReceivableNetCurrent',
-      targetElementName: 'Accounts Receivable, Net, Current',
-      aggregationMethod: 'sum',
-      weight: 1,
-      orderValue: 2,
-    },
-    {
-      identifier: 'assoc-003',
-      sourceElement: 'inventory',
-      sourceElementName: 'Inventory',
-      targetElement: 'us-gaap:InventoryNet',
-      targetElementName: 'Inventory, Net',
-      aggregationMethod: 'sum',
-      weight: 1,
-      orderValue: 3,
-    },
-    {
-      identifier: 'assoc-004',
-      sourceElement: 'product-revenue',
-      sourceElementName: 'Product Revenue',
-      targetElement:
-        'us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax',
-      targetElementName:
-        'Revenue from Contract with Customer, Excluding Assessed Tax',
-      aggregationMethod: 'sum',
-      weight: 1,
-      orderValue: 4,
-    },
-    {
-      identifier: 'assoc-005',
-      sourceElement: 'service-revenue',
-      sourceElementName: 'Service Revenue',
-      targetElement:
-        'us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax',
-      targetElementName:
-        'Revenue from Contract with Customer, Excluding Assessed Tax',
-      aggregationMethod: 'sum',
-      weight: 1,
-      orderValue: 5,
-    },
-  ],
-}
-
-const MOCK_UNMAPPED: ElementWithGraph[] = [
-  {
-    identifier: 'misc-income',
-    uri: 'urn:element:misc-income',
-    qname: 'coa:MiscellaneousIncome',
-    name: 'Miscellaneous Income',
-    classification: 'revenue',
-    balance: 'credit',
-    periodType: 'duration',
-    type: 'monetaryItemType',
-    isAbstract: false,
-    isNumeric: true,
-    isDimensionItem: false,
-    isDomainMember: false,
-    isHypercubeItem: false,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'other-assets',
-    uri: 'urn:element:other-assets',
-    qname: 'coa:OtherAssets',
-    name: 'Other Assets',
-    classification: 'asset',
-    balance: 'debit',
-    periodType: 'instant',
-    type: 'monetaryItemType',
-    isAbstract: false,
-    isNumeric: true,
-    isDimensionItem: false,
-    isDomainMember: false,
-    isHypercubeItem: false,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-]
-
-const MOCK_ALL_ELEMENTS: ElementWithGraph[] = [
-  {
-    identifier: 'cash-and-equivalents',
-    uri: 'urn:element:cash-and-equivalents',
-    qname: 'coa:CashAndCashEquivalents',
-    name: 'Cash and Cash Equivalents',
-    classification: 'asset',
-    balance: 'debit',
-    periodType: 'instant',
-    type: 'monetaryItemType',
-    isAbstract: false,
-    isNumeric: true,
-    isDimensionItem: false,
-    isDomainMember: false,
-    isHypercubeItem: false,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'accounts-receivable',
-    uri: 'urn:element:accounts-receivable',
-    qname: 'coa:AccountsReceivable',
-    name: 'Accounts Receivable, Net',
-    classification: 'asset',
-    balance: 'debit',
-    periodType: 'instant',
-    type: 'monetaryItemType',
-    isAbstract: false,
-    isNumeric: true,
-    isDimensionItem: false,
-    isDomainMember: false,
-    isHypercubeItem: false,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'inventory',
-    uri: 'urn:element:inventory',
-    qname: 'coa:Inventory',
-    name: 'Inventory',
-    classification: 'asset',
-    balance: 'debit',
-    periodType: 'instant',
-    type: 'monetaryItemType',
-    isAbstract: false,
-    isNumeric: true,
-    isDimensionItem: false,
-    isDomainMember: false,
-    isHypercubeItem: false,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'product-revenue',
-    uri: 'urn:element:product-revenue',
-    qname: 'coa:ProductRevenue',
-    name: 'Product Revenue',
-    classification: 'revenue',
-    balance: 'credit',
-    periodType: 'duration',
-    type: 'monetaryItemType',
-    isAbstract: false,
-    isNumeric: true,
-    isDimensionItem: false,
-    isDomainMember: false,
-    isHypercubeItem: false,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-  {
-    identifier: 'service-revenue',
-    uri: 'urn:element:service-revenue',
-    qname: 'coa:ServiceRevenue',
-    name: 'Service Revenue',
-    classification: 'revenue',
-    balance: 'credit',
-    periodType: 'duration',
-    type: 'monetaryItemType',
-    isAbstract: false,
-    isNumeric: true,
-    isDimensionItem: false,
-    isDomainMember: false,
-    isHypercubeItem: false,
-    _graphId: 'demo-graph-1',
-    _graphName: 'acme-corp',
-  },
-]
-
 const AccountMappingsContent: FC = function () {
   const { state: graphState } = useGraphContext()
   const [structures, setStructures] = useState<MappingStructureWithGraph[]>([])
@@ -336,11 +128,10 @@ const AccountMappingsContent: FC = function () {
   useEffect(() => {
     const loadData = async () => {
       if (!currentGraph) {
-        // Use mock data when no graph available (for screenshots)
-        setStructures(MOCK_STRUCTURES)
-        setUnmappedElements(MOCK_UNMAPPED)
-        setAllElements(MOCK_ALL_ELEMENTS)
-        setAssociations(MOCK_ASSOCIATIONS)
+        setStructures([])
+        setUnmappedElements([])
+        setAllElements([])
+        setAssociations({})
         setIsLoading(false)
         return
       }
@@ -372,29 +163,19 @@ const AccountMappingsContent: FC = function () {
           }
           const rows = data.data || []
 
-          if (rows.length > 0) {
-            const graphStructures: MappingStructureWithGraph[] = rows.map(
-              (row) => ({
-                identifier: row.identifier || '',
-                name: row.name || 'Unnamed Structure',
-                description: row.description,
-                taxonomyUri: row.taxonomyUri || '',
-                targetTaxonomyUri: row.targetTaxonomyUri || '',
-                associationCount: row.associationCount || 0,
-                _graphId: currentGraph.graphId,
-                _graphName: currentGraph.graphName,
-              })
-            )
-            setStructures(graphStructures)
-          } else {
-            // Use mock data when API returns empty
-            setStructures(MOCK_STRUCTURES)
-            setAssociations(MOCK_ASSOCIATIONS)
-          }
-        } else {
-          // Use mock data when no response
-          setStructures(MOCK_STRUCTURES)
-          setAssociations(MOCK_ASSOCIATIONS)
+          const graphStructures: MappingStructureWithGraph[] = rows.map(
+            (row) => ({
+              identifier: row.identifier || '',
+              name: row.name || 'Unnamed Structure',
+              description: row.description,
+              taxonomyUri: row.taxonomyUri || '',
+              targetTaxonomyUri: row.targetTaxonomyUri || '',
+              associationCount: row.associationCount || 0,
+              _graphId: currentGraph.graphId,
+              _graphName: currentGraph.graphName,
+            })
+          )
+          setStructures(graphStructures)
         }
 
         // Load unmapped elements
@@ -417,30 +198,24 @@ const AccountMappingsContent: FC = function () {
           }
           const rows = data.data || []
 
-          if (rows.length > 0) {
-            const unmapped: ElementWithGraph[] = rows.map((row) => ({
-              identifier: row.identifier || '',
-              uri: '',
-              qname: '',
-              name: row.name || row.identifier || 'Unknown',
-              classification: row.classification,
-              balance: 'debit',
-              periodType: 'instant',
-              type: '',
-              isAbstract: false,
-              isNumeric: true,
-              isDimensionItem: false,
-              isDomainMember: false,
-              isHypercubeItem: false,
-              _graphId: currentGraph.graphId,
-              _graphName: currentGraph.graphName,
-            }))
-            setUnmappedElements(unmapped)
-          } else {
-            setUnmappedElements(MOCK_UNMAPPED)
-          }
-        } else {
-          setUnmappedElements(MOCK_UNMAPPED)
+          const unmapped: ElementWithGraph[] = rows.map((row) => ({
+            identifier: row.identifier || '',
+            uri: '',
+            qname: '',
+            name: row.name || row.identifier || 'Unknown',
+            classification: row.classification,
+            balance: 'debit',
+            periodType: 'instant',
+            type: '',
+            isAbstract: false,
+            isNumeric: true,
+            isDimensionItem: false,
+            isDomainMember: false,
+            isHypercubeItem: false,
+            _graphId: currentGraph.graphId,
+            _graphName: currentGraph.graphName,
+          }))
+          setUnmappedElements(unmapped)
         }
 
         // Load all elements for CoA selection
@@ -474,39 +249,28 @@ const AccountMappingsContent: FC = function () {
           }
           const rows = data.data || []
 
-          if (rows.length > 0) {
-            const elements: ElementWithGraph[] = rows.map((row) => ({
-              identifier: row.identifier || '',
-              uri: row.uri || '',
-              qname: row.qname || '',
-              name: row.name || row.identifier || 'Unknown',
-              classification: row.classification,
-              balance: row.balance || 'debit',
-              periodType: row.periodType || 'instant',
-              type: row.type || '',
-              isAbstract: row.isAbstract || false,
-              isNumeric: row.isNumeric !== false,
-              isDimensionItem: row.isDimensionItem || false,
-              isDomainMember: row.isDomainMember || false,
-              isHypercubeItem: row.isHypercubeItem || false,
-              _graphId: currentGraph.graphId,
-              _graphName: currentGraph.graphName,
-            }))
-            setAllElements(elements)
-          } else {
-            setAllElements(MOCK_ALL_ELEMENTS)
-          }
-        } else {
-          setAllElements(MOCK_ALL_ELEMENTS)
+          const elements: ElementWithGraph[] = rows.map((row) => ({
+            identifier: row.identifier || '',
+            uri: row.uri || '',
+            qname: row.qname || '',
+            name: row.name || row.identifier || 'Unknown',
+            classification: row.classification,
+            balance: row.balance || 'debit',
+            periodType: row.periodType || 'instant',
+            type: row.type || '',
+            isAbstract: row.isAbstract || false,
+            isNumeric: row.isNumeric !== false,
+            isDimensionItem: row.isDimensionItem || false,
+            isDomainMember: row.isDomainMember || false,
+            isHypercubeItem: row.isHypercubeItem || false,
+            _graphId: currentGraph.graphId,
+            _graphName: currentGraph.graphName,
+          }))
+          setAllElements(elements)
         }
       } catch (err) {
         console.error('Error loading mappings:', err)
-        // Use mock data on error
-        setStructures(MOCK_STRUCTURES)
-        setUnmappedElements(MOCK_UNMAPPED)
-        setAllElements(MOCK_ALL_ELEMENTS)
-        setAssociations(MOCK_ASSOCIATIONS)
-        setError(null) // Clear error to show mock data
+        setError('Failed to load account mappings. Please try again.')
       } finally {
         setIsLoading(false)
       }
