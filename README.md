@@ -49,7 +49,6 @@ The application will be available at http://localhost:3001
 ```bash
 npm run dev              # Start development server (port 3001)
 npm run build            # Production build
-npm run build:dev        # Development build test
 ```
 
 ### Testing

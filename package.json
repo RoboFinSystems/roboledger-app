@@ -18,7 +18,6 @@
     "start": "next start",
     "dev": "PORT=3001 next dev",
     "build": "next build",
-    "build:dev": "NODE_ENV=production next build",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "eslint .",
