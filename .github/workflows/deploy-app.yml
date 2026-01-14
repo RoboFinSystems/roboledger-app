@@ -140,7 +140,7 @@ on:
         required: true
 
 jobs:
-  action:
+  deploy:
     runs-on: ${{ fromJSON(inputs.runner_config) }}
     timeout-minutes: 15
     permissions:

@@ -15,12 +15,12 @@ on:
       deploy_to:
         description: 'Initial deployment target'
         required: true
-        default: 'staging'
+        default: 'all'
         type: choice
         options:
+          - all
           - staging
           - prod
-          - all
           - none
 
 jobs:
@@ -145,20 +145,23 @@ jobs:
           DEPLOY_TARGET="${{ inputs.deploy_to }}"
           TAG_NAME="${{ needs.create-tag.outputs.tag_name }}"
 
-          echo "🚀 Triggering deployment to $DEPLOY_TARGET from git tag $TAG_NAME..."
+          echo "Triggering deployment to $DEPLOY_TARGET from git tag $TAG_NAME..."
 
           if [ "$DEPLOY_TARGET" = "staging" ]; then
             gh workflow run staging.yml --ref "$TAG_NAME"
-            echo "✅ Staging deployment triggered for tag $TAG_NAME"
+            echo "Staging deployment triggered for tag $TAG_NAME"
           elif [ "$DEPLOY_TARGET" = "prod" ]; then
             gh workflow run prod.yml --ref "$TAG_NAME"
-            echo "✅ Production deployment triggered for tag $TAG_NAME"
+            echo "Production deployment triggered for tag $TAG_NAME"
           elif [ "$DEPLOY_TARGET" = "all" ]; then
-            echo "🚀 Triggering deployment to both staging and production..."
+            # Trigger staging first, then prod with delay
+            # Both share 'roboledger-app-deploy' concurrency group, so prod queues behind staging
             gh workflow run staging.yml --ref "$TAG_NAME"
-            echo "✅ Staging deployment triggered for tag $TAG_NAME"
+            echo "Staging deployment triggered for tag $TAG_NAME"
+            echo "Waiting 30 seconds before triggering production (concurrency group will queue it)..."
+            sleep 30
             gh workflow run prod.yml --ref "$TAG_NAME"
-            echo "✅ Production deployment triggered for tag $TAG_NAME"
+            echo "Production deployment triggered - will start after staging completes"
           fi
 
   create-summary:
