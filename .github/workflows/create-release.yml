@@ -194,11 +194,14 @@ jobs:
             gh workflow run prod.yml --ref "$TAG_NAME"
             echo "✅ Production deployment triggered for tag $TAG_NAME"
           elif [ "$DEPLOY_TARGET" = "all" ]; then
-            echo "🚀 Triggering deployment to both staging and production..."
+            # Trigger staging first, then prod with delay
+            # Both share 'robosystems-app-deploy' concurrency group, so prod queues behind staging
             gh workflow run staging.yml --ref "$TAG_NAME"
-            echo "✅ Staging deployment triggered for tag $TAG_NAME"
+            echo "Staging deployment triggered for tag $TAG_NAME"
+            echo "Waiting 30 seconds before triggering production (concurrency group will queue it)..."
+            sleep 30
             gh workflow run prod.yml --ref "$TAG_NAME"
-            echo "✅ Production deployment triggered for tag $TAG_NAME"
+            echo "Production deployment triggered - will start after staging completes"
           fi
 
   create-summary:
