@@ -125,6 +125,7 @@ jobs:
       memory: ${{ vars.MEMORY_PROD || '512' }}
       fargate_weight: ${{ vars.FARGATE_WEIGHT_PROD || '20' }}
       fargate_spot_weight: ${{ vars.FARGATE_SPOT_WEIGHT_PROD || '80' }}
+      fargate_base: ${{ vars.FARGATE_BASE_PROD || '0' }}
       # Auto-scaling Configuration
       capacity_min: ${{ vars.CAPACITY_MIN_PROD || '1' }}
       capacity_max: ${{ vars.CAPACITY_MAX_PROD || '10' }}
