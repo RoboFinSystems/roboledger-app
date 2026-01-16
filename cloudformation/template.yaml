@@ -131,6 +131,13 @@ Parameters:
     MaxValue: 100
     Description: Weight for FARGATE_SPOT capacity provider (Spot instances)
 
+  FargateBase:
+    Type: Number
+    Default: 0
+    MinValue: 0
+    MaxValue: 10
+    Description: Minimum number of tasks guaranteed to run on FARGATE (On-Demand). Set to 1+ for guaranteed availability during Spot shortages.
+
   # Auto-scaling Configuration
   CapacityMin:
     Type: Number
@@ -614,7 +621,7 @@ Resources:
           Base: 0
         - CapacityProvider: FARGATE
           Weight: !Ref FargateWeight
-          Base: 0
+          Base: !Ref FargateBase
       DesiredCount: !Ref CapacityMin
       HealthCheckGracePeriodSeconds: 60
       EnableECSManagedTags: true
