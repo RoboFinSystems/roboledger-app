@@ -7,12 +7,12 @@
     "node": ">=22.0.0"
   },
   "bin": {
-    "bootstrap": "./bin/bootstrap",
-    "create-feature": "./bin/create-feature",
-    "create-release": "./bin/create-release",
-    "create-pr": "./bin/create-pr",
-    "sync-subtree": "./bin/sync-subtree",
-    "gha-setup": "./bin/gha-setup"
+    "bootstrap": "./bin/bootstrap.sh",
+    "create-feature": "./bin/create-feature.sh",
+    "create-release": "./bin/create-release.sh",
+    "create-pr": "./bin/create-pr.sh",
+    "sync-subtree": "./bin/sync-subtree.sh",
+    "gha-setup": "./bin/gha-setup.sh"
   },
   "scripts": {
     "start": "next start",
@@ -28,16 +28,16 @@
     "cf-lint": "uvx cfn-lint",
     "test:watch": "vitest watch --silent",
     "test:coverage": "vitest run --coverage --silent",
-    "core:pull": "./bin/sync-subtree pull",
-    "core:push": "./bin/sync-subtree push",
-    "core:add": "./bin/sync-subtree add",
-    "deploy:staging": "./bin/deploy staging",
-    "deploy:prod": "./bin/deploy prod",
-    "feature:create": "./bin/create-feature",
-    "release:create": "./bin/create-release",
-    "pr:create": "./bin/create-pr",
-    "setup:gha": "./bin/gha-setup",
-    "setup:bootstrap": "./bin/bootstrap"
+    "core:pull": "./bin/sync-subtree.sh pull",
+    "core:push": "./bin/sync-subtree.sh push",
+    "core:add": "./bin/sync-subtree.sh add",
+    "deploy:staging": "./bin/deploy.sh staging",
+    "deploy:prod": "./bin/deploy.sh prod",
+    "feature:create": "./bin/create-feature.sh",
+    "release:create": "./bin/create-release.sh",
+    "pr:create": "./bin/create-pr.sh",
+    "setup:gha": "./bin/gha-setup.sh",
+    "setup:bootstrap": "./bin/bootstrap.sh"
   },
   "dependencies": {
     "@aws-sdk/client-sns": "^3.948.0",
