@@ -50,6 +50,8 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false  # No Python deps to cache in this Node.js app
 
       - name: Install Dependencies
         timeout-minutes: 3
