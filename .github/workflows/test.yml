@@ -64,7 +64,7 @@ jobs:
           uvx cfn-lint
 
       - name: Scan dependencies for vulnerabilities
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
           scan-ref: '.'
