@@ -115,7 +115,9 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -255,6 +257,45 @@ jobs:
           echo "$TAGS" | tr ' ' '\n' | grep -E '^-t' | sed 's/-t /  - /'
 
   # ===========================================================================
+  # Scan Docker image for vulnerabilities (runs after ECR build)
+  # ===========================================================================
+  scan:
+    needs: ecr-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      id-token: write
+      contents: read
+      security-events: write # Required for SARIF upload
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ inputs.region }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ needs.ecr-build.outputs.image }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'container-scan'
+
+  # ===========================================================================
   # Docker Hub Build - Configurable image with runtime environment injection
   # ===========================================================================
   # This job builds a separate image with placeholder values that get replaced
@@ -364,9 +405,12 @@ jobs:
           echo "🚀 Publishing configurable image to Docker Hub"
 
           # Build for both amd64 and arm64 (for Mac M1/M2 users)
+          # SBOM and provenance attestations improve Docker Hub security score
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
             --push \
+            --sbom=true \
+            --provenance=mode=max \
             $TAGS \
             -f Dockerfile .
 

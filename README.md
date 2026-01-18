@@ -114,7 +114,7 @@ See the **[Bootstrap Guide](https://github.com/RoboFinSystems/robosystems/wiki/B
 
 - **Dashboard**: Financial overview with account balances, recent transactions, and AI-powered insights
 - **Ledger**: Double-entry accounting with chart of accounts, journal entries, trial balance, and account mappings
-- **Reports**: Custom report builder with fact grids, templates, and multi-format export (PDF, Excel, CSV) — *in development*
+- **Reports**: Custom report builder with fact grids, templates, and multi-format export (PDF, Excel, CSV) — _in development_
 - **Connections**: Data source management for QuickBooks sync, Plaid bank feeds, and SEC filings
 - **Console**: Interactive Cypher query terminal for direct graph exploration
 - **Entities**: Multi-entity management across all graphs with parent/subsidiary relationships
@@ -123,8 +123,8 @@ See the **[Bootstrap Guide](https://github.com/RoboFinSystems/robosystems/wiki/B
 **Data Integrations:**
 
 - **QuickBooks**: OAuth 2.0 authentication, company data import, transaction sync, automatic trial balance
-- **Plaid**: Bank authentication via Plaid Link, multi-institution support, transaction feeds — *in development*
-- **SEC XBRL**: CIK lookup, filing downloads (10-K, 10-Q, 8-K), US-GAAP element mapping — *in development*
+- **Plaid**: Bank authentication via Plaid Link, multi-institution support, transaction feeds — _in development_
+- **SEC XBRL**: CIK lookup, filing downloads (10-K, 10-Q, 8-K), US-GAAP element mapping — _in development_
 
 **Core Library (`/src/lib/core/`):**
 

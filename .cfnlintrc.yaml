@@ -1,0 +1,12 @@
+# cfn-lint configuration
+# https://github.com/aws-cloudformation/cfn-lint
+
+templates:
+  - cloudformation/*.yaml
+
+# Ignore rules that produce false positives for valid CloudFormation patterns
+ignore_checks:
+  # W1030/W1031: Ref/Sub validation when parameters have empty defaults
+  # DomainName parameter is optional and empty by default
+  - W1030
+  - W1031
