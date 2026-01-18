@@ -226,7 +226,6 @@ Conditions:
     - !Equals [!Ref AppAccessMode, 'public-http']
 
   # Check if we're in production environment for www redirect (only applies to public mode)
-  IsProduction: !Equals [!Ref Environment, 'prod']
   IsProductionPublic: !And
     - !Equals [!Ref Environment, 'prod']
     - !Equals [!Ref AppAccessMode, 'public']

@@ -7,6 +7,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  security-events: write  # Required for Trivy SARIF upload to GitHub Security tab
+
 jobs:
   runner:
     runs-on: ubuntu-latest

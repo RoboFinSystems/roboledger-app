@@ -15,6 +15,9 @@ jobs:
   test:
     runs-on: ${{ fromJSON(inputs.runner_config) }}
     timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write  # Required for Trivy SARIF upload
     env:
       # Use fixed port for roboledger-app (port 5434)
       DATABASE_URL: postgres://postgres:postgres@localhost:5434/robosystems_test
@@ -45,6 +48,9 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
       - name: Install Dependencies
         timeout-minutes: 3
         run: |
@@ -67,3 +73,27 @@ jobs:
       - name: Run Build
         timeout-minutes: 5
         run: npm run build
+
+      - name: Lint CloudFormation templates
+        timeout-minutes: 1
+        run: |
+          echo "🔍 Linting CloudFormation templates..."
+          uvx cfn-lint
+
+      - name: Scan dependencies for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+          scanners: 'vuln'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'dependency-scan'
