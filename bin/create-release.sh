@@ -3,7 +3,7 @@ set -e
 
 # Create release script using GitHub Actions
 # Creates a new release branch via GHA workflow and checks it out locally
-# Usage: ./bin/create-release [major|minor|patch] [staging|prod|none]
+# Usage: ./bin/create-release.sh [major|minor|patch] [staging|prod|none]
 
 # Default to patch if no argument provided
 VERSION_TYPE=${1:-patch}

@@ -3,7 +3,7 @@ set -e
 
 # Create feature branch script - local Git operations
 # Creates a new feature/bugfix/hotfix branch locally and pushes to remote
-# Usage: ./bin/create-feature [feature|bugfix|hotfix|chore|refactor] [branch-name] [base-branch] [update-deps]
+# Usage: ./bin/create-feature.sh [feature|bugfix|hotfix|chore|refactor] [branch-name] [base-branch] [update-deps]
 
 # Default values
 BRANCH_TYPE=${1:-feature}

@@ -8,7 +8,7 @@
 #
 # Usage:
 #   npm run setup:gha
-#   or directly: ./bin/gha-setup
+#   or directly: ./bin/gha-setup.sh
 #
 # Required GitHub repository configuration:
 # - Repository secrets (sensitive data)
@@ -238,7 +238,7 @@ function setup_minimum_config() {
     echo "💡 All settings use cost-optimized defaults."
     echo ""
     echo "📋 Next steps:"
-    echo "1. Run bootstrap first if not done: ./bin/bootstrap"
+    echo "1. Run bootstrap first if not done: ./bin/bootstrap.sh"
     echo "   (Sets AWS_ROLE_ARN for OIDC authentication)"
     echo "2. Optional secrets for additional features: gh secret list"
     echo "   - ACTIONS_TOKEN (workflow automations)"
