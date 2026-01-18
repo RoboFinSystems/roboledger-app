@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Deploy current branch or tag to specified environment for RoboLedger Next.js App
-# Usage: ./bin/deploy staging|prod [branch_or_tag]
+# Usage: ./bin/deploy.sh staging|prod [branch_or_tag]
 
 set -euo pipefail
 
@@ -36,17 +36,17 @@ print_step() {
 
 # Function to show usage
 show_usage() {
-    echo "Usage: ./bin/deploy <environment> [branch_or_tag]"
+    echo "Usage: ./bin/deploy.sh <environment> [branch_or_tag]"
     echo ""
     echo "Arguments:"
     echo "  environment      Target environment (staging|prod)"
     echo "  branch_or_tag    Optional: specific branch or tag to deploy (defaults to current)"
     echo ""
     echo "Examples:"
-    echo "  ./bin/deploy staging           # Deploy current branch/tag to staging"
-    echo "  ./bin/deploy prod              # Deploy current branch/tag to production"
-    echo "  ./bin/deploy staging v1.2.3    # Deploy specific tag to staging"
-    echo "  ./bin/deploy prod main         # Deploy main branch to production"
+    echo "  ./bin/deploy.sh staging           # Deploy current branch/tag to staging"
+    echo "  ./bin/deploy.sh prod              # Deploy current branch/tag to production"
+    echo "  ./bin/deploy.sh staging v1.2.3    # Deploy specific tag to staging"
+    echo "  ./bin/deploy.sh prod main         # Deploy main branch to production"
     echo ""
 }
 
