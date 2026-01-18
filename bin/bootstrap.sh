@@ -13,7 +13,7 @@
 #   - OIDC stack already deployed via robosystems repo (just bootstrap)
 #
 # USAGE:
-#   ./bin/bootstrap
+#   ./bin/bootstrap.sh
 #
 # =============================================================================
 
@@ -211,7 +211,7 @@ check_oidc_infrastructure() {
         echo ""
         echo "  3. Return here and run this script again:"
         echo "     cd $(pwd)"
-        echo "     ./bin/bootstrap"
+        echo "     ./bin/bootstrap.sh"
         echo ""
         echo -e "${YELLOW}════════════════════════════════════════════════════════════${NC}"
         exit 1
@@ -337,13 +337,13 @@ configure_github() {
     print_step "Run full variable setup?"
     echo "  This will configure all deployment variables (domains, scaling, etc.)"
     echo ""
-    read -p "Run ./bin/gha-setup now? (Y/n): " -n 1 -r
+    read -p "Run ./bin/gha-setup.sh now? (Y/n): " -n 1 -r
     echo ""
     if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-        if [ -x "./bin/gha-setup" ]; then
-            ./bin/gha-setup
+        if [ -x "./bin/gha-setup.sh" ]; then
+            ./bin/gha-setup.sh
         else
-            print_warning "bin/gha-setup not found or not executable"
+            print_warning "bin/gha-setup.sh not found or not executable"
         fi
     fi
 }

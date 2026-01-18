@@ -3,7 +3,7 @@ set -e
 
 # Create PR script using GitHub Actions
 # Analyzes current branch changes and creates a comprehensive PR with Claude
-# Usage: ./bin/create-pr [target_branch] [claude_review]
+# Usage: ./bin/create-pr.sh [target_branch] [claude_review]
 
 # Default values
 TARGET_BRANCH=${1:-main}
