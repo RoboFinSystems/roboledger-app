@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      security-events: write  # Required for Trivy SARIF upload
+      security-events: write # Required for Trivy SARIF upload
     env:
       # Use fixed port for roboledger-app (port 5434)
       DATABASE_URL: postgres://postgres:postgres@localhost:5434/robosystems_test
@@ -51,7 +51,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
-          enable-cache: false  # No Python deps to cache in this Node.js app
+          enable-cache: false # No Python deps to cache in this Node.js app
 
       - name: Install Dependencies
         timeout-minutes: 3
@@ -71,6 +71,10 @@ jobs:
       - name: Run Lint
         timeout-minutes: 2
         run: npm run lint
+
+      - name: Check Formatting
+        timeout-minutes: 1
+        run: npm run format:check
 
       - name: Run Build
         timeout-minutes: 5

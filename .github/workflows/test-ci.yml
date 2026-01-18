@@ -9,7 +9,7 @@ on:
 
 permissions:
   contents: read
-  security-events: write  # Required for Trivy SARIF upload to GitHub Security tab
+  security-events: write # Required for Trivy SARIF upload to GitHub Security tab
 
 jobs:
   runner:

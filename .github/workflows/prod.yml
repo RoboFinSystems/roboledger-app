@@ -4,7 +4,7 @@ permissions:
   contents: read
   deployments: write
   id-token: write
-  security-events: write  # Required for Trivy SARIF upload in test workflow
+  security-events: write # Required for Trivy SARIF upload in test workflow
 
 concurrency:
   group: roboledger-app-deploy

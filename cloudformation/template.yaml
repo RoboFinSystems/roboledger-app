@@ -975,7 +975,8 @@ Resources:
             CustomOriginConfig:
               HTTPPort: 80
               HTTPSPort: 443
-              OriginProtocolPolicy: !If [IsPublicMode, 'https-only', 'http-only']
+              OriginProtocolPolicy:
+                !If [IsPublicMode, 'https-only', 'http-only']
               OriginSSLProtocols:
                 - TLSv1.2
         DefaultCacheBehavior:

@@ -13,7 +13,7 @@ Parameters:
 
   Namespace:
     Type: String
-    Default: ""
+    Default: ''
     Description: |
       S3 bucket namespace (typically AWS account ID) for globally unique bucket names.
       When provided, creates buckets like: roboledger-app-{namespace}-{env}-static-assets
@@ -30,7 +30,7 @@ Parameters:
     Description: Tag value for Component identification
 
 Conditions:
-  HasNamespace: !Not [!Equals [!Ref Namespace, ""]]
+  HasNamespace: !Not [!Equals [!Ref Namespace, '']]
 
 Resources:
   # S3 Bucket for Static Assets
