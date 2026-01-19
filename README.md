@@ -1,6 +1,6 @@
 # RoboLedger App
 
-> **Version 0.2 (Beta)** — Core accounting features available, expanding integrations and automation
+> **Version 0.3 (Beta)** — Core accounting features available, expanding integrations and automation
 
 RoboLedger App is the web interface for AI-native accounting, building semantic knowledge graphs from financial data for intelligent automation and natural language analysis powered by Claude AI.
 
