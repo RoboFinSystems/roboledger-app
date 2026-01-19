@@ -134,7 +134,7 @@ Shared modules maintained as a git subtree across RoboSystems frontend apps:
 
 **Infrastructure:**
 
-- ECS Fargate with auto-scaling and Spot capacity
+- AWS App Runner with auto-scaling
 - S3 + CloudFront for static asset hosting
 - CloudFormation templates in `/cloudformation/`
 
@@ -149,7 +149,7 @@ Shared modules maintained as a git subtree across RoboSystems frontend apps:
 
 ### Infrastructure
 
-- **ECS Fargate** with auto-scaling and Spot capacity
+- **AWS App Runner** with auto-scaling
 - **S3 + CloudFront** for static asset hosting
 - **CloudFormation** templates in `/cloudformation/`
 
