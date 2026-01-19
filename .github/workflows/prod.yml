@@ -131,8 +131,6 @@ jobs:
       # Domain & DNS Configuration (required for public mode)
       domain_name: ${{ vars.DOMAIN_NAME_PROD || 'roboledger.ai' }}
       domain_name_root: ${{ vars.DOMAIN_NAME_ROOT || 'roboledger.ai' }}
-      # SNS Configuration
-      notification_email: ${{ vars.AWS_SNS_ALERT_EMAIL || '' }}
     secrets:
       ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
 
