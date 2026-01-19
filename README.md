@@ -1,6 +1,6 @@
 # RoboSystems App
 
-> **Version 1.0** — Production-ready platform for financial knowledge graph management
+> **Version 1.1** — Production-ready platform for financial knowledge graph management
 
 RoboSystems App is the web interface for the RoboSystems financial knowledge graph platform, providing tools to create, manage, and query graph databases.
 
