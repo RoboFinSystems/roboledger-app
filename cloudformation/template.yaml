@@ -309,7 +309,7 @@ Resources:
   AppRunnerAutoScaling:
     Type: AWS::AppRunner::AutoScalingConfiguration
     Properties:
-      AutoScalingConfigurationName: !Sub robosystems-app-${Environment}-autoscaling
+      AutoScalingConfigurationName: !Sub robosystems-${Environment}-autoscaling
       MaxConcurrency: !Ref MaxConcurrency
       MaxSize: !Ref CapacityMax
       MinSize: !Ref CapacityMin
