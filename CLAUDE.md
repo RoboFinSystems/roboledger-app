@@ -42,11 +42,11 @@ npm run format:check # Check code formatting
 - Pre-built login/register forms with custom styling
 - Session validation across authenticated routes
 
-**AI Integration:**
+**API Routes:**
 
-- Dual AI system: External RoboSystems agent + Anthropic Claude
-- Chat interface at `/api/chat` with session-based conversations
-- Agent service integration for specialized business intelligence
+- `/api/utilities/health` - Health check endpoint for App Runner
+- `/api/contact` - Contact form submission via SNS (with rate limiting and CAPTCHA)
+- `/api/session/sidebar` - Sidebar state management
 
 **Route Structure:**
 
@@ -87,11 +87,14 @@ npm run format:check # Check code formatting
 
 **Frontend Application:**
 
-- Next.js application that connects to RoboSystems API
-- Can be deployed to any static hosting service (Vercel, Netlify, etc.)
+- Primarily client-side Next.js application that connects to RoboSystems API
+- Minimal server-side requirements: health check, contact form (SNS), sidebar state
+- Currently deployed on AWS App Runner behind CloudFront
 - Environment variables needed:
   - `NEXT_PUBLIC_ROBOSYSTEMS_API_URL` - RoboSystems API endpoint
-  - Any other app-specific configuration
+  - `SNS_CONTACT_TOPIC_ARN` - SNS topic for contact form
+  - `SNS_WAITLIST_TOPIC_ARN` - SNS topic for waitlist
+  - `TURNSTILE_SECRET_KEY` / `TURNSTILE_SITE_KEY` - CAPTCHA configuration
 
 ## Important Notes
 
