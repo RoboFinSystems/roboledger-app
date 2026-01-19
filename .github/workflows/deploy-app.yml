@@ -34,7 +34,6 @@ on:
           App access mode:
           - public: CloudFront + custom domain + HTTPS (requires domain)
           - public-http: CloudFront with AWS DNS, no custom domain needed
-          - internal: Internal ALB only, access via bastion tunnel
         required: false
         type: string
         default: 'public'
@@ -63,64 +62,34 @@ on:
         required: true
         type: string
 
-      # ECS & Compute Configuration
+      # App Runner Compute Configuration
       cpu:
-        description: 'CPU units for ECS task (256 = 0.25 vCPU)'
+        description: 'CPU for App Runner instance'
         required: false
         type: string
-        default: '256'
+        default: '0.25 vCPU'
       memory:
-        description: 'Memory in MiB for ECS task'
+        description: 'Memory for App Runner instance'
         required: false
         type: string
-        default: '512'
-      fargate_weight:
-        description: 'Weight for FARGATE capacity provider (On-Demand instances)'
-        required: false
-        type: string
-        default: '20'
-      fargate_spot_weight:
-        description: 'Weight for FARGATE_SPOT capacity provider (Spot instances)'
-        required: false
-        type: string
-        default: '80'
-      fargate_base:
-        description: 'Minimum tasks guaranteed on FARGATE (On-Demand). Set to 1+ for guaranteed availability during Spot shortages.'
-        required: false
-        type: string
-        default: '0'
+        default: '0.5 GB'
 
       # Auto-scaling Configuration
       capacity_min:
-        description: 'Minimum number of tasks for auto scaling'
+        description: 'Minimum number of instances for auto scaling'
         required: false
         type: string
         default: '1'
       capacity_max:
-        description: 'Maximum number of tasks for auto scaling'
+        description: 'Maximum number of instances for auto scaling'
         required: false
         type: string
         default: '10'
-      scale_up_cpu_threshold:
-        description: 'CPU utilization percentage to trigger scale up'
+      max_concurrency:
+        description: 'Maximum concurrent requests per instance before scaling'
         required: false
         type: string
-        default: '70'
-      scale_down_cpu_threshold:
-        description: 'CPU utilization percentage to trigger scale down'
-        required: false
-        type: string
-        default: '30'
-      scale_up_memory_threshold:
-        description: 'Memory utilization percentage to trigger scale up'
-        required: false
-        type: string
-        default: '65'
-      scale_down_memory_threshold:
-        description: 'Memory utilization percentage to trigger scale down'
-        required: false
-        type: string
-        default: '25'
+        default: '100'
 
       # Domain & DNS Configuration (required only when app_access_mode=public)
       domain_name:
@@ -134,12 +103,6 @@ on:
         type: string
         default: ''
 
-      # SNS Configuration
-      notification_email:
-        description: 'Email address for admin notifications (contact form)'
-        required: true
-        type: string
-
     secrets:
       ACTIONS_TOKEN:
         required: true
@@ -147,7 +110,7 @@ on:
 jobs:
   deploy:
     runs-on: ${{ fromJSON(inputs.runner_config) }}
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       id-token: write
       contents: read
@@ -164,73 +127,6 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ inputs.aws_region }}
-
-      - name: Get VPC Stack Information
-        id: get-vpc-info
-        run: |
-          # Use the shared VPC stack for both environments
-          STACK_NAME="RoboSystemsVPC"
-
-          echo "Looking up CloudFormation stack: $STACK_NAME"
-
-          # Check if stack exists
-          if ! aws cloudformation describe-stacks --stack-name "$STACK_NAME" >/dev/null 2>&1; then
-            echo "Error: Stack $STACK_NAME not found"
-            exit 1
-          fi
-
-          # Get VPC ID
-          VPC_ID=$(aws cloudformation describe-stacks \
-            --stack-name "$STACK_NAME" \
-            --query "Stacks[0].Outputs[?OutputKey=='VpcId'].OutputValue | [0]" \
-            --output text)
-
-          echo "vpc_id=$VPC_ID" >> $GITHUB_OUTPUT
-          echo "Found VPC ID: $VPC_ID"
-
-          # Get Public Subnet IDs
-          PUBLIC_SUBNET_IDS=$(aws cloudformation describe-stacks \
-            --stack-name "$STACK_NAME" \
-            --query "Stacks[0].Outputs[?OutputKey=='PublicSubnetIds'].OutputValue | [0]" \
-            --output text)
-
-          echo "public_subnet_ids=$PUBLIC_SUBNET_IDS" >> $GITHUB_OUTPUT
-          echo "Found Public Subnet IDs: $PUBLIC_SUBNET_IDS"
-
-          # Get Private Subnet IDs
-          PRIVATE_SUBNET_IDS=$(aws cloudformation describe-stacks \
-            --stack-name "$STACK_NAME" \
-            --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnetIds'].OutputValue | [0]" \
-            --output text)
-
-          echo "private_subnet_ids=$PRIVATE_SUBNET_IDS" >> $GITHUB_OUTPUT
-          echo "Found Private Subnet IDs: $PRIVATE_SUBNET_IDS"
-
-          # Get NAT Gateway IP
-          NAT_GATEWAY_IP=$(aws cloudformation describe-stacks \
-            --stack-name "$STACK_NAME" \
-            --query "Stacks[0].Outputs[?OutputKey=='NatGatewayIPs'].OutputValue | [0]" \
-            --output text)
-
-          echo "nat_gateway_ips=$NAT_GATEWAY_IP" >> $GITHUB_OUTPUT
-          echo "Found NAT Gateway IP: $NAT_GATEWAY_IP"
-
-          echo "Summary of network resources:"
-          echo "  VPC ID: $VPC_ID"
-          echo "  Public Subnets: $PUBLIC_SUBNET_IDS"
-          echo "  Private Subnets: $PRIVATE_SUBNET_IDS"
-          echo "  NAT Gateway IP: $NAT_GATEWAY_IP"
-
-      - name: Get Secret ARNs
-        id: get-arns
-        run: |
-          # Get RoboSystems secrets ARN (shared across all RoboFin apps)
-          ROBOSYSTEMS_SECRETS_ARN=$(aws secretsmanager describe-secret \
-            --secret-id "robosystems/${{ inputs.environment }}" \
-            --query "ARN" --output text)
-
-          echo "robosystems_secrets_arn=$ROBOSYSTEMS_SECRETS_ARN" >> $GITHUB_OUTPUT
-          echo "Found RoboSystems secret ARN: $ROBOSYSTEMS_SECRETS_ARN"
 
       - name: Deploy RoboLedger CloudFormation Stack
         id: deploy-stack
@@ -262,38 +158,37 @@ jobs:
             echo "is_new_stack=false" >> $GITHUB_OUTPUT
           fi
 
-          # Base parameters (always required)
-          APP_STACK_PARAMS="ParameterKey=Environment,ParameterValue=${{ inputs.environment }} \
-                ParameterKey=AWSAccountId,ParameterValue=${{ inputs.aws_account_id }} \
-                ParameterKey=AppAccessMode,ParameterValue=${{ inputs.app_access_mode }} \
-                ParameterKey=RoboLedgerSecretsArn,ParameterValue=${{ steps.get-arns.outputs.robosystems_secrets_arn }} \
-                ParameterKey=VpcId,ParameterValue=${{ steps.get-vpc-info.outputs.vpc_id }} \
-                ParameterKey=SubnetIds,ParameterValue=\"${{ steps.get-vpc-info.outputs.private_subnet_ids }}\" \
-                ParameterKey=PublicSubnetIds,ParameterValue=\"${{ steps.get-vpc-info.outputs.public_subnet_ids }}\" \
-                ParameterKey=ECRRepository,ParameterValue=${{ inputs.ecr_repository }} \
-                ParameterKey=ECRImageTag,ParameterValue=${{ inputs.ecr_image_tag }} \
-                ParameterKey=Cpu,ParameterValue=${{ inputs.cpu }} \
-                ParameterKey=Memory,ParameterValue=${{ inputs.memory }} \
-                ParameterKey=StaticAssetsBucketName,ParameterValue=${{ inputs.static_assets_bucket_name }} \
-                ParameterKey=StaticAssetsBucketArn,ParameterValue=${{ inputs.static_assets_bucket_arn }} \
-                ParameterKey=StaticAssetsBucketDomainName,ParameterValue=${{ inputs.static_assets_bucket_domain }} \
-                ParameterKey=CapacityMin,ParameterValue=${{ inputs.capacity_min }} \
-                ParameterKey=CapacityMax,ParameterValue=${{ inputs.capacity_max }} \
-                ParameterKey=ScaleUpCPUThreshold,ParameterValue=${{ inputs.scale_up_cpu_threshold }} \
-                ParameterKey=ScaleDownCPUThreshold,ParameterValue=${{ inputs.scale_down_cpu_threshold }} \
-                ParameterKey=ScaleUpMemoryThreshold,ParameterValue=${{ inputs.scale_up_memory_threshold }} \
-                ParameterKey=ScaleDownMemoryThreshold,ParameterValue=${{ inputs.scale_down_memory_threshold }} \
-                ParameterKey=FargateSpotWeight,ParameterValue=${{ inputs.fargate_spot_weight }} \
-                ParameterKey=FargateWeight,ParameterValue=${{ inputs.fargate_weight }} \
-                ParameterKey=FargateBase,ParameterValue=${{ inputs.fargate_base }} \
-                ParameterKey=NotificationEmail,ParameterValue=${{ inputs.notification_email }}"
+          # Build parameters JSON file (handles spaces in values correctly)
+          cat > /tmp/cfn-params.json << 'PARAMS_EOF'
+          [
+            {"ParameterKey": "Environment", "ParameterValue": "${{ inputs.environment }}"},
+            {"ParameterKey": "AWSAccountId", "ParameterValue": "${{ inputs.aws_account_id }}"},
+            {"ParameterKey": "AppAccessMode", "ParameterValue": "${{ inputs.app_access_mode }}"},
+            {"ParameterKey": "ECRRepository", "ParameterValue": "${{ inputs.ecr_repository }}"},
+            {"ParameterKey": "ECRImageTag", "ParameterValue": "${{ inputs.ecr_image_tag }}"},
+            {"ParameterKey": "Cpu", "ParameterValue": "${{ inputs.cpu }}"},
+            {"ParameterKey": "Memory", "ParameterValue": "${{ inputs.memory }}"},
+            {"ParameterKey": "StaticAssetsBucketName", "ParameterValue": "${{ inputs.static_assets_bucket_name }}"},
+            {"ParameterKey": "StaticAssetsBucketArn", "ParameterValue": "${{ inputs.static_assets_bucket_arn }}"},
+            {"ParameterKey": "StaticAssetsBucketDomainName", "ParameterValue": "${{ inputs.static_assets_bucket_domain }}"},
+            {"ParameterKey": "CapacityMin", "ParameterValue": "${{ inputs.capacity_min }}"},
+            {"ParameterKey": "CapacityMax", "ParameterValue": "${{ inputs.capacity_max }}"},
+            {"ParameterKey": "MaxConcurrency", "ParameterValue": "${{ inputs.max_concurrency }}"}
+          ]
+          PARAMS_EOF
 
           # Add domain parameters only for public mode
           if [ "${{ inputs.app_access_mode }}" = "public" ]; then
-            APP_STACK_PARAMS="$APP_STACK_PARAMS \
-                ParameterKey=DomainName,ParameterValue=${{ inputs.domain_name }} \
-                ParameterKey=HostedZoneId,ParameterValue=$HOSTED_ZONE_ID"
+            sed -i '$ d' /tmp/cfn-params.json
+            cat >> /tmp/cfn-params.json << DOMAIN_EOF
+            ,{"ParameterKey": "DomainName", "ParameterValue": "${{ inputs.domain_name }}"},
+            {"ParameterKey": "HostedZoneId", "ParameterValue": "$HOSTED_ZONE_ID"}
+          ]
+          DOMAIN_EOF
           fi
+
+          echo "Parameters:"
+          cat /tmp/cfn-params.json
 
           # Deploy or update the stack
           if [ "$STACK_ACTION" = "create-stack" ]; then
@@ -301,15 +196,15 @@ jobs:
             aws cloudformation $STACK_ACTION \
               --stack-name ${{ inputs.stack_name }} \
               --template-body file://cloudformation/template.yaml \
-              --capabilities CAPABILITY_IAM \
-              --parameters $APP_STACK_PARAMS
+              --capabilities CAPABILITY_NAMED_IAM \
+              --parameters file:///tmp/cfn-params.json
           else
             # Update existing stack, handling "No updates" error
             UPDATE_OUTPUT=$(aws cloudformation $STACK_ACTION \
               --stack-name ${{ inputs.stack_name }} \
               --template-body file://cloudformation/template.yaml \
-              --capabilities CAPABILITY_IAM \
-              --parameters $APP_STACK_PARAMS 2>&1) || true
+              --capabilities CAPABILITY_NAMED_IAM \
+              --parameters file:///tmp/cfn-params.json 2>&1) || true
 
             # Check if the error was "No updates are to be performed"
             if echo "$UPDATE_OUTPUT" | grep -q "No updates are to be performed"; then
@@ -331,21 +226,94 @@ jobs:
           timeout: '1800'
           interval: '10'
 
-      - name: Refresh ECS Service
-        if: steps.deploy-stack.outputs.is_new_stack == 'false'
-        uses: ./.github/actions/refresh-ecs
-        with:
-          stack-name: ${{ inputs.stack_name }}
-          skip-autoscale-refresh: 'false'
-          max-wait-time: '600'
-          service-stability-delay: '30'
+      - name: Get App Runner Service Info
+        id: get-service-info
+        run: |
+          # Get the App Runner service ARN from stack outputs
+          SERVICE_ARN=$(aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.stack_name }} \
+            --query "Stacks[0].Outputs[?OutputKey=='AppRunnerServiceArn'].OutputValue" \
+            --output text)
+
+          echo "service_arn=$SERVICE_ARN" >> $GITHUB_OUTPUT
+          echo "App Runner Service ARN: $SERVICE_ARN"
+
+          # Get the service URL
+          SERVICE_URL=$(aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.stack_name }} \
+            --query "Stacks[0].Outputs[?OutputKey=='AppRunnerServiceUrl'].OutputValue" \
+            --output text)
+
+          echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
+          echo "App Runner Service URL: $SERVICE_URL"
+
+      - name: Wait for App Runner Deployment
+        run: |
+          SERVICE_ARN="${{ steps.get-service-info.outputs.service_arn }}"
+          MAX_ATTEMPTS=60
+          SLEEP_INTERVAL=10
+
+          echo "Waiting for App Runner service to become ready..."
+
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            STATUS=$(aws apprunner describe-service \
+              --service-arn "$SERVICE_ARN" \
+              --query "Service.Status" \
+              --output text)
+
+            echo "Attempt $i/$MAX_ATTEMPTS: Service status is $STATUS"
+
+            if [ "$STATUS" = "RUNNING" ]; then
+              echo "App Runner service is running!"
+              break
+            elif [ "$STATUS" = "CREATE_FAILED" ] || [ "$STATUS" = "DELETE_FAILED" ] || [ "$STATUS" = "UPDATE_FAILED" ]; then
+              echo "ERROR: App Runner service deployment failed with status: $STATUS"
+              exit 1
+            fi
+
+            if [ $i -eq $MAX_ATTEMPTS ]; then
+              echo "ERROR: Timeout waiting for App Runner service to become ready"
+              exit 1
+            fi
+
+            sleep $SLEEP_INTERVAL
+          done
+
+      - name: Verify Health Check
+        run: |
+          SERVICE_URL="${{ steps.get-service-info.outputs.service_url }}"
+          HEALTH_URL="https://${SERVICE_URL}/api/utilities/health"
+
+          echo "Checking health endpoint: $HEALTH_URL"
+
+          # Wait for health check to pass
+          MAX_ATTEMPTS=12
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL" || echo "000")
+
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "Health check passed! HTTP $HTTP_STATUS"
+              break
+            fi
+
+            echo "Attempt $i/$MAX_ATTEMPTS: Health check returned HTTP $HTTP_STATUS"
+
+            if [ $i -eq $MAX_ATTEMPTS ]; then
+              echo "ERROR: Health check did not return 200 after $MAX_ATTEMPTS attempts"
+              exit 1
+            fi
+
+            sleep 10
+          done
 
       - name: Update Deployment Status
         if: always()
         run: |
-          # Output deployment status for the main workflow
           if [ "${{ steps.deploy-stack.outputs.is_new_stack }}" == "true" ]; then
             echo "RoboLedger app stack creation completed"
           else
             echo "RoboLedger app stack update completed"
           fi
+
+          echo ""
+          echo "App Runner Service URL: ${{ steps.get-service-info.outputs.service_url }}"

@@ -1,4 +1,4 @@
-Description: RoboLedger App Service - ECS Fargate
+Description: RoboLedger App Service - AWS App Runner
 
 Parameters:
   # Environment & AWS Configuration
@@ -17,31 +17,6 @@ Parameters:
     Description: AWS Account ID for cross-account resources
     AllowedPattern: '[0-9]{12}'
 
-  # Secrets Configuration
-  RoboLedgerSecretsArn:
-    Type: String
-    Description: ARN of the main application configuration secret
-    AllowedPattern: ^arn:aws:secretsmanager:[a-z0-9-]+:[0-9]+:secret:.*$
-    ConstraintDescription: Must be a valid Secrets Manager ARN
-
-  # Infrastructure & Networking
-  VpcId:
-    Type: AWS::EC2::VPC::Id
-    Description: VPC ID for ECS tasks
-
-  SubnetIds:
-    Type: List<AWS::EC2::Subnet::Id>
-    Description: Private subnet IDs for ECS tasks (comma-separated)
-
-  PublicSubnetIds:
-    Type: List<AWS::EC2::Subnet::Id>
-    Description: Public subnet IDs for ALB (comma-separated)
-
-  CloudFrontManagedPrefixListId:
-    Type: String
-    Default: pl-3b927c52 # CloudFront origin facing prefix list (global)
-    Description: Managed prefix list ID for CloudFront origins
-
   # Access Mode Configuration
   AppAccessMode:
     Type: String
@@ -49,12 +24,10 @@ Parameters:
     AllowedValues:
       - public
       - public-http
-      - internal
     Description: |
       App access mode:
       - public: CloudFront + custom domain + HTTPS (requires DomainName and HostedZoneId)
       - public-http: CloudFront with AWS DNS, no custom domain needed
-      - internal: Internal ALB only, access via bastion tunnel
 
   # Domain & DNS Configuration (required only when AppAccessMode=public)
   DomainName:
@@ -98,104 +71,49 @@ Parameters:
     MaxValue: 65535
     Description: Port the container listens on
 
-  # ECS & Compute Configuration
+  # App Runner Compute Configuration
   Cpu:
     Type: String
-    Default: '256'
-    Description: CPU units for ECS task (256 = 0.25 vCPU)
+    Default: '0.25 vCPU'
+    Description: CPU for App Runner instance
     AllowedValues:
-      - '256'
-      - '512'
-      - '1024'
+      - '0.25 vCPU'
+      - '0.5 vCPU'
+      - '1 vCPU'
+      - '2 vCPU'
 
   Memory:
     Type: String
-    Default: '512'
-    Description: Memory in MiB for ECS task
+    Default: '0.5 GB'
+    Description: Memory for App Runner instance
     AllowedValues:
-      - '512'
-      - '1024'
-      - '2048'
-
-  FargateWeight:
-    Type: Number
-    Default: 20
-    MinValue: 0
-    MaxValue: 100
-    Description: Weight for FARGATE capacity provider (On-Demand instances)
-
-  FargateSpotWeight:
-    Type: Number
-    Default: 80
-    MinValue: 0
-    MaxValue: 100
-    Description: Weight for FARGATE_SPOT capacity provider (Spot instances)
-
-  FargateBase:
-    Type: Number
-    Default: 0
-    MinValue: 0
-    MaxValue: 10
-    Description: Minimum number of tasks guaranteed to run on FARGATE (On-Demand). Set to 1+ for guaranteed availability during Spot shortages.
+      - '0.5 GB'
+      - '1 GB'
+      - '2 GB'
+      - '3 GB'
+      - '4 GB'
 
   # Auto-scaling Configuration
   CapacityMin:
     Type: Number
     Default: 1
     MinValue: 1
-    MaxValue: 100
-    Description: Minimum number of tasks for auto scaling
+    MaxValue: 25
+    Description: Minimum number of instances for auto scaling
 
   CapacityMax:
     Type: Number
     Default: 10
-    MinValue: 2
-    MaxValue: 100
-    Description: Maximum number of tasks for auto scaling
-
-  ScaleUpCPUThreshold:
-    Type: Number
-    Default: 70
     MinValue: 1
-    MaxValue: 100
-    Description: CPU utilization percentage to trigger scale up
+    MaxValue: 25
+    Description: Maximum number of instances for auto scaling
 
-  ScaleDownCPUThreshold:
+  MaxConcurrency:
     Type: Number
-    Default: 30
+    Default: 100
     MinValue: 1
-    MaxValue: 100
-    Description: CPU utilization percentage to trigger scale down
-
-  ScaleUpMemoryThreshold:
-    Type: Number
-    Default: 65
-    MinValue: 1
-    MaxValue: 100
-    Description: Memory utilization percentage to trigger scale up
-
-  ScaleDownMemoryThreshold:
-    Type: Number
-    Default: 25
-    MinValue: 1
-    MaxValue: 100
-    Description: Memory utilization percentage to trigger scale down
-
-  # Observability & Monitoring
-  LogRetentionDays:
-    Type: Number
-    Default: 30
-    MinValue: 1
-    MaxValue: 365
-    Description: CloudWatch log retention in days
-
-  ContainerInsightsEnabled:
-    Type: String
-    Default: disabled
-    AllowedValues:
-      - enabled
-      - disabled
-    Description: Enable/disable ECS Container Insights (adds ~$30-40/month in CloudWatch costs per cluster)
+    MaxValue: 200
+    Description: Maximum concurrent requests per instance before scaling
 
   # Tagging Configuration
   ServiceTag:
@@ -208,33 +126,15 @@ Parameters:
     Default: App
     Description: Tag value for Component identification
 
-  # SNS Configuration
-  NotificationEmail:
-    Type: String
-    Default: ''
-    Description: Email address for admin notifications (leave empty to skip SNS setup)
-
 Conditions:
   # Access mode conditions
   IsPublicMode: !Equals [!Ref AppAccessMode, 'public']
   IsPublicHttpMode: !Equals [!Ref AppAccessMode, 'public-http']
-  IsInternalMode: !Equals [!Ref AppAccessMode, 'internal']
 
-  # CloudFront is used in public and public-http modes
-  HasCloudFront: !Or
-    - !Equals [!Ref AppAccessMode, 'public']
-    - !Equals [!Ref AppAccessMode, 'public-http']
-
-  # Check if we're in production environment for www redirect (only applies to public mode)
+  # Production + public mode: enables www.domain.com redirect to domain.com
   IsProductionPublic: !And
     - !Equals [!Ref Environment, 'prod']
     - !Equals [!Ref AppAccessMode, 'public']
-
-  # Check if SNS notification should be created
-  CreateSNSTopic: !Not
-    - !Equals
-      - !Ref NotificationEmail
-      - ''
 
 Resources:
   # ACM Certificate (only for public mode with custom domain)
@@ -262,51 +162,22 @@ Resources:
         - Key: CreatedBy
           Value: CloudFormation
 
-  # ECS Cluster
-  AppCluster:
-    Type: AWS::ECS::Cluster
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Retain
-    Properties:
-      ClusterName: !Sub roboledger-${Environment}-cluster
-      ClusterSettings:
-        - Name: containerInsights
-          Value: !Ref ContainerInsightsEnabled
-      Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Service
-          Value: !Ref ServiceTag
-        - Key: Component
-          Value: !Ref ComponentTag
-        - Key: CreatedBy
-          Value: CloudFormation
-
-  # IAM Role for ECS Task Execution
-  AppEcsExecutionRole:
+  # IAM Role for App Runner to access ECR
+  AppRunnerAccessRole:
     Type: AWS::IAM::Role
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Properties:
+      RoleName: !Sub roboledger-${Environment}-apprunner-access
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
-              Service: ecs-tasks.amazonaws.com
+              Service: build.apprunner.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-      Policies:
-        - PolicyName: SecretsManagerAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
-                Resource:
-                  - !Ref RoboLedgerSecretsArn
+        - arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -317,32 +188,20 @@ Resources:
         - Key: CreatedBy
           Value: CloudFormation
 
-  # IAM Role for ECS Task
-  AppTaskRole:
+  # IAM Role for App Runner instance (if app needs AWS service access)
+  AppRunnerInstanceRole:
     Type: AWS::IAM::Role
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Properties:
+      RoleName: !Sub roboledger-${Environment}-apprunner-instance
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
-              Service: ecs-tasks.amazonaws.com
+              Service: tasks.apprunner.amazonaws.com
             Action: sts:AssumeRole
-      Policies:
-        - !If
-          - CreateSNSTopic
-          - PolicyName: SNSPublishPolicy
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - sns:Publish
-                  Resource:
-                    - !Ref ContactFormTopic
-          - !Ref AWS::NoValue
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -353,14 +212,14 @@ Resources:
         - Key: CreatedBy
           Value: CloudFormation
 
-  # Log Group
-  AppLogGroup:
-    Type: AWS::Logs::LogGroup
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Retain
+  # Auto Scaling Configuration
+  AppRunnerAutoScaling:
+    Type: AWS::AppRunner::AutoScalingConfiguration
     Properties:
-      LogGroupName: !Sub /roboledger/${Environment}/app
-      RetentionInDays: !Ref LogRetentionDays
+      AutoScalingConfigurationName: !Sub roboledger-${Environment}-autoscaling
+      MaxConcurrency: !Ref MaxConcurrency
+      MaxSize: !Ref CapacityMax
+      MinSize: !Ref CapacityMin
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -371,263 +230,42 @@ Resources:
         - Key: CreatedBy
           Value: CloudFormation
 
-  # SNS Topic for Contact Form Notifications
-  ContactFormTopic:
-    Type: AWS::SNS::Topic
-    Condition: CreateSNSTopic
-    Properties:
-      TopicName: !Sub roboledger-${Environment}-contact-form
-      DisplayName: !Sub RoboLedger ${Environment} Contact Form
-      Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Service
-          Value: !Ref ServiceTag
-        - Key: Component
-          Value: !Ref ComponentTag
-        - Key: CreatedBy
-          Value: CloudFormation
-
-  # Email Subscription for Contact Form
-  ContactFormEmailSubscription:
-    Type: AWS::SNS::Subscription
-    Condition: CreateSNSTopic
-    Properties:
-      Protocol: email
-      TopicArn: !Ref ContactFormTopic
-      Endpoint: !Ref NotificationEmail
-
-  # Security Group
-  AppSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+  # App Runner Service
+  AppRunnerService:
+    Type: AWS::AppRunner::Service
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Properties:
-      GroupDescription: Security group for RoboLedger app
-      VpcId: !Ref VpcId
-      SecurityGroupEgress:
-        - IpProtocol: -1
-          CidrIp: 0.0.0.0/0
-      Tags:
-        - Key: Name
-          Value: !Sub sg-roboledger-${Environment}
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Service
-          Value: !Ref ServiceTag
-        - Key: Component
-          Value: !Ref ComponentTag
-        - Key: CreatedBy
-          Value: CloudFormation
-
-  # Security Group for ALB
-  ALBSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Retain
-    Properties:
-      GroupDescription: Security group for RoboLedger Application Load Balancer
-      VpcId: !Ref VpcId
-      SecurityGroupEgress:
-        - IpProtocol: -1
-          CidrIp: 0.0.0.0/0
-      Tags:
-        - Key: Name
-          Value: !Sub sg-roboledger-${Environment}-alb
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Service
-          Value: !Ref ServiceTag
-        - Key: Component
-          Value: !Ref ComponentTag
-        - Key: CreatedBy
-          Value: CloudFormation
-
-  # Security Group Rule - CloudFront HTTPS to ALB (public mode only)
-  # In public mode, CloudFront connects to ALB via HTTPS
-  CloudFrontHTTPSToALBSecurityGroupIngress:
-    Type: AWS::EC2::SecurityGroupIngress
-    Condition: IsPublicMode
-    Properties:
-      GroupId: !Ref ALBSecurityGroup
-      IpProtocol: tcp
-      FromPort: 443
-      ToPort: 443
-      SourcePrefixListId: !Ref CloudFrontManagedPrefixListId
-      Description: Allow HTTPS traffic from CloudFront (public mode)
-
-  # Security Group Rule - CloudFront HTTP to ALB (public-http mode only)
-  # In public-http mode, CloudFront connects to ALB via HTTP (no cert on ALB)
-  CloudFrontHTTPToALBSecurityGroupIngress:
-    Type: AWS::EC2::SecurityGroupIngress
-    Condition: IsPublicHttpMode
-    Properties:
-      GroupId: !Ref ALBSecurityGroup
-      IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
-      SourcePrefixListId: !Ref CloudFrontManagedPrefixListId
-      Description: Allow HTTP traffic from CloudFront (public-http mode)
-
-  # Security Group Rule - VPC to Internal ALB (internal mode only)
-  # In internal mode, access via bastion tunnel only
-  VPCToInternalALBSecurityGroupIngress:
-    Type: AWS::EC2::SecurityGroupIngress
-    Condition: IsInternalMode
-    Properties:
-      GroupId: !Ref ALBSecurityGroup
-      IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
-      CidrIp: 10.0.0.0/8
-      Description: Allow HTTP traffic from VPC (internal mode via bastion tunnel)
-
-  # Security Group Rule - ALB to App
-  ALBToAppSecurityGroupIngress:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      GroupId: !Ref AppSecurityGroup
-      IpProtocol: tcp
-      FromPort: !Ref ContainerPort
-      ToPort: !Ref ContainerPort
-      SourceSecurityGroupId: !Ref ALBSecurityGroup
-      Description: Allow traffic from ALB to application
-
-  # Application Load Balancer
-  AppLoadBalancer:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Retain
-    Properties:
-      Name: !Sub roboledger-${Environment}-alb
-      # Use private subnets for internal mode, public subnets otherwise
-      Subnets: !If [IsInternalMode, !Ref SubnetIds, !Ref PublicSubnetIds]
-      SecurityGroups:
-        - !Ref ALBSecurityGroup
-      # Internal scheme for internal mode, internet-facing otherwise
-      Scheme: !If [IsInternalMode, 'internal', 'internet-facing']
-      IpAddressType: ipv4
-      LoadBalancerAttributes:
-        - Key: idle_timeout.timeout_seconds
-          Value: '60'
-      Tags:
-        - Key: Name
-          Value: !Sub roboledger-app-${Environment}-alb
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Service
-          Value: !Ref ServiceTag
-        - Key: Component
-          Value: !Ref ComponentTag
-        - Key: CreatedBy
-          Value: CloudFormation
-
-  # HTTP Listener - behavior depends on access mode:
-  # - public mode: redirects to HTTPS
-  # - public-http/internal mode: forwards to target group
-  AppHTTPListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Retain
-    Properties:
-      LoadBalancerArn: !Ref AppLoadBalancer
-      Port: 80
-      Protocol: HTTP
-      DefaultActions:
-        - !If
-          - IsPublicMode
-          - Type: redirect
-            RedirectConfig:
-              Protocol: HTTPS
-              Port: '443'
-              StatusCode: HTTP_301
-          - Type: forward
-            TargetGroupArn: !Ref AppTargetGroup
-
-  # HTTPS Listener (only for public mode with custom domain and certificate)
-  AppHTTPSListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Condition: IsPublicMode
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Retain
-    Properties:
-      LoadBalancerArn: !Ref AppLoadBalancer
-      Port: 443
-      Protocol: HTTPS
-      Certificates:
-        - CertificateArn: !Ref AppCertificate
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref AppTargetGroup
-
-  # Target Group
-  AppTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Retain
-    Properties:
-      Name: !Sub roboledger-${Environment}-tg
-      Port: !Ref ContainerPort
-      Protocol: HTTP
-      VpcId: !Ref VpcId
-      TargetType: ip
-      HealthCheckEnabled: true
-      HealthCheckPath: /api/utilities/health
-      HealthCheckProtocol: HTTP
-      HealthCheckPort: !Ref ContainerPort
-      HealthCheckTimeoutSeconds: 10
-      HealthCheckIntervalSeconds: 30
-      HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 3
-      Matcher:
-        HttpCode: 200-399
-      TargetGroupAttributes:
-        - Key: deregistration_delay.timeout_seconds
-          Value: '30'
-      Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Service
-          Value: !Ref ServiceTag
-        - Key: Component
-          Value: !Ref ComponentTag
-        - Key: CreatedBy
-          Value: CloudFormation
-
-  # ECS Service
-  EcsService:
-    Type: AWS::ECS::Service
-    # Note: DependsOn cannot be conditional, but HTTP listener always exists
-    DependsOn:
-      - AppHTTPListener
-    Properties:
-      Cluster: !Ref AppCluster
-      TaskDefinition: !Ref TaskDefinition
-      ServiceName: !Sub roboledger-${Environment}-service
+      ServiceName: !Sub roboledger-${Environment}
+      SourceConfiguration:
+        AuthenticationConfiguration:
+          AccessRoleArn: !GetAtt AppRunnerAccessRole.Arn
+        AutoDeploymentsEnabled: false
+        ImageRepository:
+          ImageIdentifier: !Sub ${AWSAccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:${ECRImageTag}
+          ImageRepositoryType: ECR
+          ImageConfiguration:
+            Port: !Ref ContainerPort
+            RuntimeEnvironmentVariables:
+              - Name: NODE_ENV
+                Value: production
+      InstanceConfiguration:
+        Cpu: !Ref Cpu
+        Memory: !Ref Memory
+        InstanceRoleArn: !GetAtt AppRunnerInstanceRole.Arn
+      HealthCheckConfiguration:
+        Protocol: HTTP
+        Path: /api/utilities/health
+        Interval: 10
+        Timeout: 5
+        HealthyThreshold: 1
+        UnhealthyThreshold: 5
+      AutoScalingConfigurationArn: !GetAtt AppRunnerAutoScaling.AutoScalingConfigurationArn
       NetworkConfiguration:
-        AwsvpcConfiguration:
-          Subnets: !Ref SubnetIds
-          SecurityGroups:
-            - !Ref AppSecurityGroup
-          AssignPublicIp: DISABLED
-      LoadBalancers:
-        - ContainerName: roboledger-app
-          ContainerPort: !Ref ContainerPort
-          TargetGroupArn: !Ref AppTargetGroup
-      CapacityProviderStrategy:
-        - CapacityProvider: FARGATE_SPOT
-          Weight: !Ref FargateSpotWeight
-          Base: 0
-        - CapacityProvider: FARGATE
-          Weight: !Ref FargateWeight
-          Base: !Ref FargateBase
-      DesiredCount: !Ref CapacityMin
-      HealthCheckGracePeriodSeconds: 60
-      EnableECSManagedTags: true
-      PropagateTags: SERVICE
-      DeploymentConfiguration:
-        MaximumPercent: 200
-        MinimumHealthyPercent: 50
+        EgressConfiguration:
+          EgressType: DEFAULT
+      ObservabilityConfiguration:
+        ObservabilityEnabled: false
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -638,281 +276,9 @@ Resources:
         - Key: CreatedBy
           Value: CloudFormation
 
-  # Task Definition
-  TaskDefinition:
-    Type: AWS::ECS::TaskDefinition
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Retain
-    Properties:
-      Family: !Sub roboledger-${Environment}
-      ExecutionRoleArn: !GetAtt AppEcsExecutionRole.Arn
-      TaskRoleArn: !GetAtt AppTaskRole.Arn
-      RequiresCompatibilities:
-        - FARGATE
-      NetworkMode: awsvpc
-      Cpu: !Ref Cpu
-      Memory: !Ref Memory
-      ContainerDefinitions:
-        - Name: roboledger-app
-          Image: !Sub ${AWSAccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:${ECRImageTag}
-          PortMappings:
-            - ContainerPort: !Ref ContainerPort
-          Environment:
-            - Name: NODE_ENV
-              Value: production
-            - Name: SNS_CONTACT_TOPIC_ARN
-              Value: !If [CreateSNSTopic, !Ref ContactFormTopic, '']
-            - Name: REQUIRE_CAPTCHA
-              Value: 'true'
-          Secrets:
-            # Turnstile CAPTCHA secrets from AWS Secrets Manager
-            - Name: TURNSTILE_SECRET_KEY
-              ValueFrom: !Sub '${RoboLedgerSecretsArn}:TURNSTILE_SECRET_KEY::'
-            - Name: TURNSTILE_SITE_KEY
-              ValueFrom: !Sub '${RoboLedgerSecretsArn}:TURNSTILE_SITE_KEY::'
-          LogConfiguration:
-            LogDriver: awslogs
-            Options:
-              awslogs-group: !Ref AppLogGroup
-              awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: app
-          Essential: true
-      Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Service
-          Value: !Ref ServiceTag
-        - Key: Component
-          Value: !Ref ComponentTag
-        - Key: CreatedBy
-          Value: CloudFormation
-
-  # Auto Scaling
-  AppScalingTarget:
-    Type: AWS::ApplicationAutoScaling::ScalableTarget
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Retain
-    DependsOn: EcsService
-    Properties:
-      MaxCapacity: !Ref CapacityMax
-      MinCapacity: !Ref CapacityMin
-      ResourceId: !Sub service/roboledger-${Environment}-cluster/roboledger-${Environment}-service
-      RoleARN: !GetAtt AppAutoScalingRole.Arn
-      ScalableDimension: ecs:service:DesiredCount
-      ServiceNamespace: ecs
-
-  # IAM Role for Auto Scaling
-  AppAutoScalingRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: application-autoscaling.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole
-      Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Service
-          Value: !Ref ServiceTag
-        - Key: Component
-          Value: !Ref ComponentTag
-        - Key: CreatedBy
-          Value: CloudFormation
-
-  # Scale Up Policy for CPU
-  ServiceScaleUpCPUPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Retain
-    Properties:
-      PolicyName: !Sub roboledger-${Environment}-cpu-scale-up
-      PolicyType: StepScaling
-      ScalingTargetId: !Ref AppScalingTarget
-      StepScalingPolicyConfiguration:
-        AdjustmentType: ChangeInCapacity
-        Cooldown: 60
-        MetricAggregationType: Average
-        StepAdjustments:
-          - MetricIntervalLowerBound: 0
-            ScalingAdjustment: 1
-
-  # Scale Down Policy for CPU
-  ServiceScaleDownCPUPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Retain
-    Properties:
-      PolicyName: !Sub roboledger-${Environment}-cpu-scale-down
-      PolicyType: StepScaling
-      ScalingTargetId: !Ref AppScalingTarget
-      StepScalingPolicyConfiguration:
-        AdjustmentType: ChangeInCapacity
-        Cooldown: 300
-        MetricAggregationType: Average
-        StepAdjustments:
-          - MetricIntervalUpperBound: 0
-            ScalingAdjustment: -1
-
-  # Scale Up Policy for Memory
-  ServiceScaleUpMemoryPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Retain
-    Properties:
-      PolicyName: !Sub roboledger-${Environment}-memory-scale-up
-      PolicyType: StepScaling
-      ScalingTargetId: !Ref AppScalingTarget
-      StepScalingPolicyConfiguration:
-        AdjustmentType: ChangeInCapacity
-        Cooldown: 60
-        MetricAggregationType: Average
-        StepAdjustments:
-          - MetricIntervalLowerBound: 0
-            ScalingAdjustment: 1
-
-  # Scale Down Policy for Memory
-  ServiceScaleDownMemoryPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Retain
-    Properties:
-      PolicyName: !Sub roboledger-${Environment}-memory-scale-down
-      PolicyType: StepScaling
-      ScalingTargetId: !Ref AppScalingTarget
-      StepScalingPolicyConfiguration:
-        AdjustmentType: ChangeInCapacity
-        Cooldown: 300
-        MetricAggregationType: Average
-        StepAdjustments:
-          - MetricIntervalUpperBound: 0
-            ScalingAdjustment: -1
-
-  # CloudWatch Alarms for Scaling
-  HighCPUAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: !Sub ${AWS::StackName}-app-cpu-high-alarm
-      AlarmDescription: !Sub Scale up if CPU utilization is above ${ScaleUpCPUThreshold}%
-      MetricName: CPUUtilization
-      Namespace: AWS/ECS
-      Statistic: Average
-      Period: 60
-      EvaluationPeriods: 2
-      Threshold: !Ref ScaleUpCPUThreshold
-      ComparisonOperator: GreaterThanThreshold
-      Dimensions:
-        - Name: ClusterName
-          Value: !Ref AppCluster
-        - Name: ServiceName
-          Value: !GetAtt EcsService.Name
-      AlarmActions:
-        - !Ref ServiceScaleUpCPUPolicy
-      Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Service
-          Value: !Ref ServiceTag
-        - Key: Component
-          Value: !Ref ComponentTag
-        - Key: CreatedBy
-          Value: CloudFormation
-
-  LowCPUAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: !Sub ${AWS::StackName}-app-cpu-low-alarm
-      AlarmDescription: !Sub Scale down if CPU utilization is below ${ScaleDownCPUThreshold}%
-      MetricName: CPUUtilization
-      Namespace: AWS/ECS
-      Statistic: Average
-      Period: 60
-      EvaluationPeriods: 2
-      Threshold: !Ref ScaleDownCPUThreshold
-      ComparisonOperator: LessThanThreshold
-      Dimensions:
-        - Name: ClusterName
-          Value: !Ref AppCluster
-        - Name: ServiceName
-          Value: !GetAtt EcsService.Name
-      AlarmActions:
-        - !Ref ServiceScaleDownCPUPolicy
-      Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Service
-          Value: !Ref ServiceTag
-        - Key: Component
-          Value: !Ref ComponentTag
-        - Key: CreatedBy
-          Value: CloudFormation
-
-  HighMemoryAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: !Sub ${AWS::StackName}-app-memory-high-alarm
-      AlarmDescription: !Sub Scale up if Memory utilization is above ${ScaleUpMemoryThreshold}%
-      MetricName: MemoryUtilization
-      Namespace: AWS/ECS
-      Statistic: Average
-      Period: 60
-      EvaluationPeriods: 2
-      Threshold: !Ref ScaleUpMemoryThreshold
-      ComparisonOperator: GreaterThanThreshold
-      Dimensions:
-        - Name: ClusterName
-          Value: !Ref AppCluster
-        - Name: ServiceName
-          Value: !GetAtt EcsService.Name
-      AlarmActions:
-        - !Ref ServiceScaleUpMemoryPolicy
-      Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Service
-          Value: !Ref ServiceTag
-        - Key: Component
-          Value: !Ref ComponentTag
-        - Key: CreatedBy
-          Value: CloudFormation
-
-  LowMemoryAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: !Sub ${AWS::StackName}-app-memory-low-alarm
-      AlarmDescription: !Sub Scale down if Memory utilization is below ${ScaleDownMemoryThreshold}%
-      MetricName: MemoryUtilization
-      Namespace: AWS/ECS
-      Statistic: Average
-      Period: 60
-      EvaluationPeriods: 2
-      Threshold: !Ref ScaleDownMemoryThreshold
-      ComparisonOperator: LessThanThreshold
-      Dimensions:
-        - Name: ClusterName
-          Value: !Ref AppCluster
-        - Name: ServiceName
-          Value: !GetAtt EcsService.Name
-      AlarmActions:
-        - !Ref ServiceScaleDownMemoryPolicy
-      Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Service
-          Value: !Ref ServiceTag
-        - Key: Component
-          Value: !Ref ComponentTag
-        - Key: CreatedBy
-          Value: CloudFormation
-
-  # Bucket Policy for CloudFront Access (only when CloudFront is used)
+  # Bucket Policy for CloudFront Access
   StaticAssetsBucketPolicy:
     Type: AWS::S3::BucketPolicy
-    Condition: HasCloudFront
     Properties:
       Bucket: !Ref StaticAssetsBucketName
       PolicyDocument:
@@ -927,10 +293,9 @@ Resources:
               StringEquals:
                 AWS:SourceArn: !Sub arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
 
-  # CloudFront Origin Access Control (only when CloudFront is used)
+  # CloudFront Origin Access Control
   CloudFrontOAC:
     Type: AWS::CloudFront::OriginAccessControl
-    Condition: HasCloudFront
     Properties:
       OriginAccessControlConfig:
         Name: !Sub roboledger-${Environment}-oac
@@ -938,10 +303,9 @@ Resources:
         SigningBehavior: always
         SigningProtocol: sigv4
 
-  # CloudFront Distribution (only when CloudFront is used - public or public-http modes)
+  # CloudFront Distribution
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
-    Condition: HasCloudFront
     Properties:
       DistributionConfig:
         Comment: !Sub RoboLedger ${Environment} Distribution
@@ -968,19 +332,17 @@ Resources:
             S3OriginConfig:
               OriginAccessIdentity: ''
             OriginAccessControlId: !Ref CloudFrontOAC
-          # Origin for dynamic content (ALB)
-          # For public mode: HTTPS, for public-http: HTTP (no cert on ALB)
-          - Id: ALB-Dynamic-Content
-            DomainName: !GetAtt AppLoadBalancer.DNSName
+          # Origin for dynamic content (App Runner)
+          # App Runner always uses HTTPS
+          - Id: AppRunner-Dynamic-Content
+            DomainName: !GetAtt AppRunnerService.ServiceUrl
             CustomOriginConfig:
-              HTTPPort: 80
               HTTPSPort: 443
-              OriginProtocolPolicy:
-                !If [IsPublicMode, 'https-only', 'http-only']
+              OriginProtocolPolicy: https-only
               OriginSSLProtocols:
                 - TLSv1.2
         DefaultCacheBehavior:
-          TargetOriginId: ALB-Dynamic-Content
+          TargetOriginId: AppRunner-Dynamic-Content
           ViewerProtocolPolicy: redirect-to-https
           AllowedMethods:
             - DELETE
@@ -994,18 +356,8 @@ Resources:
             - GET
             - HEAD
           Compress: true
-          ForwardedValues:
-            QueryString: true
-            Cookies:
-              Forward: all
-            Headers:
-              - Host
-              - CloudFront-Forwarded-Proto
-              - CloudFront-Is-Mobile-Viewer
-              - CloudFront-Is-Desktop-Viewer
-              - CloudFront-Is-Tablet-Viewer
           CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled managed policy
-          OriginRequestPolicyId: 216adef6-5c7f-47e4-b989-5492eafa07d3 # AllViewer managed policy
+          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader managed policy
         CacheBehaviors:
           # Cache behavior for static assets
           - PathPattern: /images/*
@@ -1020,19 +372,6 @@ Resources:
               - HEAD
             Compress: true
             CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized managed policy
-          - PathPattern: /fonts/*
-            TargetOriginId: S3-Static-Assets
-            ViewerProtocolPolicy: redirect-to-https
-            AllowedMethods:
-              - GET
-              - HEAD
-              - OPTIONS
-            CachedMethods:
-              - GET
-              - HEAD
-            Compress: false # Don't compress fonts as they're already optimized
-            CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized managed policy
-            ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03 # CORS-With-Preflight-And-SecurityHeadersPolicy
           - PathPattern: /_next/static/*
             TargetOriginId: S3-Static-Assets
             ViewerProtocolPolicy: redirect-to-https
@@ -1056,7 +395,6 @@ Resources:
           Value: CloudFormation
 
   # CloudFront Function for www to apex redirect
-  # This function runs at the edge and redirects www.domain.com to domain.com
   # Only created for production + public mode (requires custom domain)
   WwwRedirectFunction:
     Type: AWS::CloudFront::Function
@@ -1108,7 +446,6 @@ Resources:
         Runtime: cloudfront-js-2.0
 
   # CloudFront Distribution for www redirect
-  # Uses a CloudFront Function to redirect at the edge - no origin is actually hit
   # Only created for production + public mode (requires custom domain)
   WwwCloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
@@ -1117,7 +454,7 @@ Resources:
       DistributionConfig:
         Comment: !Sub RoboLedger ${Environment} WWW Redirect Distribution
         Enabled: true
-        PriceClass: PriceClass_100 # Use only North America and Europe for cost savings
+        PriceClass: PriceClass_100
         HttpVersion: http2
         Aliases:
           - !Sub www.${DomainName}
@@ -1128,9 +465,8 @@ Resources:
         Origins:
           # Dummy origin - required by CloudFront but never hit because the function redirects
           - Id: Dummy-Origin
-            DomainName: !GetAtt AppLoadBalancer.DNSName
+            DomainName: !GetAtt AppRunnerService.ServiceUrl
             CustomOriginConfig:
-              HTTPPort: 80
               HTTPSPort: 443
               OriginProtocolPolicy: https-only
               OriginSSLProtocols:
@@ -1199,22 +535,19 @@ Outputs:
     Value: !If
       - IsPublicMode
       - !Sub https://${DomainName}
-      - !If
-        - HasCloudFront
-        - !Sub https://${CloudFrontDistribution.DomainName}
-        - !Sub http://${AppLoadBalancer.DNSName}
+      - !Sub https://${CloudFrontDistribution.DomainName}
 
-  ALBEndpoint:
-    Description: ALB endpoint DNS name
-    Value: !GetAtt AppLoadBalancer.DNSName
+  AppRunnerServiceUrl:
+    Description: App Runner service URL (direct access)
+    Value: !GetAtt AppRunnerService.ServiceUrl
 
-  ClusterName:
-    Description: ECS Cluster Name
-    Value: !Ref AppCluster
+  AppRunnerServiceArn:
+    Description: App Runner service ARN
+    Value: !GetAtt AppRunnerService.ServiceArn
 
-  ServiceName:
-    Description: ECS Service Name
-    Value: !GetAtt EcsService.Name
+  AppRunnerServiceId:
+    Description: App Runner service ID
+    Value: !GetAtt AppRunnerService.ServiceId
 
   CertificateArn:
     Condition: IsPublicMode
@@ -1222,12 +555,10 @@ Outputs:
     Value: !Ref AppCertificate
 
   CloudFrontDistributionId:
-    Condition: HasCloudFront
     Description: CloudFront Distribution ID
     Value: !Ref CloudFrontDistribution
 
   CloudFrontDomainName:
-    Condition: HasCloudFront
     Description: CloudFront Distribution Domain Name
     Value: !GetAtt CloudFrontDistribution.DomainName
 
@@ -1259,7 +590,7 @@ Outputs:
       URL: https://${DomainName}
 
       CloudFront Distribution: ${CloudFrontDistribution.DomainName}
-      ALB Endpoint: ${AppLoadBalancer.DNSName}
+      App Runner Service: ${AppRunnerService.ServiceUrl}
 
   PublicHttpAccessInstructions:
     Condition: IsPublicHttpMode
@@ -1270,25 +601,8 @@ Outputs:
       URL: https://${CloudFrontDistribution.DomainName}
 
       This uses CloudFront's default domain with HTTPS.
-      ALB Endpoint: ${AppLoadBalancer.DNSName}
+      App Runner Service: ${AppRunnerService.ServiceUrl}
 
       LIMITATIONS (public-http mode):
       - No custom domain - uses CloudFront's d123.cloudfront.net domain
       - Some OAuth integrations may require a custom domain
-
-  InternalAccessInstructions:
-    Condition: IsInternalMode
-    Description: Instructions for accessing the app (internal mode via bastion tunnel)
-    Value: !Sub |
-      App is configured for internal access only (no public domain).
-
-      To access via bastion tunnel:
-      1. Start the tunnel: just bastion-tunnel ${Environment} app
-      2. Access app at: http://localhost:3000
-
-      ALB Endpoint: ${AppLoadBalancer.DNSName}
-
-      LIMITATIONS (internal mode):
-      - No CloudFront CDN - static assets served from ALB/ECS
-      - No HTTPS - traffic is HTTP within VPC
-      - Access requires VPN/bastion tunnel
