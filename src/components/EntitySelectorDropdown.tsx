@@ -80,7 +80,6 @@ export function EntitySelectorDropdown() {
     if (roboledgerGraphs.length > 0) {
       loadAllEntities()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roboledgerGraphs]) // Only reload when graphs change, not on every entity selection
 
   const handleEntitySelect = async (entity: Entity, graphId: string) => {

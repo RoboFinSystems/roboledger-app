@@ -1,6 +1,7 @@
 {
   "name": "roboledger-app",
   "version": "0.3.1",
+  "type": "module",
   "private": true,
   "license": "Apache-2.0",
   "engines": {
@@ -40,13 +41,13 @@
     "setup:bootstrap": "./bin/bootstrap.sh"
   },
   "dependencies": {
-    "@aws-sdk/client-sns": "^3.948.0",
-    "@robosystems/client": "0.2.25",
+    "@aws-sdk/client-sns": "^3.893.0",
+    "@robosystems/client": "0.2.26",
     "flowbite": "^3.1",
     "flowbite-react": "^0.12.5",
     "intuit-oauth": "^4.1.0",
     "lru-cache": "^11.2.4",
-    "next": "^15.5.9",
+    "next": "^16.1.6",
     "plaid": "^36",
     "react": "^19",
     "react-dom": "^19",
@@ -54,6 +55,9 @@
     "react-markdown": "^10",
     "react-plaid-link": "^4",
     "tailwind-merge": "^3"
+  },
+  "overrides": {
+    "fast-xml-parser": "^5.3.4"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^15.5.6",
@@ -69,13 +73,14 @@
     "@typescript-eslint/parser": "^8",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^3",
-    "eslint": "^8",
+    "eslint": "^9.39.2",
     "eslint-config-next": "^15.5.6",
     "eslint-config-prettier": "^10",
     "eslint-plugin-jsx-a11y": "^6",
     "eslint-plugin-prettier": "^5",
     "eslint-plugin-react": "^7",
     "eslint-plugin-react-hooks": "^5",
+    "globals": "^17.2.0",
     "jsdom": "^26.0.0",
     "postcss": "^8",
     "prettier": "^3",
