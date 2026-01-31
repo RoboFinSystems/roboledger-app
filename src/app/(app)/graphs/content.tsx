@@ -48,7 +48,6 @@ export function GraphsContent() {
 
   useEffect(() => {
     fetchGraphs()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchGraphs = async () => {
