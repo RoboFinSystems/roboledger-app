@@ -36,12 +36,14 @@ jobs:
     runs-on: ubuntu-latest # Use GitHub-hosted runners for memory-intensive git/Claude operations
     timeout-minutes: 10
     env:
+      # ACTIONS_TOKEN required for PR to trigger on:pull_request workflows
+      # With GITHUB_TOKEN, PR is created but CI won't run
       GH_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          repository: ${{ github.repository }}
           ref: ${{ github.ref }}
           token: ${{ secrets.ACTIONS_TOKEN }}
           fetch-depth: 0

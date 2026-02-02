@@ -34,10 +34,10 @@ jobs:
       - name: Checkout main branch
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          repository: ${{ github.repository }}
           ref: main
           fetch-depth: 0
-          token: ${{ secrets.ACTIONS_TOKEN }}
+          token: ${{ github.token }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -126,46 +126,25 @@ jobs:
       branch_ref: ${{ needs.create-branch.outputs.branch_name }}
     secrets: inherit
 
-  deploy:
+  # Deploy to staging when target is 'staging' or 'all'
+  deploy-staging:
     needs: [create-branch, create-tag]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
-          token: ${{ secrets.ACTIONS_TOKEN }}
+    if: ${{ inputs.deploy_to == 'staging' || inputs.deploy_to == 'all' }}
+    uses: ./.github/workflows/staging.yml
+    secrets: inherit
 
-      - name: Trigger deployment
-        if: ${{ inputs.deploy_to != 'none' }}
-        env:
-          GH_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
-        run: |
-          DEPLOY_TARGET="${{ inputs.deploy_to }}"
-          TAG_NAME="${{ needs.create-tag.outputs.tag_name }}"
-
-          echo "Triggering deployment to $DEPLOY_TARGET from git tag $TAG_NAME..."
-
-          if [ "$DEPLOY_TARGET" = "staging" ]; then
-            gh workflow run staging.yml --ref "$TAG_NAME"
-            echo "Staging deployment triggered for tag $TAG_NAME"
-          elif [ "$DEPLOY_TARGET" = "prod" ]; then
-            gh workflow run prod.yml --ref "$TAG_NAME"
-            echo "Production deployment triggered for tag $TAG_NAME"
-          elif [ "$DEPLOY_TARGET" = "all" ]; then
-            # Trigger staging first, then prod with delay
-            # Both share 'roboledger-app-deploy' concurrency group, so prod queues behind staging
-            gh workflow run staging.yml --ref "$TAG_NAME"
-            echo "Staging deployment triggered for tag $TAG_NAME"
-            echo "Waiting 30 seconds before triggering production (concurrency group will queue it)..."
-            sleep 30
-            gh workflow run prod.yml --ref "$TAG_NAME"
-            echo "Production deployment triggered - will start after staging completes"
-          fi
+  # Deploy to prod when target is 'prod' or 'all' (after staging succeeds if 'all')
+  deploy-prod:
+    needs: [create-branch, create-tag, deploy-staging]
+    if: |
+      always() &&
+      (inputs.deploy_to == 'prod' || inputs.deploy_to == 'all') &&
+      (needs.deploy-staging.result == 'success' || needs.deploy-staging.result == 'skipped')
+    uses: ./.github/workflows/prod.yml
+    secrets: inherit
 
   create-summary:
-    needs: [create-branch, create-tag, deploy]
+    needs: [create-branch, create-tag, deploy-staging, deploy-prod]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
