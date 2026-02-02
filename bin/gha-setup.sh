@@ -108,6 +108,10 @@ function setup_secrets() {
     echo "# Enables Claude-powered PR/release workflows"
     echo "gh secret set ANTHROPIC_API_KEY --body \"your_anthropic_api_key\""
     echo ""
+    echo "# Enables Docker Hub publishing (for public image distribution)"
+    echo "gh secret set DOCKERHUB_USERNAME --body \"your_dockerhub_username\""
+    echo "gh secret set DOCKERHUB_TOKEN --body \"your_dockerhub_token\""
+    echo ""
     echo "💡 ACTIONS_TOKEN needs these permissions:"
     echo "   - repo (full control)"
     echo "   - workflow (update workflows)"
@@ -138,8 +142,6 @@ function setup_minimum_config() {
 
     echo ""
     echo "🔧 Optional variables (press Enter to use defaults):"
-    read -p "Repository Name [RoboFinSystems/robosystems-app]: " REPOSITORY_NAME
-    REPOSITORY_NAME=${REPOSITORY_NAME:-"RoboFinSystems/robosystems-app"}
     read -p "ECR Repository Name [robosystems-app]: " ECR_REPOSITORY
     ECR_REPOSITORY=${ECR_REPOSITORY:-"robosystems-app"}
     read -p "AWS Region [us-east-1]: " AWS_REGION
@@ -159,7 +161,6 @@ function setup_minimum_config() {
     echo "Setting variables..."
 
     # Core Infrastructure
-    gh variable set REPOSITORY_NAME --body "$REPOSITORY_NAME"
     gh variable set AWS_ACCOUNT_ID --body "$AWS_ACCOUNT_ID"
     gh variable set AWS_REGION --body "$AWS_REGION"
     gh variable set ECR_REPOSITORY --body "$ECR_REPOSITORY"
@@ -221,15 +222,11 @@ function setup_minimum_config() {
     # SNS Alert Email (optional)
     gh variable set AWS_SNS_ALERT_EMAIL --body ""
 
-    # DockerHub Configuration (optional)
-    gh variable set DOCKERHUB_USERNAME --body ""
-
     echo ""
     echo "✅ Minimal configuration completed!"
     echo ""
     echo "📋 Variables set:"
     echo "  🌐 Domain: $DOMAIN_NAME"
-    echo "  📦 Repository: $REPOSITORY_NAME"
     echo "  🔑 AWS Account: $AWS_ACCOUNT_ID"
     echo "  🐳 ECR Repository: $ECR_REPOSITORY"
     echo "  📍 Region: $AWS_REGION"
@@ -253,8 +250,6 @@ function setup_full_config() {
     # Get user input for key variables
     read -p "Enter Domain Name (e.g., robosystems.ai): " DOMAIN_NAME
     read -p "Enter AWS Account ID: " AWS_ACCOUNT_ID
-    read -p "Enter Repository Name [RoboFinSystems/robosystems-app]: " REPOSITORY_NAME
-    REPOSITORY_NAME=${REPOSITORY_NAME:-"RoboFinSystems/robosystems-app"}
     read -p "Enter ECR Repository Name [robosystems-app]: " ECR_REPOSITORY
     ECR_REPOSITORY=${ECR_REPOSITORY:-"robosystems-app"}
     read -p "Enter AWS Region [us-east-1]: " AWS_REGION
@@ -264,7 +259,6 @@ function setup_full_config() {
     echo "Setting all variables..."
 
     # Core Infrastructure
-    gh variable set REPOSITORY_NAME --body "$REPOSITORY_NAME"
     gh variable set AWS_ACCOUNT_ID --body "$AWS_ACCOUNT_ID"
     gh variable set AWS_REGION --body "$AWS_REGION"
     gh variable set ECR_REPOSITORY --body "$ECR_REPOSITORY"
@@ -347,18 +341,13 @@ function setup_full_config() {
     read -p "SNS alert email (optional): " SNS_EMAIL
     gh variable set AWS_SNS_ALERT_EMAIL --body "$SNS_EMAIL"
 
-    # DockerHub Configuration
-    read -p "DockerHub username (optional): " DOCKERHUB_USER
-    gh variable set DOCKERHUB_USERNAME --body "$DOCKERHUB_USER"
-
     echo ""
     echo "✅ Full configuration completed!"
     echo ""
     echo "📋 Summary of configured variables:"
     echo "  🌐 Domain: $DOMAIN_NAME"
-    echo "  📦 Repository: $REPOSITORY_NAME"
     echo "  🐳 ECR: $ECR_REPOSITORY"
-    echo "  🔧 Total variables configured: 40+"
+    echo "  🔧 Total variables configured: 35+"
     echo ""
 }
 

@@ -4,24 +4,24 @@ on:
   workflow_dispatch:
     inputs:
       version_type:
-        description: 'Type of version bump'
+        description: 'Version type'
         required: true
+        default: 'patch'
         type: choice
         options:
           - major
           - minor
           - patch
-        default: patch
       deploy_to:
         description: 'Initial deployment target'
         required: true
+        default: 'all'
         type: choice
         options:
           - all
           - staging
           - prod
           - none
-        default: all
 
 jobs:
   create-branch:
@@ -34,94 +34,56 @@ jobs:
       - name: Checkout main branch
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/robosystems-app' }}
+          repository: ${{ github.repository }}
           ref: main
-          token: ${{ secrets.ACTIONS_TOKEN }}
           fetch-depth: 0
-
-      - name: Set up Git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          token: ${{ github.token }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
 
       - name: Get current version
         id: current-version
         run: |
           CURRENT_VERSION=$(node -p "require('./package.json').version")
-          if [ -z "$CURRENT_VERSION" ]; then
-            echo "Could not find version in package.json"
-            exit 1
-          fi
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          echo "Current version: $CURRENT_VERSION"
 
       - name: Calculate new version
         id: new-version
         run: |
-          set -e  # Exit on any error
-
           CURRENT_VERSION="${{ steps.current-version.outputs.current_version }}"
           VERSION_TYPE="${{ inputs.version_type }}"
 
-          echo "Current version from previous step: $CURRENT_VERSION"
-          echo "Version type: $VERSION_TYPE"
+          IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
 
-          # Validate current version exists
-          if [ -z "$CURRENT_VERSION" ]; then
-            echo "Error: Current version is empty"
-            exit 1
-          fi
+          case "$VERSION_TYPE" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+          esac
 
-          # Split version into major, minor, and patch
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
-
-          echo "Parsed version: MAJOR=$MAJOR, MINOR=$MINOR, PATCH=$PATCH"
-
-          # Validate parsed components
-          if [ -z "$MAJOR" ] || [ -z "$MINOR" ] || [ -z "$PATCH" ]; then
-            echo "Error: Failed to parse version components from $CURRENT_VERSION"
-            exit 1
-          fi
-
-          # Increment appropriate version component
-          if [ "$VERSION_TYPE" = "major" ]; then
-            MAJOR=$((MAJOR + 1))
-            MINOR=0
-            PATCH=0
-          elif [ "$VERSION_TYPE" = "minor" ]; then
-            MINOR=$((MINOR + 1))
-            PATCH=0
-          else # patch
-            PATCH=$((PATCH + 1))
-          fi
-
-          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
-          BRANCH_NAME="release/$NEW_VERSION"
+          NEW_VERSION="${major}.${minor}.${patch}"
+          BRANCH_NAME="release/${NEW_VERSION}"
 
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          echo "New version: $NEW_VERSION"
-          echo "Branch name: $BRANCH_NAME"
 
-      - name: Check if branch already exists
-        id: check-branch
+      - name: Configure Git
         run: |
-          BRANCH_NAME="${{ steps.new-version.outputs.branch_name }}"
-
-          # Check if branch exists locally or remotely
-          if git show-ref --verify --quiet refs/heads/$BRANCH_NAME || git show-ref --verify --quiet refs/remotes/origin/$BRANCH_NAME; then
-            echo "Branch $BRANCH_NAME already exists"
-            echo "branch_exists=true" >> $GITHUB_OUTPUT
-            exit 1
-          else
-            echo "Branch $BRANCH_NAME does not exist, proceeding..."
-            echo "branch_exists=false" >> $GITHUB_OUTPUT
-          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Update main branch version
         run: |
@@ -131,25 +93,23 @@ jobs:
           echo "Updating main branch version from $CURRENT_VERSION to $NEW_VERSION"
 
           # Update version in package.json
-          npm version $NEW_VERSION --no-git-tag-version
+          npm version "$NEW_VERSION" --no-git-tag-version
 
-          # Install dependencies to update package-lock.json
-          echo "Updating package-lock.json..."
-          npm install --package-lock-only
+          # Install dependencies to update lock file
+          npm install
 
-          # Commit and push the version update to main
+          # Commit and push to main
           git add package.json package-lock.json
           git commit -m "Release v$NEW_VERSION"
           git push origin main
 
-          echo "✅ Main branch updated to version $NEW_VERSION with synced lock file"
-
       - name: Create release branch
         run: |
           BRANCH_NAME="${{ steps.new-version.outputs.branch_name }}"
-          echo "Creating release branch: $BRANCH_NAME from updated main"
 
-          # Create and checkout the release branch from current HEAD (updated main)
+          echo "Creating release branch: $BRANCH_NAME"
+
+          # Create new branch from updated main
           git checkout -b "$BRANCH_NAME"
 
           # Push the release branch
@@ -166,46 +126,25 @@ jobs:
       branch_ref: ${{ needs.create-branch.outputs.branch_name }}
     secrets: inherit
 
-  deploy:
+  # Deploy to staging when target is 'staging' or 'all'
+  deploy-staging:
     needs: [create-branch, create-tag]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/robosystems-app' }}
-          token: ${{ secrets.ACTIONS_TOKEN }}
+    if: ${{ inputs.deploy_to == 'staging' || inputs.deploy_to == 'all' }}
+    uses: ./.github/workflows/staging.yml
+    secrets: inherit
 
-      - name: Trigger deployment
-        if: ${{ inputs.deploy_to != 'none' }}
-        env:
-          GH_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
-        run: |
-          DEPLOY_TARGET="${{ inputs.deploy_to }}"
-          TAG_NAME="${{ needs.create-tag.outputs.tag_name }}"
-
-          echo "🚀 Triggering deployment to $DEPLOY_TARGET from git tag $TAG_NAME..."
-
-          if [ "$DEPLOY_TARGET" = "staging" ]; then
-            gh workflow run staging.yml --ref "$TAG_NAME"
-            echo "✅ Staging deployment triggered for tag $TAG_NAME"
-          elif [ "$DEPLOY_TARGET" = "prod" ]; then
-            gh workflow run prod.yml --ref "$TAG_NAME"
-            echo "✅ Production deployment triggered for tag $TAG_NAME"
-          elif [ "$DEPLOY_TARGET" = "all" ]; then
-            # Trigger staging first, then prod with delay
-            # Both share 'robosystems-app-deploy' concurrency group, so prod queues behind staging
-            gh workflow run staging.yml --ref "$TAG_NAME"
-            echo "Staging deployment triggered for tag $TAG_NAME"
-            echo "Waiting 30 seconds before triggering production (concurrency group will queue it)..."
-            sleep 30
-            gh workflow run prod.yml --ref "$TAG_NAME"
-            echo "Production deployment triggered - will start after staging completes"
-          fi
+  # Deploy to prod when target is 'prod' or 'all' (after staging succeeds if 'all')
+  deploy-prod:
+    needs: [create-branch, create-tag, deploy-staging]
+    if: |
+      always() &&
+      (inputs.deploy_to == 'prod' || inputs.deploy_to == 'all') &&
+      (needs.deploy-staging.result == 'success' || needs.deploy-staging.result == 'skipped')
+    uses: ./.github/workflows/prod.yml
+    secrets: inherit
 
   create-summary:
-    needs: [create-branch, create-tag, deploy]
+    needs: [create-branch, create-tag, deploy-staging, deploy-prod]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
