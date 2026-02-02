@@ -59,8 +59,6 @@ on:
         description: 'Whether this is a release build'
         value: ${{ jobs.ecr-build.outputs.is_release }}
     secrets:
-      ACTIONS_TOKEN:
-        required: true
       DOCKERHUB_USERNAME:
         required: false
       DOCKERHUB_TOKEN:
@@ -96,9 +94,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          repository: ${{ github.repository }}
           ref: ${{ github.ref }}
-          token: ${{ secrets.ACTIONS_TOKEN }}
+          token: ${{ github.token }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -323,9 +321,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          repository: ${{ github.repository }}
           ref: ${{ github.ref }}
-          token: ${{ secrets.ACTIONS_TOKEN }}
+          token: ${{ github.token }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3

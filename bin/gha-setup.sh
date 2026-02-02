@@ -102,15 +102,20 @@ function setup_secrets() {
     echo ""
     echo "📋 OPTIONAL secrets (enable additional features):"
     echo ""
-    echo "# Enables workflow automations (deploy after release, gh CLI in workflows)"
-    echo "gh secret set ACTIONS_TOKEN --body \"your_github_personal_access_token\""
+    echo "   ACTIONS_TOKEN      - GitHub Personal Access Token (PAT)"
+    echo "                        Create at: github.com/settings/tokens"
+    echo "                        Required scope: repo (full control)"
+    echo "                        Enhances PR/release automations"
     echo ""
-    echo "# Enables Claude-powered PR/release workflows"
-    echo "gh secret set ANTHROPIC_API_KEY --body \"your_anthropic_api_key\""
+    echo "   ANTHROPIC_API_KEY  - Enables AI-powered PR summaries and release notes"
     echo ""
-    echo "💡 ACTIONS_TOKEN needs these permissions:"
-    echo "   - repo (full control)"
-    echo "   - workflow (update workflows)"
+    echo "ACTIONS_TOKEN limitations when not set:"
+    echo "   - PRs created by create-pr.yml won't auto-trigger CI workflows"
+    echo "   - Self-hosted runner checks limited to repo-level (no org runners)"
+    echo ""
+    echo "To set secrets:"
+    echo "   gh secret set ACTIONS_TOKEN"
+    echo "   gh secret set ANTHROPIC_API_KEY"
     echo ""
     echo "Secrets information completed!"
 }
@@ -138,8 +143,6 @@ function setup_minimum_config() {
 
     echo ""
     echo "🔧 Optional variables (press Enter to use defaults):"
-    read -p "Repository Name [RoboFinSystems/roboledger-app]: " REPOSITORY_NAME
-    REPOSITORY_NAME=${REPOSITORY_NAME:-"RoboFinSystems/roboledger-app"}
     read -p "ECR Repository Name [roboledger-app]: " ECR_REPOSITORY
     ECR_REPOSITORY=${ECR_REPOSITORY:-"roboledger-app"}
     read -p "AWS Region [us-east-1]: " AWS_REGION
@@ -159,7 +162,6 @@ function setup_minimum_config() {
     echo "Setting variables..."
 
     # Core Infrastructure
-    gh variable set REPOSITORY_NAME --body "$REPOSITORY_NAME"
     gh variable set AWS_ACCOUNT_ID --body "$AWS_ACCOUNT_ID"
     gh variable set AWS_REGION --body "$AWS_REGION"
     gh variable set ECR_REPOSITORY --body "$ECR_REPOSITORY"
@@ -221,15 +223,11 @@ function setup_minimum_config() {
     # SNS Alert Email (optional)
     gh variable set AWS_SNS_ALERT_EMAIL --body ""
 
-    # DockerHub Configuration (optional)
-    gh variable set DOCKERHUB_USERNAME --body ""
-
     echo ""
     echo "✅ Minimal configuration completed!"
     echo ""
     echo "📋 Variables set:"
     echo "  🌐 Domain: $DOMAIN_NAME"
-    echo "  📦 Repository: $REPOSITORY_NAME"
     echo "  🔑 AWS Account: $AWS_ACCOUNT_ID"
     echo "  🐳 ECR Repository: $ECR_REPOSITORY"
     echo "  📍 Region: $AWS_REGION"
@@ -253,8 +251,6 @@ function setup_full_config() {
     # Get user input for key variables
     read -p "Enter Domain Name (e.g., robosystems.ai): " DOMAIN_NAME
     read -p "Enter AWS Account ID: " AWS_ACCOUNT_ID
-    read -p "Enter Repository Name [RoboFinSystems/roboledger-app]: " REPOSITORY_NAME
-    REPOSITORY_NAME=${REPOSITORY_NAME:-"RoboFinSystems/roboledger-app"}
     read -p "Enter ECR Repository Name [roboledger-app]: " ECR_REPOSITORY
     ECR_REPOSITORY=${ECR_REPOSITORY:-"roboledger-app"}
     read -p "Enter AWS Region [us-east-1]: " AWS_REGION
@@ -264,7 +260,6 @@ function setup_full_config() {
     echo "Setting all variables..."
 
     # Core Infrastructure
-    gh variable set REPOSITORY_NAME --body "$REPOSITORY_NAME"
     gh variable set AWS_ACCOUNT_ID --body "$AWS_ACCOUNT_ID"
     gh variable set AWS_REGION --body "$AWS_REGION"
     gh variable set ECR_REPOSITORY --body "$ECR_REPOSITORY"
@@ -347,18 +342,13 @@ function setup_full_config() {
     read -p "SNS alert email (optional): " SNS_EMAIL
     gh variable set AWS_SNS_ALERT_EMAIL --body "$SNS_EMAIL"
 
-    # DockerHub Configuration
-    read -p "DockerHub username (optional): " DOCKERHUB_USER
-    gh variable set DOCKERHUB_USERNAME --body "$DOCKERHUB_USER"
-
     echo ""
     echo "✅ Full configuration completed!"
     echo ""
     echo "📋 Summary of configured variables:"
     echo "  🌐 Domain: $DOMAIN_NAME"
-    echo "  📦 Repository: $REPOSITORY_NAME"
     echo "  🐳 ECR: $ECR_REPOSITORY"
-    echo "  🔧 Total variables configured: 40+"
+    echo "  🔧 Total variables configured: 35+"
     echo ""
 }
 

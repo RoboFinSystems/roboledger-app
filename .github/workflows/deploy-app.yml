@@ -103,10 +103,6 @@ on:
         type: string
         default: ''
 
-    secrets:
-      ACTIONS_TOKEN:
-        required: true
-
 jobs:
   deploy:
     runs-on: ${{ fromJSON(inputs.runner_config) }}
@@ -118,9 +114,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.REPOSITORY_NAME || 'RoboFinSystems/roboledger-app' }}
+          repository: ${{ github.repository }}
           ref: ${{ github.ref }}
-          token: ${{ secrets.ACTIONS_TOKEN }}
+          token: ${{ github.token }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4

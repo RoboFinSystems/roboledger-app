@@ -12,6 +12,7 @@ concurrency:
 
 on:
   workflow_dispatch: # Manual triggering only
+  workflow_call:
 
 jobs:
   runner:
@@ -26,7 +27,7 @@ jobs:
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.ref }}
-          token: ${{ secrets.ACTIONS_TOKEN }}
+          token: ${{ github.token }}
 
       - name: Check runner availability
         id: check
@@ -34,15 +35,14 @@ jobs:
         with:
           runner_labels: ${{ vars.RUNNER_LABELS || 'github-hosted' }}
           runner_scope: ${{ vars.RUNNER_SCOPE || 'both' }}
-          github_token: ${{ secrets.ACTIONS_TOKEN }}
+          github_token: ${{ github.token }}
 
   test:
     needs: [runner]
     uses: ./.github/workflows/test.yml
     with:
       runner_config: ${{ needs.runner.outputs.runner_config }}
-    secrets:
-      ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+    secrets: inherit
 
   create-deployment:
     needs: [runner, test]
@@ -54,13 +54,13 @@ jobs:
         id: deployment
         uses: chrnorm/deployment-action@v2
         with:
-          token: ${{ secrets.ACTIONS_TOKEN }}
+          token: ${{ github.token }}
           environment: production
           description: 'Production Deployment Created'
       - name: Update Deployment Status
         uses: chrnorm/deployment-status@v2
         with:
-          token: ${{ secrets.ACTIONS_TOKEN }}
+          token: ${{ github.token }}
           state: in_progress
           deployment-id: ${{ steps.deployment.outputs.deployment_id }}
           description: 'Production Deployment In Progress'
@@ -75,8 +75,7 @@ jobs:
       aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
       aws_region: ${{ vars.AWS_REGION || 'us-east-1' }}
       namespace: ${{ vars.AWS_ACCOUNT_ID }}
-    secrets:
-      ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+    secrets: inherit
 
   build:
     uses: ./.github/workflows/build.yml
@@ -96,10 +95,7 @@ jobs:
       # Set DOCKERHUB_PUBLISHING_ENABLED to 'true' in GitHub variables when ready to publish
       # Supports: refs/tags/v*.*.* (releases) and refs/heads/release/* (hotfixes)
       publish_to_dockerhub: ${{ vars.DOCKERHUB_PUBLISHING_ENABLED == 'true' && (startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/heads/release/')) }}
-    secrets:
-      ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
-      DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+    secrets: inherit
 
   deploy-app:
     needs: [runner, create-deployment, deploy-s3, build]
@@ -131,8 +127,7 @@ jobs:
       # Domain & DNS Configuration (required for public mode)
       domain_name: ${{ vars.DOMAIN_NAME_PROD || 'roboledger.ai' }}
       domain_name_root: ${{ vars.DOMAIN_NAME_ROOT || 'roboledger.ai' }}
-    secrets:
-      ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+    secrets: inherit
 
   deployment-successful:
     needs: [runner, create-deployment, build, deploy-app]
@@ -143,7 +138,7 @@ jobs:
       - name: Update Deployment Status
         uses: chrnorm/deployment-status@v2
         with:
-          token: ${{ secrets.ACTIONS_TOKEN }}
+          token: ${{ github.token }}
           state: success
           deployment-id: ${{ needs.create-deployment.outputs.deployment_id }}
           description: 'Production Deployment Succeeded'
@@ -158,11 +153,11 @@ jobs:
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.ref }}
-          token: ${{ secrets.ACTIONS_TOKEN }}
+          token: ${{ github.token }}
 
       - name: Handle Deployment Failure
         uses: ./.github/actions/handle-deployment-failure
         with:
           deployment-id: ${{ needs.create-deployment.outputs.deployment_id }}
           environment: production
-          github-token: ${{ secrets.ACTIONS_TOKEN }}
+          github-token: ${{ github.token }}
