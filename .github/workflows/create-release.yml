@@ -144,6 +144,11 @@ jobs:
   deploy-staging:
     needs: [create-branch, create-tag]
     if: ${{ inputs.deploy_to == 'staging' || inputs.deploy_to == 'all' }}
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
+      security-events: write
     uses: ./.github/workflows/staging.yml
     secrets: inherit
 
@@ -154,6 +159,11 @@ jobs:
       always() &&
       (inputs.deploy_to == 'prod' || inputs.deploy_to == 'all') &&
       (needs.deploy-staging.result == 'success' || needs.deploy-staging.result == 'skipped')
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
+      security-events: write
     uses: ./.github/workflows/prod.yml
     secrets: inherit
 
