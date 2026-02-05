@@ -116,7 +116,7 @@ jobs:
       static_assets_bucket_domain: ${{ needs.deploy-s3.outputs.static_assets_bucket_domain }}
       # Container & Application Configuration
       ecr_repository: ${{ vars.ECR_REPOSITORY || 'roboledger-app' }}
-      ecr_image_tag: latest
+      ecr_image_tag: ${{ needs.build.outputs.version_tag }}
       # App Runner Compute Configuration
       cpu: ${{ vars.CPU_PROD || '0.25 vCPU' }}
       memory: ${{ vars.MEMORY_PROD || '0.5 GB' }}
