@@ -3,16 +3,16 @@
 # ROBOLEDGER APP GITHUB REPOSITORY SETUP SCRIPT
 # =============================================================================
 #
-# This script configures GitHub repository secrets and variables used by CI/CD
-# pipelines and deployment automation for the RoboSystems App frontend.
+# This script configures GitHub repository variables used by CI/CD pipelines
+# for the RoboLedger App frontend (App Runner + CloudFront deployment).
 #
 # Usage:
 #   npm run setup:gha
-#   or directly: ./bin/gha-setup.sh.sh
+#   or directly: ./bin/gha-setup.sh
 #
-# Required GitHub repository configuration:
-# - Repository secrets (sensitive data)
-# - Repository variables (non-sensitive configuration)
+# Prerequisites:
+#   - GitHub CLI installed and authenticated
+#   - Run ./bin/bootstrap.sh first (sets AWS_ROLE_ARN for OIDC)
 #
 # =============================================================================
 
@@ -23,67 +23,47 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Function to print colored output
-print_error() {
-    echo -e "${RED}❌ $1${NC}" >&2
-}
+print_error() { echo -e "${RED}❌ $1${NC}" >&2; }
+print_info() { echo -e "${BLUE}ℹ️  $1${NC}"; }
+print_success() { echo -e "${GREEN}✅ $1${NC}"; }
+print_warning() { echo -e "${YELLOW}⚠️  $1${NC}"; }
 
-print_info() {
-    echo -e "${BLUE}ℹ️  $1${NC}"
-}
-
-print_success() {
-    echo -e "${GREEN}✅ $1${NC}"
-}
-
-print_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
-}
-
-echo "=== RoboSystems App GitHub Repository Setup ==="
+echo "=== RoboLedger App GitHub Variables Setup ==="
 echo ""
 
 # =============================================================================
-# GITHUB SETUP FUNCTIONS
+# PREREQUISITES
 # =============================================================================
 
-function check_prerequisites() {
+check_prerequisites() {
     print_info "Checking prerequisites..."
 
-    # Check GitHub CLI
     if ! command -v gh >/dev/null 2>&1; then
-        print_error "GitHub CLI is not installed. Please install it first."
-        echo "   Visit: https://cli.github.com/"
+        print_error "GitHub CLI not installed. Visit: https://cli.github.com/"
         exit 1
     fi
 
-    # Check GitHub authentication
     if ! gh auth status >/dev/null 2>&1; then
-        print_error "GitHub CLI not authenticated."
-        echo "   Run: gh auth login"
+        print_error "GitHub CLI not authenticated. Run: gh auth login"
         exit 1
     fi
 
-    # Check jq (JSON parser) - needed for JSON queries
-    if ! command -v jq >/dev/null 2>&1; then
-        print_error "jq is not installed. Please install it first."
-        echo "   Install: brew install jq (macOS) or apt install jq (Linux)"
-        exit 1
-    fi
-
-    # Check if we're in a git repository
     if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         print_error "Not in a git repository"
         exit 1
     fi
 
-    # Get repository name
     REPO_NAME=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo "")
     if [ -z "$REPO_NAME" ]; then
         print_error "Could not determine repository name"
         exit 1
+    fi
+
+    # Check if bootstrap was run (AWS_ROLE_ARN should exist)
+    if ! gh variable get AWS_ROLE_ARN >/dev/null 2>&1; then
+        print_warning "AWS_ROLE_ARN not set - run ./bin/bootstrap.sh first"
     fi
 
     print_success "Prerequisites check passed"
@@ -91,350 +71,233 @@ function check_prerequisites() {
     echo ""
 }
 
-function setup_secrets() {
-    echo "Setting up GitHub repository secrets..."
-    echo ""
-    echo "⚠️  Many secrets may be set at the ORGANIZATION level and inherited."
-    echo "    Check existing secrets first: gh secret list"
-    echo ""
-    echo "📋 With OIDC authentication, AWS credentials are NOT needed!"
-    echo "   Workflows authenticate via AWS_ROLE_ARN (set by bootstrap)"
-    echo ""
-    echo "📋 OPTIONAL secrets (enable additional features):"
-    echo ""
-    echo "   ACTIONS_TOKEN      - GitHub Personal Access Token (PAT)"
-    echo "                        Create at: github.com/settings/tokens"
-    echo "                        Required scope: repo (full control)"
-    echo ""
-    echo "   ANTHROPIC_API_KEY  - Enables AI-powered PR summaries and release notes"
-    echo ""
-    echo "ACTIONS_TOKEN enables:"
-    echo "   - Push to protected branches (create-release.yml)"
-    echo "   - Push tags and create GitHub releases (tag-release.yml)"
-    echo "   - PRs that auto-trigger CI workflows (create-pr.yml)"
-    echo "   - Org-level self-hosted runner checks (claude.yml)"
-    echo ""
-    echo "Without ACTIONS_TOKEN, workflows fall back to github.token with limitations:"
-    echo "   - May fail on protected branches/tags"
-    echo "   - PRs won't trigger on:pull_request workflows"
-    echo "   - Runner checks limited to repo-level"
-    echo ""
-    echo "To set secrets:"
-    echo "   gh secret set ACTIONS_TOKEN"
-    echo "   gh secret set ANTHROPIC_API_KEY"
-    echo ""
-    echo "Secrets information completed!"
-}
+# =============================================================================
+# SETUP CONFIGURATION
+# =============================================================================
 
-function setup_minimum_config() {
-    echo "Setting up minimal configuration..."
-    echo "💡 Only essential variables required - everything else has sensible defaults!"
+setup_config() {
+    echo "This sets GitHub variables for App Runner + CloudFront deployment."
+    echo "Most variables have sensible defaults - only domain and AWS account are required."
     echo ""
 
-    # Check for existing AWS Account ID
-    EXISTING_AWS_ID=$(gh variable get AWS_ACCOUNT_ID 2>/dev/null || echo "")
+    # Check for existing values
+    EXISTING_ACCOUNT=$(gh variable get AWS_ACCOUNT_ID 2>/dev/null || echo "")
+    EXISTING_DOMAIN=$(gh variable get DOMAIN_NAME_ROOT 2>/dev/null || echo "")
 
-    # Absolutely essential variables
-    echo "📋 Required variables:"
+    echo "📋 Required Configuration:"
+    echo ""
 
-    if [ -n "$EXISTING_AWS_ID" ]; then
-        echo "  AWS Account ID already set: $EXISTING_AWS_ID"
+    # AWS Account ID
+    if [ -n "$EXISTING_ACCOUNT" ]; then
+        echo "  AWS Account ID: $EXISTING_ACCOUNT (existing)"
         read -p "  Press Enter to keep, or enter new value: " AWS_ACCOUNT_ID
-        AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID:-$EXISTING_AWS_ID}
+        AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID:-$EXISTING_ACCOUNT}
     else
-        read -p "Enter AWS Account ID: " AWS_ACCOUNT_ID
+        read -p "  AWS Account ID: " AWS_ACCOUNT_ID
     fi
 
-    read -p "Enter Domain Name (e.g., robosystems.ai): " DOMAIN_NAME
+    # Domain
+    if [ -n "$EXISTING_DOMAIN" ]; then
+        echo "  Domain: $EXISTING_DOMAIN (existing)"
+        read -p "  Press Enter to keep, or enter new value: " DOMAIN_NAME
+        DOMAIN_NAME=${DOMAIN_NAME:-$EXISTING_DOMAIN}
+    else
+        read -p "  Domain Name (e.g., roboledger.ai): " DOMAIN_NAME
+    fi
 
     echo ""
-    echo "🔧 Optional variables (press Enter to use defaults):"
-    read -p "ECR Repository Name [roboledger-app]: " ECR_REPOSITORY
-    ECR_REPOSITORY=${ECR_REPOSITORY:-"roboledger-app"}
-    read -p "AWS Region [us-east-1]: " AWS_REGION
+    echo "🔧 Optional Configuration (press Enter for defaults):"
+    echo ""
+
+    read -p "  AWS Region [us-east-1]: " AWS_REGION
     AWS_REGION=${AWS_REGION:-"us-east-1"}
+
+    read -p "  ECR Repository [roboledger-app]: " ECR_REPOSITORY
+    ECR_REPOSITORY=${ECR_REPOSITORY:-"roboledger-app"}
+
+    read -p "  Enable staging environment? (y/N): " -n 1 -r
+    echo ""
+    STAGING_ENABLED="false"
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        STAGING_ENABLED="true"
+    fi
 
     echo ""
     echo "🌐 Related App URLs (for SSO navigation):"
-    read -p "RoboSystems API URL [https://api.robosystems.ai]: " API_URL
+    echo ""
+
+    read -p "  RoboSystems API URL [https://api.robosystems.ai]: " API_URL
     API_URL=${API_URL:-"https://api.robosystems.ai"}
-    read -p "RoboLedger App URL [https://roboledger.ai]: " ROBOLEDGER_URL
-    ROBOLEDGER_URL=${ROBOLEDGER_URL:-"https://roboledger.ai"}
-    read -p "RoboInvestor App URL [https://roboinvestor.ai]: " ROBOINVESTOR_URL
+
+    read -p "  RoboSystems App URL [https://robosystems.ai]: " ROBOSYSTEMS_URL
+    ROBOSYSTEMS_URL=${ROBOSYSTEMS_URL:-"https://robosystems.ai"}
+
+    read -p "  RoboInvestor App URL [https://roboinvestor.ai]: " ROBOINVESTOR_URL
     ROBOINVESTOR_URL=${ROBOINVESTOR_URL:-"https://roboinvestor.ai"}
 
-    # Set the essential variables
     echo ""
     echo "Setting variables..."
+    echo ""
 
+    # -------------------------------------------------------------------------
     # Core Infrastructure
+    # -------------------------------------------------------------------------
     gh variable set AWS_ACCOUNT_ID --body "$AWS_ACCOUNT_ID"
     gh variable set AWS_REGION --body "$AWS_REGION"
     gh variable set ECR_REPOSITORY --body "$ECR_REPOSITORY"
+    print_success "Core infrastructure variables set"
 
+    # -------------------------------------------------------------------------
     # Environment Configuration
-    gh variable set ENVIRONMENT_PROD --body "prod"
-    gh variable set ENVIRONMENT_STAGING --body "staging"
-    gh variable set ENVIRONMENT_STAGING_ENABLED --body "false"
+    # -------------------------------------------------------------------------
+    gh variable set ENVIRONMENT_STAGING_ENABLED --body "$STAGING_ENABLED"
+    print_success "Environment configuration set"
 
+    # -------------------------------------------------------------------------
     # Domain Configuration
+    # -------------------------------------------------------------------------
     gh variable set DOMAIN_NAME_ROOT --body "$DOMAIN_NAME"
-    gh variable set DOMAIN_NAME_PROD --body "$DOMAIN_NAME"  # Main domain without www
+    gh variable set DOMAIN_NAME_PROD --body "$DOMAIN_NAME"
     gh variable set DOMAIN_NAME_STAGING --body "staging.$DOMAIN_NAME"
+    print_success "Domain configuration set"
 
-    # App URLs for SSO
+    # -------------------------------------------------------------------------
+    # App URLs (build-time environment variables)
+    # -------------------------------------------------------------------------
     gh variable set ROBOSYSTEMS_API_URL_PROD --body "$API_URL"
-    gh variable set ROBOSYSTEMS_API_URL_STAGING --body "https://staging.api.$DOMAIN_NAME"
-    gh variable set ROBOSYSTEMS_APP_URL_PROD --body "https://$DOMAIN_NAME"
-    gh variable set ROBOSYSTEMS_APP_URL_STAGING --body "https://staging.$DOMAIN_NAME"
-    gh variable set ROBOLEDGER_APP_URL_PROD --body "$ROBOLEDGER_URL"
-    gh variable set ROBOLEDGER_APP_URL_STAGING --body "https://staging.roboledger.ai"
+    gh variable set ROBOSYSTEMS_API_URL_STAGING --body "https://staging.api.robosystems.ai"
+    gh variable set ROBOSYSTEMS_APP_URL_PROD --body "$ROBOSYSTEMS_URL"
+    gh variable set ROBOSYSTEMS_APP_URL_STAGING --body "https://staging.robosystems.ai"
+    gh variable set ROBOLEDGER_APP_URL_PROD --body "https://$DOMAIN_NAME"
+    gh variable set ROBOLEDGER_APP_URL_STAGING --body "https://staging.$DOMAIN_NAME"
     gh variable set ROBOINVESTOR_APP_URL_PROD --body "$ROBOINVESTOR_URL"
     gh variable set ROBOINVESTOR_APP_URL_STAGING --body "https://staging.roboinvestor.ai"
+    print_success "App URLs set"
 
-    # ECS Service Configuration - Production
+    # -------------------------------------------------------------------------
+    # App Runner Configuration (sensible defaults)
+    # -------------------------------------------------------------------------
+    # CPU/Memory: App Runner format - "0.25 vCPU", "0.5 GB", etc.
+    gh variable set CPU_PROD --body "0.25 vCPU"
+    gh variable set CPU_STAGING --body "0.25 vCPU"
+    gh variable set MEMORY_PROD --body "0.5 GB"
+    gh variable set MEMORY_STAGING --body "0.5 GB"
+
+    # Auto-scaling
     gh variable set CAPACITY_MIN_PROD --body "1"
-    gh variable set CAPACITY_MAX_PROD --body "10"
-    gh variable set CPU_PROD --body "256"
-    gh variable set MEMORY_PROD --body "512"
-    gh variable set SCALE_UP_CPU_THRESHOLD_PROD --body "70"
-    gh variable set SCALE_DOWN_CPU_THRESHOLD_PROD --body "30"
-    gh variable set SCALE_UP_MEMORY_THRESHOLD_PROD --body "65"
-    gh variable set SCALE_DOWN_MEMORY_THRESHOLD_PROD --body "25"
-    gh variable set FARGATE_SPOT_WEIGHT_PROD --body "80"
-    gh variable set FARGATE_WEIGHT_PROD --body "20"
-
-    # ECS Service Configuration - Staging
     gh variable set CAPACITY_MIN_STAGING --body "1"
+    gh variable set CAPACITY_MAX_PROD --body "10"
     gh variable set CAPACITY_MAX_STAGING --body "2"
-    gh variable set CPU_STAGING --body "256"
-    gh variable set MEMORY_STAGING --body "512"
-    gh variable set SCALE_UP_CPU_THRESHOLD_STAGING --body "60"
-    gh variable set SCALE_DOWN_CPU_THRESHOLD_STAGING --body "40"
-    gh variable set SCALE_UP_MEMORY_THRESHOLD_STAGING --body "60"
-    gh variable set SCALE_DOWN_MEMORY_THRESHOLD_STAGING --body "30"
-    gh variable set FARGATE_SPOT_WEIGHT_STAGING --body "99"
-    gh variable set FARGATE_WEIGHT_STAGING --body "1"
+    gh variable set MAX_CONCURRENCY_PROD --body "100"
+    gh variable set MAX_CONCURRENCY_STAGING --body "100"
+    print_success "App Runner configuration set"
 
-    # Release Configuration
-    gh variable set RELEASE_NAME --body "GitHub Actions"
-    gh variable set RELEASE_EMAIL --body "actions@github.com"
+    # -------------------------------------------------------------------------
+    # Access Mode (always public for frontend apps)
+    # -------------------------------------------------------------------------
+    gh variable set APP_ACCESS_MODE_PROD --body "public"
+    gh variable set APP_ACCESS_MODE_STAGING --body "public"
+    print_success "Access mode set"
 
-    # Feature Flags (optional)
+    # -------------------------------------------------------------------------
+    # Feature Flags
+    # -------------------------------------------------------------------------
     gh variable set MAINTENANCE_MODE_PROD --body "false"
     gh variable set MAINTENANCE_MODE_STAGING --body "false"
-    # TURNSTILE_SITE_KEY is optional - only set if provided
-    # gh variable set TURNSTILE_SITE_KEY --body "your_turnstile_site_key"
-
-    # SNS Alert Email (optional)
-    gh variable set AWS_SNS_ALERT_EMAIL --body ""
+    print_success "Feature flags set"
 
     echo ""
-    echo "✅ Minimal configuration completed!"
+    echo "════════════════════════════════════════════════════════════"
     echo ""
-    echo "📋 Variables set:"
+    print_success "Configuration complete!"
+    echo ""
+    echo "📋 Summary:"
     echo "  🌐 Domain: $DOMAIN_NAME"
     echo "  🔑 AWS Account: $AWS_ACCOUNT_ID"
-    echo "  🐳 ECR Repository: $ECR_REPOSITORY"
     echo "  📍 Region: $AWS_REGION"
+    echo "  🐳 ECR: $ECR_REPOSITORY"
+    echo "  🔧 Staging: $STAGING_ENABLED"
     echo ""
-    echo "🚀 Your deployment is ready to run!"
-    echo "💡 All settings use cost-optimized defaults."
+    echo "📋 Optional secrets (not required for deployment):"
+    echo "  gh secret set ACTIONS_TOKEN      # Protected branches, releases"
+    echo "  gh secret set ANTHROPIC_API_KEY  # AI-powered release notes"
+    echo ""
+    echo "📋 Optional variables:"
+    echo "  gh variable set TURNSTILE_SITE_KEY --body \"your_key\"  # CAPTCHA"
+    echo "  gh variable set AWS_SNS_ALERT_EMAIL --body \"email\"    # Alerts"
     echo ""
     echo "📋 Next steps:"
-    echo "1. Run bootstrap first if not done: ./bin/bootstrap.sh"
-    echo "   (Sets AWS_ROLE_ARN for OIDC authentication)"
-    echo "2. Optional secrets for additional features: gh secret list"
-    echo "   - ACTIONS_TOKEN (workflow automations)"
-    echo "   - ANTHROPIC_API_KEY (Claude PR/release workflows)"
-    echo "3. Test with: gh workflow run prod.yml"
-}
-
-function setup_full_config() {
-    echo "Setting up full configuration with all variables..."
-    echo ""
-
-    # Get user input for key variables
-    read -p "Enter Domain Name (e.g., robosystems.ai): " DOMAIN_NAME
-    read -p "Enter AWS Account ID: " AWS_ACCOUNT_ID
-    read -p "Enter ECR Repository Name [roboledger-app]: " ECR_REPOSITORY
-    ECR_REPOSITORY=${ECR_REPOSITORY:-"roboledger-app"}
-    read -p "Enter AWS Region [us-east-1]: " AWS_REGION
-    AWS_REGION=${AWS_REGION:-"us-east-1"}
-
-    echo ""
-    echo "Setting all variables..."
-
-    # Core Infrastructure
-    gh variable set AWS_ACCOUNT_ID --body "$AWS_ACCOUNT_ID"
-    gh variable set AWS_REGION --body "$AWS_REGION"
-    gh variable set ECR_REPOSITORY --body "$ECR_REPOSITORY"
-
-    # Environment Configuration
-    gh variable set ENVIRONMENT_PROD --body "prod"
-    gh variable set ENVIRONMENT_STAGING --body "staging"
-    gh variable set ENVIRONMENT_STAGING_ENABLED --body "false"
-
-    # Domain Configuration
-    gh variable set DOMAIN_NAME_ROOT --body "$DOMAIN_NAME"
-    gh variable set DOMAIN_NAME_PROD --body "$DOMAIN_NAME"  # Main domain without www
-    gh variable set DOMAIN_NAME_STAGING --body "staging.$DOMAIN_NAME"
-
-    # App URLs for SSO and API Integration
-    echo ""
-    read -p "RoboSystems API URL [https://api.robosystems.ai]: " API_URL
-    API_URL=${API_URL:-"https://api.robosystems.ai"}
-    read -p "RoboLedger App URL [https://roboledger.ai]: " ROBOLEDGER_URL
-    ROBOLEDGER_URL=${ROBOLEDGER_URL:-"https://roboledger.ai"}
-    read -p "RoboInvestor App URL [https://roboinvestor.ai]: " ROBOINVESTOR_URL
-    ROBOINVESTOR_URL=${ROBOINVESTOR_URL:-"https://roboinvestor.ai"}
-
-    gh variable set ROBOSYSTEMS_API_URL_PROD --body "$API_URL"
-    gh variable set ROBOSYSTEMS_API_URL_STAGING --body "https://staging.api.$DOMAIN_NAME"
-    gh variable set ROBOSYSTEMS_APP_URL_PROD --body "https://$DOMAIN_NAME"
-    gh variable set ROBOSYSTEMS_APP_URL_STAGING --body "https://staging.$DOMAIN_NAME"
-    gh variable set ROBOLEDGER_APP_URL_PROD --body "$ROBOLEDGER_URL"
-    gh variable set ROBOLEDGER_APP_URL_STAGING --body "https://staging.roboledger.ai"
-    gh variable set ROBOINVESTOR_APP_URL_PROD --body "$ROBOINVESTOR_URL"
-    gh variable set ROBOINVESTOR_APP_URL_STAGING --body "https://staging.roboinvestor.ai"
-
-    # ECS Service Configuration - Production
-    echo ""
-    read -p "Production min capacity [1]: " MIN_PROD
-    MIN_PROD=${MIN_PROD:-"1"}
-    read -p "Production max capacity [10]: " MAX_PROD
-    MAX_PROD=${MAX_PROD:-"10"}
-
-    gh variable set CAPACITY_MIN_PROD --body "$MIN_PROD"
-    gh variable set CAPACITY_MAX_PROD --body "$MAX_PROD"
-    gh variable set CPU_PROD --body "256"
-    gh variable set MEMORY_PROD --body "512"
-    gh variable set SCALE_UP_CPU_THRESHOLD_PROD --body "70"
-    gh variable set SCALE_DOWN_CPU_THRESHOLD_PROD --body "30"
-    gh variable set SCALE_UP_MEMORY_THRESHOLD_PROD --body "65"
-    gh variable set SCALE_DOWN_MEMORY_THRESHOLD_PROD --body "25"
-    gh variable set FARGATE_SPOT_WEIGHT_PROD --body "80"
-    gh variable set FARGATE_WEIGHT_PROD --body "20"
-
-    # ECS Service Configuration - Staging
-    gh variable set CAPACITY_MIN_STAGING --body "1"
-    gh variable set CAPACITY_MAX_STAGING --body "2"
-    gh variable set CPU_STAGING --body "256"
-    gh variable set MEMORY_STAGING --body "512"
-    gh variable set SCALE_UP_CPU_THRESHOLD_STAGING --body "60"
-    gh variable set SCALE_DOWN_CPU_THRESHOLD_STAGING --body "40"
-    gh variable set SCALE_UP_MEMORY_THRESHOLD_STAGING --body "60"
-    gh variable set SCALE_DOWN_MEMORY_THRESHOLD_STAGING --body "30"
-    gh variable set FARGATE_SPOT_WEIGHT_STAGING --body "99"
-    gh variable set FARGATE_WEIGHT_STAGING --body "1"
-
-    # Release Configuration
-    gh variable set RELEASE_NAME --body "GitHub Actions"
-    gh variable set RELEASE_EMAIL --body "actions@github.com"
-
-    # Feature Flags
-    echo ""
-    read -p "Maintenance mode for production (true/false) [false]: " MAINTENANCE_PROD
-    MAINTENANCE_PROD=${MAINTENANCE_PROD:-"false"}
-    read -p "Maintenance mode for staging (true/false) [false]: " MAINTENANCE_STAGING
-    MAINTENANCE_STAGING=${MAINTENANCE_STAGING:-"false"}
-    read -p "Cloudflare Turnstile site key (leave empty to disable): " TURNSTILE_KEY
-
-    gh variable set MAINTENANCE_MODE_PROD --body "$MAINTENANCE_PROD"
-    gh variable set MAINTENANCE_MODE_STAGING --body "$MAINTENANCE_STAGING"
-    gh variable set TURNSTILE_SITE_KEY --body "$TURNSTILE_KEY"
-
-    # SNS Alert Email
-    read -p "SNS alert email (optional): " SNS_EMAIL
-    gh variable set AWS_SNS_ALERT_EMAIL --body "$SNS_EMAIL"
-
-    echo ""
-    echo "✅ Full configuration completed!"
-    echo ""
-    echo "📋 Summary of configured variables:"
-    echo "  🌐 Domain: $DOMAIN_NAME"
-    echo "  🐳 ECR: $ECR_REPOSITORY"
-    echo "  🔧 Total variables configured: 35+"
+    echo "  1. Verify: gh variable list"
+    echo "  2. Deploy: gh workflow run prod.yml"
     echo ""
 }
 
 # =============================================================================
-# MAIN SCRIPT EXECUTION
+# CLEANUP LEGACY VARIABLES
 # =============================================================================
 
-function main() {
+cleanup_legacy() {
+    echo ""
+    print_info "Checking for legacy ECS variables..."
+
+    LEGACY_VARS=(
+        "FARGATE_SPOT_WEIGHT_PROD"
+        "FARGATE_SPOT_WEIGHT_STAGING"
+        "FARGATE_WEIGHT_PROD"
+        "FARGATE_WEIGHT_STAGING"
+        "FARGATE_BASE_PROD"
+        "FARGATE_BASE_STAGING"
+        "SCALE_UP_CPU_THRESHOLD_PROD"
+        "SCALE_UP_CPU_THRESHOLD_STAGING"
+        "SCALE_DOWN_CPU_THRESHOLD_PROD"
+        "SCALE_DOWN_CPU_THRESHOLD_STAGING"
+        "SCALE_UP_MEMORY_THRESHOLD_PROD"
+        "SCALE_UP_MEMORY_THRESHOLD_STAGING"
+        "SCALE_DOWN_MEMORY_THRESHOLD_PROD"
+        "SCALE_DOWN_MEMORY_THRESHOLD_STAGING"
+        "RELEASE_NAME"
+        "RELEASE_EMAIL"
+        "REPOSITORY_NAME"
+    )
+
+    found_legacy=false
+    for var in "${LEGACY_VARS[@]}"; do
+        if gh variable get "$var" >/dev/null 2>&1; then
+            if ! $found_legacy; then
+                echo ""
+                print_warning "Found legacy ECS variables (no longer used with App Runner):"
+                found_legacy=true
+            fi
+            echo "  - $var"
+        fi
+    done
+
+    if $found_legacy; then
+        echo ""
+        read -p "Delete legacy variables? (y/N): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            for var in "${LEGACY_VARS[@]}"; do
+                if gh variable delete "$var" 2>/dev/null; then
+                    print_success "Deleted $var"
+                fi
+            done
+        else
+            print_info "Keeping legacy variables (they won't affect deployment)"
+        fi
+    else
+        print_success "No legacy variables found"
+    fi
+}
+
+# =============================================================================
+# MAIN
+# =============================================================================
+
+main() {
     check_prerequisites
-
-    echo "This script will configure GitHub repository secrets and variables."
-    echo ""
-
-    # Show current repository
-    local repo_info=$(gh repo view --json nameWithOwner --jq '.nameWithOwner' 2>/dev/null || echo "Unknown")
-    echo "Repository: $repo_info"
-    echo ""
-
-    echo "Choose what to set up:"
-    echo "1) Variables only - Minimum config (essential variables only)"
-    echo "2) Variables only - Full config (all variables)"
-    echo "3) Show secret commands (requires manual setup)"
-    echo "4) Both variables (minimum) + secret commands"
-    echo "5) Both variables (full) + secret commands"
-    echo ""
-    read -p "Enter your choice (1/2/3/4/5): " -n 1 -r
-    echo ""
-
-    case $REPLY in
-        1)
-            echo "Setting up minimum variables..."
-            echo ""
-            setup_minimum_config
-            ;;
-        2)
-            echo "Setting up full variables..."
-            echo ""
-            setup_full_config
-            ;;
-        3)
-            echo "Showing secret setup commands..."
-            echo ""
-            setup_secrets
-            ;;
-        4)
-            echo "Setting up minimum variables and showing secret commands..."
-            echo ""
-            setup_minimum_config
-            echo ""
-            setup_secrets
-            ;;
-        5)
-            echo "Setting up full variables and showing secret commands..."
-            echo ""
-            setup_full_config
-            echo ""
-            setup_secrets
-            ;;
-        *)
-            echo "Invalid choice. Exiting."
-            exit 1
-            ;;
-    esac
-
-    echo ""
-    echo "✅ GitHub repository setup completed!"
-    echo ""
-    echo "📋 Verification commands:"
-    echo "  gh variable list          # Show all variables"
-    echo "  gh secret list           # Show all secrets (names only)"
-    echo ""
-    echo "📋 Test deployment:"
-    echo "  gh workflow run staging.yml    # Manual staging deployment"
-    echo "  gh workflow run prod.yml       # Manual production deployment"
-    echo ""
-    echo "⚠️  Note: Many secrets may be inherited from the organization level."
-    echo "    If deployment fails with auth errors, ensure secrets are set."
+    setup_config
+    cleanup_legacy
 }
 
-# Run main function if script is executed directly
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
-fi
+main "$@"
