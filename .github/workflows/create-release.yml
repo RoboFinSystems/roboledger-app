@@ -202,7 +202,8 @@ jobs:
           echo "✅ Staging deployment dispatched: https://github.com/${{ github.repository }}/actions/runs/$RUN_ID"
 
   deploy-prod-dispatch:
-    needs: [create-branch, create-tag, check-deploy-method, deploy-staging-dispatch]
+    needs:
+      [create-branch, create-tag, check-deploy-method, deploy-staging-dispatch]
     if: |
       always() &&
       needs.check-deploy-method.outputs.use_dispatch == 'true' &&
@@ -265,7 +266,8 @@ jobs:
     secrets: inherit
 
   deploy-prod-reusable:
-    needs: [create-branch, create-tag, check-deploy-method, deploy-staging-reusable]
+    needs:
+      [create-branch, create-tag, check-deploy-method, deploy-staging-reusable]
     if: |
       always() &&
       needs.check-deploy-method.outputs.use_dispatch == 'false' &&
