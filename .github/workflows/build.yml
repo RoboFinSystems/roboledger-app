@@ -47,14 +47,17 @@ on:
         description: 'Whether to publish images to Docker Hub'
     outputs:
       image:
-        description: 'Built image reference'
+        description: 'Full image reference with tag'
         value: ${{ jobs.ecr-build.outputs.image }}
+      image_tag:
+        description: 'Image tag (git-sha based, use this for deployments)'
+        value: ${{ jobs.ecr-build.outputs.image_tag }}
+      version_tag:
+        description: 'Version tag (v1.2.3) if release, empty otherwise (metadata only)'
+        value: ${{ jobs.ecr-build.outputs.version_tag }}
       ecr_repository_url:
         description: 'ECR repository URL'
         value: ${{ jobs.ecr-build.outputs.ecr_repository_url }}
-      version_tag:
-        description: 'Version tag used for the build'
-        value: ${{ jobs.ecr-build.outputs.version_tag }}
       is_release:
         description: 'Whether this is a release build'
         value: ${{ jobs.ecr-build.outputs.is_release }}
@@ -75,10 +78,11 @@ jobs:
       id-token: write
       contents: read
     outputs:
-      image: ${{ steps.build-and-push.outputs.image }}
-      ecr_repository_url: ${{ steps.build-and-push.outputs.ecr_repository_url }}
-      version_tag: ${{ steps.build-and-push.outputs.version_tag }}
-      is_release: ${{ steps.build-and-push.outputs.is_release }}
+      image: ${{ steps.resolve.outputs.image }}
+      image_tag: ${{ steps.resolve.outputs.image_tag }}
+      version_tag: ${{ steps.resolve.outputs.version_tag }}
+      ecr_repository_url: ${{ steps.resolve.outputs.ecr_repository_url }}
+      is_release: ${{ steps.resolve.outputs.is_release }}
     steps:
       - name: Free disk space
         run: |
@@ -117,12 +121,60 @@ jobs:
         with:
           mask-password: 'true'
 
+      - name: Resolve image tag and check existence
+        id: resolve
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          # Git SHA + environment is the source of truth for image identity
+          # (environment included because ECR builds bake in env-specific URLs)
+          GIT_SHA="${GITHUB_SHA:0:12}"
+          IMAGE_TAG="git-${GIT_SHA}-${ENVIRONMENT}"
+
+          # Determine version tag for releases (metadata for ECR, pinned for Docker Hub)
+          VERSION_TAG=""
+          IS_RELEASE="false"
+
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION_TAG="${GITHUB_REF#refs/tags/}"
+            IS_RELEASE="true"
+            echo "📦 Release detected: $VERSION_TAG"
+          elif [[ "$GITHUB_REF" == refs/heads/release/* ]]; then
+            BRANCH_VERSION="${GITHUB_REF#refs/heads/release/}"
+            VERSION_TAG="v${BRANCH_VERSION}-hotfix.${GIT_SHA}"
+            IS_RELEASE="true"
+            echo "🔥 Hotfix detected: $VERSION_TAG"
+          else
+            echo "🔧 Development build: $IMAGE_TAG"
+          fi
+
+          # Check if image already exists in ECR
+          ECR_URL="${ECR_REGISTRY}/${ECR_REPOSITORY}"
+          if aws ecr describe-images --repository-name "$ECR_REPOSITORY" --image-ids imageTag="$IMAGE_TAG" &>/dev/null; then
+            echo "✅ Image exists: ${IMAGE_TAG} - will skip build"
+            echo "needs_build=false" >> $GITHUB_OUTPUT
+          else
+            echo "🔨 Image not found: ${IMAGE_TAG} - will build"
+            echo "needs_build=true" >> $GITHUB_OUTPUT
+          fi
+
+          # Set outputs
+          echo "image=${ECR_URL}:${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
+          echo "ecr_repository_url=${ECR_URL}" >> $GITHUB_OUTPUT
+          echo "is_release=${IS_RELEASE}" >> $GITHUB_OUTPUT
+
       - name: Setup Node.js
+        if: steps.resolve.outputs.needs_build == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
       - name: Install dependencies and build Next.js
+        if: steps.resolve.outputs.needs_build == 'true'
         env:
           NEXT_PUBLIC_ROBOSYSTEMS_API_URL: ${{ inputs.robosystems_api_url }}
           NEXT_PUBLIC_ROBOLEDGER_APP_URL: ${{ inputs.roboledger_app_url }}
@@ -138,6 +190,7 @@ jobs:
           tar -czf next-build.tar.gz .next
 
       - name: Sync static assets to S3
+        if: steps.resolve.outputs.needs_build == 'true'
         env:
           # Use bucket name from deploy-s3 outputs if provided, otherwise use legacy naming
           S3_BUCKET: ${{ inputs.static_assets_bucket_name || format('roboledger-app-{0}-static-assets', inputs.environment) }}
@@ -193,66 +246,96 @@ jobs:
             echo "Please deploy the CloudFormation stack first to create the bucket."
           fi
 
-      - name: Build, tag, and push Docker image to ECR
-        id: build-and-push
+      - name: Build and push Docker image to ECR
+        if: steps.resolve.outputs.needs_build == 'true'
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ steps.resolve.outputs.image_tag }}
+          VERSION_TAG: ${{ steps.resolve.outputs.version_tag }}
+          IS_RELEASE: ${{ steps.resolve.outputs.is_release }}
         run: |
           export DOCKER_BUILDKIT=1
           export COMPOSE_DOCKER_CLI_BUILD=1
 
-          # Determine version information
-          VERSION_TAG=""
-          IS_RELEASE="false"
+          ECR_URL="${ECR_REGISTRY}/${ECR_REPOSITORY}"
 
-          # Check if this is a version tag (v*.*.*)
-          if [[ "$GITHUB_REF" == refs/tags/v*.*.* ]]; then
-            VERSION_TAG=${GITHUB_REF#refs/tags/}
-            IS_RELEASE="true"
-            echo "📦 Building release version: $VERSION_TAG"
-          # Check if this is a release branch (release/*)
-          elif [[ "$GITHUB_REF" == refs/heads/release/* ]]; then
-            # Extract version from branch name (e.g., release/1.0.0 -> v1.0.0)
-            BRANCH_VERSION=${GITHUB_REF#refs/heads/release/}
-            VERSION_TAG="v${BRANCH_VERSION}-hotfix.${GITHUB_SHA:0:8}"
-            IS_RELEASE="true"
-            echo "🔥 Building hotfix version: $VERSION_TAG (from release/$BRANCH_VERSION)"
-          else
-            # For non-release builds, use commit SHA
-            VERSION_TAG="git-${GITHUB_SHA:0:8}"
-            echo "🔧 Building development version: $VERSION_TAG"
+          # Build tags - git-sha-env is always the primary tag
+          TAGS="-t ${ECR_URL}:${IMAGE_TAG}"
+
+          # Add version tag as metadata for ECR
+          if [[ -n "$VERSION_TAG" ]]; then
+            TAGS="$TAGS -t ${ECR_URL}:${VERSION_TAG}"
           fi
 
-          # Prepare ECR tags
-          TAGS="-t $ECR_REGISTRY/$ECR_REPOSITORY:${{ inputs.environment }}"
-          TAGS="$TAGS -t $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION_TAG"
-
-          if [[ "${{ inputs.environment }}" == "prod" ]]; then
-            TAGS="$TAGS -t $ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          # Add latest tag for prod environment releases
+          if [[ "${{ inputs.environment }}" == "prod" ]] && [[ "$IS_RELEASE" == "true" ]]; then
+            TAGS="$TAGS -t ${ECR_URL}:latest"
           fi
+
+          echo "🏗️ Building with tags:"
+          echo "$TAGS" | tr ' ' '\n' | grep -E '^-t' | sed 's/-t /  /'
 
           # Build and push to ECR (amd64 only for ECS/Fargate)
           docker buildx build \
             --platform linux/amd64 \
             --push \
-            --cache-from type=registry,ref=$ECR_REGISTRY/$ECR_REPOSITORY:buildcache \
-            --cache-from type=registry,ref=$ECR_REGISTRY/$ECR_REPOSITORY:deps-cache \
-            --cache-to type=registry,ref=$ECR_REGISTRY/$ECR_REPOSITORY:buildcache,mode=max \
-            --cache-to type=registry,ref=$ECR_REGISTRY/$ECR_REPOSITORY:deps-cache,mode=max \
+            --cache-from type=registry,ref=${ECR_URL}:buildcache \
+            --cache-to type=registry,ref=${ECR_URL}:buildcache,mode=max \
             $TAGS \
             -f Dockerfile .
 
-          # Verify the image was pushed successfully to ECR
-          aws ecr describe-images --repository-name $ECR_REPOSITORY --image-ids imageTag=${{ inputs.environment }} || exit 1
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:${{ inputs.environment }}" >> $GITHUB_OUTPUT
-          echo "ecr_repository_url=$ECR_REGISTRY/$ECR_REPOSITORY" >> $GITHUB_OUTPUT
-          echo "version_tag=$VERSION_TAG" >> $GITHUB_OUTPUT
-          echo "is_release=$IS_RELEASE" >> $GITHUB_OUTPUT
+      - name: Add version tags to existing image
+        if: steps.resolve.outputs.needs_build == 'false' && steps.resolve.outputs.version_tag != ''
+        env:
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ steps.resolve.outputs.image_tag }}
+          VERSION_TAG: ${{ steps.resolve.outputs.version_tag }}
+        run: |
+          echo "🏷️ Adding version tag ${VERSION_TAG} to existing image ${IMAGE_TAG}"
 
-          # Log the tags that were created
-          echo "📋 ECR image tags created:"
-          echo "$TAGS" | tr ' ' '\n' | grep -E '^-t' | sed 's/-t /  - /'
+          # Get the manifest of the existing image
+          MANIFEST=$(aws ecr batch-get-image \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids imageTag="$IMAGE_TAG" \
+            --query 'images[0].imageManifest' \
+            --output text)
+
+          # Add version tag
+          if ! OUTPUT=$(aws ecr put-image \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-tag "$VERSION_TAG" \
+            --image-manifest "$MANIFEST" 2>&1); then
+            if echo "$OUTPUT" | grep -q "ImageAlreadyExistsException"; then
+              echo "Tag ${VERSION_TAG} already exists, skipping"
+            else
+              echo "::error::Failed to add tag ${VERSION_TAG}: $OUTPUT"
+              exit 1
+            fi
+          fi
+
+          # Add latest tag for prod
+          if [[ "${{ inputs.environment }}" == "prod" ]]; then
+            if ! OUTPUT=$(aws ecr put-image \
+              --repository-name "$ECR_REPOSITORY" \
+              --image-tag "latest" \
+              --image-manifest "$MANIFEST" 2>&1); then
+              if echo "$OUTPUT" | grep -q "ImageAlreadyExistsException"; then
+                echo "Tag latest already exists, skipping"
+              else
+                echo "::error::Failed to add tag latest: $OUTPUT"
+                exit 1
+              fi
+            fi
+          fi
+
+      - name: Verify image exists
+        env:
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ steps.resolve.outputs.image_tag }}
+        run: |
+          aws ecr describe-images --repository-name "$ECR_REPOSITORY" --image-ids imageTag="$IMAGE_TAG" || exit 1
+          echo "✅ Image verified: ${IMAGE_TAG}"
 
   # ===========================================================================
   # Scan Docker image for vulnerabilities (runs after ECR build)
