@@ -281,9 +281,7 @@ jobs:
             --platform linux/amd64 \
             --push \
             --cache-from type=registry,ref=${ECR_URL}:buildcache \
-            --cache-from type=registry,ref=${ECR_URL}:deps-cache \
             --cache-to type=registry,ref=${ECR_URL}:buildcache,mode=max \
-            --cache-to type=registry,ref=${ECR_URL}:deps-cache,mode=max \
             $TAGS \
             -f Dockerfile .
 
@@ -304,17 +302,31 @@ jobs:
             --output text)
 
           # Add version tag
-          aws ecr put-image \
+          if ! OUTPUT=$(aws ecr put-image \
             --repository-name "$ECR_REPOSITORY" \
             --image-tag "$VERSION_TAG" \
-            --image-manifest "$MANIFEST" 2>/dev/null || echo "Tag ${VERSION_TAG} may already exist"
+            --image-manifest "$MANIFEST" 2>&1); then
+            if echo "$OUTPUT" | grep -q "ImageAlreadyExistsException"; then
+              echo "Tag ${VERSION_TAG} already exists, skipping"
+            else
+              echo "::error::Failed to add tag ${VERSION_TAG}: $OUTPUT"
+              exit 1
+            fi
+          fi
 
           # Add latest tag for prod
           if [[ "${{ inputs.environment }}" == "prod" ]]; then
-            aws ecr put-image \
+            if ! OUTPUT=$(aws ecr put-image \
               --repository-name "$ECR_REPOSITORY" \
               --image-tag "latest" \
-              --image-manifest "$MANIFEST" 2>/dev/null || echo "Tag latest may already exist"
+              --image-manifest "$MANIFEST" 2>&1); then
+              if echo "$OUTPUT" | grep -q "ImageAlreadyExistsException"; then
+                echo "Tag latest already exists, skipping"
+              else
+                echo "::error::Failed to add tag latest: $OUTPUT"
+                exit 1
+              fi
+            fi
           fi
 
       - name: Verify image exists
