@@ -1,14 +1,14 @@
 # RoboSystems Core Components
 
-A shared library of React components, hooks, utilities, and types used across RoboInvestor ecosystem applications.
+A shared library of React components, hooks, utilities, and types used across RoboSystems ecosystem applications.
 
 ## Overview
 
 This repository contains reusable components that are shared between:
 
-- **roboinvestor-app** - Primary investment management interface
-- **roboledger-app** - Financial reporting and ledger management
-- **robosystems-app** - Core systems management
+- **robosystems-app** - Graph database management interface
+- **roboledger-app** - Accounting and bookkeeping interface
+- **roboinvestor-app** - Investment management interface
 
 ## Structure
 
@@ -89,15 +89,15 @@ import {
   SidebarProvider,
   customTheme,
   sidebarCookie,
-} from '@/lib/common'
+} from '@/lib/core'
 
-import type { CommonUser, SidebarCookie } from '@/lib/common'
+import type { CommonUser, SidebarCookie } from '@/lib/core'
 ```
 
 ### Authentication
 
 ```typescript
-import { useAuth, AuthProvider } from '@/lib/common'
+import { useAuth, AuthProvider } from '@/lib/core'
 
 function MyApp() {
   return (
@@ -116,7 +116,7 @@ function MyComponent() {
 ### Sidebar Management
 
 ```typescript
-import { SidebarProvider, useSidebarContext } from '@/lib/common'
+import { SidebarProvider, useSidebarContext } from '@/lib/core'
 
 function Layout({ children }) {
   return (
@@ -136,7 +136,7 @@ function MySidebar() {
 ### Responsive Design
 
 ```typescript
-import { useMediaQuery } from '@/lib/common'
+import { useMediaQuery } from '@/lib/core'
 
 function ResponsiveComponent() {
   const isMobile = useMediaQuery('(max-width: 768px)')
@@ -152,8 +152,8 @@ function ResponsiveComponent() {
 ### API Integration
 
 ```typescript
-import { SDK } from '@/lib/common'
-import type { UserResponse } from '@/lib/common/sdk/types.gen'
+import { SDK } from '@/lib/core'
+import type { UserResponse } from '@/lib/core/sdk/types.gen'
 
 async function fetchUser() {
   const response = await SDK.getCurrentUser()
@@ -192,7 +192,7 @@ Components should be tested in the consuming applications. Common patterns:
 
 ```typescript
 import { render, screen } from '@testing-library/react'
-import { SidebarProvider } from '@/lib/common'
+import { SidebarProvider } from '@/lib/core'
 
 test('sidebar provider works', () => {
   render(
@@ -226,7 +226,3 @@ This repository follows semantic versioning principles:
 - Use environment variables for configuration
 - Follow authentication best practices
 - Validate all inputs and API responses
-
----
-
-Generated with Claude Code for consistent, reliable shared components across the RoboInvestor ecosystem.
