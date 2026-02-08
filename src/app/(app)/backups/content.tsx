@@ -9,6 +9,7 @@ import {
   getBackupDownloadUrl,
   getBackupStats,
   listBackups,
+  listSubgraphs,
   restoreBackup,
 } from '@robosystems/client'
 import {
@@ -65,6 +66,7 @@ export default function BackupManagementContent() {
     null
   )
   const [downloadQuota, setDownloadQuota] = useState<DownloadQuota | null>(null)
+  const [graphIdToName, setGraphIdToName] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -90,6 +92,7 @@ export default function BackupManagementContent() {
       setLoading(true)
       setError(null)
 
+      // Fetch parent graph backups
       const backupsResponse = await listBackups({
         path: { graph_id: selectedGraphId },
       })
@@ -103,7 +106,10 @@ export default function BackupManagementContent() {
         throw new Error(`Failed to fetch backups: ${errorMsg}`)
       }
 
-      setBackups(backupsResponse.data?.backups || [])
+      let allBackups = [...(backupsResponse.data?.backups || [])]
+      const nameMap: Record<string, string> = {
+        [selectedGraphId]: 'Parent',
+      }
 
       // Set download quota for shared repositories
       if ((backupsResponse.data as any)?.download_quota) {
@@ -111,6 +117,50 @@ export default function BackupManagementContent() {
       } else {
         setDownloadQuota(null)
       }
+
+      // Fetch subgraph backups for non-repository graphs
+      if (!isRepository) {
+        try {
+          const subgraphsResponse = await listSubgraphs({
+            path: { graph_id: selectedGraphId },
+          })
+
+          const subgraphs = subgraphsResponse.data?.subgraphs || []
+
+          if (subgraphs.length > 0) {
+            // Build name map
+            for (const sg of subgraphs) {
+              nameMap[sg.graph_id] = sg.display_name
+            }
+
+            // Fetch backups for each subgraph in parallel
+            const subgraphBackupResults = await Promise.allSettled(
+              subgraphs.map((sg) =>
+                listBackups({ path: { graph_id: sg.graph_id } })
+              )
+            )
+
+            for (const result of subgraphBackupResults) {
+              if (result.status === 'fulfilled' && result.value.data?.backups) {
+                allBackups.push(...result.value.data.backups)
+              }
+            }
+          }
+        } catch (sgErr) {
+          // Silently skip - subgraphs may not be available
+          console.warn('Could not fetch subgraph backups:', sgErr)
+        }
+      }
+
+      // Sort all backups by created_at descending
+      allBackups.sort((a, b) => {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0
+        return dateB - dateA
+      })
+
+      setBackups(allBackups)
+      setGraphIdToName(nameMap)
 
       try {
         const statsResponse = await getBackupStats({
@@ -132,7 +182,7 @@ export default function BackupManagementContent() {
     } finally {
       setLoading(false)
     }
-  }, [selectedGraphId, showError])
+  }, [selectedGraphId, isRepository, showError])
 
   useEffect(() => {
     fetchBackupData()
@@ -250,7 +300,7 @@ export default function BackupManagementContent() {
     try {
       const response = await restoreBackup({
         path: {
-          graph_id: selectedGraphId,
+          graph_id: selectedBackup.graph_id,
           backup_id: selectedBackup.backup_id,
         },
         body: {
@@ -286,7 +336,7 @@ export default function BackupManagementContent() {
     try {
       const response = await getBackupDownloadUrl({
         path: {
-          graph_id: selectedGraphId,
+          graph_id: backup.graph_id,
           backup_id: backup.backup_id,
         },
         query: { expires_in: 3600 },
@@ -513,6 +563,9 @@ export default function BackupManagementContent() {
         <Table>
           <TableHead>
             <TableHeadCell>Created</TableHeadCell>
+            {Object.keys(graphIdToName).length > 1 && (
+              <TableHeadCell>Source</TableHeadCell>
+            )}
             <TableHeadCell>Status</TableHeadCell>
             <TableHeadCell>Size</TableHeadCell>
             <TableHeadCell>Encrypted</TableHeadCell>
@@ -521,7 +574,10 @@ export default function BackupManagementContent() {
           <TableBody className="divide-y">
             {backups.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center">
+                <TableCell
+                  colSpan={Object.keys(graphIdToName).length > 1 ? 6 : 5}
+                  className="py-12 text-center"
+                >
                   <div className="text-gray-500 dark:text-gray-300">
                     <HiDatabase className="mx-auto mb-4 h-12 w-12 text-gray-400 dark:text-gray-500" />
                     <p className="font-medium text-gray-700 dark:text-gray-200">
@@ -544,6 +600,20 @@ export default function BackupManagementContent() {
                   <TableCell className="font-medium">
                     {formatDate(backup.created_at)}
                   </TableCell>
+                  {Object.keys(graphIdToName).length > 1 && (
+                    <TableCell>
+                      <Badge
+                        color={
+                          backup.graph_id === selectedGraphId
+                            ? 'gray'
+                            : 'purple'
+                        }
+                        size="sm"
+                      >
+                        {graphIdToName[backup.graph_id] || backup.graph_id}
+                      </Badge>
+                    </TableCell>
+                  )}
                   <TableCell>{getStatusBadge(backup.status)}</TableCell>
                   <TableCell>
                     {formatBytes(backup.compressed_size_bytes)}

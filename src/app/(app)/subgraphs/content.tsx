@@ -1,11 +1,16 @@
 'use client'
 
 import { customTheme, useGraphContext, useToast } from '@/lib/core'
+import { useOperationMonitoring } from '@/lib/core/task-monitoring/operationHooks'
 import type {
   ListSubgraphsResponse,
   SubgraphSummary,
 } from '@robosystems/client'
-import { deleteSubgraph, listSubgraphs } from '@robosystems/client'
+import {
+  createBackup,
+  deleteSubgraph,
+  listSubgraphs,
+} from '@robosystems/client'
 import {
   Alert,
   Badge,
@@ -25,12 +30,18 @@ import {
 } from 'flowbite-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { HiChip, HiExclamationCircle, HiPlus, HiTrash } from 'react-icons/hi'
+import {
+  HiChip,
+  HiDatabase,
+  HiExclamationCircle,
+  HiPlus,
+  HiTrash,
+} from 'react-icons/hi'
 
 export function SubgraphsContent() {
   const router = useRouter()
   const { state } = useGraphContext()
-  const { showSuccess, showError } = useToast()
+  const { showSuccess, showError, showInfo } = useToast()
   const currentGraphId = state.currentGraphId
   const [subgraphs, setSubgraphs] = useState<SubgraphSummary[]>([])
   const [listResponse, setListResponse] =
@@ -40,6 +51,43 @@ export function SubgraphsContent() {
   const [subgraphToDelete, setSubgraphToDelete] =
     useState<SubgraphSummary | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [backingUpId, setBackingUpId] = useState<string | null>(null)
+  const backupOperationMonitor = useOperationMonitoring()
+
+  const handleBackupClick = async (subgraph: SubgraphSummary) => {
+    setBackingUpId(subgraph.graph_id)
+    try {
+      const response = await createBackup({
+        path: { graph_id: subgraph.graph_id },
+        body: {
+          backup_format: 'full_dump',
+          encryption: false,
+          retention_days: 90,
+        },
+      })
+
+      if (response.data) {
+        const operationId = (response.data as any).operation_id
+        showInfo('Backup started...', 3000)
+        await backupOperationMonitor.startMonitoring(operationId)
+        showSuccess(
+          `Backup created for ${subgraph.display_name}. View it on the Backups page.`
+        )
+        backupOperationMonitor.reset()
+      } else {
+        throw new Error('Failed to create backup')
+      }
+    } catch (err: any) {
+      console.error('Subgraph backup error:', err)
+      if (err.status === 403) {
+        showError('Backup creation is currently disabled.', 5000)
+      } else {
+        showError(err.message || 'Failed to create backup', 5000)
+      }
+    } finally {
+      setBackingUpId(null)
+    }
+  }
 
   const fetchSubgraphs = async () => {
     if (!currentGraphId) {
@@ -287,7 +335,20 @@ export function SubgraphsContent() {
                         {formatDate(subgraph.created_at)}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center justify-end">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            color="gray"
+                            onClick={() => handleBackupClick(subgraph)}
+                            disabled={backingUpId === subgraph.graph_id}
+                            className="px-3 transition-all hover:scale-110"
+                          >
+                            {backingUpId === subgraph.graph_id ? (
+                              <Spinner size="sm" />
+                            ) : (
+                              <HiDatabase className="h-5 w-5" />
+                            )}
+                          </Button>
                           <Button
                             size="sm"
                             color="failure"
@@ -365,7 +426,20 @@ export function SubgraphsContent() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex justify-end pt-2">
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button
+                      size="sm"
+                      color="gray"
+                      onClick={() => handleBackupClick(subgraph)}
+                      disabled={backingUpId === subgraph.graph_id}
+                      className="px-4 transition-all hover:scale-110"
+                    >
+                      {backingUpId === subgraph.graph_id ? (
+                        <Spinner size="sm" />
+                      ) : (
+                        <HiDatabase className="h-5 w-5" />
+                      )}
+                    </Button>
                     <Button
                       size="sm"
                       color="failure"
