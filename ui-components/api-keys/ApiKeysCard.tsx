@@ -141,18 +141,9 @@ export const ApiKeysCard: React.FC<ApiKeysCardProps> = ({
           <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
             No API keys yet
           </h3>
-          <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Create an API key to access your graphs programmatically
           </p>
-          <Button
-            theme={theme?.button}
-            color="blue"
-            onClick={() => setIsOpenCreateModal(true)}
-            size="sm"
-          >
-            <HiPlusCircle className="mr-2 h-4 w-4" />
-            Create Your First Key
-          </Button>
         </div>
       ) : (
         <ApiKeyTable
