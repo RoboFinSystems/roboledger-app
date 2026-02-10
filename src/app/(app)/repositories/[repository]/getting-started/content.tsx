@@ -8,7 +8,6 @@ import {
 } from '@/lib/core'
 import { createUserApiKey } from '@robosystems/client/sdk'
 import { Button, Card, Spinner } from 'flowbite-react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import {
@@ -148,9 +147,6 @@ export function ApiKeysContent({ repository }: ApiKeysContentProps) {
             </p>
           </div>
         </div>
-        <Link href="/repositories">
-          <Button color="gray">Back to Repositories</Button>
-        </Link>
       </div>
 
       {/* What's Included */}

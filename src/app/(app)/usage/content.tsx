@@ -506,7 +506,9 @@ export function UsageContent() {
           <h3 className="font-heading mb-4 text-lg font-semibold text-gray-900 dark:text-white">
             {isRepository ? 'Repository' : 'Graph'} Limits & Quotas
           </h3>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div
+            className={`grid grid-cols-1 gap-6 ${isRepository ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-3'}`}
+          >
             {/* Query Limits */}
             <div className="rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
               <div className="mb-3 flex items-center gap-2">
@@ -581,37 +583,41 @@ export function UsageContent() {
               </div>
             </div>
 
-            {/* Tier Information */}
-            <div className="rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
-              <div className="mb-3 flex items-center gap-2">
-                <HiTrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
-                <h4 className="font-medium text-gray-900 dark:text-white">
-                  Subscription
-                </h4>
+            {/* Tier Information - only show for user graphs, not shared repositories */}
+            {!isRepository && (
+              <div className="rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
+                <div className="mb-3 flex items-center gap-2">
+                  <HiTrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <h4 className="font-medium text-gray-900 dark:text-white">
+                    Subscription
+                  </h4>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Tier
+                    </span>
+                    <Badge color="purple">
+                      {data.graphLimits.subscription_tier}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Graph Type
+                    </span>
+                    <Badge color="gray">{data.graphLimits.graph_tier}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Access
+                    </span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      Full
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Tier</span>
-                  <Badge color="purple">
-                    {data.graphLimits.subscription_tier}
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Graph Type
-                  </span>
-                  <Badge color="gray">{data.graphLimits.graph_tier}</Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Access
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {isRepository ? 'Read-Only' : 'Full'}
-                  </span>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </Card>
       )}
