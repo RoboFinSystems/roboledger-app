@@ -3,6 +3,7 @@
 import { Alert, Button, Card, Progress, Spinner } from 'flowbite-react'
 import { useState } from 'react'
 import { HiArrowLeft, HiArrowRight, HiCheck } from 'react-icons/hi'
+import { useOrg } from '../../contexts/org-context'
 import { useGraphCreation } from '../../task-monitoring/operationHooks'
 import { customTheme } from '../../theme'
 import { EntityInfoStep } from './steps/EntityInfoStep'
@@ -36,6 +37,7 @@ export function GraphCreationWizard({
   className = '',
 }: GraphCreationWizardProps) {
   const graphCreation = useGraphCreation()
+  const { currentOrg } = useOrg()
 
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState<GraphFormData>({
@@ -181,6 +183,7 @@ export function GraphCreationWizard({
           create_entity: formData.createEntity,
           description: formData.entityDescription,
           tags: formData.entityTags,
+          org_id: currentOrg?.id,
         })
       } else {
         // Create generic graph
@@ -189,6 +192,7 @@ export function GraphCreationWizard({
           description: formData.genericGraphDescription,
           instance_tier: formData.selectedTier,
           schema_extensions: formData.selectedExtensions,
+          org_id: currentOrg?.id,
         })
       }
 
