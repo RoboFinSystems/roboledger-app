@@ -1,3 +1,4 @@
+// @ts-nocheck - connections functionality removed from SDK, pending overhaul
 'use client'
 
 import { PageHeader } from '@/components/PageHeader'

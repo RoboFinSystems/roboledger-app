@@ -197,17 +197,25 @@ export function useGraphCreation() {
       entity_name?: string
       entity_identifier?: string
       entity_identifier_type?: 'ein' | 'name'
+      // Billing
+      org_id?: string
     }) => {
       setIsCreating(true)
       try {
         // Check if billing is enabled and user needs to complete checkout
-        // TODO: Update to use getOrgBillingCustomer with org_id parameter
-        // const billingResponse = await getOrgBillingCustomer({ client })
-        // const billingData = billingResponse.data
+        let billingData = null
+        if (graphData.org_id) {
+          const billingResponse = await getOrgBillingCustomer({
+            client,
+            path: { org_id: graphData.org_id },
+          })
+          // Only set billingData if we got a successful response
+          // If billing disabled, getOrgBillingCustomer will return 404 and we skip checkout
+          if (!billingResponse.error) {
+            billingData = billingResponse.data
+          }
+        }
 
-        // Only check payment if billing is enabled (response exists)
-        // If billing disabled, getBillingCustomer will return 404 and we skip checkout
-        const billingData = null // Temporarily disabled
         if (
           billingData &&
           !billingData.has_payment_method &&
@@ -377,6 +385,7 @@ export function useGraphCreation() {
       create_entity?: boolean
       description?: string
       tags?: string[]
+      org_id?: string
     }) => {
       return createGraph({
         graph_type: 'entity',
@@ -389,6 +398,7 @@ export function useGraphCreation() {
         create_entity: entityData.create_entity,
         description: entityData.description,
         tags: entityData.tags,
+        org_id: entityData.org_id,
       })
     },
     [createGraph]
@@ -400,6 +410,7 @@ export function useGraphCreation() {
       description?: string
       instance_tier?: string
       schema_extensions?: string[]
+      org_id?: string
     }) => {
       return createGraph({
         graph_type: 'generic',
