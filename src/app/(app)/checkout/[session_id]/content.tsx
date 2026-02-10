@@ -10,7 +10,7 @@ import {
 import * as SDK from '@robosystems/client'
 import { Alert, Button, Card, Progress, Spinner } from 'flowbite-react'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   HiCheckCircle,
   HiExclamationCircle,
@@ -41,9 +41,14 @@ export function CheckoutContent({ sessionId }: CheckoutContentProps) {
   const [operationId, setOperationId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(
-    null
-  )
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
+
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current)
+      pollingRef.current = null
+    }
+  }, [])
 
   const checkStatus = useCallback(async () => {
     try {
@@ -73,10 +78,7 @@ export function CheckoutContent({ sessionId }: CheckoutContentProps) {
           checkoutStatus === 'failed' ||
           checkoutStatus === 'canceled'
         ) {
-          if (pollingInterval) {
-            clearInterval(pollingInterval)
-            setPollingInterval(null)
-          }
+          stopPolling()
 
           if (checkoutStatus === 'active') {
             // Determine redirect based on resource type
@@ -84,15 +86,12 @@ export function CheckoutContent({ sessionId }: CheckoutContentProps) {
             // Graph IDs are UUIDs
             const isRepository = currentResourceId && !isUUID(currentResourceId)
 
-            // For repositories, set up context before redirect
+            // For repositories, refresh graphs and redirect (no select call needed)
             if (isRepository && currentResourceId) {
               const setupAndRedirect = async () => {
                 try {
                   // Refresh graphs list to include new repository
                   await refreshGraphs()
-
-                  // Set repository as current graph
-                  await setCurrentGraph(currentResourceId)
 
                   // Small delay to ensure state updates
                   setTimeout(() => {
@@ -129,7 +128,7 @@ export function CheckoutContent({ sessionId }: CheckoutContentProps) {
     }
   }, [
     sessionId,
-    pollingInterval,
+    stopPolling,
     showSuccess,
     showError,
     handleApiError,
@@ -140,18 +139,14 @@ export function CheckoutContent({ sessionId }: CheckoutContentProps) {
   useEffect(() => {
     checkStatus()
 
-    const interval = setInterval(() => {
-      checkStatus()
-    }, 3000)
-
-    setPollingInterval(interval)
+    pollingRef.current = setInterval(checkStatus, 3000)
 
     return () => {
-      if (interval) {
-        clearInterval(interval)
-      }
+      stopPolling()
     }
-  }, [checkStatus])
+    // Only run on mount — sessionId won't change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId])
 
   const getStatusMessage = () => {
     switch (status) {
@@ -261,13 +256,13 @@ export function CheckoutContent({ sessionId }: CheckoutContentProps) {
               </Alert>
             )}
 
-            {subscriptionId && (
+            {resourceId && (
               <div className="rounded-lg bg-gray-50 p-4 text-left dark:bg-gray-800">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Subscription ID
+                  Resource
                 </p>
                 <p className="font-mono text-sm text-gray-900 dark:text-white">
-                  {subscriptionId}
+                  {isUUID(resourceId) ? resourceId : resourceId.toUpperCase()}
                 </p>
               </div>
             )}

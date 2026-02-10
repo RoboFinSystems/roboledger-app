@@ -259,13 +259,19 @@ export function BrowseRepositoriesContent() {
                       </div>
                       {userSub && (
                         <Badge color="success" icon={HiCheckCircle} size="lg">
-                          Active - {userSub.plan_name}
+                          Active - {userSub.plan_display_name}
                         </Badge>
                       )}
                     </div>
 
                     {/* Pricing Plans */}
-                    <div className="grid gap-6 lg:grid-cols-3">
+                    <div
+                      className={`grid gap-6 ${
+                        repoData.plans.length === 2
+                          ? 'mx-auto max-w-3xl lg:grid-cols-2'
+                          : 'lg:grid-cols-3'
+                      }`}
+                    >
                       {repoData.plans.map((plan, index) => {
                         const isCurrentPlan =
                           userSub?.plan_name.toLowerCase() ===

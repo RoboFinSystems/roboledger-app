@@ -39,6 +39,7 @@ import {
   HiCurrencyDollar,
   HiDatabase,
   HiDocumentText,
+  HiDownload,
   HiExclamationCircle,
   HiInformationCircle,
   HiTerminal,
@@ -278,7 +279,7 @@ function OverviewTab({
                 {currentOrg?.name || 'Organization'}
               </h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Organization ID: {currentOrg?.id}
+                Billing &amp; Subscription Management
               </p>
             </div>
             <Badge color={billingEnabled ? 'green' : 'gray'}>
@@ -553,7 +554,7 @@ function SubscriptionsTab({
                           {graph?.graphName || sub.resource_id}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {sub.plan_name}
+                          {sub.plan_display_name}
                         </p>
                       </div>
                       {getSubscriptionBadge(sub)}
@@ -631,7 +632,7 @@ function SubscriptionsTab({
                         {sub.resource_id.toUpperCase()}
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {sub.plan_name}
+                        {sub.plan_display_name}
                       </p>
                     </div>
                     {getSubscriptionBadge(sub)}
@@ -720,7 +721,9 @@ function SubscriptionsTab({
                           )?.graphName || subscriptionToCancel.resource_id
                         : subscriptionToCancel.resource_id.toUpperCase()}
                     </p>
-                    <p className="mt-1">{subscriptionToCancel.plan_name}</p>
+                    <p className="mt-1">
+                      {subscriptionToCancel.plan_display_name}
+                    </p>
                     <p className="mt-1">
                       $
                       {(subscriptionToCancel.base_price_cents / 100).toFixed(2)}
@@ -812,10 +815,9 @@ function InvoicesTab({
         <Table>
           <TableHead>
             <TableHeadCell>Invoice</TableHeadCell>
-            <TableHeadCell>Period</TableHeadCell>
+            <TableHeadCell>Date</TableHeadCell>
             <TableHeadCell>Amount</TableHeadCell>
             <TableHeadCell>Status</TableHeadCell>
-            <TableHeadCell>Date</TableHeadCell>
             <TableHeadCell>
               <span className="sr-only">Actions</span>
             </TableHeadCell>
@@ -827,8 +829,8 @@ function InvoicesTab({
                   {invoice.number || invoice.id.slice(0, 8)}
                 </TableCell>
                 <TableCell>
-                  {invoice.due_date
-                    ? format(new Date(invoice.due_date), 'MMM d, yyyy')
+                  {invoice.created
+                    ? format(new Date(invoice.created), 'MMM d, yyyy')
                     : 'N/A'}
                 </TableCell>
                 <TableCell className="font-medium">
@@ -848,19 +850,15 @@ function InvoicesTab({
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {invoice.created
-                    ? format(new Date(invoice.created), 'MMM d, yyyy')
-                    : 'N/A'}
-                </TableCell>
-                <TableCell>
                   {invoice.invoice_pdf && (
                     <a
                       href={invoice.invoice_pdf}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500"
+                      className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500"
+                      title="Download PDF"
                     >
-                      Download
+                      <HiDownload className="h-5 w-5" />
                     </a>
                   )}
                 </TableCell>

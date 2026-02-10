@@ -48,9 +48,7 @@ export default function PricingContent() {
                       Standard
                     </h3>
                     <div className="mb-4">
-                      <span className="text-4xl font-bold text-white">
-                        $100
-                      </span>
+                      <span className="text-4xl font-bold text-white">$99</span>
                       <span className="text-gray-400">/month</span>
                     </div>
                     <p className="text-gray-400">
@@ -164,7 +162,7 @@ export default function PricingContent() {
                     </h3>
                     <div className="mb-4">
                       <span className="text-4xl font-bold text-white">
-                        $300
+                        $299
                       </span>
                       <span className="text-gray-400">/month</span>
                     </div>
@@ -274,7 +272,7 @@ export default function PricingContent() {
                     </h3>
                     <div className="mb-4">
                       <span className="text-4xl font-bold text-white">
-                        $700
+                        $699
                       </span>
                       <span className="text-gray-400">/month</span>
                     </div>
