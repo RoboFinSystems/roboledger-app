@@ -1,17 +1,11 @@
 'use client'
 
-import {
-  GraphCreationPage,
-  useCreditContext,
-  useEntity,
-  useGraphContext,
-} from '@/lib/core'
+import { GraphCreationPage, useEntity, useGraphContext } from '@/lib/core'
 import { useRouter } from 'next/navigation'
 
 export function NewGraphContent() {
   const router = useRouter()
   const { setCurrentGraph, refreshGraphs } = useGraphContext()
-  const { switchGraph } = useCreditContext()
   const { setCurrentEntity } = useEntity()
 
   const handleSuccess = async (graphId: string, result?: any) => {
@@ -23,9 +17,6 @@ export function NewGraphContent() {
         // Then select the new graph through the context
         // This will update both the backend and the cookie
         await setCurrentGraph(graphId)
-
-        // Also switch the graph in the credit context
-        await switchGraph(graphId)
 
         // If an entity was created, select it
         if (result?.initial_entity) {

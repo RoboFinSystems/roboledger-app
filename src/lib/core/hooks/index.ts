@@ -1,6 +1,4 @@
 export { useApiError } from './use-api-error'
-export { useBillingStatus, type BillingStatus } from './use-billing-status'
-export { useEntities } from './use-entities'
 export { useMediaQuery } from './use-media-query'
 export { useStreamingQuery } from './use-streaming-query'
 export { useToast, type ToastMessage } from './use-toast'

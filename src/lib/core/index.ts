@@ -36,13 +36,10 @@ export {
 // Export hooks
 export {
   useApiError,
-  useBillingStatus,
-  useEntities,
   useMediaQuery,
   useToast,
   useUser,
   useUserLimits,
-  type BillingStatus,
   type ToastMessage,
 } from './hooks'
 
@@ -52,10 +49,6 @@ export {
   createGraphContext,
   createGraphProvider,
   createUseGraphContext,
-  // Credit context exports
-  CreditProvider,
-  // Credit visibility context
-  CreditVisibilityProvider,
   // Entity context exports
   EntityProvider,
   GraphContext,
@@ -65,16 +58,11 @@ export {
   // Service offerings context
   ServiceOfferingsProvider,
   SidebarProvider,
-  useCreditAwareOperation,
-  useCreditContext,
-  useCredits,
-  useCreditVisibility,
   useEntity,
   useGraphContext,
   useOrg,
   useServiceOfferings,
   useSidebarContext,
-  type CreditVisibilityProviderProps,
   type EntityContextValue,
   type EntityProviderProps,
   type GraphContextValue,
@@ -90,11 +78,9 @@ export {
 export {
   clientGraphCookie,
   clientSidebarCookie,
-  creditVisibilityCookie,
   entityCookie,
   graphCookie,
   sidebarCookie,
-  type CreditVisibilityCookie,
   type EntityCookie,
   type GraphCookie,
   type SidebarCookie,
@@ -116,11 +102,6 @@ export {
   persistEntitySelection,
 } from './actions/entity-actions'
 
-export {
-  getCreditVisibility,
-  setCreditVisibility,
-} from './actions/credit-visibility-actions'
-
 // Export types
 export type { Entities, Entity, User } from './types'
 
@@ -128,19 +109,23 @@ export type { Entities, Entity, User } from './types'
 export { customTheme } from './theme'
 
 // Export components
+// Export console components
+export { ConsoleContent } from './components/console'
+export type {
+  ConsoleCommandContext,
+  ConsoleConfig,
+  ConsoleExtraCommand,
+  ConsoleHeaderConfig,
+  ConsoleMcpConfig,
+  ConsoleWelcomeConfig,
+  SampleQuery,
+} from './components/console'
+
 export {
-  CreditAlerts,
-  CreditAwareButton,
-  CreditBadge,
-  CreditCostPreview,
-  CreditCostTable,
-  CreditDisplay,
-  CreditLowBanner,
   EntitySelector,
   EntitySelectorCore,
   GraphSelectorCore,
   PageLayout,
-  PreferencesCard,
   RepositoryGuard,
   useIsRepository,
   type EntityGroup,
