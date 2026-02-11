@@ -487,9 +487,12 @@ jobs:
 
           # Build for both amd64 and arm64 (for Mac M1/M2 users)
           # SBOM and provenance attestations improve Docker Hub security score
+          # Registry cache avoids rebuilding layers on every release
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
             --push \
+            --cache-from type=registry,ref=robofinsystems/roboledger-app:buildcache \
+            --cache-to type=registry,ref=robofinsystems/roboledger-app:buildcache,mode=max \
             --sbom=true \
             --provenance=mode=max \
             $TAGS \
