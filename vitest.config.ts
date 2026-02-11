@@ -12,6 +12,10 @@ const clientExtensionsMock = path.resolve(
   srcDir,
   '__mocks__/@robosystems/client-extensions.js'
 )
+const clientSdkMock = path.resolve(
+  srcDir,
+  '__mocks__/@robosystems/client-sdk.js'
+)
 const reactMarkdownMock = path.resolve(srcDir, '__mocks__/react-markdown.js')
 
 export default defineConfig({
@@ -28,6 +32,7 @@ export default defineConfig({
       '@': srcDir,
       'react-markdown': reactMarkdownMock,
       '@robosystems/client/extensions': clientExtensionsMock,
+      '@robosystems/client/sdk': clientSdkMock,
       '@robosystems/client': clientMock,
     },
   },
