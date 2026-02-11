@@ -1,3 +1,4 @@
+export { ConsoleContent } from './console'
 export { CreditAlerts, CreditLowBanner } from './CreditAlerts'
 export { CreditAwareButton } from './CreditAwareButton'
 export { CreditCostPreview, CreditCostTable } from './CreditCostPreview'

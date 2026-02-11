@@ -128,6 +128,18 @@ export type { Entities, Entity, User } from './types'
 export { customTheme } from './theme'
 
 // Export components
+// Export console components
+export { ConsoleContent } from './components/console'
+export type {
+  ConsoleCommandContext,
+  ConsoleConfig,
+  ConsoleExtraCommand,
+  ConsoleHeaderConfig,
+  ConsoleMcpConfig,
+  ConsoleWelcomeConfig,
+  SampleQuery,
+} from './components/console'
+
 export {
   CreditAlerts,
   CreditAwareButton,
