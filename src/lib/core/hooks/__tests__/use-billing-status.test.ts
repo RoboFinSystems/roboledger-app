@@ -1,7 +1,7 @@
 import * as SDK from '@robosystems/client'
 import { renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useBillingStatus } from '../useBillingStatus'
+import { useBillingStatus } from '../use-billing-status'
 
 // Mock the org context
 vi.mock('../../contexts/org-context', () => ({
