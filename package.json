@@ -18,6 +18,7 @@
   "scripts": {
     "start": "next start",
     "dev": "PORT=3001 next dev",
+    "dev:webpack": "PORT=3001 next dev --webpack",
     "build": "next build",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
