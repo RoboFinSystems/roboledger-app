@@ -1,4 +1,4 @@
-import { useCreditContext, useUserLimits } from '@/lib/core'
+import { useUserLimits } from '@/lib/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useRouter } from 'next/navigation'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
@@ -6,7 +6,6 @@ import { GraphsContent } from '../content'
 
 // Mock dependencies
 vi.mock('@/lib/core', () => ({
-  useCreditContext: vi.fn(),
   useUserLimits: vi.fn(),
   useToast: vi.fn(),
   useApiError: vi.fn(),
@@ -185,82 +184,14 @@ vi.mock('flowbite-react', () => {
   }
 })
 
-const mockUseCreditContext = vi.mocked(useCreditContext)
 const mockUseUserLimits = vi.mocked(useUserLimits)
 const mockUseRouter = vi.mocked(useRouter)
 
 describe('GraphsContent', () => {
-  const mockRefreshCredits = vi.fn()
   const mockPush = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
-
-    // Create mock credit data
-    const mockGraphCredits = new Map([
-      [
-        'company_123',
-        {
-          graph_id: 'company_123',
-          graph_tier: 'enterprise',
-          credit_multiplier: 2.0,
-          current_balance: 500000,
-          monthly_allocation: 1000000,
-          consumed_this_month: 250000,
-          consumed_today: 1250,
-          transaction_count: 125,
-          usage_percentage: 25,
-          last_allocation_date: '2024-01-01T00:00:00Z',
-        },
-      ],
-      [
-        'company_456',
-        {
-          graph_id: 'company_456',
-          graph_tier: 'standard',
-          credit_multiplier: 1.0,
-          current_balance: 80000,
-          monthly_allocation: 100000,
-          consumed_this_month: 20000,
-          consumed_today: 500,
-          transaction_count: 50,
-          usage_percentage: 20,
-          last_allocation_date: '2024-01-01T00:00:00Z',
-        },
-      ],
-      [
-        'generic_789',
-        {
-          graph_id: 'generic_789',
-          graph_tier: 'premium',
-          credit_multiplier: 4.0,
-          current_balance: 1800000,
-          monthly_allocation: 2000000,
-          consumed_this_month: 200000,
-          consumed_today: 5000,
-          transaction_count: 200,
-          usage_percentage: 10,
-          last_allocation_date: '2024-01-01T00:00:00Z',
-        },
-      ],
-    ])
-
-    mockUseCreditContext.mockReturnValue({
-      graphCredits: mockGraphCredits,
-      currentGraphId: null,
-      currentGraphCredits: null,
-      repositoryCredits: new Map(),
-      totalRepositoryCredits: null,
-      isLoading: false,
-      error: null,
-      recentConsumption: 0,
-      consumptionRate: 0,
-      refreshCredits: mockRefreshCredits,
-      loadRepositoryCredits: vi.fn(),
-      loadAllGraphCredits: vi.fn(),
-      consumeCredits: vi.fn(),
-      hasCredits: vi.fn(),
-    })
 
     // Mock useUserLimits hook
     mockUseUserLimits.mockReturnValue({

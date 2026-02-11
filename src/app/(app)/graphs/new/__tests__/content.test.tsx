@@ -1,9 +1,4 @@
-import {
-  useCreditContext,
-  useGraphContext,
-  useUser,
-  useUserLimits,
-} from '@/lib/core'
+import { useGraphContext, useUser, useUserLimits } from '@/lib/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useRouter } from 'next/navigation'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
@@ -45,7 +40,6 @@ vi.mock('@/components/app/GraphLimitModal', () => ({
 }))
 
 vi.mock('@/lib/core', () => ({
-  useCreditContext: vi.fn(),
   useGraphContext: vi.fn(),
   useUser: vi.fn(),
   useUserLimits: vi.fn(),
@@ -55,7 +49,6 @@ vi.mock('next/navigation', () => ({
   useRouter: vi.fn(),
 }))
 
-const mockUseCreditContext = vi.mocked(useCreditContext)
 const mockUseGraphContext = vi.mocked(useGraphContext)
 const mockUseUser = vi.mocked(useUser)
 const mockUseUserLimits = vi.mocked(useUserLimits)
@@ -67,7 +60,6 @@ describe('NewGraphContent', () => {
   const mockRefresh = vi.fn()
   const mockSetCurrentGraph = vi.fn()
   const mockRefreshGraphs = vi.fn()
-  const mockSwitchGraph = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -90,10 +82,6 @@ describe('NewGraphContent', () => {
         </div>
       )
     )
-
-    mockUseCreditContext.mockReturnValue({
-      switchGraph: mockSwitchGraph,
-    })
 
     mockUseGraphContext.mockReturnValue({
       setCurrentGraph: mockSetCurrentGraph,
