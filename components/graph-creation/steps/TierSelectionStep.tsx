@@ -2,10 +2,13 @@ import { Alert, Badge, Card, Spinner } from 'flowbite-react'
 import { useEffect, useState } from 'react'
 import { HiCheckCircle, HiInformationCircle } from 'react-icons/hi'
 import {
+  fetchGraphCapacity,
   fetchGraphTiers,
+  getCapacityBadge,
   getPopularTier,
   getTierColor,
   type GraphTier,
+  type TierCapacity,
 } from '../../../lib/graph-tiers'
 import { customTheme } from '../../../theme'
 import type { GraphFormData } from '../types'
@@ -20,6 +23,9 @@ export function TierSelectionStep({
   onTierChange,
 }: TierSelectionStepProps) {
   const [tiers, setTiers] = useState<GraphTier[]>([])
+  const [capacityMap, setCapacityMap] = useState<Record<string, TierCapacity>>(
+    {}
+  )
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -42,12 +48,28 @@ export function TierSelectionStep({
   }
 
   useEffect(() => {
-    const loadTiers = async () => {
+    const loadTiersAndCapacity = async () => {
       try {
         setLoading(true)
         setError(null)
-        const response = await fetchGraphTiers(false)
-        setTiers(response.tiers)
+
+        const [tiersResponse, capacityResult] = await Promise.all([
+          fetchGraphTiers(false),
+          fetchGraphCapacity().catch((err) => {
+            console.warn('Failed to load capacity (non-blocking):', err)
+            return null
+          }),
+        ])
+
+        setTiers(tiersResponse.tiers)
+
+        if (capacityResult) {
+          const map: Record<string, TierCapacity> = {}
+          for (const tc of capacityResult.tiers) {
+            map[tc.tier] = tc
+          }
+          setCapacityMap(map)
+        }
       } catch (err) {
         console.error('Failed to load graph tiers:', err)
         setError(
@@ -60,7 +82,7 @@ export function TierSelectionStep({
       }
     }
 
-    loadTiers()
+    loadTiersAndCapacity()
   }, [])
 
   if (loading) {
@@ -114,21 +136,34 @@ export function TierSelectionStep({
           const isSelected = selectedTier === tier.tier
           const isPopular = tier.tier === getPopularTier(tiers)
           const color = getTierColor(tier, tiers)
+          const capacity = capacityMap[tier.tier]
+          const isAtCapacity = capacity?.status === 'at_capacity'
+          const capacityBadge = capacity
+            ? getCapacityBadge(capacity.status)
+            : null
 
           return (
             <Card
               key={tier.tier}
               theme={customTheme.card}
-              className={`relative cursor-pointer transition-all ${
-                isSelected
+              className={`relative transition-all ${
+                isAtCapacity
+                  ? 'cursor-not-allowed opacity-60'
+                  : 'cursor-pointer'
+              } ${
+                isSelected && !isAtCapacity
                   ? color === 'info'
                     ? 'ring-primary-500 dark:ring-primary-400 ring-2'
                     : color === 'warning'
                       ? 'ring-accent-500 dark:ring-accent-400 ring-2'
                       : 'ring-secondary-500 dark:ring-secondary-400 ring-2'
-                  : 'hover:shadow-lg'
+                  : isAtCapacity
+                    ? ''
+                    : 'hover:shadow-lg'
               }`}
-              onClick={() => handleTierChange(tier.tier)}
+              onClick={() => {
+                if (!isAtCapacity) handleTierChange(tier.tier)
+              }}
             >
               {isPopular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -154,6 +189,13 @@ export function TierSelectionStep({
                   <p className="mt-2 text-sm font-medium text-gray-500 dark:text-gray-400">
                     {tier.monthly_credits.toLocaleString()} AI credits/mo
                   </p>
+                  {capacityBadge && (
+                    <div className="mt-2">
+                      <Badge color={capacityBadge.color} size="sm">
+                        {capacityBadge.label}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
 
                 <ul className="space-y-2.5">
@@ -175,12 +217,20 @@ export function TierSelectionStep({
                   ))}
                 </ul>
 
-                {isSelected && (
+                {isAtCapacity ? (
                   <div className="text-center">
-                    <Badge color={color} size="lg">
-                      Selected
-                    </Badge>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Contact us for availability
+                    </p>
                   </div>
+                ) : (
+                  isSelected && (
+                    <div className="text-center">
+                      <Badge color={color} size="lg">
+                        Selected
+                      </Badge>
+                    </div>
+                  )
                 )}
               </div>
             </Card>
