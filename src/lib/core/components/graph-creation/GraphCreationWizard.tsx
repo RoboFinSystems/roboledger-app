@@ -307,17 +307,11 @@ export function GraphCreationWizard({
           </div>
 
           <Progress
-            progress={graphCreation.progress || 0}
+            progress={Math.round(graphCreation.progress || 0)}
             theme={customTheme.progress}
             size="lg"
             labelProgress
           />
-
-          {graphCreation.operationId && (
-            <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-              Operation ID: {graphCreation.operationId}
-            </p>
-          )}
 
           <div className="flex justify-center">
             <Button
