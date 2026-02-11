@@ -1,9 +1,12 @@
 import {
   getAvailableGraphTiers,
+  getGraphCapacity,
   type AvailableGraphTiersResponse,
+  type GraphCapacityResponse,
   type GraphTierInfo,
   type GraphTierInstance,
   type GraphTierLimits,
+  type TierCapacity,
 } from '@robosystems/client'
 // Import the pre-configured client from core (already set up with auth interceptors)
 import { client } from '../index'
@@ -13,7 +16,7 @@ import { client } from '../index'
  */
 
 // Re-export SDK types for backwards compatibility
-export type { GraphTierInstance, GraphTierLimits }
+export type { GraphTierInstance, GraphTierLimits, TierCapacity }
 export type GraphTier = GraphTierInfo
 export type GraphTiersResponse = AvailableGraphTiersResponse
 
@@ -100,4 +103,42 @@ export function supportsSubgraphs(tier: GraphTier): boolean {
 export function formatTierForDisplay(tier: GraphTier): string {
   const price = tier.monthly_price ? `$${tier.monthly_price}/mo` : ''
   return `${tier.display_name} ${price}`.trim()
+}
+
+/**
+ * Fetch graph capacity from the API using the RoboSystems client
+ */
+export async function fetchGraphCapacity(): Promise<GraphCapacityResponse> {
+  const response = await getGraphCapacity({ client })
+
+  if (response.error) {
+    const errorMsg =
+      response.error &&
+      typeof response.error === 'object' &&
+      'message' in response.error
+        ? String(response.error.message)
+        : 'Unknown error'
+    throw new Error(`Failed to fetch graph capacity: ${errorMsg}`)
+  }
+
+  return response.data as GraphCapacityResponse
+}
+
+/**
+ * Get badge display properties for a capacity status
+ */
+export function getCapacityBadge(status: string): {
+  label: string
+  color: 'success' | 'warning' | 'failure'
+} {
+  switch (status) {
+    case 'ready':
+      return { label: 'Available', color: 'success' }
+    case 'scalable':
+      return { label: 'Available — 3-5 min setup', color: 'warning' }
+    case 'at_capacity':
+      return { label: 'At Capacity', color: 'failure' }
+    default:
+      return { label: 'Available', color: 'success' }
+  }
 }
