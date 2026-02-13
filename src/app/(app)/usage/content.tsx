@@ -429,12 +429,7 @@ export function UsageContent() {
               <h3 className="font-heading text-lg font-semibold text-gray-900 dark:text-white">
                 Storage Usage
               </h3>
-              {data.graphLimits.credits && (
-                <Badge color="gray">
-                  {data.graphLimits.credits.storage_rate_per_gb_per_day}{' '}
-                  credits/GB/day
-                </Badge>
-              )}
+              <Badge color="gray">Included in plan</Badge>
             </div>
 
             <div className="space-y-3">
@@ -466,26 +461,19 @@ export function UsageContent() {
               />
             </div>
 
-            {data.graphLimits.credits && (
-              <div className="rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Daily Storage Cost
-                    </p>
-                    <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
-                      ~
-                      {formatNumber(
-                        data.graphLimits.storage.current_usage_gb *
-                          data.graphLimits.credits.storage_rate_per_gb_per_day
-                      )}{' '}
-                      credits/day
-                    </p>
-                  </div>
-                  <HiDatabase className="h-8 w-8 text-gray-400" />
+            <div className="rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Storage
+                  </p>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                    Included in your subscription — no credit cost
+                  </p>
                 </div>
+                <HiDatabase className="h-8 w-8 text-gray-400" />
               </div>
-            )}
+            </div>
 
             {data.graphLimits.storage.approaching_limit && (
               <Alert color="warning" icon={HiExclamationCircle}>
