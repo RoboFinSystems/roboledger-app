@@ -8,7 +8,7 @@ export default function SchemaArchitecture() {
       type: 'Accounting',
       icon: '/images/quickbooks.svg',
       useImage: true,
-      features: ['Real-time sync', 'Journal entries', 'Chart of accounts'],
+      features: ['Daily sync', 'Journal entries', 'Chart of accounts'],
       color: 'cyan',
     },
     {
@@ -55,7 +55,7 @@ export default function SchemaArchitecture() {
       components: [
         'Report',
         'Fact',
-        'FactDimension',
+        'Dimension',
         'Structure',
         'Association',
         'Transaction',

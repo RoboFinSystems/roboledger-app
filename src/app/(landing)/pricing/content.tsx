@@ -476,23 +476,23 @@ export default function PricingContent() {
                     What are credits used for?
                   </h4>
                   <p className="text-gray-400">
-                    Credits are used for AI agent interactions and storage
-                    overage. AI calls are billed based on token usage, with a
-                    typical agent call consuming about 38 credits. Storage
-                    beyond your included allocation costs 1 credit per GB per
-                    day. Database operations, imports, exports, queries, and MCP
-                    tool access don't consume credits (subject to rate limits by
-                    tier).
+                    Credits are used exclusively for AI agent calls, which are
+                    billed based on token usage with a typical call consuming
+                    about 38 credits. All other operations — database queries,
+                    imports, exports, storage, and MCP tool access — are
+                    included in your plan at no additional credit cost (subject
+                    to rate limits by tier).
                   </p>
                 </div>
                 <div className="rounded-lg border border-gray-800 bg-zinc-900 p-6">
                   <h4 className="mb-2 font-semibold text-white">
-                    Can I upgrade or downgrade my plan?
+                    Can I cancel my subscription?
                   </h4>
                   <p className="text-gray-400">
-                    Yes, you can change your plan at any time. Upgrades take
-                    effect immediately, and downgrades take effect at the start
-                    of your next billing cycle.
+                    Yes, you can cancel at any time and your subscription
+                    remains active until the end of the current billing period.
+                    To change graph tiers, create a new graph on the desired
+                    tier and migrate your data.
                   </p>
                 </div>
               </div>
