@@ -144,14 +144,14 @@ export function SignUpForm({
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-black via-gray-900 to-zinc-800 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-lg space-y-8">
         <div className="text-center">
           <Image
-            className="mx-auto h-12 w-auto"
+            className="mx-auto h-14 w-auto"
             src="/images/logo.png"
             alt="Logo"
-            width={48}
-            height={48}
+            width={56}
+            height={56}
           />
           <h1 className="font-heading mt-4 text-center text-2xl font-semibold tracking-tight text-white">
             {appName}
@@ -189,7 +189,7 @@ export function SignUpForm({
                 required
                 value={formData.name}
                 onChange={handleInputChange}
-                className="relative block w-full rounded-md border-0 bg-gray-800 px-4 py-3 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset sm:text-sm sm:leading-6"
+                className="relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset"
                 placeholder="Full name"
                 disabled={loading}
               />
@@ -206,7 +206,7 @@ export function SignUpForm({
                 required
                 value={formData.email}
                 onChange={handleInputChange}
-                className="relative block w-full rounded-md border-0 bg-gray-800 px-4 py-3 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset sm:text-sm sm:leading-6"
+                className="relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset"
                 placeholder="Email address"
                 disabled={loading}
               />
@@ -223,7 +223,7 @@ export function SignUpForm({
                 required
                 value={formData.password}
                 onChange={handleInputChange}
-                className="relative block w-full rounded-md border-0 bg-gray-800 px-4 py-3 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset sm:text-sm sm:leading-6"
+                className="relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset"
                 placeholder="Password"
                 disabled={loading}
               />
@@ -241,7 +241,7 @@ export function SignUpForm({
                   required
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="relative block w-full rounded-md border-0 bg-gray-800 px-4 py-3 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset sm:text-sm sm:leading-6"
+                  className="relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset"
                   placeholder="Confirm password"
                   disabled={loading}
                 />
