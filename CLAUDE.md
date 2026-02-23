@@ -7,16 +7,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Core Development:**
 
 ```bash
-npm run dev          # Start development server on PORT 3000 with Turbo mode
+npm run dev          # Start development server on PORT 3000
 npm run build        # Production build
 npm run start        # Production start
 ```
 
-**⚠️ Development Port Change**: The development server runs on port **3000**. Update local configurations accordingly.
-
 **Code Quality:**
 
 ```bash
+npm run test:all     # All tests, formatting, linting, type checking, and CF linting
 npm run test         # Run Vitest test suite
 npm run test:watch   # Run tests in watch mode
 npm run test:coverage # Run tests with coverage report
@@ -31,15 +30,9 @@ npm run format:check # Check code formatting
 
 **Authentication System:**
 
-- RoboSystems Client for user authentication and session management
-- All data storage and business logic handled by RoboSystems API
-- User-company associations managed through API endpoints
-
-**Authentication Flow:**
-
-- RoboSystems Components SDK with React hooks and components
+- RoboSystems Client SDK for user authentication and session management
 - Cookie-based session persistence with automatic refresh
-- Pre-built login/register forms with custom styling
+- Pre-built login/register forms via shared core library
 - Session validation across authenticated routes
 
 **API Routes:**
@@ -50,8 +43,9 @@ npm run format:check # Check code formatting
 
 **Route Structure:**
 
-- `(app)` route group: Authenticated application pages (home, settings)
-- `(landing)` route group: Public pages (login, register, legal pages)
+- `(app)` route group: Authenticated pages (home, console, graphs, schema, tables, subgraphs, backups, repositories, billing, usage, organization, settings, dashboard, checkout)
+- `(landing)` route group: Public pages (login, register, auth, pricing, platform, open-source, legal pages)
+- `(blog)` route group: Blog posts
 - API routes follow RESTful patterns with proper session validation
 
 ## Key Development Patterns
@@ -71,9 +65,9 @@ npm run format:check # Check code formatting
 
 **Frontend Development:**
 
-- Server actions with proper error handling
+- Primarily client-side Next.js 16 application that connects to RoboSystems API
 - Session validation on protected routes through API
-- RoboSystems Client for all API interactions
+- RoboSystems Client SDK for all API interactions
 - Client-side error handling and user feedback
 
 **Testing Strategy:**
@@ -85,31 +79,19 @@ npm run format:check # Check code formatting
 
 ## Deployment
 
-**Frontend Application:**
-
-- Primarily client-side Next.js application that connects to RoboSystems API
-- Minimal server-side requirements: health check, contact form (SNS), sidebar state
-- Currently deployed on AWS App Runner behind CloudFront
+- Deployed on AWS App Runner behind CloudFront
 - Environment variables needed:
   - `NEXT_PUBLIC_ROBOSYSTEMS_API_URL` - RoboSystems API endpoint
   - `SNS_CONTACT_TOPIC_ARN` - SNS topic for contact form
   - `SNS_WAITLIST_TOPIC_ARN` - SNS topic for waitlist
-  - `TURNSTILE_SECRET_KEY` / `TURNSTILE_SITE_KEY` - CAPTCHA configuration
+  - `TURNSTILE_SECRET_KEY` / `NEXT_PUBLIC_TURNSTILE_SITE_KEY` - CAPTCHA configuration
 
 ## Important Notes
 
-**Environment Setup:**
-
 - Requires Node.js 22.x (specified in package.json engines)
-- Flowbite React requires post-install patching
 - RoboSystems API URL configuration required
-
-**Development Workflow:**
-
-- Always run type checking before commits
-- Use `npm run dev` for full development setup
+- Always run `npm run test:all` before commits
 - Format code before submitting PRs
-- Test coverage should be maintained for new components
 
 ## Core Library (Git Subtree)
 
@@ -136,8 +118,8 @@ npm run core:add         # Initial setup (only needed once)
 - **auth-components/**: Login, register, password reset forms
 - **auth-core/**: Session management and JWT handling
 - **components/**: Graph creation wizard and shared components
-- **ui-components/**: Layout, forms, settings components
-- **contexts/**: User, company, graph, credit contexts
+- **ui-components/**: Layout, forms, chat, and settings components
+- **contexts/**: Graph, organization, entity, service-offerings, and sidebar contexts
 - **task-monitoring/**: SSE-based background job tracking
 - **hooks/**: Shared React hooks
 - **theme/**: Flowbite theme customization
