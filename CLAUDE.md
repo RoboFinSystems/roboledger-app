@@ -4,140 +4,106 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-### Core Development Commands
+**Core Development:**
 
 ```bash
-# Start development server
-npm run dev
-
-# Build dev test
-npm run build:dev
-
-# Run all tests
-npm test
-
-# Generate test coverage report
-npm run test:coverage
-
-# Lint code
-npm run lint
-
-# Fix linting issues
-npm run lint:fix
-
-# Format code
-npm run format
-
-# Check formatting
-npm run format:check
-
-# Type check
-npm run typecheck
+npm run dev          # Start development server on PORT 3001
+npm run build        # Production build
+npm run start        # Production start
 ```
 
-### Testing Commands
+**Code Quality:**
 
 ```bash
-# Run a specific test file
-npm test -- src/components/__tests__/ChatDrawer.test.tsx
-
-# Run tests matching a pattern
-npm test -- --testNamePattern="should render"
-
-# Update test snapshots
-npm test -- -u
+npm run test:all     # All tests, formatting, linting, type checking, and CF linting
+npm run test         # Run Vitest test suite
+npm run test:watch   # Run tests in watch mode
+npm run test:coverage # Run tests with coverage report
+npm run lint         # Run ESLint
+npm run lint:fix     # Fix ESLint issues automatically
+npm run typecheck    # Run TypeScript type checking
+npm run format       # Format code with Prettier
+npm run format:check # Check code formatting
 ```
 
 ## Architecture Overview
 
-This is a Next.js 14 application using the App Router pattern that connects to the RoboSystems API for all backend operations.
+**Authentication System:**
 
-### Frontend Architecture
+- RoboSystems Client SDK for user authentication and session management
+- Cookie-based session persistence with automatic refresh
+- Pre-built login/register forms via shared core library
+- Session validation across authenticated routes
 
-- **Framework**: Next.js 14 with App Router and TypeScript
-- **UI Components**: Flowbite React components with Tailwind CSS styling
-- **State Management**: React Context API for sidebar and auth state
-- **Authentication**: NextAuth.js with OAuth providers (QuickBooks)
+**API Routes:**
 
-### API Structure
+- `/api/utilities/health` - Health check endpoint for App Runner
+- `/api/contact` - Contact form submission via SNS (with rate limiting and CAPTCHA)
+- `/api/session/sidebar` - Sidebar state management
 
-The application follows RESTful patterns with API routes under `/api/`:
+**Route Structure:**
 
-- `/api/auth/*` - Authentication endpoints (NextAuth)
-- `/api/company/*` - Company and accounting data management
-- `/api/user/*` - User profile and settings
-- `/api/qb/*` - QuickBooks integration
-- `/api/sec/*` - SEC filings integration
-- `/api/chat/*` - AI chat integration
+- `(app)` route group: Authenticated pages (home, console, graphs, ledger, entities, entity, connections, plaid-connect, reports, settings)
+- `(landing)` route group: Public pages (login, register, legal pages, landing page)
+- API routes follow RESTful patterns with proper session validation
 
-### Backend Architecture
+**Ledger Sub-Routes:**
 
-- **RoboSystems API**: All data operations, business logic, and database interactions are handled by the RoboSystems API
-- **Authentication**: OAuth-based authentication with session management
+- `/ledger/chart-of-accounts` - Chart of accounts with element classification
+- `/ledger/transactions` - Journal entries with line item detail
+- `/ledger/trial-balance` - Period-based debit/credit totals
+- `/ledger/account-mappings` - CoA to US-GAAP taxonomy element mapping
 
-### API Key Authentication
+**Data Integrations:**
 
-- **Format**: Bearer tokens with `rlap_` prefix (e.g., `Authorization: Bearer rlap_xxx`)
-- **Auto-creation**: Default API key generated on user registration
-- **Middleware**: Custom authentication middleware for API routes (`lib/apiKeys/middleware.ts`)
-- **System Keys**: Special `is_system` flag for internal service authentication
+- QuickBooks: OAuth 2.0 via `intuit-oauth` for accounting data sync
+- Plaid: Bank connections via `react-plaid-link` for transaction feeds
+- SEC XBRL: CIK-based filing connections with US-GAAP element mapping
 
-### Key Services Integration
+## Key Development Patterns
 
-- **RoboSystems API**: Primary backend service for all data operations
-- **QuickBooks**: OAuth integration for accounting data import (via RoboSystems API)
-- **Authentication**: NextAuth.js for user authentication
+**Component Organization:**
 
-### Deployment Architecture
+- Flowbite React components for consistent UI
+- Dark mode support via Tailwind CSS
+- Responsive design with mobile-first approach
+- Component testing with React Testing Library
 
-- **Frontend Hosting**: Next.js application deployment
-- **CI/CD**: GitHub Actions workflows for automated testing and deployment
-- **Environments**: Separate production and staging environments
+**App-Specific Libraries:**
 
-### Key Patterns and Conventions
+- `src/lib/ledger/` - Ledger-specific Cypher queries, types, and US-GAAP element reference
+- `src/lib/rate-limiter.ts` - Rate limiting for contact/forms
+- `src/lib/sns.ts` - AWS SNS integration
+- `src/lib/turnstile-server.ts` - Server-side CAPTCHA validation
 
-1. **API Routes**: Proxy requests to RoboSystems API with proper authentication
-2. **Error Handling**: Consistent error responses with appropriate HTTP status codes
-3. **Authentication**: OAuth-based authentication using NextAuth
-4. **Data Fetching**: All data fetched from RoboSystems API
-5. **Type Safety**: Strict TypeScript with defined types in `/src/types/`
-6. **Testing**: Component tests with React Testing Library, API integration tests with Vitest
+**Frontend Development:**
 
-### Environment Variables
+- Primarily client-side Next.js 16 application that connects to RoboSystems API
+- Session validation on protected routes through API
+- RoboSystems Client SDK for all API interactions
+- Client-side error handling and user feedback
 
-The application requires several environment variables:
+**Testing Strategy:**
 
-- **Authentication**: NextAuth secret and OAuth credentials
-- **API Configuration**: RoboSystems API URL and authentication tokens
-- **OAuth Providers**: QuickBooks OAuth credentials
-- **Environment-specific**: Production/staging URLs
+- Vitest with jsdom environment for fast unit and component testing
+- Component tests in `__tests__/` directories
+- Path alias support for clean imports
+- Test coverage reporting available with v8 provider
 
-### Integration Points
+## Deployment
 
-- **RoboSystems API**: Primary backend service handling all business logic, data processing, and integrations
-- **QuickBooks**: OAuth authentication for user accounts
-- **NextAuth.js**: Authentication provider integration
+- Deployed on AWS App Runner behind CloudFront
+- Environment variables needed:
+  - `NEXT_PUBLIC_ROBOSYSTEMS_API_URL` - RoboSystems API endpoint
+  - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` - CAPTCHA configuration
+  - Cross-app URLs for SSO navigation between RoboSystems, RoboLedger, and RoboInvestor
 
-### CI/CD Pipeline
+## Important Notes
 
-1. **Test Phase**: Vitest unit tests, TypeScript checking, ESLint
-2. **Build Phase**: Next.js production build
-3. **Deploy Phase**: Deploy to hosting platform
-4. **Environments**:
-   - `main` branch → production (www.roboledger.ai)
-   - `staging` branch → staging (staging.roboledger.ai)
-
-### Security Architecture
-
-- **Authentication**: OAuth-based authentication with NextAuth.js
-- **API Security**: JWT tokens for RoboSystems API communication
-- **SSL/TLS**: HTTPS encryption for all communications
-- **Token Management**: Secure handling of authentication tokens
-
-## Important Deployment Instructions
-
-- All deployments should go through the CI/CD pipeline via GitHub Actions
-- Use `gh workflow run` or push to appropriate branches for deployments
+- Requires Node.js 22.x (specified in package.json engines)
+- RoboSystems API URL configuration required
+- Always run `npm run test:all` before commits
+- Format code before submitting PRs
 
 ## Core Library (Git Subtree)
 
@@ -164,8 +130,8 @@ npm run core:add         # Initial setup (only needed once)
 - **auth-components/**: Login, register, password reset forms
 - **auth-core/**: Session management and JWT handling
 - **components/**: Graph creation wizard and shared components
-- **ui-components/**: Layout, forms, settings components
-- **contexts/**: User, company, graph, credit contexts
+- **ui-components/**: Layout, forms, chat, and settings components
+- **contexts/**: Graph, organization, entity, service-offerings, and sidebar contexts
 - **task-monitoring/**: SSE-based background job tracking
 - **hooks/**: Shared React hooks
 - **theme/**: Flowbite theme customization
