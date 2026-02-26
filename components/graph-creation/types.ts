@@ -7,6 +7,8 @@ export interface GraphCreationConfig {
 
   requiredExtensions?: string[]
 
+  allowedExtensions?: string[]
+
   showTierSelection?: boolean
 
   requireInitialEntity?: boolean
