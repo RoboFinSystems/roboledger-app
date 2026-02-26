@@ -28,4 +28,10 @@ export {
 } from './graph-filters'
 export { GraphSelectorCore, type GraphSelectorProps } from './GraphSelectorCore'
 export { PageLayout } from './PageLayout'
+export {
+  ActiveSubscriptions,
+  BrowseRepositories,
+  type ActiveSubscriptionsProps,
+  type BrowseRepositoriesProps,
+} from './repositories'
 export { RepositoryGuard, useIsRepository } from './RepositoryGuard'
