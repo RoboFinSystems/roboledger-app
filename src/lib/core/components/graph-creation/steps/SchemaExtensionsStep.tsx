@@ -8,12 +8,14 @@ import { customTheme } from '../../../theme'
 interface SchemaExtensionsStepProps {
   selectedExtensions: string[]
   requiredExtensions: string[]
+  allowedExtensions?: string[]
   onExtensionsChange: (extensions: string[]) => void
 }
 
 export function SchemaExtensionsStep({
   selectedExtensions,
   requiredExtensions,
+  allowedExtensions,
   onExtensionsChange,
 }: SchemaExtensionsStepProps) {
   const [extensions, setExtensions] = useState<AvailableExtension[]>([])
@@ -27,7 +29,12 @@ export function SchemaExtensionsStep({
         setError(null)
         const response = await getAvailableExtensions()
         if (response.data) {
-          setExtensions(response.data.extensions)
+          const fetched = response.data.extensions
+          setExtensions(
+            allowedExtensions
+              ? fetched.filter((ext) => allowedExtensions.includes(ext.name))
+              : fetched
+          )
         }
       } catch (err) {
         console.error('Failed to fetch extensions:', err)
@@ -37,6 +44,7 @@ export function SchemaExtensionsStep({
       }
     }
     fetchExtensions()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleToggleExtension = (extensionName: string) => {
