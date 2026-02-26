@@ -122,12 +122,16 @@ export type {
 } from './components/console'
 
 export {
+  ActiveSubscriptions,
+  BrowseRepositories,
   EntitySelector,
   EntitySelectorCore,
   GraphSelectorCore,
   PageLayout,
   RepositoryGuard,
   useIsRepository,
+  type ActiveSubscriptionsProps,
+  type BrowseRepositoriesProps,
   type EntityGroup,
   type EntityLike,
   type EntityRecord,
