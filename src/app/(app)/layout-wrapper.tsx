@@ -2,9 +2,16 @@
 
 import { EntitySelector } from '@/components/EntitySelector'
 import { ErrorBoundary } from '@/components/error/ErrorBoundary'
-import { CoreNavbar, CoreSidebar, useToast } from '@/lib/core'
+import {
+  CoreNavbar,
+  CoreSidebar,
+  GraphFilters,
+  useGraphContext,
+  useToast,
+} from '@/lib/core'
+import { useMemo } from 'react'
 import { LayoutContent } from './layout-content'
-import { roboLedgerNavigationItems } from './sidebar-config'
+import { getNavigationItems } from './sidebar-config'
 
 interface LayoutWrapperProps {
   children: React.ReactNode
@@ -12,6 +19,14 @@ interface LayoutWrapperProps {
 
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const { ToastContainer } = useToast()
+  const { state } = useGraphContext()
+
+  const hasQualifyingGraph = useMemo(
+    () => state.graphs.filter(GraphFilters.roboledger).length > 0,
+    [state.graphs]
+  )
+
+  const navigationItems = getNavigationItems(hasQualifyingGraph)
 
   return (
     <>
@@ -27,7 +42,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       />
       <div className="mt-16 flex items-start">
         <CoreSidebar
-          navigationItems={roboLedgerNavigationItems}
+          navigationItems={navigationItems}
           features={{
             showOrgSection: false,
           }}
