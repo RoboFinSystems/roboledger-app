@@ -1,7 +1,5 @@
-// @ts-nocheck - connections functionality removed from SDK, pending overhaul
 'use client'
 
-/* eslint-disable react/prop-types */
 import { PageHeader } from '@/components/PageHeader'
 import {
   customTheme,
@@ -20,34 +18,16 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
-  Progress,
 } from 'flowbite-react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
-import { FaTrash } from 'react-icons/fa'
-import {
-  HiCheckCircle,
-  HiClock,
-  HiExclamationCircle,
-  HiLink,
-  HiPlus,
-  HiRefresh,
-} from 'react-icons/hi'
+import { HiLink, HiPlus } from 'react-icons/hi'
 
-interface Connection {
-  id: string
-  connection: {
-    properties: {
-      provider: string
-      status: 'connected' | 'disconnected' | 'syncing' | 'error'
-      lastSync?: string
-      companyName?: string
-      connectionId?: string
-      error?: string
-    }
-  }
-}
+import ConnectionCard, {
+  type ConnectionData,
+  type ConnectionStatus,
+} from './components/ConnectionCard'
+import QuickBooksSetupForm from './components/QuickBooksSetupForm'
+import SecSetupForm from './components/SecSetupForm'
 
 interface TaskStatus {
   task_id: string
@@ -64,24 +44,13 @@ interface TaskStatus {
   error?: string
 }
 
-interface ApiResponse<T> {
-  data: T
-}
-
-interface ConnectionsResponse {
-  connections: any[]
-}
-
 interface ConnectionProviderInfo {
   provider: string
   display_name: string
   description: string
   auth_type: 'none' | 'oauth' | 'link' | 'api_key'
-  auth_flow?: string | null
   features: string[]
   data_types: string[]
-  setup_instructions?: string | null
-  documentation_url?: string | null
 }
 
 const AUTH_TYPE_LABELS: Record<string, string> = {
@@ -92,7 +61,7 @@ const AUTH_TYPE_LABELS: Record<string, string> = {
 }
 
 export default function ModernConnectionsContent() {
-  const [connections, setConnections] = useState<Connection[]>([])
+  const [connections, setConnections] = useState<ConnectionData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTasks, setActiveTasks] = useState<Map<string, TaskStatus>>(
@@ -100,59 +69,31 @@ export default function ModernConnectionsContent() {
   )
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [connectionToDelete, setConnectionToDelete] =
-    useState<Connection | null>(null)
+    useState<ConnectionData | null>(null)
   const [marketplaceOpen, setMarketplaceOpen] = useState(false)
   const [availableProviders, setAvailableProviders] = useState<
     ConnectionProviderInfo[]
   >([])
   const [providersLoading, setProvidersLoading] = useState(false)
-  const [connectingProvider, setConnectingProvider] = useState<string | null>(
-    null
-  )
+  // Which provider setup form to show (null = provider list)
+  const [setupProvider, setSetupProvider] = useState<string | null>(null)
   const { showError, showSuccess, ToastContainer } = useToast()
   const { state: graphState } = useGraphContext()
   const { currentGraphId } = graphState
-  const router = useRouter()
+
+  // ── Load connections (all providers) ──
 
   const loadConnections = useCallback(async () => {
     try {
       setLoading(true)
+      if (!currentGraphId) return
 
-      if (!currentGraphId) {
-        return
-      }
-
-      const qbConnections = await SDK.listConnections({
+      const response = await SDK.listConnections({
         path: { graph_id: currentGraphId },
-        query: {
-          entity_id: currentGraphId,
-          provider: 'quickbooks',
-        },
-      }).catch((error) => {
-        console.error('Failed to load connections:', error)
-        return {
-          data: { connections: [] },
-        } as ApiResponse<ConnectionsResponse>
       })
 
-      const qbList = Array.isArray(qbConnections.data) ? qbConnections.data : []
-
-      const allConnections = qbList.map((conn: any, index: number) => ({
-        id: `qb_${index}`,
-        connection: {
-          properties: {
-            provider: 'QuickBooks',
-            status:
-              (conn.status as Connection['connection']['properties']['status']) ||
-              'connected',
-            lastSync: conn.last_sync,
-            companyName: conn.metadata?.entity_name,
-            connectionId: conn.connection_id,
-          },
-        },
-      }))
-
-      setConnections(allConnections)
+      const list = Array.isArray(response.data) ? response.data : []
+      setConnections(list as ConnectionData[])
       setError(null)
     } catch (err) {
       const errorMsg = 'Failed to load connections'
@@ -170,7 +111,8 @@ export default function ModernConnectionsContent() {
     }
   }, [loadConnections, currentGraphId])
 
-  // Poll active tasks for status updates
+  // ── Poll active tasks ──
+
   useEffect(() => {
     if (activeTasks.size === 0) return
 
@@ -222,16 +164,19 @@ export default function ModernConnectionsContent() {
     return () => clearInterval(interval)
   }, [activeTasks, loadConnections])
 
+  // ── Marketplace ──
+
   const loadAvailableProviders = async () => {
     if (!currentGraphId) return
-
     setProvidersLoading(true)
     try {
       const response = await SDK.getConnectionOptions({
         path: { graph_id: currentGraphId },
       })
       if (response.data?.providers) {
-        setAvailableProviders(response.data.providers)
+        setAvailableProviders(
+          response.data.providers as ConnectionProviderInfo[]
+        )
       }
     } catch (err) {
       console.error('Failed to load connection options:', err)
@@ -242,66 +187,27 @@ export default function ModernConnectionsContent() {
   }
 
   const openMarketplace = () => {
+    setSetupProvider(null)
     setMarketplaceOpen(true)
     loadAvailableProviders()
   }
 
-  const handleConnectProvider = async (provider: ConnectionProviderInfo) => {
-    if (!currentGraphId) {
-      showError('No graph selected')
-      return
-    }
-
-    setConnectingProvider(provider.provider)
-
-    try {
-      // Create the connection
-      const createResponse = await SDK.createConnection({
-        path: { graph_id: currentGraphId },
-        body: {
-          entity_id: currentGraphId,
-          provider: provider.provider,
-        },
-      })
-
-      const connectionId = (createResponse.data as any)?.connection_id
-      if (!connectionId) {
-        throw new Error(`Failed to create ${provider.display_name} connection`)
-      }
-
-      // Handle OAuth-based providers
-      if (provider.auth_type === 'oauth') {
-        const oauthResponse = await SDK.initOAuth({
-          path: { graph_id: currentGraphId },
-          body: {
-            connection_id: connectionId,
-            redirect_uri: `${window.location.origin}/connections/qb-callback`,
-          },
-        })
-
-        if ((oauthResponse.data as any)?.auth_url) {
-          router.push((oauthResponse.data as any).auth_url)
-          return
-        } else {
-          throw new Error(
-            `Failed to initiate ${provider.display_name} OAuth flow`
-          )
-        }
-      }
-
-      // For non-OAuth providers, refresh and close
-      showSuccess(`${provider.display_name} connection created`)
-      setMarketplaceOpen(false)
-      loadConnections()
-    } catch (error) {
-      console.error('Connection error:', error)
-      showError(`Failed to connect to ${provider.display_name}`)
-    } finally {
-      setConnectingProvider(null)
-    }
+  const closeMarketplace = () => {
+    setMarketplaceOpen(false)
+    setSetupProvider(null)
   }
 
-  const handleSync = async (connectionId?: string) => {
+  // ── Provider setup callbacks ──
+
+  const handleSetupSuccess = (connectionId: string) => {
+    showSuccess('Connection created successfully')
+    closeMarketplace()
+    loadConnections()
+  }
+
+  // ── Sync ──
+
+  const handleSync = async (connectionId: string) => {
     try {
       if (!currentGraphId) {
         showError('No graph selected')
@@ -311,57 +217,45 @@ export default function ModernConnectionsContent() {
       const syncResponse = await SDK.syncConnection({
         path: {
           graph_id: currentGraphId,
-          connection_id: connectionId || 'default',
+          connection_id: connectionId,
         },
         body: { full_sync: true },
       })
 
-      if (syncResponse.data?.task_id) {
+      const syncData = syncResponse.data as any
+      if (syncData?.task_id) {
         setActiveTasks((prev) =>
-          new Map(prev).set(syncResponse.data.task_id, {
-            task_id: syncResponse.data.task_id,
-            status: syncResponse.data.status || 'pending',
-            message: syncResponse.data.message || 'Sync started...',
+          new Map(prev).set(syncData.task_id, {
+            task_id: syncData.task_id,
+            status: syncData.status || 'pending',
+            message: syncData.message || 'Sync started...',
           })
         )
         showSuccess('Sync started successfully')
       } else {
-        const errorMsg = syncResponse.data?.error || 'Failed to start sync'
-        setError(errorMsg)
-        showError(errorMsg)
+        showError('Failed to start sync')
       }
-    } catch (err: any) {
-      const errorMsg = 'Failed to start sync'
-      setError(errorMsg)
-      showError(errorMsg)
+    } catch (err) {
+      showError('Failed to start sync')
       console.error('Error syncing:', err)
     }
   }
 
+  // ── Delete ──
+
   const handleDeleteConnection = async () => {
-    if (!connectionToDelete) return
+    if (!connectionToDelete || !currentGraphId) return
 
     try {
-      if (!currentGraphId) {
-        showError('No graph selected')
-        return
-      }
-
-      const connectionId = connectionToDelete.connection.properties.connectionId
-      if (!connectionId) {
-        showError('Connection ID not found')
-        return
-      }
-
       await SDK.deleteConnection({
         path: {
           graph_id: currentGraphId,
-          connection_id: connectionId,
+          connection_id: connectionToDelete.connection_id,
         },
       })
       showSuccess('Connection deleted successfully')
       loadConnections()
-    } catch (err: any) {
+    } catch (err) {
       console.error('Delete connection error:', err)
       showError('Failed to delete connection')
     } finally {
@@ -370,16 +264,16 @@ export default function ModernConnectionsContent() {
     }
   }
 
-  const confirmDeleteConnection = (connection: Connection) => {
-    setConnectionToDelete(connection)
-    setDeleteModalOpen(true)
-  }
+  // ── Status helper ──
 
-  const getConnectionStatus = (connection: Connection) => {
-    const props = connection.connection.properties
-
+  const getConnectionStatus = (
+    connection: ConnectionData
+  ): ConnectionStatus => {
+    // Check if there's an active task for this connection
     for (const task of activeTasks.values()) {
-      if (task.message.toLowerCase().includes(props.provider.toLowerCase())) {
+      if (
+        task.message.toLowerCase().includes(connection.provider.toLowerCase())
+      ) {
         return {
           status: task.status === 'in_progress' ? 'syncing' : task.status,
           message: task.message,
@@ -391,17 +285,14 @@ export default function ModernConnectionsContent() {
     }
 
     return {
-      status: props.status,
-      message:
-        props.error ||
-        (props.lastSync
-          ? `Last sync: ${new Date(props.lastSync).toLocaleString()}`
-          : 'Never synced'),
-      progress: undefined,
-      step: undefined,
-      error: props.error,
+      status: connection.status,
+      message: connection.last_sync
+        ? `Last sync: ${new Date(connection.last_sync).toLocaleString()}`
+        : 'Never synced',
     }
   }
+
+  // ── Render ──
 
   if (loading) {
     return <Spinner size="xl" fullScreen />
@@ -432,21 +323,18 @@ export default function ModernConnectionsContent() {
         {error && <Alert color="failure">{error}</Alert>}
 
         <div className="grid grid-cols-1 gap-y-4">
-          {connections.map((connection, index) => {
-            const status = getConnectionStatus(connection)
-
-            return (
-              <ConnectionCard
-                key={connection.id || index}
-                status={status}
-                connection={connection}
-                onSync={() =>
-                  handleSync(connection.connection.properties.connectionId)
-                }
-                onDelete={() => confirmDeleteConnection(connection)}
-              />
-            )
-          })}
+          {connections.map((connection) => (
+            <ConnectionCard
+              key={connection.connection_id}
+              connection={connection}
+              status={getConnectionStatus(connection)}
+              onSync={() => handleSync(connection.connection_id)}
+              onDelete={() => {
+                setConnectionToDelete(connection)
+                setDeleteModalOpen(true)
+              }}
+            />
+          ))}
 
           {connections.length === 0 && (
             <Card theme={customTheme.card}>
@@ -473,20 +361,25 @@ export default function ModernConnectionsContent() {
           )}
         </div>
 
-        {/* Connection Marketplace Modal */}
-        <Modal
-          show={marketplaceOpen}
-          onClose={() => setMarketplaceOpen(false)}
-          size="2xl"
-        >
+        {/* ── Marketplace / Setup Modal ── */}
+        <Modal show={marketplaceOpen} onClose={closeMarketplace} size="2xl">
           <ModalHeader>
             <div className="flex items-center gap-3">
               <HiLink className="h-5 w-5 text-gray-500" />
-              <span>Connection Marketplace</span>
+              <span>
+                {setupProvider ? 'Set Up Connection' : 'Connection Marketplace'}
+              </span>
             </div>
           </ModalHeader>
           <ModalBody>
-            {providersLoading ? (
+            {setupProvider === 'sec' ? (
+              <SecSetupForm
+                onSuccess={handleSetupSuccess}
+                onCancel={() => setSetupProvider(null)}
+              />
+            ) : setupProvider === 'quickbooks' ? (
+              <QuickBooksSetupForm onCancel={() => setSetupProvider(null)} />
+            ) : providersLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Spinner size="lg" />
               </div>
@@ -503,34 +396,33 @@ export default function ModernConnectionsContent() {
                   <ProviderRow
                     key={provider.provider}
                     provider={provider}
-                    onConnect={() => handleConnectProvider(provider)}
-                    isConnecting={connectingProvider === provider.provider}
+                    onConnect={() => setSetupProvider(provider.provider)}
                   />
                 ))}
               </div>
             )}
           </ModalBody>
-          <ModalFooter>
-            <Button
-              color="gray"
-              theme={customTheme.button}
-              onClick={() => setMarketplaceOpen(false)}
-            >
-              Close
-            </Button>
-          </ModalFooter>
+          {!setupProvider && (
+            <ModalFooter>
+              <Button
+                color="gray"
+                theme={customTheme.button}
+                onClick={closeMarketplace}
+              >
+                Close
+              </Button>
+            </ModalFooter>
+          )}
         </Modal>
 
-        {/* Delete Confirmation Modal */}
+        {/* ── Delete Confirmation Modal ── */}
         <Modal show={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
           <ModalHeader>Delete Connection</ModalHeader>
           <ModalBody>
             <p className="text-gray-700 dark:text-gray-300">
               Are you sure you want to delete the{' '}
-              <strong>
-                {connectionToDelete?.connection.properties.provider}
-              </strong>{' '}
-              connection? This action cannot be undone.
+              <strong>{connectionToDelete?.provider}</strong> connection? This
+              action cannot be undone.
             </p>
           </ModalBody>
           <ModalFooter>
@@ -555,15 +447,14 @@ export default function ModernConnectionsContent() {
   )
 }
 
-// --- Provider Row (Marketplace) ---
+// ── Provider Row (Marketplace list) ──
 
 interface ProviderRowProps {
   provider: ConnectionProviderInfo
   onConnect: () => void
-  isConnecting: boolean
 }
 
-function ProviderRow({ provider, onConnect, isConnecting }: ProviderRowProps) {
+function ProviderRow({ provider, onConnect }: ProviderRowProps) {
   return (
     <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/50">
       <div className="min-w-0 flex-1">
@@ -594,179 +485,10 @@ function ProviderRow({ provider, onConnect, isConnecting }: ProviderRowProps) {
           color="primary"
           theme={customTheme.button}
           onClick={onConnect}
-          disabled={isConnecting}
         >
-          {isConnecting ? (
-            <>
-              <Spinner size="sm" className="mr-2" />
-              Connecting...
-            </>
-          ) : (
-            'Connect'
-          )}
+          Connect
         </Button>
       </div>
     </div>
-  )
-}
-
-// --- Connection Card (Existing Connections) ---
-
-interface ConnectionCardProps {
-  status: {
-    status: string
-    message: string
-    progress?: number
-    step?: string
-    error?: string
-  }
-  connection: Connection
-  onSync: () => void
-  onDelete: () => void
-}
-
-function ConnectionCard({
-  status,
-  connection,
-  onSync,
-  onDelete,
-}: ConnectionCardProps) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'connected':
-      case 'completed':
-        return 'success'
-      case 'syncing':
-      case 'in_progress':
-      case 'pending':
-        return 'warning'
-      case 'error':
-      case 'failed':
-        return 'failure'
-      default:
-        return 'gray'
-    }
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'connected':
-      case 'completed':
-        return HiCheckCircle
-      case 'syncing':
-      case 'in_progress':
-      case 'pending':
-        return HiClock
-      case 'error':
-      case 'failed':
-        return HiExclamationCircle
-      default:
-        return undefined
-    }
-  }
-
-  const props = connection.connection.properties
-
-  return (
-    <Card theme={customTheme.card}>
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <Image
-            src="/images/qb_connect.png"
-            alt="QuickBooks"
-            width={60}
-            height={32}
-            className="rounded"
-          />
-
-          <div className="flex-1">
-            <h3 className="font-heading mb-2 text-xl font-bold dark:text-white">
-              {props.provider} Integration
-            </h3>
-
-            <div className="mb-2 flex items-center gap-2">
-              <Badge
-                color={getStatusColor(status.status)}
-                icon={getStatusIcon(status.status)}
-                className="flex items-center gap-1"
-              >
-                {status.status.charAt(0).toUpperCase() + status.status.slice(1)}
-              </Badge>
-            </div>
-
-            {props.companyName && (
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                <p>Company: {props.companyName}</p>
-              </div>
-            )}
-
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              {status.message}
-            </p>
-
-            {status.step && (
-              <p className="mt-1 text-sm text-blue-600 dark:text-blue-400">
-                Current step: {status.step}
-              </p>
-            )}
-
-            {status.progress !== undefined && (
-              <div className="mt-3">
-                <div className="mb-1 flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Progress
-                  </span>
-                  <span className="text-gray-600 dark:text-gray-400">
-                    {Math.round(status.progress)}%
-                  </span>
-                </div>
-                <Progress progress={status.progress} color="blue" />
-              </div>
-            )}
-
-            {status.error && (
-              <Alert color="failure" className="mt-3">
-                {status.error}
-              </Alert>
-            )}
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            color="primary"
-            theme={customTheme.button}
-            onClick={onSync}
-            disabled={
-              status.status === 'syncing' ||
-              status.status === 'in_progress' ||
-              status.status === 'pending'
-            }
-          >
-            <HiRefresh className="mr-2 h-4 w-4" />
-            {status.status === 'syncing' ||
-            status.status === 'in_progress' ||
-            status.status === 'pending'
-              ? 'Syncing...'
-              : 'Sync Now'}
-          </Button>
-          <Button
-            size="sm"
-            color="failure"
-            theme={customTheme.button}
-            onClick={onDelete}
-            disabled={
-              status.status === 'syncing' ||
-              status.status === 'in_progress' ||
-              status.status === 'pending'
-            }
-            title="Delete connection"
-          >
-            <FaTrash className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
-    </Card>
   )
 }
