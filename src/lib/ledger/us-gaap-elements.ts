@@ -1,7 +1,7 @@
 /**
  * Predefined US-GAAP Elements
  *
- * Common US-GAAP taxonomy elements for element mapping.
+ * Common US-GAAP taxonomy elements for account classification.
  * These serve as a "phantom" taxonomy since the full US-GAAP taxonomy isn't available.
  */
 

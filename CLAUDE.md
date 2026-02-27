@@ -52,13 +52,13 @@ npm run format:check # Check code formatting
 - `/ledger/chart-of-accounts` - Chart of accounts with element classification
 - `/ledger/transactions` - Journal entries with line item detail
 - `/ledger/trial-balance` - Period-based debit/credit totals
-- `/ledger/account-mappings` - CoA to US-GAAP taxonomy element mapping
+- `/ledger/account-mappings` - CoA to US-GAAP taxonomy mapping (deprecated, pending OLTP migration)
 
 **Data Integrations:**
 
 - QuickBooks: OAuth 2.0 via `intuit-oauth` for accounting data sync
 - Plaid: Bank connections via `react-plaid-link` for transaction feeds
-- SEC XBRL: CIK-based filing connections with US-GAAP element mapping
+- SEC XBRL: CIK-based filing connections with US-GAAP taxonomy data
 
 ## Key Development Patterns
 
