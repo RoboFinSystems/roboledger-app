@@ -46,7 +46,7 @@ export default function SchemaArchitecture() {
       name: 'Base Schema',
       description: 'Foundation for all data',
       components: ['Entity', 'Taxonomy', 'Element', 'Period', 'Unit'],
-      icon: '/images/logo.png',
+      icon: '/images/logos/robosystems.png',
       useImage: true,
     },
     {

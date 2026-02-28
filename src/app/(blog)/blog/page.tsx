@@ -28,7 +28,7 @@ export default function BlogPage() {
           <div className="mb-6 flex items-center justify-center">
             <Link href="/" className="flex items-center">
               <Image
-                src="/images/logo.png"
+                src="/images/logos/robosystems.png"
                 alt="RoboSystems Logo"
                 width={60}
                 height={60}

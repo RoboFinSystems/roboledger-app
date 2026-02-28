@@ -41,7 +41,7 @@ export default function GraphDashboard() {
             </button>
             <div className="flex items-center gap-2">
               <Image
-                src="/images/logo.png"
+                src="/images/logos/robosystems.png"
                 alt="RoboSystems"
                 width={32}
                 height={32}
