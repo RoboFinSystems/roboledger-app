@@ -176,6 +176,7 @@ jobs:
       - name: Install dependencies and build Next.js
         if: steps.resolve.outputs.needs_build == 'true'
         env:
+          NEXT_PUBLIC_APP_NAME: roboledger
           NEXT_PUBLIC_ROBOSYSTEMS_API_URL: ${{ inputs.robosystems_api_url }}
           NEXT_PUBLIC_ROBOLEDGER_APP_URL: ${{ inputs.roboledger_app_url }}
           NEXT_PUBLIC_ROBOINVESTOR_APP_URL: ${{ inputs.roboinvestor_app_url }}
