@@ -33,16 +33,11 @@ export function proxy(request: NextRequest) {
         'https://www.googletagmanager.com https://www.google-analytics.com ' +
         'https://tagmanager.google.com https://analytics.google.com',
 
-    // Style sources - Relaxed for auth routes only in production
-    isDevelopment || isAuthRoute
-      ? "style-src 'self' 'unsafe-inline' " +
-        'https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com ' +
-        'https://cdnjs.cloudflare.com https://challenges.cloudflare.com ' +
-        'https://tagmanager.google.com'
-      : "style-src 'self' " +
-        'https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com ' +
-        'https://cdnjs.cloudflare.com https://challenges.cloudflare.com ' +
-        'https://tagmanager.google.com',
+    // Style sources - Allow unsafe-inline for Next.js Image component and other inline styles
+    "style-src 'self' 'unsafe-inline' " +
+      'https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com ' +
+      'https://cdnjs.cloudflare.com https://challenges.cloudflare.com ' +
+      'https://tagmanager.google.com',
 
     // Image sources - Allow common image hosts and data URIs
     "img-src 'self' data: blob: " +
