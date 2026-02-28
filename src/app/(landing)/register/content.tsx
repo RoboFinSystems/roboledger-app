@@ -1,6 +1,6 @@
 'use client'
 
-import { SignUpForm } from '@/lib/core'
+import { CURRENT_APP, SignUpForm } from '@/lib/core'
 import { useRouter } from 'next/navigation'
 
 export default function RegisterContent() {
@@ -11,7 +11,7 @@ export default function RegisterContent() {
       apiUrl={
         process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL || 'http://localhost:8000'
       }
-      currentApp="robosystems"
+      currentApp={CURRENT_APP}
       showConfirmPassword={true}
       showTermsAcceptance={true}
       redirectTo="/login"

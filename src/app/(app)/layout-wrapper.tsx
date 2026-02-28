@@ -2,7 +2,13 @@
 
 import { ErrorBoundary } from '@/components/error/ErrorBoundary'
 import { GraphSelector } from '@/components/graphs/GraphSelector'
-import { CoreNavbar, CoreSidebar, useGraphContext, useToast } from '@/lib/core'
+import {
+  CURRENT_APP,
+  CoreNavbar,
+  CoreSidebar,
+  useGraphContext,
+  useToast,
+} from '@/lib/core'
 import { LayoutContent } from './layout-content'
 import { getNavigationItems } from './sidebar-config'
 
@@ -26,7 +32,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       <ToastContainer />
       <CoreNavbar
         appName="RoboSystems"
-        currentApp="robosystems"
+        currentApp={CURRENT_APP}
         borderColorClass="dark:border-gray-800"
         additionalComponents={<GraphSelector />}
       />
