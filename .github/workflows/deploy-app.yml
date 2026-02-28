@@ -103,6 +103,12 @@ on:
         type: string
         default: ''
 
+      # SNS Configuration
+      notification_email:
+        description: 'Email address for admin notifications (contact form)'
+        required: true
+        type: string
+
 jobs:
   deploy:
     runs-on: ${{ fromJSON(inputs.runner_config) }}
@@ -123,6 +129,17 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ inputs.aws_region }}
+
+      - name: Get Secret ARNs
+        id: get-arns
+        run: |
+          # Get main RoboSystems secrets ARN
+          ROBOSYSTEMS_SECRETS_ARN=$(aws secretsmanager describe-secret \
+            --secret-id "robosystems/${{ inputs.environment }}" \
+            --query "ARN" --output text)
+
+          echo "robosystems_secrets_arn=$ROBOSYSTEMS_SECRETS_ARN" >> $GITHUB_OUTPUT
+          echo "Found RoboSystems secret ARN: $ROBOSYSTEMS_SECRETS_ARN"
 
       - name: Deploy RoboLedger CloudFormation Stack
         id: deploy-stack
@@ -160,6 +177,7 @@ jobs:
             {"ParameterKey": "Environment", "ParameterValue": "${{ inputs.environment }}"},
             {"ParameterKey": "AWSAccountId", "ParameterValue": "${{ inputs.aws_account_id }}"},
             {"ParameterKey": "AppAccessMode", "ParameterValue": "${{ inputs.app_access_mode }}"},
+            {"ParameterKey": "RoboSystemsSecretsArn", "ParameterValue": "${{ steps.get-arns.outputs.robosystems_secrets_arn }}"},
             {"ParameterKey": "ECRRepository", "ParameterValue": "${{ inputs.ecr_repository }}"},
             {"ParameterKey": "ECRImageTag", "ParameterValue": "${{ inputs.ecr_image_tag }}"},
             {"ParameterKey": "Cpu", "ParameterValue": "${{ inputs.cpu }}"},
@@ -169,7 +187,8 @@ jobs:
             {"ParameterKey": "StaticAssetsBucketDomainName", "ParameterValue": "${{ inputs.static_assets_bucket_domain }}"},
             {"ParameterKey": "CapacityMin", "ParameterValue": "${{ inputs.capacity_min }}"},
             {"ParameterKey": "CapacityMax", "ParameterValue": "${{ inputs.capacity_max }}"},
-            {"ParameterKey": "MaxConcurrency", "ParameterValue": "${{ inputs.max_concurrency }}"}
+            {"ParameterKey": "MaxConcurrency", "ParameterValue": "${{ inputs.max_concurrency }}"},
+            {"ParameterKey": "NotificationEmail", "ParameterValue": "${{ inputs.notification_email }}"}
           ]
           PARAMS_EOF
 
