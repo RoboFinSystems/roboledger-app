@@ -1,6 +1,6 @@
 'use client'
 
-import { SignInForm } from '@/lib/core'
+import { CURRENT_APP, SignInForm } from '@/lib/core'
 
 export default function LoginContent() {
   return (
@@ -9,7 +9,7 @@ export default function LoginContent() {
         process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL || 'http://localhost:8000'
       }
       enableSSO={true}
-      currentApp="roboledger"
+      currentApp={CURRENT_APP}
       redirectTo="/home"
       onSuccess={() => {}}
       onRedirect={(url) => {

@@ -1,6 +1,6 @@
 'use client'
 
-import Image from 'next/image'
+import { AnimatedLogo } from '@/lib/core/ui-components/Logo'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
@@ -48,13 +48,7 @@ export default function Header() {
             href="/"
             className="flex items-center transition-opacity hover:opacity-80"
           >
-            <Image
-              src="/images/logos/roboledger.png"
-              alt="RoboLedger Logo"
-              width={40}
-              height={40}
-              className="rounded-lg"
-            />
+            <AnimatedLogo animate="once" className="h-10 w-10 text-white" />
             <span className="font-heading ml-2 text-xl font-semibold text-white sm:text-2xl">
               RoboLedger
             </span>

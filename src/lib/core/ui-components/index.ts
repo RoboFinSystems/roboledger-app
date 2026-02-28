@@ -5,6 +5,7 @@ export * from './layout'
 export * from './settings'
 
 // UI Components
+export { AnimatedLogo } from './Logo'
 export { Spinner } from './Spinner'
 
 // Chat Components

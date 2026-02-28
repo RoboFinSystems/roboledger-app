@@ -1,4 +1,7 @@
-import type { AppConfig } from './types'
+import type { AppConfig, AppName } from './types'
+
+export const CURRENT_APP: AppName =
+  (process.env.NEXT_PUBLIC_APP_NAME as AppName) || 'robosystems'
 
 export const APP_CONFIGS: Record<string, AppConfig> = {
   roboinvestor: {

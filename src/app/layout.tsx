@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   description:
     'A comprehensive financial reporting app for private companies to securely share financial reports with shareholders and stakeholders. Built with React, Tailwind CSS, and Flowbite, it provides features such as customizable reports, user permissions, and real-time collaboration.',
   icons: {
-    icon: '/images/logo.png',
+    icon: '/images/logos/roboledger.png',
   },
 }
 

@@ -2,11 +2,11 @@
 
 import { Dropdown, DropdownItem } from 'flowbite-react'
 import { HiViewGrid } from 'react-icons/hi'
-import { getAppConfig } from '../auth-core/config'
 import { useSSO } from '../auth-core/sso'
-import type { AppConfig } from '../auth-core/types'
+import type { AppConfig, AppName } from '../auth-core/types'
 import { useToast } from '../hooks/use-toast'
 import { customTheme } from '../theme'
+import { AnimatedLogo } from '../ui-components/Logo'
 
 export interface AppSwitcherProps {
   apiUrl: string
@@ -68,13 +68,11 @@ export function AppSwitcher({
               onClick={() => handleAppClick(app)}
               className="flex w-full items-center space-x-3 p-3"
             >
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-sm ${getAppConfig(app.name).colorClass}`}
-              >
-                <span className="text-xs font-bold text-white">
-                  {getAppConfig(app.name).initials}
-                </span>
-              </div>
+              <AnimatedLogo
+                app={app.name as AppName}
+                animate="once"
+                className="h-8 w-8 text-black dark:text-white"
+              />
               <div className="min-w-0 flex-1">
                 <p className="text-left text-sm font-medium text-gray-900 dark:text-white">
                   {app.displayName}

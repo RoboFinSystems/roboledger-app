@@ -5,6 +5,7 @@ import { ErrorBoundary } from '@/components/error/ErrorBoundary'
 import {
   CoreNavbar,
   CoreSidebar,
+  CURRENT_APP,
   GraphFilters,
   useGraphContext,
   useToast,
@@ -32,7 +33,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
     <>
       <CoreNavbar
         appName="RoboLedger"
-        currentApp="roboledger"
+        currentApp={CURRENT_APP}
         additionalComponents={
           <div className="flex items-center gap-3">
             <EntitySelector />

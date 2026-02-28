@@ -10,7 +10,6 @@ import {
   NavbarBrand,
   Tooltip,
 } from 'flowbite-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React from 'react'
@@ -21,6 +20,7 @@ import { useSidebarContext } from '../../contexts'
 import { useMediaQuery, useUser } from '../../hooks'
 import { customTheme } from '../../theme'
 import type { User } from '../../types'
+import { AnimatedLogo } from '../Logo'
 import { ThemeToggle } from './ThemeToggle'
 
 export interface CoreNavbarProps {
@@ -136,19 +136,10 @@ export function CoreNavbar({
               </div>
             </button>
             <NavbarBrand as={Link} href={homeHref} className="mr-14">
-              <Image
-                src="/images/logo_black.png"
-                alt={altText}
-                width={40}
-                height={40}
-                className="mr-2 dark:hidden"
-              />
-              <Image
-                src="/images/logo.png"
-                alt={altText}
-                width={40}
-                height={40}
-                className="mr-2 hidden dark:block"
+              <AnimatedLogo
+                animate="once"
+                app={currentApp}
+                className="mr-2 h-10 w-10 text-black dark:text-white"
               />
               <span className="font-heading mt-2 ml-1 self-center text-2xl font-semibold whitespace-nowrap text-gray-900 dark:text-white">
                 {appName}
