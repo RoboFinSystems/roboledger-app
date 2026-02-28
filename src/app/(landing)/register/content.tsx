@@ -1,6 +1,6 @@
 'use client'
 
-import { SignUpForm } from '@/lib/core'
+import { CURRENT_APP, SignUpForm } from '@/lib/core'
 
 export default function RegisterContent() {
   return (
@@ -8,7 +8,7 @@ export default function RegisterContent() {
       apiUrl={
         process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL || 'http://localhost:8000'
       }
-      currentApp="roboledger"
+      currentApp={CURRENT_APP}
       showConfirmPassword={true}
       showTermsAcceptance={true}
       redirectTo="/login"

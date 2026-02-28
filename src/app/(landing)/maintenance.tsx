@@ -1,16 +1,14 @@
 'use client'
 
-import Image from 'next/image'
+import { AnimatedLogo } from '@/lib/core/ui-components/Logo'
 
 export default function MaintenancePage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-900">
       <div className="flex flex-col items-center">
-        <Image
-          src="/images/logo.png"
-          alt="RoboLedger Logo"
-          width={120}
-          height={120}
+        <AnimatedLogo
+          animate="once"
+          className="h-[120px] w-[120px] text-white"
         />
         <h1 className="font-heading mt-8 text-3xl font-semibold text-white">
           RoboLedger
