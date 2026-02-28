@@ -41,6 +41,13 @@ vi.mock('../../ui-components', () => ({
       Loading {size} {fullScreen && '(fullscreen)'}
     </div>
   ),
+  AnimatedLogo: ({ animate, className }: any) => (
+    <div
+      data-testid="animated-logo"
+      data-animate={animate}
+      className={className}
+    />
+  ),
 }))
 
 const mockUseRouter = vi.mocked(useRouter)
@@ -106,10 +113,9 @@ describe('SignInForm', () => {
     it('should show SSO checking state initially when SSO is enabled', () => {
       render(<SignInForm {...defaultProps} />)
 
-      const spinner = screen.getByTestId('spinner')
-      expect(spinner).toBeInTheDocument()
-      expect(spinner).toHaveTextContent(/loading/i)
-      expect(spinner).toHaveTextContent(/xl/i)
+      const logo = screen.getByTestId('animated-logo')
+      expect(logo).toBeInTheDocument()
+      expect(logo).toHaveAttribute('data-animate', 'loop')
     })
 
     it('should not check SSO when disabled', async () => {
