@@ -156,7 +156,6 @@ const TrialBalanceContent: FC = function () {
         for (const graph of roboledgerGraphs) {
           try {
             // For CoA view, use direct Cypher query
-            // For US-GAAP view, we would use the /views API with mapping_structure_id
             // For now, only CoA view is fully implemented
             const response = await SDK.executeCypherQuery({
               path: { graph_id: graph.graphId },

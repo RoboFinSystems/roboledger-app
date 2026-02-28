@@ -26,7 +26,7 @@ RoboLedger App is the web interface for AI-native accounting, building semantic 
 
 - **Reports**: Custom report builder with fact grids, templates, and multi-format export
 - **Plaid Connections**: Direct bank feeds for transaction synchronization
-- **SEC XBRL**: Process SEC filings with US-GAAP taxonomy element mapping
+- **SEC XBRL**: Process SEC filings with US-GAAP taxonomy data
 
 ## Quick Start
 

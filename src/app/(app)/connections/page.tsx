@@ -1,7 +1,7 @@
 'use client'
 import { useUser } from '@/lib/core'
 import { Spinner } from '@/lib/core/ui-components'
-import ModernConnectionsContent from './modern-content'
+import ModernConnectionsContent from './content'
 
 export default function CompanyConnectionsPage() {
   const { user, isLoading } = useUser()

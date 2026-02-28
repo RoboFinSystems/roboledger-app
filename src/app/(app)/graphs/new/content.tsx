@@ -51,6 +51,7 @@ export function NewGraphContent() {
       // RoboLedger-specific configuration
       allowGenericGraphs={false} // Only allow entity graphs
       requiredExtensions={['roboledger']} // Require roboledger schema
+      allowedExtensions={['roboledger', 'roboinvestor']} // Only show relevant schemas
       requireInitialEntity={true} // Always create with initial entity
       showTierSelection={true}
       onSuccess={handleSuccess}
