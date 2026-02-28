@@ -1,12 +1,11 @@
 'use client'
 
-import Image from 'next/image'
 import React, { useEffect, useMemo, useState } from 'react'
 import { RoboSystemsAuthClient } from '../auth-core/client'
 import { getAppConfig } from '../auth-core/config'
 import { useSSO } from '../auth-core/sso'
 import type { AuthUser } from '../auth-core/types'
-import { Spinner } from '../ui-components'
+import { AnimatedLogo, Spinner } from '../ui-components'
 
 export interface SignInFormProps {
   onSuccess?: (user: AuthUser) => void
@@ -139,19 +138,13 @@ export function SignInForm({
       <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-black via-gray-900 to-zinc-800 p-6">
         <div className="w-full max-w-md">
           <div className="text-center">
-            <Image
-              className="mx-auto h-12 w-auto"
-              src="/images/logo.png"
-              alt="Logo"
-              width={48}
-              height={48}
+            <AnimatedLogo
+              animate="loop"
+              className="mx-auto h-16 w-16 text-white"
             />
             <h1 className="font-heading mt-4 text-center text-2xl font-semibold tracking-tight text-white">
               {appName}
             </h1>
-            <div className="mt-6 flex justify-center">
-              <Spinner size="xl" className="border-gray-300" />
-            </div>
           </div>
         </div>
       </div>
@@ -162,17 +155,14 @@ export function SignInForm({
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-black via-gray-900 to-zinc-800 px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-lg space-y-8">
         <div className="text-center">
-          <Image
-            className="mx-auto h-14 w-auto"
-            src="/images/logo.png"
-            alt="Logo"
-            width={56}
-            height={56}
+          <AnimatedLogo
+            animate="once"
+            className="mx-auto h-14 w-14 text-white"
           />
           <h1 className="font-heading mt-4 text-center text-2xl font-semibold tracking-tight text-white">
             {appName}
           </h1>
-          <h2 className="mt-6 text-center text-xl font-semibold tracking-tight text-gray-300">
+          <h2 className="mt-2 text-center text-xl font-semibold tracking-tight text-gray-300">
             Sign in to your account
           </h2>
         </div>

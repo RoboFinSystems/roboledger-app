@@ -33,6 +33,13 @@ vi.mock('../../ui-components', () => ({
       Loading {size} {fullScreen && '(fullscreen)'}
     </div>
   ),
+  AnimatedLogo: ({ animate, className }: any) => (
+    <div
+      data-testid="animated-logo"
+      data-animate={animate}
+      className={className}
+    />
+  ),
 }))
 
 const mockUseRouter = vi.mocked(useRouter)
