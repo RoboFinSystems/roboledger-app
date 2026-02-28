@@ -201,7 +201,7 @@ function SystemsBook({ animate }: { animate: 'once' | 'loop' }) {
       {/* Infinity S — visible segment traces the figure-8 */}
       <g transform="matrix(12.8263,0,0,13.3096,313.735,516.868)">
         {/* Base — starts solid, fades to faint once trace begins */}
-        <path d={infinityPath} style={{ fillRule: 'nonzero' }}>
+        <path d={infinityPath} fillRule="nonzero">
           {isOnce ? (
             <animate
               attributeName="opacity"
@@ -243,7 +243,7 @@ function SystemsBook({ animate }: { animate: 'once' | 'loop' }) {
         <path
           d={infinityPath}
           mask={`url(#${isOnce ? 'rs-trace-once' : 'rs-trace-loop'})`}
-          style={{ fillRule: 'nonzero' }}
+          fillRule="nonzero"
         />
       </g>
     </>
@@ -262,7 +262,8 @@ export function AnimatedLogo({
       className={className}
       role="img"
       aria-label="Loading"
-      style={{ fillRule: 'evenodd', clipRule: 'evenodd' }}
+      fillRule="evenodd"
+      clipRule="evenodd"
       shapeRendering="geometricPrecision"
     >
       {app === 'roboinvestor' && <InvestorBook animate={animate} />}
