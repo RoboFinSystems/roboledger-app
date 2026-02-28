@@ -96,7 +96,7 @@ export default function IntegrationsSection() {
               </div>
               <p className="text-sm text-gray-400">
                 Connect bank accounts directly. Transaction feeds flow into your
-                context graph with automatic categorization.
+                knowledge graph with automatic categorization.
               </p>
             </div>
           </div>

@@ -82,7 +82,7 @@ export default function BusinessServices() {
           <p className="mx-auto max-w-3xl text-gray-400">
             Powered by the RoboLedger schema that unifies QuickBooks
             transactions, SEC XBRL filings, and banking data into a single,
-            queryable context graph
+            queryable knowledge graph
           </p>
         </div>
 

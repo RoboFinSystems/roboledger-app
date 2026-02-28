@@ -84,8 +84,8 @@ export default function HeroSection() {
                   Context Graph
                 </h3>
                 <p className="text-center text-sm text-gray-400">
-                  Semantic understanding of financial relationships, entities,
-                  and meaning—structured for AI reasoning
+                  Embeddings, semantic enrichment, and confidence scoring that
+                  transform knowledge graphs into AI-ready context
                 </p>
               </div>
             </div>

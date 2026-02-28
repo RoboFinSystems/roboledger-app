@@ -28,7 +28,7 @@ export default function PlatformContent() {
                 RoboSystems Platform
               </h1>
               <p className="mx-auto max-w-3xl text-lg text-gray-300 sm:text-xl">
-                A context graph platform that transforms your financial and
+                A knowledge graph platform that transforms your financial and
                 operational data into a semantic layer where AI doesn't just
                 retrieve information—it understands meaning.
               </p>
@@ -171,7 +171,7 @@ export default function PlatformContent() {
         <section className="bg-zinc-950 py-16">
           <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
             <h2 className="font-heading mb-4 text-3xl font-bold text-white">
-              Ready to Build Your Context Graph?
+              Ready to Build Your Knowledge Graph?
             </h2>
             <p className="mb-8 text-lg text-gray-400">
               Transform your financial data into a semantic layer that AI can

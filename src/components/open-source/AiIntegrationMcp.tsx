@@ -119,7 +119,7 @@ export default function AiIntegrationMcp() {
               </li>
               <li className="flex items-start">
                 <span className="mr-2 text-purple-400">•</span>
-                "Fork the graph and build a custom element mapping"
+                "Fork the graph into an analytical workspace"
               </li>
             </ul>
           </div>

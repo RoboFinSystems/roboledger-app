@@ -13,13 +13,14 @@ export default function ProductOverview() {
             How It Works
           </p>
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-            The Financial Context Graph
+            The Financial Knowledge Graph
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
             Your financial data isn't just numbers—it's decisions,
             relationships, and institutional knowledge. RoboSystems transforms
-            scattered data into a context graph: a semantic layer where AI
-            doesn't just retrieve information, it understands meaning.
+            scattered data into a knowledge graph: a semantic layer where AI
+            doesn't just retrieve information—it understands meaning,
+            relationships, and context.
           </p>
         </div>
 
@@ -162,7 +163,7 @@ export default function ProductOverview() {
                   </svg>
                 </div>
                 <h3 className="mb-2 text-center font-semibold text-white">
-                  Context Graph
+                  Knowledge Graph
                 </h3>
                 <p className="text-center text-sm text-gray-400">
                   Entities, relationships, and meaning—structured for AI to

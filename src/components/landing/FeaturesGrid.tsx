@@ -13,7 +13,7 @@ export default function FeaturesGrid() {
             How We Deliver It
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            A modern stack purpose-built for financial context graphs and
+            A modern stack purpose-built for financial knowledge graphs and
             AI-native applications.
           </p>
         </div>

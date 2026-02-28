@@ -109,6 +109,7 @@ export function NewGraphContent() {
         // RoboSystems-specific configuration
         allowGenericGraphs={true} // Allow both entity and generic graphs
         requiredExtensions={[]} // No required extensions for flexibility
+        allowedExtensions={['roboledger', 'roboinvestor']} // Only show relevant schemas
         showTierSelection={true}
         onSuccess={handleSuccess}
         backUrl="/dashboard"

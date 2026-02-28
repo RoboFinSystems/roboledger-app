@@ -29,6 +29,7 @@ interface GraphCreationWizardProps extends GraphCreationConfig {
 export function GraphCreationWizard({
   allowGenericGraphs = true,
   requiredExtensions = [],
+  allowedExtensions,
   showTierSelection = true,
   requireInitialEntity = false,
   validateEntity,
@@ -246,6 +247,7 @@ export function GraphCreationWizard({
           <SchemaExtensionsStep
             selectedExtensions={formData.selectedExtensions}
             requiredExtensions={requiredExtensions}
+            allowedExtensions={allowedExtensions}
             onExtensionsChange={(extensions) =>
               setFormData({ ...formData, selectedExtensions: extensions })
             }
