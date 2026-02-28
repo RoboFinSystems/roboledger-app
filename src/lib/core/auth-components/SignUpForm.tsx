@@ -1,11 +1,10 @@
 'use client'
 
-import Image from 'next/image'
 import React, { useState } from 'react'
 import { RoboSystemsAuthClient } from '../auth-core/client'
 import { getAppConfig } from '../auth-core/config'
 import type { AuthUser } from '../auth-core/types'
-import { Spinner } from '../ui-components'
+import { AnimatedLogo, Spinner } from '../ui-components'
 import { TurnstileWidget } from './TurnstileWidget'
 
 export interface SignUpFormProps {
@@ -146,12 +145,9 @@ export function SignUpForm({
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-black via-gray-900 to-zinc-800 px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-lg space-y-8">
         <div className="text-center">
-          <Image
-            className="mx-auto h-14 w-auto"
-            src="/images/logo.png"
-            alt="Logo"
-            width={56}
-            height={56}
+          <AnimatedLogo
+            animate="once"
+            className="mx-auto h-14 w-14 text-white"
           />
           <h1 className="font-heading mt-4 text-center text-2xl font-semibold tracking-tight text-white">
             {appName}

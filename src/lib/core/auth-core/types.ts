@@ -51,6 +51,8 @@ export interface SSOTokenResponse {
   apps: string[]
 }
 
+export type AppName = 'robosystems' | 'roboledger' | 'roboinvestor'
+
 export interface AppConfig {
   name: string
   displayName: string
