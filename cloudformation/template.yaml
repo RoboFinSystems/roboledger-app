@@ -115,6 +115,19 @@ Parameters:
     MaxValue: 200
     Description: Maximum concurrent requests per instance before scaling
 
+  # Secrets Configuration
+  RoboSystemsSecretsArn:
+    Type: String
+    Description: ARN of the main application configuration secret
+    AllowedPattern: ^arn:aws:secretsmanager:[a-z0-9-]+:[0-9]+:secret:.*$
+    ConstraintDescription: Must be a valid Secrets Manager ARN
+
+  # SNS Configuration
+  NotificationEmail:
+    Type: String
+    Default: ''
+    Description: Email address for admin notifications (leave empty to skip SNS setup)
+
   # Tagging Configuration
   ServiceTag:
     Type: String
@@ -130,6 +143,12 @@ Conditions:
   # Access mode conditions
   IsPublicMode: !Equals [!Ref AppAccessMode, 'public']
   IsPublicHttpMode: !Equals [!Ref AppAccessMode, 'public-http']
+
+  # Check if SNS notification should be created
+  CreateSNSTopic: !Not
+    - !Equals
+      - !Ref NotificationEmail
+      - ''
 
   # Production + public mode: enables www.domain.com redirect to domain.com
   IsProductionPublic: !And
@@ -161,6 +180,32 @@ Resources:
           Value: !Ref ComponentTag
         - Key: CreatedBy
           Value: CloudFormation
+
+  # SNS Topic for Contact Form Notifications
+  ContactFormTopic:
+    Type: AWS::SNS::Topic
+    Condition: CreateSNSTopic
+    Properties:
+      TopicName: !Sub roboledger-app-${Environment}-contact-form
+      DisplayName: !Sub RoboLedger ${Environment} Contact Form
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # Email Subscription for Contact Form
+  ContactFormEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: CreateSNSTopic
+    Properties:
+      Protocol: email
+      TopicArn: !Ref ContactFormTopic
+      Endpoint: !Ref NotificationEmail
 
   # IAM Role for App Runner to access ECR
   AppRunnerAccessRole:
@@ -202,6 +247,28 @@ Resources:
             Principal:
               Service: tasks.apprunner.amazonaws.com
             Action: sts:AssumeRole
+      Policies:
+        - !If
+          - CreateSNSTopic
+          - PolicyName: SNSPublishPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - sns:Publish
+                  Resource:
+                    - !Ref ContactFormTopic
+          - !Ref AWS::NoValue
+        - PolicyName: SecretsManagerAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Ref RoboSystemsSecretsArn
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -249,6 +316,13 @@ Resources:
             RuntimeEnvironmentVariables:
               - Name: NODE_ENV
                 Value: production
+              - Name: SNS_CONTACT_TOPIC_ARN
+                Value: !If [CreateSNSTopic, !Ref ContactFormTopic, '']
+              - Name: REQUIRE_CAPTCHA
+                Value: 'true'
+            RuntimeEnvironmentSecrets:
+              - Name: TURNSTILE_SECRET_KEY
+                Value: !Sub '${RoboSystemsSecretsArn}:TURNSTILE_SECRET_KEY::'
       InstanceConfiguration:
         Cpu: !Ref Cpu
         Memory: !Ref Memory
@@ -579,6 +653,11 @@ Outputs:
   Region:
     Description: AWS Region where the stack is deployed
     Value: !Ref AWS::Region
+
+  ContactFormTopicArn:
+    Condition: CreateSNSTopic
+    Description: SNS Topic ARN for contact form notifications
+    Value: !Ref ContactFormTopic
 
   # Access Mode Instructions
   PublicAccessInstructions:
