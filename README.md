@@ -104,7 +104,7 @@ npm run core:add         # Add core subtree (initial setup)
 - AWS account with IAM Identity Center (SSO)
 - Run `npm run setup:bootstrap` to configure OIDC and GitHub variables
 
-See the **[Bootstrap Guide](https://github.com/RoboFinSystems/robosystems/wiki/Bootstrap-Guide)** for complete instructions including access modes (internal, public-http, public).
+See the **[Bootstrap Guide](https://github.com/RoboFinSystems/robosystems/wiki/Bootstrap-Guide)** for complete instructions including access modes (internal, public).
 
 ## Architecture
 
