@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  changeRepositoryPlan,
   client,
   createCheckoutSession,
   createGraph as createGraphAPI,
@@ -529,9 +530,40 @@ export function useRepositorySubscription() {
     []
   )
 
+  const changePlan = useCallback(
+    async (data: { repository_name: string; new_plan_name: string }) => {
+      setIsSubscribing(true)
+
+      try {
+        const response = await changeRepositoryPlan({
+          client,
+          path: { graph_id: data.repository_name },
+          body: { new_plan_name: data.new_plan_name },
+        })
+
+        if (response.error) {
+          const errorMsg =
+            typeof response.error === 'object' && 'detail' in response.error
+              ? String(response.error.detail)
+              : 'Failed to change plan'
+          throw new Error(errorMsg)
+        }
+
+        setIsSubscribing(false)
+        return response.data
+      } catch (error) {
+        console.error('Plan change failed:', error)
+        setIsSubscribing(false)
+        throw error
+      }
+    },
+    []
+  )
+
   return {
     isSubscribing,
     subscribe,
+    changePlan,
   }
 }
 
