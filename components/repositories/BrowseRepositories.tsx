@@ -362,12 +362,12 @@ export function BrowseRepositories({
                     {repoData.plans.map((plan, index) => {
                       const isCurrentPlan =
                         userSub?.plan_name.toLowerCase() ===
-                        plan.plan.toLowerCase()
+                        `${repoType}-${plan.plan}`.toLowerCase()
                       const isPopular = index === 1
                       const currentPlanData = userSub
                         ? repoData.plans.find(
                             (p) =>
-                              p.plan.toLowerCase() ===
+                              `${repoType}-${p.plan}`.toLowerCase() ===
                               userSub.plan_name.toLowerCase()
                           )
                         : null
