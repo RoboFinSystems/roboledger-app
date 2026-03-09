@@ -360,16 +360,20 @@ export function BrowseRepositories({
                     }`}
                   >
                     {repoData.plans.map((plan, index) => {
+                      const subPlan = userSub?.plan_name.toLowerCase() ?? ''
+                      const planKey = plan.plan.toLowerCase()
                       const isCurrentPlan =
-                        userSub?.plan_name.toLowerCase() ===
-                        plan.plan.toLowerCase()
+                        subPlan === planKey ||
+                        subPlan === `${repoType}-${planKey}`
                       const isPopular = index === 1
                       const currentPlanData = userSub
-                        ? repoData.plans.find(
-                            (p) =>
-                              p.plan.toLowerCase() ===
-                              userSub.plan_name.toLowerCase()
-                          )
+                        ? repoData.plans.find((p) => {
+                            const key = p.plan.toLowerCase()
+                            return (
+                              subPlan === key ||
+                              subPlan === `${repoType}-${key}`
+                            )
+                          })
                         : null
                       const isUpgrade =
                         userSub &&
