@@ -6,10 +6,12 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   HiBookOpen,
   HiCheckCircle,
+  HiCloudDownload,
   HiCreditCard,
   HiDatabase,
   HiGlobeAlt,
   HiLightningBolt,
+  HiSwitchHorizontal,
   HiTerminal,
 } from 'react-icons/hi'
 import { useGraphContext } from '../../contexts/graph-context'
@@ -28,6 +30,8 @@ export interface ActiveSubscriptionsProps {
   onOpenUsage?: (repositoryId: string) => void
   /** Called when user clicks "Getting Started" for a repository */
   onGettingStarted?: (repositoryId: string) => void
+  /** Called when user clicks "Backups" */
+  onBackups?: () => void
   /** Called when user clicks "Billing Details" */
   onBilling?: () => void
   /** Called when user clicks "Browse Repositories" */
@@ -40,6 +44,7 @@ export function ActiveSubscriptions({
   onOpenConsole,
   onOpenUsage,
   onGettingStarted,
+  onBackups,
   onBilling,
   onBrowse,
   emptyState,
@@ -192,7 +197,7 @@ export function ActiveSubscriptions({
                 <h4 className="font-heading mb-4 text-sm font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
                   Quick Actions
                 </h4>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {onGettingStarted && (
                     <Button
                       color="gray"
@@ -225,6 +230,28 @@ export function ActiveSubscriptions({
                     >
                       <HiLightningBolt className="mr-2 h-4 w-4" />
                       Credits & Usage
+                    </Button>
+                  )}
+
+                  {onBackups && (
+                    <Button
+                      color="gray"
+                      onClick={onBackups}
+                      className="justify-start"
+                    >
+                      <HiCloudDownload className="mr-2 h-4 w-4" />
+                      Backups
+                    </Button>
+                  )}
+
+                  {onBrowse && (
+                    <Button
+                      color="gray"
+                      onClick={onBrowse}
+                      className="justify-start"
+                    >
+                      <HiSwitchHorizontal className="mr-2 h-4 w-4" />
+                      Change Plan
                     </Button>
                   )}
 
