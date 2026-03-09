@@ -172,7 +172,12 @@ export function BrowseRepositories({
 
   const getUserSubscription = (repositoryName: string) => {
     return userSubscriptions.find(
-      (sub) => sub.resource_id === repositoryName && sub.status === 'active'
+      (sub) =>
+        sub.resource_id === repositoryName &&
+        (sub.status === 'active' ||
+          (sub.status === 'canceled' &&
+            sub.ends_at &&
+            new Date(sub.ends_at) > new Date()))
     )
   }
 
