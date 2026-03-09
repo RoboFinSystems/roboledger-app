@@ -170,15 +170,6 @@ export function BrowseRepositories({
     }
   }
 
-  const isSubscribed = (repositoryName: string, tier: string) => {
-    return userSubscriptions.some(
-      (sub) =>
-        sub.resource_id === repositoryName &&
-        sub.plan_name.toLowerCase() === tier.toLowerCase() &&
-        sub.status === 'active'
-    )
-  }
-
   const getUserSubscription = (repositoryName: string) => {
     return userSubscriptions.find(
       (sub) => sub.resource_id === repositoryName && sub.status === 'active'
@@ -372,8 +363,17 @@ export function BrowseRepositories({
                       const isCurrentPlan =
                         userSub?.plan_name.toLowerCase() ===
                         plan.plan.toLowerCase()
-                      const isSubscribedPlan = isSubscribed(repoType, plan.plan)
                       const isPopular = index === 1
+                      const currentPlanData = userSub
+                        ? repoData.plans.find(
+                            (p) =>
+                              p.plan.toLowerCase() ===
+                              userSub.plan_name.toLowerCase()
+                          )
+                        : null
+                      const isUpgrade =
+                        userSub &&
+                        plan.monthlyPrice > (currentPlanData?.monthlyPrice ?? 0)
 
                       return (
                         <div
@@ -442,55 +442,42 @@ export function BrowseRepositories({
                                 Current Plan
                               </Button>
                             ) : userSub ? (
-                              (() => {
-                                const currentPlanData = repoData.plans.find(
-                                  (p) =>
-                                    p.plan.toLowerCase() ===
-                                    userSub.plan_name.toLowerCase()
-                                )
-                                const isUpgrade =
-                                  plan.monthlyPrice >
-                                  (currentPlanData?.monthlyPrice ?? 0)
-                                return (
-                                  <Button
-                                    onClick={() =>
-                                      handleChangePlan(
-                                        repoType,
-                                        repoData.name,
-                                        userSub.plan_name,
-                                        userSub.plan_display_name,
-                                        currentPlanData?.monthlyPrice ?? 0,
-                                        plan.plan,
-                                        plan.name,
-                                        plan.monthlyPrice
-                                      )
-                                    }
-                                    className="w-full"
-                                    size="lg"
-                                    color={isUpgrade ? 'purple' : 'blue'}
-                                  >
-                                    {isUpgrade ? (
-                                      <>
-                                        <HiArrowUp className="mr-2 h-4 w-4" />
-                                        Upgrade to {plan.name}
-                                      </>
-                                    ) : (
-                                      <>
-                                        <HiArrowDown className="mr-2 h-4 w-4" />
-                                        Downgrade to {plan.name}
-                                      </>
-                                    )}
-                                  </Button>
-                                )
-                              })()
+                              <Button
+                                onClick={() =>
+                                  handleChangePlan(
+                                    repoType,
+                                    repoData.name,
+                                    userSub.plan_name,
+                                    userSub.plan_display_name,
+                                    currentPlanData?.monthlyPrice ?? 0,
+                                    plan.plan,
+                                    plan.name,
+                                    plan.monthlyPrice
+                                  )
+                                }
+                                className="w-full"
+                                size="lg"
+                                color={isUpgrade ? 'purple' : 'blue'}
+                              >
+                                {isUpgrade ? (
+                                  <>
+                                    <HiArrowUp className="mr-2 h-4 w-4" />
+                                    Upgrade to {plan.name}
+                                  </>
+                                ) : (
+                                  <>
+                                    <HiArrowDown className="mr-2 h-4 w-4" />
+                                    Downgrade to {plan.name}
+                                  </>
+                                )}
+                              </Button>
                             ) : (
                               <Button
                                 onClick={() =>
                                   handleSubscribe(repoType, plan.plan)
                                 }
                                 disabled={
-                                  subscribing === `${repoType}-${plan.plan}` ||
-                                  isSubscribedPlan
+                                  subscribing === `${repoType}-${plan.plan}`
                                 }
                                 className="w-full"
                                 size="lg"
@@ -498,9 +485,7 @@ export function BrowseRepositories({
                               >
                                 {subscribing === `${repoType}-${plan.plan}`
                                   ? 'Subscribing...'
-                                  : isSubscribedPlan
-                                    ? 'Subscribed'
-                                    : `Subscribe to ${plan.name}`}
+                                  : `Subscribe to ${plan.name}`}
                               </Button>
                             )}
                           </div>
