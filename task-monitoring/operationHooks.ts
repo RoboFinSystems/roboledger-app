@@ -519,12 +519,12 @@ export function useRepositorySubscription() {
           throw new Error(errorMsg)
         }
 
-        setIsSubscribing(false)
         return response.data
       } catch (error) {
         console.error('Repository subscription failed:', error)
-        setIsSubscribing(false)
         throw error
+      } finally {
+        setIsSubscribing(false)
       }
     },
     []
@@ -549,12 +549,12 @@ export function useRepositorySubscription() {
           throw new Error(errorMsg)
         }
 
-        setIsSubscribing(false)
         return response.data
       } catch (error) {
         console.error('Plan change failed:', error)
-        setIsSubscribing(false)
         throw error
+      } finally {
+        setIsSubscribing(false)
       }
     },
     []
