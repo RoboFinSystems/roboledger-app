@@ -1,9 +1,21 @@
 'use client'
 
 import * as SDK from '@robosystems/client'
-import { Badge, Button, Card, Spinner } from 'flowbite-react'
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Spinner,
+} from 'flowbite-react'
 import { useCallback, useEffect, useState } from 'react'
 import {
+  HiArrowDown,
+  HiArrowUp,
   HiCheckCircle,
   HiDatabase,
   HiGlobeAlt,
@@ -41,8 +53,6 @@ export interface BrowseRepositoriesProps {
   onSubscribed?: (repositoryType: string) => void
   /** Called when user wants to view their subscriptions */
   onViewSubscriptions?: () => void
-  /** Called when user wants to upgrade a plan */
-  onUpgrade?: (repositoryType: string, planName: string) => void
   /** Whether to show the header section */
   showHeader?: boolean
   /** Whether to show the "How it Works" info card */
@@ -52,7 +62,6 @@ export interface BrowseRepositoriesProps {
 export function BrowseRepositories({
   onSubscribed,
   onViewSubscriptions,
-  onUpgrade,
   showHeader = true,
   showInfoCard = true,
 }: BrowseRepositoriesProps) {
@@ -61,6 +70,18 @@ export function BrowseRepositories({
   >([])
   const [loading, setLoading] = useState(true)
   const [subscribing, setSubscribing] = useState<string | null>(null)
+  const [changingPlan, setChangingPlan] = useState(false)
+  const [planChangeModal, setPlanChangeModal] = useState<{
+    repoType: string
+    repoName: string
+    currentPlan: string
+    currentPlanName: string
+    currentPrice: number
+    newPlan: string
+    newPlanName: string
+    newPrice: number
+    isUpgrade: boolean
+  } | null>(null)
   const { showSuccess, showError, ToastContainer } = useToast()
   const { currentOrg } = useOrg()
   const { offerings, isLoading: offeringsLoading } = useServiceOfferings()
@@ -162,6 +183,56 @@ export function BrowseRepositories({
     return userSubscriptions.find(
       (sub) => sub.resource_id === repositoryName && sub.status === 'active'
     )
+  }
+
+  const handleChangePlan = (
+    repoType: string,
+    repoName: string,
+    currentPlan: string,
+    currentPlanName: string,
+    currentPrice: number,
+    newPlan: string,
+    newPlanName: string,
+    newPrice: number
+  ) => {
+    setPlanChangeModal({
+      repoType,
+      repoName,
+      currentPlan,
+      currentPlanName,
+      currentPrice,
+      newPlan,
+      newPlanName,
+      newPrice,
+      isUpgrade: newPrice > currentPrice,
+    })
+  }
+
+  const handleChangePlanConfirm = async () => {
+    if (!planChangeModal) return
+
+    try {
+      setChangingPlan(true)
+
+      await repositorySubscription.changePlan({
+        repository_name: planChangeModal.repoType,
+        new_plan_name: planChangeModal.newPlan,
+      })
+
+      showSuccess(
+        `Successfully ${planChangeModal.isUpgrade ? 'upgraded' : 'downgraded'} to ${planChangeModal.newPlanName}`
+      )
+
+      setPlanChangeModal(null)
+      await loadData()
+    } catch (error) {
+      console.error('Failed to change plan:', error)
+      showError(
+        error instanceof Error ? error.message : 'Failed to change plan'
+      )
+    } finally {
+      setChangingPlan(false)
+    }
   }
 
   if (loading || offeringsLoading) {
@@ -370,17 +441,48 @@ export function BrowseRepositories({
                                 <HiCheckCircle className="mr-2 h-4 w-4" />
                                 Current Plan
                               </Button>
-                            ) : userSub &&
-                              plan.plan.toLowerCase() !== 'basic' &&
-                              onUpgrade ? (
-                              <Button
-                                onClick={() => onUpgrade(repoType, plan.plan)}
-                                className="w-full"
-                                size="lg"
-                                color={isPopular ? 'purple' : 'blue'}
-                              >
-                                Upgrade to {plan.name}
-                              </Button>
+                            ) : userSub ? (
+                              (() => {
+                                const currentPlanData = repoData.plans.find(
+                                  (p) =>
+                                    p.plan.toLowerCase() ===
+                                    userSub.plan_name.toLowerCase()
+                                )
+                                const isUpgrade =
+                                  plan.monthlyPrice >
+                                  (currentPlanData?.monthlyPrice ?? 0)
+                                return (
+                                  <Button
+                                    onClick={() =>
+                                      handleChangePlan(
+                                        repoType,
+                                        repoData.name,
+                                        userSub.plan_name,
+                                        userSub.plan_display_name,
+                                        currentPlanData?.monthlyPrice ?? 0,
+                                        plan.plan,
+                                        plan.name,
+                                        plan.monthlyPrice
+                                      )
+                                    }
+                                    className="w-full"
+                                    size="lg"
+                                    color={isUpgrade ? 'purple' : 'blue'}
+                                  >
+                                    {isUpgrade ? (
+                                      <>
+                                        <HiArrowUp className="mr-2 h-4 w-4" />
+                                        Upgrade to {plan.name}
+                                      </>
+                                    ) : (
+                                      <>
+                                        <HiArrowDown className="mr-2 h-4 w-4" />
+                                        Downgrade to {plan.name}
+                                      </>
+                                    )}
+                                  </Button>
+                                )
+                              })()
                             ) : (
                               <Button
                                 onClick={() =>
@@ -426,6 +528,84 @@ export function BrowseRepositories({
           </div>
         </Card>
       )}
+
+      {/* Plan Change Confirmation Modal */}
+      <Modal
+        show={!!planChangeModal}
+        onClose={() => !changingPlan && setPlanChangeModal(null)}
+        size="md"
+      >
+        <ModalHeader>
+          {planChangeModal?.isUpgrade ? 'Upgrade' : 'Downgrade'} Plan
+        </ModalHeader>
+        <ModalBody>
+          {planChangeModal && (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div
+                  className={`rounded-full p-3 ${
+                    planChangeModal.isUpgrade
+                      ? 'bg-purple-100 dark:bg-purple-900/30'
+                      : 'bg-blue-100 dark:bg-blue-900/30'
+                  }`}
+                >
+                  {planChangeModal.isUpgrade ? (
+                    <HiArrowUp className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  ) : (
+                    <HiArrowDown className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 dark:text-white">
+                    {planChangeModal.isUpgrade ? 'Upgrade' : 'Downgrade'}{' '}
+                    {planChangeModal.repoName}?
+                  </h3>
+                  <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    <p>
+                      {planChangeModal.currentPlanName} ($
+                      {planChangeModal.currentPrice}/mo) &rarr;{' '}
+                      {planChangeModal.newPlanName} ($
+                      {planChangeModal.newPrice}/mo)
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <Alert
+                color={planChangeModal.isUpgrade ? 'info' : 'warning'}
+                icon={HiInformationCircle}
+              >
+                <p className="text-sm">
+                  {planChangeModal.isUpgrade
+                    ? 'Your new plan will take effect immediately. You will be charged a prorated amount for the remainder of this billing period.'
+                    : 'Your plan will be downgraded immediately. You will receive a prorated credit for the remainder of this billing period.'}
+                </p>
+              </Alert>
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <div className="flex w-full gap-3">
+            <Button
+              onClick={() => setPlanChangeModal(null)}
+              disabled={changingPlan}
+              color="gray"
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleChangePlanConfirm}
+              disabled={changingPlan}
+              color={planChangeModal?.isUpgrade ? 'purple' : 'blue'}
+              className="flex-1"
+            >
+              {changingPlan
+                ? 'Processing...'
+                : `Confirm ${planChangeModal?.isUpgrade ? 'Upgrade' : 'Downgrade'}`}
+            </Button>
+          </div>
+        </ModalFooter>
+      </Modal>
     </div>
   )
 }
