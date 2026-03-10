@@ -11,5 +11,8 @@ export { Spinner } from './Spinner'
 // Chat Components
 export * from './chat'
 
+// Support Components
+export * from './support'
+
 // Types
 export * from './types'

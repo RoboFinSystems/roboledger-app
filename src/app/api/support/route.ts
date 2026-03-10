@@ -1,5 +1,10 @@
 import { contactRateLimiter } from '@/lib/rate-limiter'
 import { snsService } from '@/lib/sns'
+import {
+  getClientIp,
+  isCaptchaRequired,
+  verifyTurnstileToken,
+} from '@/lib/turnstile-server'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
@@ -33,6 +38,28 @@ export async function POST(request: NextRequest) {
       if (!body[field]) {
         return NextResponse.json(
           { error: `Missing required field: ${field}`, code: 'MISSING_FIELD' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Verify CAPTCHA if required
+    if (isCaptchaRequired()) {
+      const captchaToken = body.captchaToken
+
+      if (!captchaToken) {
+        return NextResponse.json(
+          { error: 'CAPTCHA verification is required' },
+          { status: 400 }
+        )
+      }
+
+      const clientIp = getClientIp(request)
+      const verifyResult = await verifyTurnstileToken(captchaToken, clientIp)
+
+      if (!verifyResult.success) {
+        return NextResponse.json(
+          { error: 'CAPTCHA verification failed' },
           { status: 400 }
         )
       }

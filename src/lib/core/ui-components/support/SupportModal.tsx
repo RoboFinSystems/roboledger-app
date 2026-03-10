@@ -1,6 +1,5 @@
 'use client'
 
-import { useUser } from '@/lib/core'
 import {
   Button,
   Label,
@@ -10,7 +9,16 @@ import {
   Textarea,
   TextInput,
 } from 'flowbite-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import {
+  TurnstileWidget,
+  type TurnstileWidgetRef,
+} from '../../auth-components/TurnstileWidget'
+import { useUser } from '../../hooks'
+import {
+  isTurnstileEnabled,
+  isTurnstileValid,
+} from '../../utils/turnstile-config'
 
 export interface SupportMetadata {
   graphId?: string | null
@@ -39,16 +47,28 @@ export default function SupportModal({
   const [submitStatus, setSubmitStatus] = useState<
     'idle' | 'success' | 'error'
   >('idle')
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const turnstileRef = useRef<TurnstileWidgetRef>(null)
 
   const handleClose = () => {
     setMessage('')
     setSubject('')
     setSubmitStatus('idle')
+    setCaptchaToken(null)
+    if (turnstileRef.current) {
+      turnstileRef.current.reset()
+    }
     onClose()
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!isTurnstileValid(captchaToken)) {
+      setSubmitStatus('error')
+      return
+    }
+
     setIsSubmitting(true)
     setSubmitStatus('idle')
 
@@ -62,6 +82,7 @@ export default function SupportModal({
           subject,
           message,
           metadata: metadata || {},
+          captchaToken,
         }),
       })
 
@@ -70,9 +91,17 @@ export default function SupportModal({
         setTimeout(handleClose, 2000)
       } else {
         setSubmitStatus('error')
+        if (turnstileRef.current) {
+          turnstileRef.current.reset()
+          setCaptchaToken(null)
+        }
       }
     } catch {
       setSubmitStatus('error')
+      if (turnstileRef.current) {
+        turnstileRef.current.reset()
+        setCaptchaToken(null)
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -134,9 +163,26 @@ export default function SupportModal({
               />
             </div>
 
+            {isTurnstileEnabled() &&
+              process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+                <div className="flex justify-center">
+                  <TurnstileWidget
+                    ref={turnstileRef}
+                    siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                    onVerify={(token) => setCaptchaToken(token)}
+                    onError={() => setCaptchaToken(null)}
+                    onExpire={() => setCaptchaToken(null)}
+                    theme="dark"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              )}
+
             {submitStatus === 'error' && (
               <p className="text-sm text-red-600 dark:text-red-500">
-                Something went wrong. Please try again later.
+                {!isTurnstileValid(captchaToken)
+                  ? 'Please complete the security verification.'
+                  : 'Something went wrong. Please try again later.'}
               </p>
             )}
 
@@ -149,7 +195,10 @@ export default function SupportModal({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting || !isTurnstileValid(captchaToken)}
+              >
                 {isSubmitting ? 'Sending...' : 'Send Message'}
               </Button>
             </div>
