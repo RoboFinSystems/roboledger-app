@@ -190,11 +190,17 @@ export {
   SettingsPageHeader,
   Spinner,
   StatusAlert,
+  SupportModal,
   ThemeToggle,
 } from './ui-components'
 
 // Export commonly used types
-export type { AgentType, Message, SidebarItemData } from './ui-components'
+export type {
+  AgentType,
+  Message,
+  SidebarItemData,
+  SupportMetadata,
+} from './ui-components'
 
 // Export SDK with namespace to avoid conflicts
 export * as SDK from '@robosystems/client'
