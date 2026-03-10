@@ -184,9 +184,6 @@ export function ActiveSubscriptions({
                           subscription.plan_name.slice(1)}{' '}
                         Plan
                       </Badge>
-                      <span className="text-sm text-gray-500">
-                        ID: {subscription.id}
-                      </span>
                     </div>
                   </div>
                 </div>

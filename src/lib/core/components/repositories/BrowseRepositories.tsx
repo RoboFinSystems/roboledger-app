@@ -172,7 +172,12 @@ export function BrowseRepositories({
 
   const getUserSubscription = (repositoryName: string) => {
     return userSubscriptions.find(
-      (sub) => sub.resource_id === repositoryName && sub.status === 'active'
+      (sub) =>
+        sub.resource_id === repositoryName &&
+        (sub.status === 'active' ||
+          (sub.status === 'canceled' &&
+            sub.ends_at &&
+            new Date(sub.ends_at) > new Date()))
     )
   }
 
@@ -346,7 +351,9 @@ export function BrowseRepositories({
                     </div>
                     {userSub && (
                       <Badge color="success" icon={HiCheckCircle} size="lg">
-                        Active - {userSub.plan_display_name}
+                        Active -{' '}
+                        {userSub.plan_name.charAt(0).toUpperCase() +
+                          userSub.plan_name.slice(1)}
                       </Badge>
                     )}
                   </div>
