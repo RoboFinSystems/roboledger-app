@@ -1,13 +1,13 @@
 'use client'
 
 import { EntitySelector } from '@/components/EntitySelector'
-import SupportModal from '@/components/app/SupportModal'
 import { ErrorBoundary } from '@/components/error/ErrorBoundary'
 import {
   CoreNavbar,
   CoreSidebar,
   CURRENT_APP,
   GraphFilters,
+  SupportModal,
   useGraphContext,
   useOrg,
   useToast,
