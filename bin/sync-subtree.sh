@@ -106,7 +106,7 @@ case "$COMMAND" in
             exit 1
         fi
 
-        git subtree pull --prefix="$COMMON_PREFIX" "$COMMON_REPO" main --squash
+        git subtree pull --prefix="$COMMON_PREFIX" "$COMMON_REPO" main --squash --rejoin
 
         echo -e "${GREEN}✅ Latest changes pulled successfully${NC}"
         echo "Run your tests to ensure compatibility"
@@ -155,7 +155,7 @@ case "$COMMAND" in
 
         if [[ "$COMMITTED_CHANGES" == true ]]; then
             echo -e "${BLUE}🚀 Pushing changes to subtree repository...${NC}"
-            git subtree push --prefix="$COMMON_PREFIX" "$COMMON_REPO" main
+            git subtree push --prefix="$COMMON_PREFIX" "$COMMON_REPO" main --rejoin
             echo -e "${GREEN}✅ Changes pushed successfully${NC}"
         else
             echo -e "${GREEN}✅ No new changes to push${NC}"
