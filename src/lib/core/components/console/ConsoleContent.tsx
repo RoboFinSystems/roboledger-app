@@ -24,6 +24,8 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
     []
   )
   const [commandInput, setCommandInput] = useState('')
+  const [commandHistory, setCommandHistory] = useState<string[]>([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
   const terminalEndRef = useRef<HTMLDivElement>(null)
   const terminalScrollRef = useRef<HTMLDivElement>(null)
   const [currentQueryStartTime, setCurrentQueryStartTime] = useState<
@@ -226,7 +228,12 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
 
     if (streamingQuery.status === 'completed') {
       const duration = Date.now() - currentQueryStartTime
-      const resultText = `Query completed in ${duration}ms\nRows returned: ${streamingQuery.results.length}\nCredits used: ${streamingQuery.creditsUsed?.toFixed(1) || '0'}${streamingQuery.cached ? ' (Cached - Free)' : ''}`
+      let resultText = `Query completed in ${duration}ms\nRows returned: ${streamingQuery.results.length}`
+      if (streamingQuery.cached) {
+        resultText += `\nCached - Free`
+      } else if (streamingQuery.creditsUsed && streamingQuery.creditsUsed > 0) {
+        resultText += `\nCredits used: ${streamingQuery.creditsUsed.toFixed(1)}`
+      }
 
       if (streamingQuery.results.length > 0) {
         addResultMessage(resultText, streamingQuery.results)
@@ -337,28 +344,50 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
       const creditsRemaining = metadata.credits_remaining as number | undefined
       const resultCount = metadata.result_count as number | undefined
 
-      let outputMessage = `${result.content}\n\n`
+      // Try to extract JSON data from the response content for table display
+      let tableData: any[] | undefined
+      let displayContent = result.content
 
-      outputMessage += `═══════════════════════════════════════════════════════════════\n`
-      outputMessage += `Agent: ${result.agent_used}\n`
-      outputMessage += `Mode: ${result.mode_used}\n`
-      outputMessage += `Execution time: ${duration}ms\n`
-
-      if (result.confidence_score !== undefined) {
-        outputMessage += `Confidence: ${(result.confidence_score * 100).toFixed(1)}%\n`
+      // Look for JSON array in code blocks or raw in the content
+      const jsonBlockMatch = result.content.match(
+        /```(?:json)?\s*\n(\[[\s\S]*?\])\s*\n```/
+      )
+      if (jsonBlockMatch) {
+        try {
+          const parsed = JSON.parse(jsonBlockMatch[1])
+          if (
+            Array.isArray(parsed) &&
+            parsed.length > 0 &&
+            typeof parsed[0] === 'object'
+          ) {
+            tableData = parsed
+            // Remove the JSON block from the display text
+            displayContent = result.content
+              .replace(jsonBlockMatch[0], '')
+              .trim()
+          }
+        } catch {
+          // Not valid JSON, keep as text
+        }
       }
 
-      if (creditsUsed !== undefined) {
-        outputMessage += `Credits used: ${creditsUsed.toFixed(6)}\n`
-      }
-      if (creditsRemaining !== undefined) {
-        outputMessage += `Credits remaining: ${creditsRemaining.toFixed(2)}\n`
-      }
+      // Extract just the cypher query from the agent response content
+      const cypherMatch = displayContent.match(/```cypher\s*\n([\s\S]*?)```/)
+      const cypherQuery = cypherMatch ? cypherMatch[1].trim() : null
+
+      // Build compact output matching the regular query style
+      let outputMessage = `Query completed in ${duration}ms`
       if (resultCount !== undefined) {
-        outputMessage += `Results: ${resultCount} rows\n`
+        outputMessage += `\nRows returned: ${resultCount}`
+      }
+      if (creditsUsed != null && Number(creditsUsed) > 0) {
+        outputMessage += `\nCredits used: ${Number(creditsUsed).toFixed(1)}`
+      }
+      if (cypherQuery) {
+        outputMessage += `\nGenerated Cypher:\n  ${cypherQuery.replace(/\n/g, '\n  ')}`
       }
 
-      addSystemMessage(outputMessage, true)
+      addResultMessage(outputMessage, tableData)
     } catch (error: any) {
       setAgentProgress({ isRunning: false, message: '' })
 
@@ -445,6 +474,8 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
     if (!command.trim()) return
 
     addUserMessage(command)
+    setCommandHistory((prev) => [...prev, command])
+    setHistoryIndex(-1)
     setCommandInput('')
 
     // Handle /query command
@@ -651,6 +682,28 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   handleCommand(commandInput)
+                } else if (e.key === 'ArrowUp') {
+                  e.preventDefault()
+                  if (commandHistory.length > 0) {
+                    const newIndex =
+                      historyIndex === -1
+                        ? commandHistory.length - 1
+                        : Math.max(0, historyIndex - 1)
+                    setHistoryIndex(newIndex)
+                    setCommandInput(commandHistory[newIndex])
+                  }
+                } else if (e.key === 'ArrowDown') {
+                  e.preventDefault()
+                  if (historyIndex !== -1) {
+                    const newIndex = historyIndex + 1
+                    if (newIndex >= commandHistory.length) {
+                      setHistoryIndex(-1)
+                      setCommandInput('')
+                    } else {
+                      setHistoryIndex(newIndex)
+                      setCommandInput(commandHistory[newIndex])
+                    }
+                  }
                 }
               }}
               placeholder="Type a question, /query <cypher>, or /help..."
