@@ -106,7 +106,7 @@ case "$COMMAND" in
             exit 1
         fi
 
-        git subtree pull --prefix="$COMMON_PREFIX" "$COMMON_REPO" main --squash --rejoin
+        git subtree pull --prefix="$COMMON_PREFIX" "$COMMON_REPO" main --squash
 
         echo -e "${GREEN}✅ Latest changes pulled successfully${NC}"
         echo "Run your tests to ensure compatibility"
