@@ -142,10 +142,11 @@ export function createGraphProvider<T extends GraphState = GraphState>(
       async (graphId: string) => {
         try {
           // Use functional setState to access current graphs and determine if repository
-          let isRepository = false
+          let isUserGraph = false
           setBaseState((prev) => {
             const graph = prev.graphs.find((g) => g.graphId === graphId)
-            isRepository = graph?.isRepository ?? false
+            // Only treat as a user graph if found and NOT a repository
+            isUserGraph = graph ? !graph.isRepository : false
             return {
               ...prev,
               currentGraphId: graphId,
@@ -154,7 +155,8 @@ export function createGraphProvider<T extends GraphState = GraphState>(
 
           // Only call selectGraph API for user graphs, not repositories
           // Repositories can be accessed but not "selected" in the backend
-          if (!isRepository) {
+          // If graph is not found in local state, skip the API call (likely a repository)
+          if (isUserGraph) {
             await SDK.selectGraph({
               path: { graph_id: graphId },
             })
