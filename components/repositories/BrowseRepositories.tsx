@@ -13,6 +13,7 @@ import {
   Spinner,
 } from 'flowbite-react'
 import { useCallback, useEffect, useState } from 'react'
+import { GoRepo } from 'react-icons/go'
 import {
   HiArrowDown,
   HiArrowUp,
@@ -338,7 +339,7 @@ export function BrowseRepositories({
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4">
                       <div className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 p-3">
-                        <HiDatabase className="h-8 w-8 text-white" />
+                        <GoRepo className="h-8 w-8 text-white" />
                       </div>
                       <div>
                         <h2 className="font-heading text-2xl font-bold text-zinc-900 dark:text-zinc-100">

@@ -3,12 +3,12 @@
 import * as SDK from '@robosystems/client'
 import { Badge, Button, Card, Spinner } from 'flowbite-react'
 import { useCallback, useEffect, useState } from 'react'
+import { GoRepo } from 'react-icons/go'
 import {
   HiBookOpen,
   HiCheckCircle,
   HiCloudDownload,
   HiCreditCard,
-  HiDatabase,
   HiGlobeAlt,
   HiLightningBolt,
   HiSwitchHorizontal,
@@ -30,8 +30,8 @@ export interface ActiveSubscriptionsProps {
   onOpenUsage?: (repositoryId: string) => void
   /** Called when user clicks "Getting Started" for a repository */
   onGettingStarted?: (repositoryId: string) => void
-  /** Called when user clicks "Backups" */
-  onBackups?: () => void
+  /** Called when user clicks "Backups" for a repository */
+  onBackups?: (repositoryId: string) => void
   /** Called when user clicks "Billing Details" */
   onBilling?: () => void
   /** Called when user clicks "Browse Repositories" */
@@ -120,6 +120,11 @@ export function ActiveSubscriptions({
     onOpenUsage?.(repositoryId)
   }
 
+  const handleOpenBackups = async (repositoryId: string) => {
+    await setCurrentGraph(repositoryId)
+    onBackups?.(repositoryId)
+  }
+
   return (
     <div className="space-y-6">
       <ToastContainer />
@@ -164,7 +169,7 @@ export function ActiveSubscriptions({
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
                   <div className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 p-3">
-                    <HiDatabase className="h-8 w-8 text-white" />
+                    <GoRepo className="h-8 w-8 text-white" />
                   </div>
                   <div>
                     <h2 className="font-heading text-2xl font-bold text-zinc-900 dark:text-zinc-100">
@@ -175,10 +180,7 @@ export function ActiveSubscriptions({
                       {repoOffering?.description ||
                         'Shared repository subscription'}
                     </p>
-                    <div className="mt-2 flex items-center gap-3">
-                      <Badge color="success" icon={HiCheckCircle}>
-                        Active
-                      </Badge>
+                    <div className="mt-2 flex">
                       <Badge color="purple">
                         {subscription.plan_name.charAt(0).toUpperCase() +
                           subscription.plan_name.slice(1)}{' '}
@@ -187,6 +189,9 @@ export function ActiveSubscriptions({
                     </div>
                   </div>
                 </div>
+                <Badge color="success" icon={HiCheckCircle}>
+                  Active
+                </Badge>
               </div>
 
               {/* Management Actions */}
@@ -233,7 +238,9 @@ export function ActiveSubscriptions({
                   {onBackups && (
                     <Button
                       color="gray"
-                      onClick={onBackups}
+                      onClick={() =>
+                        handleOpenBackups(subscription.resource_id)
+                      }
                       className="justify-start"
                     >
                       <HiCloudDownload className="mr-2 h-4 w-4" />
