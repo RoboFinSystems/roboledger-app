@@ -5,7 +5,7 @@ import { useAuth } from '../auth-components'
 import type { User } from '../types'
 
 export function useUser() {
-  const { user: authUser, isLoading, isAuthenticated } = useAuth()
+  const { user: authUser, isLoading, isAuthenticated, refreshUser } = useAuth()
 
   // Transform AuthUser to User format with graceful defaults for malformed data
   const user = useMemo(() => {
@@ -41,8 +41,9 @@ export function useUser() {
       id: safeId,
       name: safeName,
       email: safeEmail,
+      emailVerified: authUser.emailVerified,
     } satisfies User
   }, [authUser])
 
-  return { user, isLoading, isAuthenticated }
+  return { user, isLoading, isAuthenticated, refreshUser }
 }

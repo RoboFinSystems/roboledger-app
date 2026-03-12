@@ -14,6 +14,7 @@ export interface GeneralInformationCardProps {
   user: AuthUser
   theme?: any
   onUpdate?: (data: UserUpdateData) => Promise<void>
+  onRefresh?: () => Promise<void>
   className?: string
 }
 
@@ -21,6 +22,7 @@ export const GeneralInformationCard: React.FC<GeneralInformationCardProps> = ({
   user,
   theme,
   onUpdate = undefined,
+  onRefresh = undefined,
   className = '',
 }) => {
   const [isLoading, setIsLoading] = useState(false)
@@ -55,6 +57,9 @@ export const GeneralInformationCard: React.FC<GeneralInformationCardProps> = ({
       }
 
       setSuccess(true)
+      if (onRefresh) {
+        await onRefresh()
+      }
       setTimeout(() => {
         setIsLoading(false)
         setSuccess(false)

@@ -185,6 +185,32 @@ export function AuthProvider({
     [authClient]
   )
 
+  const refreshUser = useCallback(async (): Promise<AuthUser | null> => {
+    try {
+      authClient.clearAuthCache()
+      const freshUser = await authClient.getCurrentUser()
+      setUser(freshUser)
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem(
+            'auth_user_cache',
+            JSON.stringify({
+              ...freshUser,
+              cached_at: Date.now(),
+              cache_version: CACHE_VERSION,
+            })
+          )
+        } catch (error) {
+          logStorageError('write', error)
+        }
+      }
+      return freshUser
+    } catch (error) {
+      debugLog('Failed to refresh user', error)
+      return null
+    }
+  }, [authClient])
+
   const refreshSession = useCallback(
     async (force = false) => {
       const now = Date.now()
@@ -213,6 +239,21 @@ export function AuthProvider({
         const response = await authClient.refreshSession()
         if (response.success) {
           setUser(response.user)
+          // Cache the refreshed user data
+          if (typeof window !== 'undefined') {
+            try {
+              sessionStorage.setItem(
+                'auth_user_cache',
+                JSON.stringify({
+                  ...response.user,
+                  cached_at: Date.now(),
+                  cache_version: CACHE_VERSION,
+                })
+              )
+            } catch (error) {
+              logStorageError('write', error)
+            }
+          }
           debugLog('Session refresh successful')
         } else {
           throw new Error('Session refresh failed')
@@ -618,6 +659,7 @@ export function AuthProvider({
     login,
     register,
     logout,
+    refreshUser,
     refreshSession,
     forgotPassword,
     resetPassword,
