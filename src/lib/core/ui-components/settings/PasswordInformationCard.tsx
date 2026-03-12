@@ -56,6 +56,7 @@ export const PasswordInformationCard: React.FC<
     }
 
     setIsLoading(true)
+    const form = event.currentTarget
 
     try {
       if (onUpdate) {
@@ -76,7 +77,7 @@ export const PasswordInformationCard: React.FC<
         setSuccess(true)
       }
       // Clear form fields
-      event.currentTarget.reset()
+      form.reset()
       setTimeout(() => {
         setIsLoading(false)
         setSuccess(false)
