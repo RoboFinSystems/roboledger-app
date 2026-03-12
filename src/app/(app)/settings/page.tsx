@@ -4,7 +4,7 @@ import { Spinner } from '@/lib/core/ui-components'
 import UserSettingsPageContent from './content'
 
 export default function UsersListPage() {
-  const { user, isLoading } = useUser()
+  const { user, isLoading, refreshUser } = useUser()
 
   if (isLoading || !user) {
     return <Spinner size="xl" fullScreen />
@@ -15,6 +15,9 @@ export default function UsersListPage() {
       user={{
         ...user,
         name: user.name || 'Unknown User',
+      }}
+      onRefresh={async () => {
+        await refreshUser()
       }}
     />
   )
