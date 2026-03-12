@@ -62,13 +62,22 @@ export const PasswordInformationCard: React.FC<
       if (onUpdate) {
         await onUpdate(updateData)
       } else {
-        await SDK.updateUserPassword({
+        const response = await SDK.updateUserPassword({
           body: {
             current_password: updateData.currentPassword,
             new_password: updateData.newPassword,
             confirm_password: updateData.confirmPassword,
           },
         })
+        if (response.error) {
+          const detail =
+            (response.error as any)?.detail?.detail ||
+            (response.error as any)?.detail ||
+            'Failed to update password.'
+          throw new Error(
+            typeof detail === 'string' ? detail : 'Failed to update password.'
+          )
+        }
       }
 
       if (onSuccess) {
@@ -83,7 +92,10 @@ export const PasswordInformationCard: React.FC<
         setSuccess(false)
       }, 2000)
     } catch (err) {
-      const msg = 'Failed to update password. Please try again.'
+      const msg =
+        err instanceof Error && err.message
+          ? err.message
+          : 'Failed to update password. Please try again.'
       if (onError) {
         onError(msg)
       } else {
