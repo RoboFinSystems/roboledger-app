@@ -2,6 +2,7 @@ export interface AuthUser {
   id: string
   email: string
   name?: string
+  emailVerified?: boolean
   createdAt: string
   updatedAt: string
 }
@@ -74,6 +75,7 @@ export interface AuthContextType {
     name?: string
   ) => Promise<AuthUser>
   logout: () => Promise<void>
+  refreshUser: () => Promise<AuthUser | null>
   refreshSession: (force?: boolean) => Promise<void>
   forgotPassword: (
     email: string

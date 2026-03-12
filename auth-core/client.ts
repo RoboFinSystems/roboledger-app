@@ -833,6 +833,17 @@ export class RoboSystemsAuthClient {
   /**
    * Validate and safely cast SDK response data
    */
+  private normalizeUser(raw: any): AuthUser {
+    return {
+      id: raw.id,
+      email: raw.email,
+      name: raw.name,
+      emailVerified: raw.email_verified ?? raw.emailVerified,
+      createdAt: raw.createdAt ?? raw.created_at ?? '',
+      updatedAt: raw.updatedAt ?? raw.updated_at ?? '',
+    }
+  }
+
   private validateSDKAuthResponse(data: unknown): SDKAuthResponse {
     if (!data || typeof data !== 'object') {
       throw new Error('Invalid SDK response: expected object')
@@ -851,6 +862,7 @@ export class RoboSystemsAuthClient {
       throw new Error('Invalid SDK response: user missing required email')
     }
 
+    response.user = this.normalizeUser(response.user)
     return response as SDKAuthResponse
   }
 
@@ -865,13 +877,14 @@ export class RoboSystemsAuthClient {
 
     // Check if the response is the user object directly (not nested under 'user' property)
     if (response.id && response.email) {
-      return { user: response } as SDKCurrentUserResponse
+      return { user: this.normalizeUser(response) } as SDKCurrentUserResponse
     }
 
     // Check if it's nested under 'user' property
     if (!response.user || typeof response.user !== 'object') {
       throw new Error('Invalid SDK response: missing or invalid user')
     }
+    response.user = this.normalizeUser(response.user)
     return response as SDKCurrentUserResponse
   }
 }

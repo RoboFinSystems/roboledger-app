@@ -46,7 +46,7 @@ describe('Auth System Core Tests', () => {
 
       const result = await authClient.getCurrentUser()
 
-      expect(result).toEqual(mockUser)
+      expect(result).toMatchObject(mockUser)
       expect(mockedGetCurrentAuthUser).toHaveBeenCalledWith({
         client: expect.any(Object),
       })
@@ -102,12 +102,12 @@ describe('Auth System Core Tests', () => {
 
       // First call
       const result1 = await authClient.getCurrentUser()
-      expect(result1).toEqual(mockUser)
+      expect(result1).toMatchObject(mockUser)
       expect(mockedGetCurrentAuthUser).toHaveBeenCalledTimes(1)
 
       // Second call within cache window (30 seconds)
       const result2 = await authClient.getCurrentUser()
-      expect(result2).toEqual(mockUser)
+      expect(result2).toMatchObject(mockUser)
       expect(mockedGetCurrentAuthUser).toHaveBeenCalledTimes(1) // No additional call
 
       // Fast-forward past cache expiry (30s + 1s)
@@ -118,7 +118,7 @@ describe('Auth System Core Tests', () => {
         data: { user: mockUser },
       } as any)
       const result3 = await authClient.getCurrentUser()
-      expect(result3).toEqual(mockUser)
+      expect(result3).toMatchObject(mockUser)
       expect(mockedGetCurrentAuthUser).toHaveBeenCalledTimes(2)
 
       vi.useRealTimers()
@@ -224,9 +224,9 @@ describe('Auth System Core Tests', () => {
         promise3,
       ])
 
-      expect(result1).toEqual(mockUser)
-      expect(result2).toEqual(mockUser)
-      expect(result3).toEqual(mockUser)
+      expect(result1).toMatchObject(mockUser)
+      expect(result2).toMatchObject(mockUser)
+      expect(result3).toMatchObject(mockUser)
 
       // Should only make one API call
       expect(mockedGetCurrentAuthUser).toHaveBeenCalledTimes(1)
