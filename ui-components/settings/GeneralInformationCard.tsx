@@ -50,12 +50,21 @@ export const GeneralInformationCard: React.FC<GeneralInformationCardProps> = ({
       if (onUpdate) {
         await onUpdate(updateData)
       } else {
-        await SDK.updateUser({
+        const response = await SDK.updateUser({
           body: {
             name: updateData.username,
             email: updateData.email,
           },
         })
+        if (response.error) {
+          const detail =
+            (response.error as any)?.detail?.detail ||
+            (response.error as any)?.detail ||
+            'Failed to update profile.'
+          throw new Error(
+            typeof detail === 'string' ? detail : 'Failed to update profile.'
+          )
+        }
       }
 
       if (onSuccess) {
@@ -71,7 +80,10 @@ export const GeneralInformationCard: React.FC<GeneralInformationCardProps> = ({
         setSuccess(false)
       }, 2000)
     } catch (err) {
-      const msg = 'Failed to update profile. Please try again.'
+      const msg =
+        err instanceof Error && err.message
+          ? err.message
+          : 'Failed to update profile. Please try again.'
       if (onError) {
         onError(msg)
       } else {
