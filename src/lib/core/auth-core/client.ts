@@ -620,6 +620,15 @@ export class RoboSystemsAuthClient {
         },
       })
 
+      // Check for error responses (4xx/5xx)
+      if (response.error) {
+        const errorData = response.error as any
+        return {
+          success: false,
+          message: errorData?.detail || 'Failed to reset password',
+        }
+      }
+
       // Handle the auth response if login is automatic after reset
       const data = response.data as any
       if (
@@ -686,6 +695,15 @@ export class RoboSystemsAuthClient {
         client: this.client,
         body: { token } as any,
       })
+
+      // Check for error responses (4xx/5xx)
+      if (response.error) {
+        const errorData = response.error as any
+        return {
+          success: false,
+          message: errorData?.detail || 'Failed to verify email',
+        }
+      }
 
       const data = response.data as any
 
