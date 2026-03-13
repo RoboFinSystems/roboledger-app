@@ -111,17 +111,29 @@ export function ActiveSubscriptions({
   }
 
   const handleOpenConsole = async (repositoryId: string) => {
-    await setCurrentGraph(repositoryId)
+    try {
+      await setCurrentGraph(repositoryId)
+    } catch (error) {
+      console.warn('Failed to set graph, navigating anyway:', error)
+    }
     onOpenConsole?.(repositoryId)
   }
 
   const handleOpenUsage = async (repositoryId: string) => {
-    await setCurrentGraph(repositoryId)
+    try {
+      await setCurrentGraph(repositoryId)
+    } catch (error) {
+      console.warn('Failed to set graph, navigating anyway:', error)
+    }
     onOpenUsage?.(repositoryId)
   }
 
   const handleOpenBackups = async (repositoryId: string) => {
-    await setCurrentGraph(repositoryId)
+    try {
+      await setCurrentGraph(repositoryId)
+    } catch (error) {
+      console.warn('Failed to set graph, navigating anyway:', error)
+    }
     onBackups?.(repositoryId)
   }
 

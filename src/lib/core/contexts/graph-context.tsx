@@ -161,13 +161,17 @@ export function createGraphProvider<T extends GraphState = GraphState>(
               path: { graph_id: graphId },
             })
           }
-
-          // Persist to cookies via server action (works for both graphs and repositories)
-          await persistGraphSelection(graphId)
         } catch (error) {
-          console.error('Failed to set current graph:', error)
-          throw error
+          console.error('Failed to select graph via API:', error)
+          // Don't throw - state is already updated, navigation should continue
         }
+
+        // Persist to cookies via server action - fire and forget
+        // This can fail in production (e.g. server action issues behind CDN)
+        // but shouldn't block graph selection since React state is already set
+        persistGraphSelection(graphId).catch((error) => {
+          console.warn('Failed to persist graph selection to cookie:', error)
+        })
       },
       [persistGraphSelection]
     )
