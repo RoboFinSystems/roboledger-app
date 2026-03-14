@@ -51,30 +51,26 @@ export function SignUpForm({
   } | null>(null)
   const [checkingPassword, setCheckingPassword] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
+  const authClientRef = useRef(new RoboSystemsAuthClient(apiUrl))
 
-  const authClient = new RoboSystemsAuthClient(apiUrl)
-
-  const checkPassword = useCallback(
-    async (password: string, email: string) => {
-      if (password.length < 4) {
-        setPasswordStrength(null)
-        return
-      }
-      setCheckingPassword(true)
-      try {
-        const result = await authClient.checkPasswordStrength(
-          password,
-          email || undefined
-        )
-        setPasswordStrength(result)
-      } catch {
-        setPasswordStrength(null)
-      } finally {
-        setCheckingPassword(false)
-      }
-    },
-    [apiUrl]
-  )
+  const checkPassword = useCallback(async (password: string, email: string) => {
+    if (password.length < 4) {
+      setPasswordStrength(null)
+      return
+    }
+    setCheckingPassword(true)
+    try {
+      const result = await authClientRef.current.checkPasswordStrength(
+        password,
+        email || undefined
+      )
+      setPasswordStrength(result)
+    } catch {
+      setPasswordStrength(null)
+    } finally {
+      setCheckingPassword(false)
+    }
+  }, [])
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -145,7 +141,7 @@ export function SignUpForm({
     }
 
     try {
-      const result = await authClient.register(
+      const result = await authClientRef.current.register(
         formData.email,
         formData.password,
         formData.name,
