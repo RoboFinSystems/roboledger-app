@@ -123,6 +123,11 @@ export function SignUpForm({
     }
 
     // Validate password strength
+    if (checkingPassword) {
+      setError('Checking password strength, please wait...')
+      setLoading(false)
+      return
+    }
     if (passwordStrength && !passwordStrength.is_valid) {
       setError(
         passwordStrength.errors.length > 0
@@ -275,8 +280,29 @@ export function SignUpForm({
                 placeholder="Password"
                 disabled={loading}
               />
+            </div>
+            {showConfirmPassword && (
+              <div>
+                <label htmlFor="confirmPassword" className="sr-only">
+                  Confirm password
+                </label>
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  className="relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset"
+                  placeholder="Confirm password"
+                  disabled={loading}
+                />
+              </div>
+            )}
+            <div className="min-h-[2.75rem]">
               {passwordStrength && (
-                <div className="mt-2 space-y-1.5">
+                <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
                     <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-700">
                       <div
@@ -309,42 +335,19 @@ export function SignUpForm({
                     </span>
                   </div>
                   {passwordStrength.errors.length > 0 && (
-                    <ul className="space-y-0.5 text-xs text-red-400">
-                      {passwordStrength.errors.map((err, i) => (
-                        <li key={i}>{err}</li>
-                      ))}
-                    </ul>
+                    <p className="text-xs text-red-400">
+                      {passwordStrength.errors[0]}
+                    </p>
                   )}
                   {passwordStrength.errors.length === 0 &&
                     passwordStrength.suggestions.length > 0 && (
-                      <ul className="space-y-0.5 text-xs text-gray-400">
-                        {passwordStrength.suggestions.map((s, i) => (
-                          <li key={i}>{s}</li>
-                        ))}
-                      </ul>
+                      <p className="text-xs text-gray-400">
+                        {passwordStrength.suggestions[0]}
+                      </p>
                     )}
                 </div>
               )}
             </div>
-            {showConfirmPassword && (
-              <div>
-                <label htmlFor="confirmPassword" className="sr-only">
-                  Confirm password
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  className="relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset"
-                  placeholder="Confirm password"
-                  disabled={loading}
-                />
-              </div>
-            )}
           </div>
 
           {/* CAPTCHA Widget - only show if site key is provided (production) */}
@@ -365,7 +368,11 @@ export function SignUpForm({
           <div>
             <button
               type="submit"
-              disabled={loading || (turnstileSiteKey && !captchaToken)}
+              disabled={
+                loading ||
+                checkingPassword ||
+                (turnstileSiteKey && !captchaToken)
+              }
               className="group relative flex w-full justify-center rounded-md bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white focus-visible:outline-solid disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading && <Spinner size="sm" className="mr-2 border-black" />}
