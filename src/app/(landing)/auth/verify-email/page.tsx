@@ -3,7 +3,7 @@
 import { useAuth } from '@/lib/core/auth-components/AuthProvider'
 import { Spinner } from 'flowbite-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { HiCheckCircle, HiExclamationCircle } from 'react-icons/hi'
 
 function VerifyEmailContent() {
@@ -14,8 +14,12 @@ function VerifyEmailContent() {
     'loading'
   )
   const [message, setMessage] = useState<string>('')
+  const verifyAttempted = useRef(false)
 
   useEffect(() => {
+    if (verifyAttempted.current) return
+    verifyAttempted.current = true
+
     let timeoutId: NodeJS.Timeout | null = null
 
     const verifyEmailToken = async () => {
