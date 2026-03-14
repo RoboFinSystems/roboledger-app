@@ -11,9 +11,11 @@ export interface PasswordRequirementsProps {
 }
 
 const defaultRequirements: PasswordRequirement[] = [
-  { text: 'At least 10 characters (and up to 100 characters)' },
-  { text: 'At least one lowercase character' },
-  { text: 'Inclusion of at least one special character, e.g., ! @ # ?' },
+  { text: 'At least 12 characters (and up to 128 characters)' },
+  { text: 'At least one uppercase letter' },
+  { text: 'At least one lowercase letter' },
+  { text: 'At least one digit' },
+  { text: 'At least one special character, e.g., ! @ # $ % ^ & *' },
 ]
 
 export const PasswordRequirements: React.FC<PasswordRequirementsProps> = ({
