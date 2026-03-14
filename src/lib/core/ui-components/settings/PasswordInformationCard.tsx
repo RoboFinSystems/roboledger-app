@@ -230,15 +230,47 @@ export const PasswordInformationCard: React.FC<
             />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <SettingsFormField
-              id="newPassword"
-              label="New password"
-              type="password"
-              placeholder="••••••••"
-              theme={theme}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
+          <div className="grid items-start gap-4 md:grid-cols-2">
+            <div>
+              <SettingsFormField
+                id="newPassword"
+                label="New password"
+                type="password"
+                placeholder="••••••••"
+                theme={theme}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <div className="mt-2 min-h-[2.75rem]">
+                {passwordStrength && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-700">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${strengthBarColor}`}
+                          style={{ width: `${passwordStrength.score}%` }}
+                        />
+                      </div>
+                      <span
+                        className={`text-xs font-medium capitalize ${strengthTextColor}`}
+                      >
+                        {passwordStrength.strength.replace('-', ' ')}
+                      </span>
+                    </div>
+                    {passwordStrength.errors.length > 0 && (
+                      <p className="text-xs text-red-400">
+                        {passwordStrength.errors[0]}
+                      </p>
+                    )}
+                    {passwordStrength.errors.length === 0 &&
+                      passwordStrength.suggestions.length > 0 && (
+                        <p className="text-xs text-gray-400">
+                          {passwordStrength.suggestions[0]}
+                        </p>
+                      )}
+                  </div>
+                )}
+              </div>
+            </div>
 
             <SettingsFormField
               id="confirmPassword"
@@ -247,37 +279,6 @@ export const PasswordInformationCard: React.FC<
               placeholder="••••••••"
               theme={theme}
             />
-          </div>
-
-          <div className="min-h-[2.75rem]">
-            {passwordStrength && (
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-700">
-                    <div
-                      className={`h-full rounded-full transition-all duration-300 ${strengthBarColor}`}
-                      style={{ width: `${passwordStrength.score}%` }}
-                    />
-                  </div>
-                  <span
-                    className={`text-xs font-medium capitalize ${strengthTextColor}`}
-                  >
-                    {passwordStrength.strength.replace('-', ' ')}
-                  </span>
-                </div>
-                {passwordStrength.errors.length > 0 && (
-                  <p className="text-xs text-red-400">
-                    {passwordStrength.errors[0]}
-                  </p>
-                )}
-                {passwordStrength.errors.length === 0 &&
-                  passwordStrength.suggestions.length > 0 && (
-                    <p className="text-xs text-gray-400">
-                      {passwordStrength.suggestions[0]}
-                    </p>
-                  )}
-              </div>
-            )}
           </div>
 
           <div className="flex justify-end pt-2">
