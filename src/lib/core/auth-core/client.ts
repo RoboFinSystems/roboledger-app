@@ -214,6 +214,12 @@ export class RoboSystemsAuthClient {
       },
     })
 
+    // Check for error responses (4xx/5xx)
+    if (response.error) {
+      const errorData = response.error as any
+      throw new Error(errorData?.detail || 'Registration failed')
+    }
+
     const sdkResponse = this.validateSDKAuthResponse(response.data)
 
     // Store JWT token with expiry information if present in response
@@ -800,24 +806,29 @@ export class RoboSystemsAuthClient {
   /**
    * Check password strength
    */
-  async checkPasswordStrength(password: string): Promise<{
+  async checkPasswordStrength(
+    password: string,
+    email?: string
+  ): Promise<{
     score: number
     strength: 'very-weak' | 'weak' | 'fair' | 'good' | 'strong'
+    errors: string[]
     suggestions: string[]
-    meets_policy: boolean
+    is_valid: boolean
   }> {
     try {
       const response = await checkPasswordStrength({
         client: this.client,
-        body: { password } as any,
+        body: { password, email } as any,
       })
 
       const data = response.data as any
       return {
         score: data?.score || 0,
         strength: data?.strength || 'very-weak',
+        errors: data?.errors || [],
         suggestions: data?.suggestions || [],
-        meets_policy: data?.meets_policy || false,
+        is_valid: data?.is_valid || false,
       }
     } catch (error) {
       console.error('Check password strength error:', error)
@@ -842,8 +853,9 @@ export class RoboSystemsAuthClient {
                 : score < 80
                   ? 'good'
                   : 'strong',
+        errors: [],
         suggestions: [],
-        meets_policy: score >= 60,
+        is_valid: score >= 60,
       }
     }
   }
