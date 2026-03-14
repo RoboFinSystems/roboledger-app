@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { RoboSystemsAuthClient } from '../auth-core/client'
 import { getAppConfig } from '../auth-core/config'
 import type { AuthUser } from '../auth-core/types'
@@ -42,8 +42,53 @@ export function SignUpForm({
   const [error, setError] = useState('')
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [captchaError, setCaptchaError] = useState<string | null>(null)
+  const [passwordStrength, setPasswordStrength] = useState<{
+    score: number
+    strength: string
+    errors: string[]
+    suggestions: string[]
+    is_valid: boolean
+  } | null>(null)
+  const [checkingPassword, setCheckingPassword] = useState(false)
+  const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
   const authClient = new RoboSystemsAuthClient(apiUrl)
+
+  const checkPassword = useCallback(
+    async (password: string, email: string) => {
+      if (password.length < 4) {
+        setPasswordStrength(null)
+        return
+      }
+      setCheckingPassword(true)
+      try {
+        const result = await authClient.checkPasswordStrength(
+          password,
+          email || undefined
+        )
+        setPasswordStrength(result)
+      } catch {
+        setPasswordStrength(null)
+      } finally {
+        setCheckingPassword(false)
+      }
+    },
+    [apiUrl]
+  )
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (formData.password.length < 4) {
+      setPasswordStrength(null)
+      return
+    }
+    debounceRef.current = setTimeout(() => {
+      checkPassword(formData.password, formData.email)
+    }, 400)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [formData.password, formData.email, checkPassword])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -77,6 +122,17 @@ export function SignUpForm({
     // Validate confirm password if enabled
     if (showConfirmPassword && formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
+      setLoading(false)
+      return
+    }
+
+    // Validate password strength
+    if (passwordStrength && !passwordStrength.is_valid) {
+      setError(
+        passwordStrength.errors.length > 0
+          ? passwordStrength.errors.join('. ')
+          : 'Password does not meet requirements'
+      )
       setLoading(false)
       return
     }
@@ -223,6 +279,56 @@ export function SignUpForm({
                 placeholder="Password"
                 disabled={loading}
               />
+              {passwordStrength && (
+                <div className="mt-2 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-700">
+                      <div
+                        className={[
+                          'h-full rounded-full transition-all duration-300',
+                          passwordStrength.score < 30
+                            ? 'bg-red-500'
+                            : passwordStrength.score < 60
+                              ? 'bg-yellow-500'
+                              : passwordStrength.score < 80
+                                ? 'bg-blue-400'
+                                : 'bg-green-500',
+                        ].join(' ')}
+                        style={{ width: `${passwordStrength.score}%` }}
+                      />
+                    </div>
+                    <span
+                      className={[
+                        'text-xs font-medium capitalize',
+                        passwordStrength.score < 30
+                          ? 'text-red-400'
+                          : passwordStrength.score < 60
+                            ? 'text-yellow-400'
+                            : passwordStrength.score < 80
+                              ? 'text-blue-300'
+                              : 'text-green-400',
+                      ].join(' ')}
+                    >
+                      {passwordStrength.strength.replace('-', ' ')}
+                    </span>
+                  </div>
+                  {passwordStrength.errors.length > 0 && (
+                    <ul className="space-y-0.5 text-xs text-red-400">
+                      {passwordStrength.errors.map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {passwordStrength.errors.length === 0 &&
+                    passwordStrength.suggestions.length > 0 && (
+                      <ul className="space-y-0.5 text-xs text-gray-400">
+                        {passwordStrength.suggestions.map((s, i) => (
+                          <li key={i}>{s}</li>
+                        ))}
+                      </ul>
+                    )}
+                </div>
+              )}
             </div>
             {showConfirmPassword && (
               <div>
