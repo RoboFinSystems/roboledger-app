@@ -8,16 +8,11 @@ import {
   SDK,
   useGraphContext,
 } from '@/lib/core'
-import type { ElementClassification, TrialBalanceRow } from '@/lib/ledger'
-import {
-  TRIAL_BALANCE_COA_QUERY,
-  TRIAL_BALANCE_PERIODS_QUERY,
-} from '@/lib/ledger'
+import type { ElementClassification } from '@/lib/ledger'
 import {
   Alert,
   Badge,
   Card,
-  Select,
   Spinner,
   Table,
   TableBody,
@@ -54,9 +49,36 @@ const CLASSIFICATION_LABELS: Record<ElementClassification, string> = {
   expense: 'Expense',
 }
 
-interface TrialBalanceRowWithGraph extends TrialBalanceRow {
+interface TrialBalanceRowWithGraph {
+  accountId: string
+  accountCode: string
+  accountName: string
+  classification: ElementClassification
+  accountType: string | null
+  totalDebits: number
+  totalCredits: number
+  netBalance: number
   _graphId: string
   _graphName: string
+}
+
+// QB's standard Chart of Accounts ordering by AccountType
+const ACCOUNT_TYPE_ORDER: Record<string, number> = {
+  Bank: 0,
+  'Accounts Receivable': 1,
+  'Other Current Asset': 2,
+  'Fixed Asset': 3,
+  'Other Asset': 4,
+  'Accounts Payable': 5,
+  'Credit Card': 6,
+  'Other Current Liability': 7,
+  'Long Term Liability': 8,
+  Equity: 9,
+  Income: 10,
+  'Cost of Goods Sold': 11,
+  Expense: 12,
+  'Other Income': 13,
+  'Other Expense': 14,
 }
 
 const formatCurrency = (amount: number): string => {
@@ -73,67 +95,10 @@ type ViewMode = 'coa' | 'usgaap'
 const TrialBalanceContent: FC = function () {
   const { state: graphState } = useGraphContext()
   const [data, setData] = useState<TrialBalanceRowWithGraph[]>([])
-  const [periods, setPeriods] = useState<string[]>([])
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('coa')
-
-  // Format period for display (e.g., "2025-10" -> "October 2025")
-  const formatPeriod = (period: string): string => {
-    if (!period) return 'All Periods'
-    const [year, month] = period.split('-')
-    const date = new Date(parseInt(year), parseInt(month) - 1)
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
-  }
-
-  // Load available periods
-  useEffect(() => {
-    const loadPeriods = async () => {
-      const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
-      if (roboledgerGraphs.length === 0) return
-
-      try {
-        const allPeriods: string[] = []
-        for (const graph of roboledgerGraphs) {
-          const response = await SDK.executeCypherQuery({
-            path: { graph_id: graph.graphId },
-            query: { mode: 'sync' },
-            body: {
-              query: TRIAL_BALANCE_PERIODS_QUERY,
-              parameters: {},
-            },
-          })
-
-          if (response.data) {
-            const responseData = response.data as {
-              data?: Array<{ period: string }>
-            }
-            const rows = responseData.data || []
-            rows.forEach((row) => {
-              if (row.period && !allPeriods.includes(row.period)) {
-                allPeriods.push(row.period)
-              }
-            })
-          }
-        }
-
-        // Sort periods descending
-        allPeriods.sort((a, b) => b.localeCompare(a))
-        setPeriods(allPeriods)
-
-        // Auto-select the most recent period
-        if (allPeriods.length > 0 && !selectedPeriod) {
-          setSelectedPeriod(allPeriods[0])
-        }
-      } catch (err) {
-        console.error('Error loading periods:', err)
-      }
-    }
-
-    loadPeriods()
-  }, [graphState.graphs, selectedPeriod])
 
   // Load trial balance data
   useEffect(() => {
@@ -155,39 +120,21 @@ const TrialBalanceContent: FC = function () {
 
         for (const graph of roboledgerGraphs) {
           try {
-            // For CoA view, use direct Cypher query
-            // For now, only CoA view is fully implemented
-            const response = await SDK.executeCypherQuery({
+            const response = await SDK.getLedgerTrialBalance({
               path: { graph_id: graph.graphId },
-              query: { mode: 'sync' },
-              body: {
-                query: TRIAL_BALANCE_COA_QUERY,
-                parameters: {
-                  period: selectedPeriod || null,
-                },
-              },
             })
 
             if (response.data) {
-              const responseData = response.data as {
-                data?: Array<{
-                  accountId: string
-                  accountName: string
-                  classification: ElementClassification
-                  totalDebits: number
-                  totalCredits: number
-                  netBalance: number
-                }>
-              }
-              const rows = responseData.data || []
-
+              const rows = response.data.rows || []
               const graphRows: TrialBalanceRowWithGraph[] = rows.map((row) => ({
-                accountId: row.accountId || '',
-                accountName: row.accountName || row.accountId || 'Unknown',
-                classification: row.classification,
-                totalDebits: row.totalDebits || 0,
-                totalCredits: row.totalCredits || 0,
-                netBalance: row.netBalance || 0,
+                accountId: row.account_id,
+                accountCode: row.account_code,
+                accountName: row.account_name,
+                classification: row.classification as ElementClassification,
+                accountType: row.account_type ?? null,
+                totalDebits: row.total_debits,
+                totalCredits: row.total_credits,
+                netBalance: row.net_balance,
                 _graphId: graph.graphId,
                 _graphName: graph.graphName,
               }))
@@ -202,6 +149,12 @@ const TrialBalanceContent: FC = function () {
           }
         }
 
+        allRows.sort((a, b) => {
+          const ta = ACCOUNT_TYPE_ORDER[a.accountType || ''] ?? 99
+          const tb = ACCOUNT_TYPE_ORDER[b.accountType || ''] ?? 99
+          if (ta !== tb) return ta - tb
+          return a.accountName.localeCompare(b.accountName)
+        })
         setData(allRows)
       } catch (err) {
         console.error('Error loading trial balance:', err)
@@ -212,7 +165,7 @@ const TrialBalanceContent: FC = function () {
     }
 
     loadTrialBalance()
-  }, [graphState.graphs, viewMode, selectedPeriod])
+  }, [graphState.graphs, viewMode])
 
   // Filter data
   const filteredData = useMemo(() => {
@@ -220,7 +173,7 @@ const TrialBalanceContent: FC = function () {
       const matchesSearch =
         searchTerm === '' ||
         row.accountName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.accountId.toLowerCase().includes(searchTerm.toLowerCase())
+        row.accountCode.toLowerCase().includes(searchTerm.toLowerCase())
 
       return matchesSearch
     })
@@ -291,32 +244,6 @@ const TrialBalanceContent: FC = function () {
                 className="pl-10"
               />
             </div>
-          </div>
-
-          {/* Period Selector */}
-          <div className="w-full sm:w-56">
-            <label
-              htmlFor="period"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Period
-            </label>
-            <Select
-              id="period"
-              theme={customTheme.select}
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-            >
-              {periods.length === 0 ? (
-                <option value="">No periods available</option>
-              ) : (
-                periods.map((period) => (
-                  <option key={period} value={period}>
-                    {formatPeriod(period)}
-                  </option>
-                ))
-              )}
-            </Select>
           </div>
 
           {/* View Mode Toggle */}
@@ -434,21 +361,14 @@ const TrialBalanceContent: FC = function () {
                 <TableHeadCell className="text-right">Debits</TableHeadCell>
                 <TableHeadCell className="text-right">Credits</TableHeadCell>
                 <TableHeadCell className="text-right">
-                  Net
-                  <br />
-                  Balance
+                  Net Balance
                 </TableHeadCell>
               </TableHead>
               <TableBody>
                 {filteredData.map((row) => (
                   <TableRow key={`${row._graphId}-${row.accountId}`}>
                     <TableCell className="font-medium text-gray-900 dark:text-white">
-                      <div className="flex flex-col">
-                        <span className="font-semibold">{row.accountName}</span>
-                        <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
-                          {row.accountId}
-                        </span>
-                      </div>
+                      {row.accountName}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -508,28 +428,24 @@ const TrialBalanceContent: FC = function () {
                     </span>
                   </TableCell>
                   <TableCell className="text-right font-mono">
-                    <span
-                      className={
-                        totals.isBalanced
-                          ? 'text-gray-900 dark:text-white'
-                          : 'text-red-600 dark:text-red-400'
-                      }
-                    >
-                      {formatCurrency(totals.totalDebits - totals.totalCredits)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {totals.isBalanced ? (
-                      <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                        <HiCheckCircle className="h-5 w-5" />
-                        <span className="text-sm">Balanced</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1 text-red-600 dark:text-red-400">
-                        <HiExclamationCircle className="h-5 w-5" />
-                        <span className="text-sm">Out of Balance</span>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      <span
+                        className={
+                          totals.isBalanced
+                            ? 'text-gray-900 dark:text-white'
+                            : 'text-red-600 dark:text-red-400'
+                        }
+                      >
+                        {formatCurrency(
+                          totals.totalDebits - totals.totalCredits
+                        )}
+                      </span>
+                      {totals.isBalanced ? (
+                        <HiCheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <HiExclamationCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               </TableBody>
@@ -541,8 +457,7 @@ const TrialBalanceContent: FC = function () {
         {!isLoading && filteredData.length > 0 && (
           <div className="border-t border-gray-200 p-4 dark:border-gray-700">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Showing {filteredData.length} accounts | Period:{' '}
-              {formatPeriod(selectedPeriod)} | View:{' '}
+              Showing {filteredData.length} accounts | View:{' '}
               {viewMode === 'coa' ? 'Chart of Accounts' : 'US-GAAP Aggregated'}
             </p>
           </div>

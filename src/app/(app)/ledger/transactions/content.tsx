@@ -8,8 +8,6 @@ import {
   SDK,
   useGraphContext,
 } from '@/lib/core'
-import type { LineItem, Transaction } from '@/lib/ledger'
-import { LINE_ITEMS_QUERY, TRANSACTIONS_QUERY } from '@/lib/ledger'
 import {
   Alert,
   Badge,
@@ -42,13 +40,29 @@ const TRANSACTION_TYPE_COLORS: Record<string, string> = {
   Opening: 'purple',
 }
 
-interface TransactionWithGraph extends Transaction {
+interface TransactionRow {
+  id: string
+  number: string | null
+  type: string
+  category: string | null
+  amount: number
+  currency: string
+  date: string
+  merchant_name: string | null
+  description: string | null
+  source: string
+  status: string
   _graphId: string
   _graphName: string
 }
 
-interface LineItemWithGraph extends LineItem {
-  _graphId: string
+interface LineItemRow {
+  id: string
+  account_name: string | null
+  account_code: string | null
+  debit_amount: number
+  credit_amount: number
+  description: string | null
 }
 
 const formatCurrency = (amount: number): string => {
@@ -59,7 +73,7 @@ const formatCurrency = (amount: number): string => {
 }
 
 const formatDate = (dateString: string): string => {
-  const date = new Date(dateString)
+  const date = new Date(dateString + 'T00:00:00')
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -69,9 +83,9 @@ const formatDate = (dateString: string): string => {
 
 const TransactionsContent: FC = function () {
   const { state: graphState } = useGraphContext()
-  const [transactions, setTransactions] = useState<TransactionWithGraph[]>([])
+  const [transactions, setTransactions] = useState<TransactionRow[]>([])
   const [lineItemsMap, setLineItemsMap] = useState<
-    Record<string, LineItemWithGraph[]>
+    Record<string, LineItemRow[]>
   >({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -86,7 +100,7 @@ const TransactionsContent: FC = function () {
 
   // Get unique transaction types
   const transactionTypes = useMemo(() => {
-    const types = new Set(transactions.map((t) => t.transactionType))
+    const types = new Set(transactions.map((t) => t.type))
     return Array.from(types).filter(Boolean).sort()
   }, [transactions])
 
@@ -106,56 +120,36 @@ const TransactionsContent: FC = function () {
           return
         }
 
-        const allTransactions: TransactionWithGraph[] = []
+        const allTransactions: TransactionRow[] = []
 
         for (const graph of roboledgerGraphs) {
           try {
-            const response = await SDK.executeCypherQuery({
+            const response = await SDK.listLedgerTransactions({
               path: { graph_id: graph.graphId },
-              query: { mode: 'sync' },
-              body: {
-                query: TRANSACTIONS_QUERY,
-                parameters: {
-                  startDate: startDate || null,
-                  endDate: endDate || null,
-                  limit: 500,
-                },
+              query: {
+                start_date: startDate || undefined,
+                end_date: endDate || undefined,
+                limit: 500,
               },
             })
 
             if (response.data) {
-              const data = response.data as {
-                data?: Array<{
-                  identifier: string
-                  uri: string
-                  transactionNumber: string
-                  date: string
-                  description: string
-                  transactionType: string
-                  amount: number
-                  referenceNumber: string
-                  currency: string
-                  updatedAt: string
-                }>
-              }
-              const rows = data.data || []
-
-              const graphTransactions: TransactionWithGraph[] = rows.map(
-                (row) => ({
-                  identifier: row.identifier || '',
-                  uri: row.uri || '',
-                  transactionNumber: row.transactionNumber || row.identifier,
-                  date: row.date || '',
-                  description: row.description || '',
-                  transactionType: row.transactionType || '',
-                  amount: row.amount || 0,
-                  referenceNumber: row.referenceNumber || '',
-                  currency: row.currency || 'USD',
-                  updatedAt: row.updatedAt || '',
-                  _graphId: graph.graphId,
-                  _graphName: graph.graphName,
-                })
-              )
+              const rows = response.data.transactions || []
+              const graphTransactions: TransactionRow[] = rows.map((row) => ({
+                id: row.id,
+                number: row.number ?? null,
+                type: row.type,
+                category: row.category ?? null,
+                amount: row.amount,
+                currency: row.currency,
+                date: row.date,
+                merchant_name: row.merchant_name ?? null,
+                description: row.description ?? null,
+                source: row.source,
+                status: row.status,
+                _graphId: graph.graphId,
+                _graphName: graph.graphName,
+              }))
 
               allTransactions.push(...graphTransactions)
             }
@@ -184,10 +178,10 @@ const TransactionsContent: FC = function () {
     loadTransactions()
   }, [graphState.graphs, startDate, endDate])
 
-  // Load line items for a transaction
+  // Load line items for a transaction via detail endpoint
   const loadLineItems = useCallback(
-    async (transaction: TransactionWithGraph) => {
-      const key = `${transaction._graphId}-${transaction.identifier}`
+    async (transaction: TransactionRow) => {
+      const key = `${transaction._graphId}-${transaction.id}`
 
       if (lineItemsMap[key]) {
         return // Already loaded
@@ -196,43 +190,27 @@ const TransactionsContent: FC = function () {
       setLoadingLineItems((prev) => new Set(prev).add(key))
 
       try {
-        const response = await SDK.executeCypherQuery({
-          path: { graph_id: transaction._graphId },
-          query: { mode: 'sync' },
-          body: {
-            query: LINE_ITEMS_QUERY,
-            parameters: {
-              txId: transaction.identifier,
-            },
+        const response = await SDK.getLedgerTransaction({
+          path: {
+            graph_id: transaction._graphId,
+            transaction_id: transaction.id,
           },
         })
 
         if (response.data) {
-          const data = response.data as {
-            data?: Array<{
-              identifier: string
-              uri: string
-              description: string
-              debitAmount: number
-              creditAmount: number
-              updatedAt: string
-              accountName: string
-              accountId: string
-            }>
+          const items: LineItemRow[] = []
+          for (const entry of response.data.entries || []) {
+            for (const li of entry.line_items || []) {
+              items.push({
+                id: li.id,
+                account_name: li.account_name ?? null,
+                account_code: li.account_code ?? null,
+                debit_amount: li.debit_amount,
+                credit_amount: li.credit_amount,
+                description: li.description ?? null,
+              })
+            }
           }
-          const rows = data.data || []
-
-          const items: LineItemWithGraph[] = rows.map((row) => ({
-            identifier: row.identifier || '',
-            uri: row.uri || '',
-            description: row.description || '',
-            debitAmount: row.debitAmount || 0,
-            creditAmount: row.creditAmount || 0,
-            accountName: row.accountName || '',
-            accountId: row.accountId || '',
-            updatedAt: row.updatedAt || '',
-            _graphId: transaction._graphId,
-          }))
 
           setLineItemsMap((prev) => ({
             ...prev,
@@ -254,8 +232,8 @@ const TransactionsContent: FC = function () {
 
   // Toggle expansion
   const toggleExpand = useCallback(
-    (transaction: TransactionWithGraph) => {
-      const key = `${transaction._graphId}-${transaction.identifier}`
+    (transaction: TransactionRow) => {
+      const key = `${transaction._graphId}-${transaction.id}`
 
       setExpandedIds((prev) => {
         const next = new Set(prev)
@@ -263,7 +241,6 @@ const TransactionsContent: FC = function () {
           next.delete(key)
         } else {
           next.add(key)
-          // Load line items if not already loaded
           loadLineItems(transaction)
         }
         return next
@@ -277,12 +254,16 @@ const TransactionsContent: FC = function () {
     return transactions.filter((tx) => {
       const matchesSearch =
         searchTerm === '' ||
-        tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tx.transactionNumber.toLowerCase().includes(searchTerm.toLowerCase())
+        (tx.description || '')
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        (tx.number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (tx.merchant_name || '')
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
 
       const matchesType =
-        transactionTypeFilter === '' ||
-        tx.transactionType === transactionTypeFilter
+        transactionTypeFilter === '' || tx.type === transactionTypeFilter
 
       return matchesSearch && matchesType
     })
@@ -427,7 +408,7 @@ const TransactionsContent: FC = function () {
               </TableHead>
               <TableBody>
                 {filteredTransactions.map((tx) => {
-                  const key = `${tx._graphId}-${tx.identifier}`
+                  const key = `${tx._graphId}-${tx.id}`
                   const isExpanded = expandedIds.has(key)
                   const isLoadingItems = loadingLineItems.has(key)
                   const lineItems = lineItemsMap[key] || []
@@ -452,22 +433,19 @@ const TransactionsContent: FC = function () {
                         <TableCell>
                           <div className="flex flex-col">
                             <span className="font-medium">
-                              {tx.description}
+                              {tx.description || tx.merchant_name || '-'}
                             </span>
                             <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
-                              {tx.transactionNumber}
+                              {tx.number || tx.id}
                             </span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <Badge
-                            color={
-                              TRANSACTION_TYPE_COLORS[tx.transactionType] ||
-                              'gray'
-                            }
+                            color={TRANSACTION_TYPE_COLORS[tx.type] || 'gray'}
                             size="sm"
                           >
-                            {tx.transactionType}
+                            {tx.type}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right font-mono font-medium">
@@ -506,7 +484,7 @@ const TransactionsContent: FC = function () {
                                   <tbody>
                                     {lineItems.map((li, idx) => (
                                       <tr
-                                        key={li.identifier}
+                                        key={li.id}
                                         className={
                                           idx < lineItems.length - 1
                                             ? 'border-b border-gray-100 dark:border-gray-700'
@@ -514,19 +492,28 @@ const TransactionsContent: FC = function () {
                                         }
                                       >
                                         <td className="py-2 font-medium text-gray-900 dark:text-white">
-                                          {li.accountName || li.accountId}
+                                          <div className="flex flex-col">
+                                            <span>
+                                              {li.account_name || '-'}
+                                            </span>
+                                            {li.account_code && (
+                                              <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
+                                                {li.account_code}
+                                              </span>
+                                            )}
+                                          </div>
                                         </td>
                                         <td className="py-2 text-gray-600 dark:text-gray-400">
                                           {li.description || '-'}
                                         </td>
                                         <td className="py-2 text-right font-mono text-blue-600 dark:text-blue-400">
-                                          {li.debitAmount
-                                            ? formatCurrency(li.debitAmount)
+                                          {li.debit_amount
+                                            ? formatCurrency(li.debit_amount)
                                             : '-'}
                                         </td>
                                         <td className="py-2 text-right font-mono text-green-600 dark:text-green-400">
-                                          {li.creditAmount
-                                            ? formatCurrency(li.creditAmount)
+                                          {li.credit_amount
+                                            ? formatCurrency(li.credit_amount)
                                             : '-'}
                                         </td>
                                       </tr>
@@ -543,7 +530,7 @@ const TransactionsContent: FC = function () {
                                         {formatCurrency(
                                           lineItems.reduce(
                                             (sum, li) =>
-                                              sum + (li.debitAmount || 0),
+                                              sum + (li.debit_amount || 0),
                                             0
                                           )
                                         )}
@@ -552,7 +539,7 @@ const TransactionsContent: FC = function () {
                                         {formatCurrency(
                                           lineItems.reduce(
                                             (sum, li) =>
-                                              sum + (li.creditAmount || 0),
+                                              sum + (li.credit_amount || 0),
                                             0
                                           )
                                         )}

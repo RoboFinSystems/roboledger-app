@@ -8,8 +8,7 @@ import {
   SDK,
   useGraphContext,
 } from '@/lib/core'
-import type { Element, ElementClassification } from '@/lib/ledger'
-import { ELEMENTS_QUERY } from '@/lib/ledger'
+import type { ElementClassification } from '@/lib/ledger'
 import {
   Alert,
   Badge,
@@ -22,7 +21,6 @@ import {
   TableHeadCell,
   TableRow,
   TextInput,
-  ToggleSwitch,
 } from 'flowbite-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -58,135 +56,150 @@ const ALL_CLASSIFICATIONS: ElementClassification[] = [
   'expense',
 ]
 
-interface ElementWithGraph extends Element {
+interface AccountRow {
+  id: string
+  name: string
+  classification: ElementClassification
+  balance_type: string
+  depth: number
+  is_active: boolean
   _graphId: string
   _graphName: string
 }
 
+interface TreeNode {
+  id: string
+  name: string
+  classification: string
+  account_type?: string | null
+  balance_type: string
+  depth: number
+  is_active: boolean
+  children?: TreeNode[]
+}
+
+// QB's standard Chart of Accounts ordering by AccountType
+const ACCOUNT_TYPE_ORDER: Record<string, number> = {
+  Bank: 0,
+  'Accounts Receivable': 1,
+  'Other Current Asset': 2,
+  'Fixed Asset': 3,
+  'Other Asset': 4,
+  'Accounts Payable': 5,
+  'Credit Card': 6,
+  'Other Current Liability': 7,
+  'Long Term Liability': 8,
+  Equity: 9,
+  Income: 10,
+  'Cost of Goods Sold': 11,
+  Expense: 12,
+  'Other Income': 13,
+  'Other Expense': 14,
+}
+
+function flattenTree(
+  nodes: TreeNode[],
+  graphId: string,
+  graphName: string
+): AccountRow[] {
+  const result: AccountRow[] = []
+  for (const node of nodes) {
+    result.push({
+      id: node.id,
+      name: node.name,
+      classification: node.classification as ElementClassification,
+      balance_type: node.balance_type,
+      depth: node.depth,
+      is_active: node.is_active,
+      _graphId: graphId,
+      _graphName: graphName,
+    })
+    if (node.children && node.children.length > 0) {
+      result.push(...flattenTree(node.children, graphId, graphName))
+    }
+  }
+  return result
+}
+
 const ChartOfAccountsContent: FC = function () {
   const { state: graphState } = useGraphContext()
-  const [elements, setElements] = useState<ElementWithGraph[]>([])
+  const [accounts, setAccounts] = useState<AccountRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedClassification, setSelectedClassification] =
     useState<ElementClassification | null>(null)
-  const [showAbstract, setShowAbstract] = useState(false)
 
-  // Load elements from all roboledger graphs
+  // Load accounts from all roboledger graphs using tree endpoint
   useEffect(() => {
-    const loadElements = async () => {
+    const loadAccounts = async () => {
       try {
         setIsLoading(true)
         setError(null)
 
-        // Filter to only roboledger graphs
         const roboledgerGraphs = graphState.graphs.filter(
           GraphFilters.roboledger
         )
 
         if (roboledgerGraphs.length === 0) {
-          setElements([])
+          setAccounts([])
           return
         }
 
-        const allElements: ElementWithGraph[] = []
+        const allAccounts: AccountRow[] = []
 
         for (const graph of roboledgerGraphs) {
           try {
-            const response = await SDK.executeCypherQuery({
+            const response = await SDK.getLedgerAccountTree({
               path: { graph_id: graph.graphId },
-              query: { mode: 'sync' },
-              body: {
-                query: ELEMENTS_QUERY,
-                parameters: {},
-              },
             })
 
             if (response.data) {
-              const data = response.data as {
-                data?: Array<{
-                  identifier: string
-                  uri: string
-                  qname: string
-                  name: string
-                  classification: ElementClassification
-                  balance: 'debit' | 'credit'
-                  periodType: 'instant' | 'duration'
-                  type: string
-                  itemType?: string
-                  isAbstract: boolean
-                  isNumeric: boolean
-                  isDimensionItem: boolean
-                  isDomainMember: boolean
-                  isHypercubeItem: boolean
-                }>
-              }
-              const rows = data.data || []
-
-              const graphElements: ElementWithGraph[] = rows.map((row) => ({
-                identifier: row.identifier || '',
-                uri: row.uri || '',
-                qname: row.qname || '',
-                name: row.name || row.identifier || 'Unnamed Element',
-                classification: row.classification,
-                balance: row.balance || 'debit',
-                periodType: row.periodType || 'instant',
-                type: row.type || '',
-                itemType: row.itemType,
-                isAbstract: row.isAbstract || false,
-                isNumeric: row.isNumeric !== false,
-                isDimensionItem: row.isDimensionItem || false,
-                isDomainMember: row.isDomainMember || false,
-                isHypercubeItem: row.isHypercubeItem || false,
-                _graphId: graph.graphId,
-                _graphName: graph.graphName,
-              }))
-
-              allElements.push(...graphElements)
+              const roots = (response.data.roots || []) as TreeNode[]
+              roots.sort((a, b) => {
+                const ta = ACCOUNT_TYPE_ORDER[a.account_type || ''] ?? 99
+                const tb = ACCOUNT_TYPE_ORDER[b.account_type || ''] ?? 99
+                if (ta !== tb) return ta - tb
+                return a.name.localeCompare(b.name)
+              })
+              allAccounts.push(
+                ...flattenTree(roots, graph.graphId, graph.graphName)
+              )
             }
           } catch (err) {
             console.error(
-              `Error loading elements from graph ${graph.graphName}:`,
+              `Error loading accounts from graph ${graph.graphName}:`,
               err
             )
           }
         }
 
-        setElements(allElements)
+        setAccounts(allAccounts)
       } catch (err) {
-        console.error('Error loading elements:', err)
+        console.error('Error loading accounts:', err)
         setError('Failed to load chart of accounts. Please try again.')
       } finally {
         setIsLoading(false)
       }
     }
 
-    loadElements()
+    loadAccounts()
   }, [graphState.graphs])
 
-  // Filter elements
-  const filteredElements = useMemo(() => {
-    return elements.filter((element) => {
-      // Filter by search term
+  // Filter accounts
+  const filteredAccounts = useMemo(() => {
+    return accounts.filter((account) => {
       const matchesSearch =
         searchTerm === '' ||
-        element.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        element.identifier.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (element.qname?.toLowerCase().includes(searchTerm.toLowerCase()) ??
-          false)
+        account.name.toLowerCase().includes(searchTerm.toLowerCase())
 
-      // Filter by classification
       const matchesClassification =
         selectedClassification === null ||
-        element.classification === selectedClassification
+        account.classification === selectedClassification
 
-      // Filter abstract elements
-      const matchesAbstract = showAbstract || !element.isAbstract
-
-      return matchesSearch && matchesClassification && matchesAbstract
+      return matchesSearch && matchesClassification
     })
-  }, [elements, searchTerm, selectedClassification, showAbstract])
+  }, [accounts, searchTerm, selectedClassification])
 
   // Count by classification
   const classificationCounts = useMemo(() => {
@@ -197,16 +210,16 @@ const ChartOfAccountsContent: FC = function () {
       revenue: 0,
       expense: 0,
     }
-    elements.forEach((element) => {
+    accounts.forEach((account) => {
       if (
-        element.classification &&
-        counts[element.classification] !== undefined
+        account.classification &&
+        counts[account.classification] !== undefined
       ) {
-        counts[element.classification]++
+        counts[account.classification]++
       }
     })
     return counts
-  }, [elements])
+  }, [accounts])
 
   const handleClassificationFilter = useCallback(
     (classification: ElementClassification | null) => {
@@ -244,14 +257,6 @@ const ChartOfAccountsContent: FC = function () {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <ToggleSwitch
-                checked={showAbstract}
-                onChange={setShowAbstract}
-                label="Show abstract"
-                theme={customTheme.toggleSwitch}
-              />
-            </div>
           </div>
 
           {/* Classification Filter Pills */}
@@ -264,7 +269,7 @@ const ChartOfAccountsContent: FC = function () {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
               }`}
             >
-              All ({elements.length})
+              All ({accounts.length})
             </button>
             {ALL_CLASSIFICATIONS.map((classification) => (
               <button
@@ -297,7 +302,7 @@ const ChartOfAccountsContent: FC = function () {
             <div className="flex justify-center py-12">
               <Spinner size="lg" />
             </div>
-          ) : elements.length === 0 ? (
+          ) : accounts.length === 0 ? (
             <div className="p-8 text-center">
               <Card theme={customTheme.card}>
                 <MdOutlineAccountBalanceWallet className="mx-auto mb-4 h-12 w-12 text-gray-400" />
@@ -312,7 +317,7 @@ const ChartOfAccountsContent: FC = function () {
                 </p>
               </Card>
             </div>
-          ) : filteredElements.length === 0 ? (
+          ) : filteredAccounts.length === 0 ? (
             <div className="p-8 text-center">
               <Card theme={customTheme.card}>
                 <HiViewList className="mx-auto mb-4 h-12 w-12 text-gray-400" />
@@ -330,58 +335,42 @@ const ChartOfAccountsContent: FC = function () {
                 <TableHeadCell>Account Name</TableHeadCell>
                 <TableHeadCell>Classification</TableHeadCell>
                 <TableHeadCell>Normal Balance</TableHeadCell>
-                <TableHeadCell>Period Type</TableHeadCell>
               </TableHead>
               <TableBody>
-                {filteredElements.map((element) => (
-                  <TableRow key={`${element._graphId}-${element.identifier}`}>
+                {filteredAccounts.map((account) => (
+                  <TableRow key={`${account._graphId}-${account.id}`}>
                     <TableCell className="font-medium text-gray-900 dark:text-white">
-                      <div className="flex flex-col">
-                        <span className="font-semibold">
-                          {element.name}
-                          {element.isAbstract && (
-                            <Badge
-                              color="gray"
-                              size="xs"
-                              className="ml-2 inline"
-                            >
-                              Abstract
-                            </Badge>
-                          )}
-                        </span>
-                        <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
-                          {element.qname || element.identifier}
-                        </span>
-                      </div>
+                      <span
+                        className="font-semibold"
+                        style={{ paddingLeft: `${account.depth * 24}px` }}
+                      >
+                        {account.depth > 0 && (
+                          <span className="mr-1 text-gray-400">└</span>
+                        )}
+                        {account.name}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Badge
                         color={
-                          CLASSIFICATION_COLORS[element.classification] ||
+                          CLASSIFICATION_COLORS[account.classification] ||
                           'gray'
                         }
                         size="sm"
                       >
-                        {CLASSIFICATION_LABELS[element.classification] ||
-                          element.classification}
+                        {CLASSIFICATION_LABELS[account.classification] ||
+                          account.classification}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <span
                         className={`text-sm font-medium ${
-                          element.balance === 'debit'
+                          account.balance_type === 'debit'
                             ? 'text-blue-600 dark:text-blue-400'
                             : 'text-green-600 dark:text-green-400'
                         }`}
                       >
-                        {element.balance === 'debit' ? 'Debit' : 'Credit'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {element.periodType === 'instant'
-                          ? 'Instant'
-                          : 'Duration'}
+                        {account.balance_type === 'debit' ? 'Debit' : 'Credit'}
                       </span>
                     </TableCell>
                   </TableRow>
@@ -392,10 +381,10 @@ const ChartOfAccountsContent: FC = function () {
         </div>
 
         {/* Summary Footer */}
-        {!isLoading && filteredElements.length > 0 && (
+        {!isLoading && filteredAccounts.length > 0 && (
           <div className="border-t border-gray-200 p-4 dark:border-gray-700">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Showing {filteredElements.length} of {elements.length} accounts
+              Showing {filteredAccounts.length} of {accounts.length} accounts
             </p>
           </div>
         )}
