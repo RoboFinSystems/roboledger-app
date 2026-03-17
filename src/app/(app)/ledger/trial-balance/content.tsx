@@ -131,7 +131,10 @@ const TrialBalanceContent: FC = function () {
                 accountCode: row.account_code,
                 accountName: row.account_name,
                 classification: row.classification as ElementClassification,
-                accountType: row.account_type ?? null,
+                accountType:
+                  ((row as Record<string, unknown>).account_type as
+                    | string
+                    | null) ?? null,
                 totalDebits: row.total_debits,
                 totalCredits: row.total_credits,
                 netBalance: row.net_balance,
