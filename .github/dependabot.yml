@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # npm — package.json and package-lock.json dependencies
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    labels:
+      - 'dependencies'
+
+  # GitHub Actions — pinned action versions
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    labels:
+      - 'dependencies'
