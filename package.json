@@ -49,7 +49,7 @@
     "intuit-oauth": "^4.1.0",
     "lru-cache": "^11.2.4",
     "next": "^16.1.6",
-    "plaid": "^36",
+    "plaid": "^41",
     "react": "^19",
     "react-dom": "^19",
     "react-icons": "^4",
