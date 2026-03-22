@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # --- Build Stage ---
-FROM public.ecr.aws/docker/library/node:22.21.1-alpine AS builder
+FROM public.ecr.aws/docker/library/node:22.22.1-alpine3.23 AS builder
 WORKDIR /app
 
 # Install git for private repository access
@@ -23,12 +23,12 @@ RUN if [ -f next-build.tar.gz ]; then \
   fi
 
 # --- Production Stage ---
-FROM public.ecr.aws/docker/library/node:22.21.1-alpine AS runner
+FROM public.ecr.aws/docker/library/node:22.22.1-alpine3.23 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Install git for private repository access
-RUN apk add --no-cache git
+# Install git and upgrade system packages for security patches
+RUN apk upgrade --no-cache && apk add --no-cache git
 
 # Create non-root user before copying files (enables --chown)
 RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup

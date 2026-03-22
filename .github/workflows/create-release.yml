@@ -27,6 +27,8 @@ jobs:
   create-branch:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: write
     outputs:
       new_version: ${{ steps.new-version.outputs.new_version }}
       branch_name: ${{ steps.new-version.outputs.branch_name }}
@@ -146,6 +148,7 @@ jobs:
   check-deploy-method:
     needs: create-tag
     runs-on: ubuntu-latest
+    permissions: {}
     outputs:
       use_dispatch: ${{ steps.check.outputs.use_dispatch }}
     steps:
@@ -172,6 +175,7 @@ jobs:
       (inputs.deploy_to == 'staging' || inputs.deploy_to == 'all')
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions: {}
     outputs:
       run_id: ${{ steps.dispatch.outputs.run_id }}
     steps:
@@ -211,6 +215,7 @@ jobs:
       (needs.deploy-staging-dispatch.result == 'success' || needs.deploy-staging-dispatch.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions: {}
     outputs:
       run_id: ${{ steps.dispatch.outputs.run_id }}
     steps:
@@ -295,6 +300,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
+    permissions: {}
     steps:
       - name: Create summary
         env:
