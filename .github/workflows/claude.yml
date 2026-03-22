@@ -13,6 +13,8 @@ on:
 jobs:
   check-runner-availability:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       runners_available: ${{ steps.check.outputs.runners_available }}
       runner_type: ${{ steps.check.outputs.runner_type }}
