@@ -42,12 +42,12 @@
     "setup:bootstrap": "./bin/bootstrap.sh"
   },
   "dependencies": {
-    "@aws-sdk/client-sns": "^3.893.0",
+    "@aws-sdk/client-sns": "^3.1000.0",
     "@robosystems/client": "^0.2.32",
     "flowbite": "^3.1",
     "flowbite-react": "^0.12.5",
     "intuit-oauth": "^4.1.0",
-    "lru-cache": "^11.2.4",
+    "lru-cache": "^11.2.6",
     "next": "^16.1.6",
     "plaid": "^36",
     "react": "^19",
@@ -57,11 +57,8 @@
     "react-plaid-link": "^4",
     "tailwind-merge": "^3"
   },
-  "overrides": {
-    "fast-xml-parser": "^5.3.4"
-  },
   "devDependencies": {
-    "@next/eslint-plugin-next": "^15.5.6",
+    "@next/eslint-plugin-next": "^16.2.1",
     "@tailwindcss/postcss": "^4.1.11",
     "@tailwindcss/typography": "^0.5",
     "@testing-library/jest-dom": "^6",
