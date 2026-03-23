@@ -129,6 +129,7 @@ export {
   GraphSelectorCore,
   PageLayout,
   RepositoryGuard,
+  SearchContent,
   useIsRepository,
   type ActiveSubscriptionsProps,
   type BrowseRepositoriesProps,
@@ -138,6 +139,8 @@ export {
   type EntitySelectorProps,
   type GraphSelectorProps,
   type GraphWithEntities,
+  type SearchConfig,
+  type SearchFilterConfig,
   type SelectableEntity,
 } from './components'
 

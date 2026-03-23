@@ -35,3 +35,5 @@ export {
   type BrowseRepositoriesProps,
 } from './repositories'
 export { RepositoryGuard, useIsRepository } from './RepositoryGuard'
+export { SearchContent } from './search'
+export type { SearchConfig, SearchFilterConfig } from './search'
