@@ -1,7 +1,12 @@
 'use client'
 
 import type { SidebarItemData } from '@/lib/core'
-import { HiHome, HiOutlineOfficeBuilding, HiTerminal } from 'react-icons/hi'
+import {
+  HiHome,
+  HiOutlineOfficeBuilding,
+  HiSearch,
+  HiTerminal,
+} from 'react-icons/hi'
 import { MdOutlineAccountBalanceWallet } from 'react-icons/md'
 import { TbReportAnalytics } from 'react-icons/tb'
 
@@ -53,6 +58,11 @@ export const getNavigationItems = (
           icon: HiTerminal,
           label: 'Console',
           href: '/console',
+        },
+        {
+          icon: HiSearch,
+          label: 'Search',
+          href: '/search',
         },
       ]
     : []
