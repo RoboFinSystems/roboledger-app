@@ -281,8 +281,8 @@ jobs:
           docker buildx build \
             --platform linux/amd64 \
             --push \
-            --cache-from type=registry,ref=${ECR_URL}:buildcache \
-            --cache-to type=registry,ref=${ECR_URL}:buildcache,mode=max \
+            --cache-from type=gha,scope=ecr \
+            --cache-to type=gha,scope=ecr,mode=max \
             $TAGS \
             -f Dockerfile .
 
