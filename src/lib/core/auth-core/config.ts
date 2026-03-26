@@ -26,7 +26,7 @@ export const APP_CONFIGS: Record<string, AppConfig> = {
     displayName: 'RoboSystems',
     url:
       process.env.NEXT_PUBLIC_ROBOSYSTEMS_APP_URL || 'https://robosystems.ai',
-    description: 'Knowledge Graph Platform',
+    description: 'Financial Intelligence Platform',
     initials: 'RS',
     colorClass: 'bg-accent-600 dark:bg-accent-500',
   },

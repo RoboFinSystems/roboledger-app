@@ -4,7 +4,7 @@
     {
       "label": "RoboLedger App Dev",
       "type": "shell",
-      "command": "npm run dev -- --port ${input:port}",
+      "command": "npm run dev${input:bundler} -- --port ${input:port}",
       "problemMatcher": []
     },
     {
@@ -157,6 +157,13 @@
       "description": "Select which port to run on:",
       "options": ["3000", "3001", "3002", "3003"],
       "default": "3001"
+    },
+    {
+      "id": "bundler",
+      "type": "pickString",
+      "description": "Select bundler:",
+      "options": ["", ":webpack"],
+      "default": ""
     },
     {
       "id": "versionType",

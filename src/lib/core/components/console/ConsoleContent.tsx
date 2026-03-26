@@ -1,5 +1,7 @@
 'use client'
 
+import type { SearchHit, SearchResponse } from '@robosystems/client'
+import * as SDK from '@robosystems/client'
 import { Card } from 'flowbite-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { HiTerminal } from 'react-icons/hi'
@@ -11,7 +13,7 @@ import { ProgressiveText } from './ProgressiveText'
 import type { ConsoleConfig, TerminalMessage } from './types'
 
 function generateMessageId() {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
 }
 
 export function ConsoleContent({ config }: { config: ConsoleConfig }) {
@@ -59,6 +61,7 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
 
     const builtInCommands =
       `  /query      - Execute a Cypher query\n` +
+      `  /search     - Search documents\n` +
       `  /mcp        - Show MCP connection setup\n` +
       `  /help       - Show this help message\n` +
       `  /clear      - Clear console history\n` +
@@ -182,9 +185,11 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
         true
       )
 
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         addSystemMessage(getWelcomeMessage(), true)
       }, 500)
+
+      return () => clearTimeout(timer)
     }
 
     previousGraphId.current = graphId
@@ -485,6 +490,61 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
         await executeCypherQuery(cypherQuery)
       } else {
         addErrorMessage('Usage: /query <cypher-query>')
+      }
+      return
+    }
+
+    // Handle /search command
+    if (command.toLowerCase().startsWith('/search')) {
+      const searchQuery = command.slice(7).trim()
+      if (!searchQuery) {
+        addErrorMessage(
+          'Usage: /search <query>\n\nExamples:\n  /search revenue recognition\n  /search month end close procedures'
+        )
+        return
+      }
+      if (!graphId) {
+        addErrorMessage('No graph selected. Please select a graph first.')
+        return
+      }
+      addSystemMessage(`Searching for "${searchQuery}"...`)
+      try {
+        const body: Record<string, unknown> = {
+          query: searchQuery,
+          size: 10,
+        }
+        const res = await SDK.searchDocuments({
+          path: { graph_id: graphId },
+          body: body as SDK.SearchRequest,
+        })
+        if (res.data) {
+          const data = res.data as SearchResponse
+          if (data.hits.length === 0) {
+            addSystemMessage(`No results found for "${searchQuery}".`)
+          } else {
+            const lines = data.hits.map((hit: SearchHit, idx: number) => {
+              const title =
+                hit.document_title || hit.section_label || 'Untitled'
+              const section =
+                hit.section_label && hit.document_title
+                  ? ` > ${hit.section_label}`
+                  : ''
+              const tags = hit.tags?.length ? `  [${hit.tags.join(', ')}]` : ''
+              const snippet = hit.snippet
+                ? `\n     ${hit.snippet.slice(0, 150)}${hit.snippet.length > 150 ? '...' : ''}`
+                : ''
+              return `  ${idx + 1}. [${hit.score.toFixed(2)}] ${title}${section}${tags}${snippet}`
+            })
+            addSystemMessage(
+              `Found ${data.total} results for "${searchQuery}" (showing ${data.hits.length}):\n\n${lines.join('\n\n')}`,
+              true
+            )
+          }
+        } else {
+          addErrorMessage('Search failed. Please try again.')
+        }
+      } catch {
+        addErrorMessage('An error occurred while searching.')
       }
       return
     }
