@@ -56,7 +56,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
   const [sectionLoading, setSectionLoading] = useState(false)
 
   // Filters visibility
-  const [showFilters, setShowFilters] = useState(false)
+  const [showFilters, setShowFilters] = useState(config.showFilters ?? false)
   const filters = config.filters ?? { sourceType: true }
 
   // Load document stats when graph changes
@@ -65,11 +65,13 @@ export function SearchContent({ config }: { config: SearchConfig }) {
       setDocCount(null)
       return
     }
-    SDK.listDocuments({ path: { graph_id: graphId } }).then((res) => {
-      if (res.data) {
-        setDocCount(res.data.total)
-      }
-    })
+    SDK.listDocuments({ path: { graph_id: graphId } })
+      .then((res) => {
+        if (res.data) {
+          setDocCount(res.data.total)
+        }
+      })
+      .catch(() => {})
   }, [graphId])
 
   // Reset when graph changes
@@ -102,7 +104,10 @@ export function SearchContent({ config }: { config: SearchConfig }) {
         if (sourceType) body.source_type = sourceType
         if (entity) body.entity = entity
         if (formType) body.form_type = formType
-        if (fiscalYear) body.fiscal_year = parseInt(fiscalYear, 10)
+        if (fiscalYear) {
+          const parsed = parseInt(fiscalYear, 10)
+          if (Number.isFinite(parsed)) body.fiscal_year = parsed
+        }
 
         const res = await SDK.searchDocuments({
           path: { graph_id: graphId },
@@ -142,6 +147,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
 
     if (!graphId) return
     setExpandedDocId(docId)
+    setSectionContent(null)
     setSectionLoading(true)
 
     try {
@@ -229,6 +235,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
           <div className="flex flex-wrap items-center gap-4">
             {hasFilters && (
               <button
+                type="button"
                 onClick={() => setShowFilters(!showFilters)}
                 className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               >
@@ -321,6 +328,8 @@ export function SearchContent({ config }: { config: SearchConfig }) {
                     id="search-fiscal-year"
                     type="number"
                     placeholder="e.g. 2024"
+                    min={1900}
+                    max={2100}
                     value={fiscalYear}
                     onChange={(e) => setFiscalYear(e.target.value)}
                   />
@@ -354,6 +363,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
                 type="button"
                 className="w-full cursor-pointer text-left"
                 onClick={() => handleExpand(hit.document_id)}
+                aria-expanded={expandedDocId === hit.document_id}
               >
                 <div className="flex items-start justify-between">
                   <div className="min-w-0 flex-1">

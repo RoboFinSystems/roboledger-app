@@ -99,10 +99,9 @@ describe('SignInForm', () => {
       render(<SignInForm {...defaultProps} />)
 
       await waitFor(() => {
-        expect(screen.queryByTestId('spinner')).not.toBeInTheDocument()
+        expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
       })
 
-      expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
       expect(
         screen.getByRole('button', { name: /sign in/i })
