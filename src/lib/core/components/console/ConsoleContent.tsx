@@ -13,7 +13,7 @@ import { ProgressiveText } from './ProgressiveText'
 import type { ConsoleConfig, TerminalMessage } from './types'
 
 function generateMessageId() {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
 }
 
 export function ConsoleContent({ config }: { config: ConsoleConfig }) {
@@ -185,9 +185,11 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
         true
       )
 
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         addSystemMessage(getWelcomeMessage(), true)
       }, 500)
+
+      return () => clearTimeout(timer)
     }
 
     previousGraphId.current = graphId
