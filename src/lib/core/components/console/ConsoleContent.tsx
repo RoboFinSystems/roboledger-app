@@ -61,7 +61,7 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
 
     const builtInCommands =
       `  /query      - Execute a Cypher query\n` +
-      `  /search     - Search documents (-s for semantic)\n` +
+      `  /search     - Search documents\n` +
       `  /mcp        - Show MCP connection setup\n` +
       `  /help       - Show this help message\n` +
       `  /clear      - Clear console history\n` +
@@ -494,18 +494,10 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
 
     // Handle /search command
     if (command.toLowerCase().startsWith('/search')) {
-      let searchArgs = command.slice(7).trim()
-      const useSemantic =
-        searchArgs.startsWith('--semantic ') || searchArgs.startsWith('-s ')
-      if (useSemantic) {
-        searchArgs = searchArgs.startsWith('--semantic ')
-          ? searchArgs.slice(11).trim()
-          : searchArgs.slice(3).trim()
-      }
-      const searchQuery = searchArgs
+      const searchQuery = command.slice(7).trim()
       if (!searchQuery) {
         addErrorMessage(
-          'Usage: /search [--semantic|-s] <query>\n\nExamples:\n  /search revenue recognition\n  /search -s month end close procedures'
+          'Usage: /search <query>\n\nExamples:\n  /search revenue recognition\n  /search month end close procedures'
         )
         return
       }
@@ -513,15 +505,12 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
         addErrorMessage('No graph selected. Please select a graph first.')
         return
       }
-      addSystemMessage(
-        `Searching for "${searchQuery}"${useSemantic ? ' (semantic)' : ''}...`
-      )
+      addSystemMessage(`Searching for "${searchQuery}"...`)
       try {
         const body: Record<string, unknown> = {
           query: searchQuery,
           size: 10,
         }
-        if (useSemantic) body.semantic = true
         const res = await SDK.searchDocuments({
           path: { graph_id: graphId },
           body: body as SDK.SearchRequest,
