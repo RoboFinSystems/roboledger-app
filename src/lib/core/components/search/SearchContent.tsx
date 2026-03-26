@@ -14,7 +14,6 @@ import {
   Select,
   Spinner,
   TextInput,
-  ToggleSwitch,
 } from 'flowbite-react'
 import { useCallback, useEffect, useState } from 'react'
 import { HiChevronDown, HiChevronUp, HiSearch } from 'react-icons/hi'
@@ -33,7 +32,6 @@ export function SearchContent({ config }: { config: SearchConfig }) {
 
   // Search state
   const [query, setQuery] = useState('')
-  const [semantic, setSemantic] = useState(false)
   const [sourceType, setSourceType] = useState(config.defaultSourceType ?? '')
   const [entity, setEntity] = useState('')
   const [formType, setFormType] = useState('')
@@ -59,7 +57,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
 
   // Filters visibility
   const [showFilters, setShowFilters] = useState(false)
-  const filters = config.filters ?? { sourceType: true, semantic: true }
+  const filters = config.filters ?? { sourceType: true }
 
   // Load document stats when graph changes
   useEffect(() => {
@@ -101,7 +99,6 @@ export function SearchContent({ config }: { config: SearchConfig }) {
           offset: newOffset,
         }
 
-        if (semantic) body.semantic = true
         if (sourceType) body.source_type = sourceType
         if (entity) body.entity = entity
         if (formType) body.form_type = formType
@@ -127,7 +124,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
         setLoading(false)
       }
     },
-    [graphId, query, semantic, sourceType, entity, formType, fiscalYear]
+    [graphId, query, sourceType, entity, formType, fiscalYear]
   )
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -220,7 +217,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
               icon={HiSearch}
             />
             <Button
-              color="primary"
+              color="purple"
               onClick={() => handleSearch(0)}
               disabled={loading || !query.trim()}
             >
@@ -230,14 +227,6 @@ export function SearchContent({ config }: { config: SearchConfig }) {
 
           {/* Toggles row */}
           <div className="flex flex-wrap items-center gap-4">
-            {filters.semantic !== false && (
-              <ToggleSwitch
-                checked={semantic}
-                onChange={setSemantic}
-                label="Semantic search"
-              />
-            )}
-
             {hasFilters && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
