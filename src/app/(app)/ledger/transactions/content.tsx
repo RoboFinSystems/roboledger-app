@@ -22,8 +22,14 @@ import {
   TableRow,
   TextInput,
 } from 'flowbite-react'
-import type { FC } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  type FC,
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import {
   HiChevronDown,
   HiChevronRight,
@@ -414,9 +420,8 @@ const TransactionsContent: FC = function () {
                   const lineItems = lineItemsMap[key] || []
 
                   return (
-                    <>
+                    <Fragment key={key}>
                       <TableRow
-                        key={key}
                         className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
                         onClick={() => toggleExpand(tx)}
                       >
@@ -552,7 +557,7 @@ const TransactionsContent: FC = function () {
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </Fragment>
                   )
                 })}
               </TableBody>

@@ -168,7 +168,7 @@ const TrialBalanceContent: FC = function () {
     }
 
     loadTrialBalance()
-  }, [graphState.graphs, viewMode])
+  }, [graphState.graphs])
 
   // Filter data
   const filteredData = useMemo(() => {
