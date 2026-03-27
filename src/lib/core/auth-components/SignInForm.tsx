@@ -44,6 +44,10 @@ export function SignInForm({
 
     const checkAuth = async () => {
       try {
+        // Capture returnUrl before handleSSOLogin cleans up URL params
+        const urlParams = new URLSearchParams(window.location.search)
+        const ssoReturnUrl = urlParams.get('returnUrl')
+
         // Check for SSO login from URL parameters
         const ssoUser = await handleSSOLogin()
         if (ssoUser) {
@@ -51,7 +55,11 @@ export function SignInForm({
           if (onSuccess) {
             onSuccess(ssoUser)
           }
-          window.location.href = redirectTo
+          // handleSSOLogin schedules navigation to returnUrl if present;
+          // only redirect to the default if no returnUrl was specified
+          if (!ssoReturnUrl) {
+            window.location.href = redirectTo
+          }
           return
         }
 

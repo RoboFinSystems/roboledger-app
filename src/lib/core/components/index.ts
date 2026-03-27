@@ -11,7 +11,6 @@ export {
   type EntitySelectorProps,
   type GraphWithEntities,
 } from './EntitySelectorCore'
-export { GraphCreationPage } from './graph-creation/GraphCreationPage'
 export {
   GraphFilters,
   byGraphType,

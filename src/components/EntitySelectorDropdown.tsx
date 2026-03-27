@@ -2,21 +2,26 @@
 
 import type { Entity } from '@/lib/core'
 import { GraphFilters, useEntity, useGraphContext } from '@/lib/core'
+import { useSSO } from '@/lib/core/auth-core/sso'
 import * as SDK from '@robosystems/client'
 import { useEffect, useMemo, useState } from 'react'
 import { HiChevronDown, HiOfficeBuilding } from 'react-icons/hi'
 
+const API_URL =
+  process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL || 'http://localhost:8000'
+
 /**
  * EntitySelectorDropdown for RoboLedger
  *
- * Shows all entities across all roboledger graphs.
- * Selecting an entity automatically switches to its graph.
+ * Loads the parent entity for each roboledger graph via the ledger entity API.
+ * Selecting an entity switches to its graph.
  */
 export function EntitySelectorDropdown() {
   const { state: graphState, setCurrentGraph } = useGraphContext()
   const { currentEntity, setCurrentEntity } = useEntity()
+  const { navigateToApp } = useSSO(API_URL)
   const [isOpen, setIsOpen] = useState(false)
-  const [entitiesByGraph, setEntitiesByGraph] = useState<Map<string, Entity[]>>(
+  const [entitiesByGraph, setEntitiesByGraph] = useState<Map<string, Entity>>(
     new Map()
   )
   const [isLoading, setIsLoading] = useState(false)
@@ -27,100 +32,82 @@ export function EntitySelectorDropdown() {
     [graphState.graphs]
   )
 
-  // Load entities for all roboledger graphs
+  // Load parent entity for each roboledger graph
   useEffect(() => {
-    const loadAllEntities = async () => {
+    const loadEntities = async () => {
       setIsLoading(true)
-      const entitiesMap = new Map<string, Entity[]>()
-
-      for (const graph of roboledgerGraphs) {
-        try {
-          const response = await SDK.executeCypherQuery({
-            path: { graph_id: graph.graphId },
-            query: { mode: 'sync' },
-            body: {
-              query: `MATCH (e:Entity)
-                      RETURN
-                        e.identifier as identifier,
-                        e.name as name,
-                        e.parent_entity_id as parentEntityId,
-                        e.is_parent as isParent
-                      ORDER BY e.name`,
-              parameters: {},
-            },
-          })
-
-          if (response.data) {
-            const data = response.data as any
-            const rows = data.data || []
-
-            const entities: Entity[] = rows.map((row: any) => ({
-              identifier: row.identifier || '',
-              name: row.name || row.identifier || 'Unnamed Entity',
-              parentEntityId: row.parentEntityId,
-              isParent: row.isParent,
-            }))
-
-            if (entities.length > 0) {
-              entitiesMap.set(graph.graphId, entities)
-            }
-          }
-        } catch (error) {
-          console.error(
-            `Failed to load entities for graph ${graph.graphId}:`,
-            error
+      const results = await Promise.allSettled(
+        roboledgerGraphs.map((graph) =>
+          SDK.getLedgerEntity({ path: { graph_id: graph.graphId } }).then(
+            (response) => ({ graph, response })
           )
+        )
+      )
+
+      const entityMap = new Map<string, Entity>()
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value.response.data) {
+          const { graph, response } = result.value
+          const data = response.data as any
+          entityMap.set(graph.graphId, {
+            identifier: data.id || data.uri || '',
+            name: data.name || 'Unnamed Entity',
+            parentEntityId: data.parent_entity_id,
+            isParent: data.is_parent,
+          })
+        } else if (result.status === 'rejected') {
+          console.error('Failed to load entity:', result.reason)
         }
       }
 
-      setEntitiesByGraph(entitiesMap)
+      setEntitiesByGraph(entityMap)
       setIsLoading(false)
+
+      // Auto-select entity for current graph if none selected
+      if (!currentEntity && graphState.currentGraphId) {
+        const entity = entityMap.get(graphState.currentGraphId)
+        if (entity) {
+          setCurrentEntity(entity)
+        }
+      }
     }
 
     if (roboledgerGraphs.length > 0) {
-      loadAllEntities()
+      loadEntities()
     }
-  }, [roboledgerGraphs]) // Only reload when graphs change, not on every entity selection
+  }, [
+    roboledgerGraphs,
+    currentEntity,
+    graphState.currentGraphId,
+    setCurrentEntity,
+  ])
 
   const handleEntitySelect = async (entity: Entity, graphId: string) => {
     setIsOpen(false)
 
-    // Switch graph if different from current
     if (graphId !== graphState.currentGraphId) {
       await setCurrentGraph(graphId)
     }
 
-    // Set the selected entity
     setCurrentEntity(entity)
   }
 
-  // Get current graph name
-  const currentGraph = roboledgerGraphs.find(
-    (g) => g.graphId === graphState.currentGraphId
-  )
-
-  // Calculate total entities across all graphs
-  const totalEntities = Array.from(entitiesByGraph.values()).reduce(
-    (sum, entities) => sum + entities.length,
-    0
-  )
-
-  // Determine empty state
+  const totalEntities = entitiesByGraph.size
   const hasNoGraphs = roboledgerGraphs.length === 0
   const hasNoEntities = !isLoading && totalEntities === 0
 
-  // If no graphs, show create graph link
+  // If no graphs, link to platform to create one
   if (hasNoGraphs) {
     return (
-      <a
-        href="/graphs/new"
+      <button
+        onClick={() => navigateToApp('robosystems', '/graphs/new')}
         className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600"
       >
         <HiOfficeBuilding className="h-4 w-4 text-gray-500 dark:text-gray-400" />
         <span className="font-medium text-gray-900 dark:text-gray-100">
           Create Graph
         </span>
-      </a>
+      </button>
     )
   }
 
@@ -161,111 +148,55 @@ export function EntitySelectorDropdown() {
                 </div>
               ) : (
                 <>
-                  {/* Currently selected entity at the top */}
-                  {currentEntity &&
-                    graphState.currentGraphId &&
-                    (() => {
-                      const currentGraphEntities =
-                        entitiesByGraph.get(graphState.currentGraphId) || []
-                      const selectedEntity = currentGraphEntities.find(
-                        (e) => e.identifier === currentEntity.identifier
-                      )
-                      const selectedGraph = roboledgerGraphs.find(
-                        (g) => g.graphId === graphState.currentGraphId
-                      )
-
-                      if (selectedEntity && selectedGraph) {
-                        return (
-                          <>
-                            <div className="border-b-2 border-gray-300 dark:border-gray-500">
-                              <div className="bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                                Current Selection
-                              </div>
-                              <button
-                                onClick={() =>
-                                  handleEntitySelect(
-                                    selectedEntity,
-                                    selectedGraph.graphId
-                                  )
-                                }
-                                className="w-full bg-blue-50 px-4 py-2 text-left hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/40"
-                              >
-                                <div className="flex flex-col">
-                                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                                    {selectedEntity.name}
-                                  </span>
-                                  <span className="text-xs text-gray-600 dark:text-gray-400">
-                                    {selectedGraph.graphName}
-                                    {selectedEntity.parentEntityId &&
-                                      ' • Subsidiary'}
-                                    {selectedEntity.isParent && ' • Parent'}
-                                  </span>
-                                </div>
-                              </button>
-                            </div>
-                          </>
-                        )
-                      }
-                      return null
-                    })()}
-
-                  {/* All other entities grouped by graph */}
+                  {/* Entity list — one per graph */}
                   {roboledgerGraphs.map((graph) => {
-                    const entities = entitiesByGraph.get(graph.graphId) || []
-                    // Filter out the currently selected entity
-                    const otherEntities = entities.filter(
-                      (e) =>
-                        !(
-                          currentEntity?.identifier === e.identifier &&
-                          graphState.currentGraphId === graph.graphId
-                        )
-                    )
+                    const entity = entitiesByGraph.get(graph.graphId)
+                    if (!entity) return null
 
-                    if (otherEntities.length === 0) return null
+                    const isSelected =
+                      currentEntity?.identifier === entity.identifier &&
+                      graphState.currentGraphId === graph.graphId
 
                     return (
-                      <div
+                      <button
                         key={graph.graphId}
-                        className="border-b border-gray-200 last:border-0 dark:border-gray-600"
+                        onClick={() =>
+                          handleEntitySelect(entity, graph.graphId)
+                        }
+                        className={`w-full border-b border-gray-200 px-4 py-3 text-left transition-colors last:border-0 dark:border-gray-600 ${
+                          isSelected
+                            ? 'bg-blue-50 dark:bg-blue-900/30'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
                       >
-                        {/* Graph header */}
-                        <div className="bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                          {graph.graphName}
-                        </div>
-
-                        {/* Entities */}
-                        {otherEntities.map((entity) => (
-                          <button
-                            key={`${graph.graphId}-${entity.identifier}`}
-                            onClick={() =>
-                              handleEntitySelect(entity, graph.graphId)
-                            }
-                            className="w-full px-4 py-2 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                        <div className="flex flex-col">
+                          <span
+                            className={`text-sm font-medium ${
+                              isSelected
+                                ? 'text-blue-700 dark:text-blue-300'
+                                : 'text-gray-900 dark:text-gray-100'
+                            }`}
                           >
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {entity.name}
-                              </span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {entity.identifier}
-                                {entity.parentEntityId && ' • Subsidiary'}
-                                {entity.isParent && ' • Parent'}
-                              </span>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
+                            {entity.name}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {graph.graphName}
+                          </span>
+                        </div>
+                      </button>
                     )
                   })}
 
-                  {/* Create New Entity Link */}
+                  {/* Create New Entity — redirects to platform via SSO */}
                   <div className="border-t-2 border-gray-300 dark:border-gray-600">
-                    <a
-                      href="/graphs/new"
+                    <button
+                      onClick={() =>
+                        navigateToApp('robosystems', '/graphs/new')
+                      }
                       className="flex w-full items-center justify-center px-4 py-3 text-sm font-medium text-blue-600 transition-colors hover:bg-gray-50 dark:text-blue-400 dark:hover:bg-gray-700"
                     >
                       + Create New Entity
-                    </a>
+                    </button>
                   </div>
                 </>
               )}

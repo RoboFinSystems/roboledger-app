@@ -4,7 +4,7 @@
 import { SDK, useGraphContext } from '@/lib/core'
 import { Spinner } from '@/lib/core/ui-components'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function QuickBooksCallbackPage() {
   const router = useRouter()
@@ -16,8 +16,15 @@ export default function QuickBooksCallbackPage() {
     'loading'
   )
   const [error, setError] = useState<string>('')
+  const attemptedRef = useRef(false)
 
   useEffect(() => {
+    // Wait for graph context to load
+    if (!currentGraphId) return
+    // Only attempt once
+    if (attemptedRef.current) return
+    attemptedRef.current = true
+
     const handleCallback = async () => {
       try {
         const code = searchParams.get('code')
@@ -26,13 +33,6 @@ export default function QuickBooksCallbackPage() {
 
         if (!code || !realmId) {
           setError('Missing authorization code or realm ID from QuickBooks')
-          setStatus('error')
-          return
-        }
-
-        // Check graph selection
-        if (!currentGraphId) {
-          setError('No graph selected')
           setStatus('error')
           return
         }
@@ -52,7 +52,6 @@ export default function QuickBooksCallbackPage() {
 
         if ((response.data as any)?.success) {
           setStatus('success')
-          // Redirect to connections page after a short delay
           setTimeout(() => {
             router.push('/connections?success=quickbooks-connected')
           }, 2000)
@@ -68,12 +67,12 @@ export default function QuickBooksCallbackPage() {
     }
 
     handleCallback()
-  }, [searchParams, currentGraphId, router])
+  }, [currentGraphId, searchParams, router])
 
   if (status === 'loading') {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="flex flex-col items-center text-center">
           <Spinner size="xl" />
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
             Connecting to QuickBooks...
