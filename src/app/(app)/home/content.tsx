@@ -7,6 +7,7 @@ import {
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
+import { useSSO } from '@/lib/core/auth-core/sso'
 import { Button, Card } from 'flowbite-react'
 import { useRouter } from 'next/navigation'
 import type { FC } from 'react'
@@ -52,9 +53,13 @@ const quickActions = [
   },
 ]
 
+const API_URL =
+  process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL || 'http://localhost:8000'
+
 const HomePageContent: FC = function () {
   const { state: graphState } = useGraphContext()
   const router = useRouter()
+  const { navigateToApp } = useSSO(API_URL)
 
   const hasQualifyingGraph = useMemo(
     () => graphState.graphs.filter(GraphFilters.roboledger).length > 0,
@@ -192,7 +197,7 @@ const HomePageContent: FC = function () {
               <Button
                 theme={customTheme.button}
                 color="primary"
-                onClick={() => router.push('/graphs/new')}
+                onClick={() => navigateToApp('robosystems', '/graphs/new')}
                 className="w-full"
                 size="lg"
               >

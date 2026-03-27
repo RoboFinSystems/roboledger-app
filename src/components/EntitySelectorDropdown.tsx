@@ -2,9 +2,13 @@
 
 import type { Entity } from '@/lib/core'
 import { GraphFilters, useEntity, useGraphContext } from '@/lib/core'
+import { useSSO } from '@/lib/core/auth-core/sso'
 import * as SDK from '@robosystems/client'
 import { useEffect, useMemo, useState } from 'react'
 import { HiChevronDown, HiOfficeBuilding } from 'react-icons/hi'
+
+const API_URL =
+  process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL || 'http://localhost:8000'
 
 /**
  * EntitySelectorDropdown for RoboLedger
@@ -15,6 +19,7 @@ import { HiChevronDown, HiOfficeBuilding } from 'react-icons/hi'
 export function EntitySelectorDropdown() {
   const { state: graphState, setCurrentGraph } = useGraphContext()
   const { currentEntity, setCurrentEntity } = useEntity()
+  const { navigateToApp } = useSSO(API_URL)
   const [isOpen, setIsOpen] = useState(false)
   const [entitiesByGraph, setEntitiesByGraph] = useState<Map<string, Entity[]>>(
     new Map()
@@ -109,18 +114,18 @@ export function EntitySelectorDropdown() {
   const hasNoGraphs = roboledgerGraphs.length === 0
   const hasNoEntities = !isLoading && totalEntities === 0
 
-  // If no graphs, show create graph link
+  // If no graphs, link to platform to create one
   if (hasNoGraphs) {
     return (
-      <a
-        href="/graphs/new"
+      <button
+        onClick={() => navigateToApp('robosystems', '/graphs/new')}
         className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600"
       >
         <HiOfficeBuilding className="h-4 w-4 text-gray-500 dark:text-gray-400" />
         <span className="font-medium text-gray-900 dark:text-gray-100">
           Create Graph
         </span>
-      </a>
+      </button>
     )
   }
 
@@ -258,14 +263,14 @@ export function EntitySelectorDropdown() {
                     )
                   })}
 
-                  {/* Create New Entity Link */}
+                  {/* Create New Entity — redirects to platform via SSO */}
                   <div className="border-t-2 border-gray-300 dark:border-gray-600">
-                    <a
-                      href="/graphs/new"
+                    <button
+                      onClick={() => navigateToApp('robosystems', '/graphs/new')}
                       className="flex w-full items-center justify-center px-4 py-3 text-sm font-medium text-blue-600 transition-colors hover:bg-gray-50 dark:text-blue-400 dark:hover:bg-gray-700"
                     >
                       + Create New Entity
-                    </a>
+                    </button>
                   </div>
                 </>
               )}
