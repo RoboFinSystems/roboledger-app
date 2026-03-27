@@ -1,9 +1,9 @@
 'use client'
 
+import { useSSO } from '@/lib/core/auth-core/sso'
 import { Card } from 'flowbite-react'
 import { useState } from 'react'
 import { HiExternalLink } from 'react-icons/hi'
-import { useSSO } from '@/lib/core/auth-core/sso'
 
 const API_URL =
   process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL || 'http://localhost:8000'

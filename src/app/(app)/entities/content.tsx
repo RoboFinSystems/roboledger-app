@@ -6,9 +6,9 @@ import {
   customTheme,
   GraphFilters,
   PageLayout,
-  SDK,
   useGraphContext,
 } from '@/lib/core'
+import * as SDK from '@robosystems/client'
 import {
   Alert,
   Badge,
@@ -30,6 +30,8 @@ interface EntityWithGraph extends Entity {
   _graphId: string
   _graphName: string
   _graphCreatedAt?: string
+  _entityType?: string
+  _status?: string
 }
 
 const EntitiesListPageContent: FC = function () {
@@ -39,59 +41,42 @@ const EntitiesListPageContent: FC = function () {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Load all entities from all roboledger graphs
+  // Load parent entity from each roboledger graph via the ledger entity API
   useEffect(() => {
     const loadAllEntities = async () => {
       try {
         setIsLoading(true)
         setError(null)
 
-        // Filter to only roboledger graphs
         const roboledgerGraphs = graphState.graphs.filter(
           GraphFilters.roboledger
         )
 
-        // Load entities from all roboledger graphs
         const allEntities: EntityWithGraph[] = []
 
         for (const graph of roboledgerGraphs) {
           try {
-            const response = await SDK.executeCypherQuery({
+            const response = await SDK.getLedgerEntity({
               path: { graph_id: graph.graphId },
-              query: { mode: 'sync' },
-              body: {
-                query: `MATCH (e:Entity)
-                        RETURN
-                          e.identifier as identifier,
-                          e.name as name,
-                          e.entity_type as entityType,
-                          e.parent_entity_id as parentEntityId,
-                          e.is_parent as isParent
-                        ORDER BY e.name`,
-                parameters: {},
-              },
             })
 
             if (response.data) {
               const data = response.data as any
-              const rows = data.data || []
-
-              const graphEntities: EntityWithGraph[] = rows.map((row: any) => ({
-                identifier: row.identifier || '',
-                name: row.name || row.identifier || 'Unnamed Entity',
-                entityType: row.entityType,
-                parentEntityId: row.parentEntityId,
-                isParent: row.isParent,
+              allEntities.push({
+                identifier: data.id || data.uri || '',
+                name: data.name || 'Unnamed Entity',
+                parentEntityId: data.parent_entity_id,
+                isParent: data.is_parent,
                 _graphId: graph.graphId,
                 _graphName: graph.graphName,
                 _graphCreatedAt: graph.createdAt,
-              }))
-
-              allEntities.push(...graphEntities)
+                _entityType: data.entity_type,
+                _status: data.status,
+              })
             }
           } catch (error) {
             console.error(
-              `Error loading entities from graph ${graph.graphName}:`,
+              `Error loading entity from graph ${graph.graphName}:`,
               error
             )
           }
@@ -172,44 +157,43 @@ const EntitiesListPageContent: FC = function () {
             <Table theme={customTheme.table}>
               <TableHead>
                 <TableHeadCell>Entity</TableHeadCell>
+                <TableHeadCell>Graph</TableHeadCell>
                 <TableHeadCell>Type</TableHeadCell>
-                <TableHeadCell>Relationship</TableHeadCell>
+                <TableHeadCell>Status</TableHeadCell>
                 <TableHeadCell>Created</TableHeadCell>
               </TableHead>
               <TableBody>
                 {filteredEntities.map((entity) => (
-                  <TableRow key={`${entity._graphId}-${entity.identifier}`}>
+                  <TableRow key={entity._graphId}>
                     <TableCell className="font-medium text-gray-900 dark:text-white">
                       <div className="flex flex-col">
                         <span className="font-semibold">{entity.name}</span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                        <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
                           {entity.identifier}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      {entity.entityType ? (
+                      <span className="text-sm text-gray-600 dark:text-gray-300">
+                        {entity._graphName}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {entity._entityType ? (
                         <Badge color="gray" size="sm">
-                          {entity.entityType}
+                          {entity._entityType}
                         </Badge>
                       ) : (
-                        <span className="text-sm text-gray-400">N/A</span>
+                        <span className="text-sm text-gray-400">--</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      {entity.isParent ? (
-                        <Badge color="success" size="sm">
-                          Parent
-                        </Badge>
-                      ) : entity.parentEntityId ? (
-                        <Badge color="warning" size="sm">
-                          Subsidiary
-                        </Badge>
-                      ) : (
-                        <span className="text-sm text-gray-400">
-                          Standalone
-                        </span>
-                      )}
+                      <Badge
+                        color={entity._status === 'active' ? 'success' : 'gray'}
+                        size="sm"
+                      >
+                        {entity._status || 'active'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -217,7 +201,7 @@ const EntitiesListPageContent: FC = function () {
                           ? new Date(
                               entity._graphCreatedAt
                             ).toLocaleDateString()
-                          : 'N/A'}
+                          : '--'}
                       </span>
                     </TableCell>
                   </TableRow>

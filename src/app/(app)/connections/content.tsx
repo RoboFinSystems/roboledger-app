@@ -19,7 +19,8 @@ import {
   ModalFooter,
   ModalHeader,
 } from 'flowbite-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { HiLink, HiPlus } from 'react-icons/hi'
 
 import ConnectionCard, {
@@ -80,6 +81,22 @@ export default function ModernConnectionsContent() {
   const { showError, showSuccess, ToastContainer } = useToast()
   const { state: graphState } = useGraphContext()
   const { currentGraphId } = graphState
+  const searchParams = useSearchParams()
+  const shownSuccessRef = useRef(false)
+
+  // Show success toast when redirected from OAuth callback
+  useEffect(() => {
+    const success = searchParams.get('success')
+    if (success && !shownSuccessRef.current) {
+      shownSuccessRef.current = true
+      const provider = success.replace('-connected', '').replace('-', ' ')
+      showSuccess(
+        `${provider.charAt(0).toUpperCase() + provider.slice(1)} connected successfully`
+      )
+      // Clean up URL
+      window.history.replaceState({}, '', '/connections')
+    }
+  }, [searchParams, showSuccess])
 
   // ── Load connections (all providers) ──
 
@@ -106,10 +123,15 @@ export default function ModernConnectionsContent() {
   }, [currentGraphId, showError])
 
   useEffect(() => {
-    if (currentGraphId) {
-      loadConnections()
+    if (!currentGraphId) return
+    // When arriving from OAuth callback, give the backend a moment to persist
+    const success = searchParams.get('success')
+    if (success) {
+      const timer = setTimeout(() => loadConnections(), 1500)
+      return () => clearTimeout(timer)
     }
-  }, [loadConnections, currentGraphId])
+    loadConnections()
+  }, [loadConnections, currentGraphId, searchParams])
 
   // ── Poll active tasks ──
 
