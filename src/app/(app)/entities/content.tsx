@@ -52,33 +52,32 @@ const EntitiesListPageContent: FC = function () {
           GraphFilters.roboledger
         )
 
-        const allEntities: EntityWithGraph[] = []
-
-        for (const graph of roboledgerGraphs) {
-          try {
-            const response = await SDK.getLedgerEntity({
-              path: { graph_id: graph.graphId },
-            })
-
-            if (response.data) {
-              const data = response.data as any
-              allEntities.push({
-                identifier: data.id || data.uri || '',
-                name: data.name || 'Unnamed Entity',
-                parentEntityId: data.parent_entity_id,
-                isParent: data.is_parent,
-                _graphId: graph.graphId,
-                _graphName: graph.graphName,
-                _graphCreatedAt: graph.createdAt,
-                _entityType: data.entity_type,
-                _status: data.status,
-              })
-            }
-          } catch (error) {
-            console.error(
-              `Error loading entity from graph ${graph.graphName}:`,
-              error
+        const results = await Promise.allSettled(
+          roboledgerGraphs.map((graph) =>
+            SDK.getLedgerEntity({ path: { graph_id: graph.graphId } }).then(
+              (response) => ({ graph, response })
             )
+          )
+        )
+
+        const allEntities: EntityWithGraph[] = []
+        for (const result of results) {
+          if (result.status === 'fulfilled' && result.value.response.data) {
+            const { graph, response } = result.value
+            const data = response.data as any
+            allEntities.push({
+              identifier: data.id || data.uri || '',
+              name: data.name || 'Unnamed Entity',
+              parentEntityId: data.parent_entity_id,
+              isParent: data.is_parent,
+              _graphId: graph.graphId,
+              _graphName: graph.graphName,
+              _graphCreatedAt: graph.createdAt,
+              _entityType: data.entity_type,
+              _status: data.status,
+            })
+          } else if (result.status === 'rejected') {
+            console.error('Error loading entity:', result.reason)
           }
         }
 

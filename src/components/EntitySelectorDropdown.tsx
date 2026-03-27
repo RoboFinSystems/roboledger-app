@@ -36,28 +36,27 @@ export function EntitySelectorDropdown() {
   useEffect(() => {
     const loadEntities = async () => {
       setIsLoading(true)
-      const entityMap = new Map<string, Entity>()
-
-      for (const graph of roboledgerGraphs) {
-        try {
-          const response = await SDK.getLedgerEntity({
-            path: { graph_id: graph.graphId },
-          })
-
-          if (response.data) {
-            const data = response.data as any
-            entityMap.set(graph.graphId, {
-              identifier: data.id || data.uri || '',
-              name: data.name || 'Unnamed Entity',
-              parentEntityId: data.parent_entity_id,
-              isParent: data.is_parent,
-            })
-          }
-        } catch (error) {
-          console.error(
-            `Failed to load entity for graph ${graph.graphId}:`,
-            error
+      const results = await Promise.allSettled(
+        roboledgerGraphs.map((graph) =>
+          SDK.getLedgerEntity({ path: { graph_id: graph.graphId } }).then(
+            (response) => ({ graph, response })
           )
+        )
+      )
+
+      const entityMap = new Map<string, Entity>()
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value.response.data) {
+          const { graph, response } = result.value
+          const data = response.data as any
+          entityMap.set(graph.graphId, {
+            identifier: data.id || data.uri || '',
+            name: data.name || 'Unnamed Entity',
+            parentEntityId: data.parent_entity_id,
+            isParent: data.is_parent,
+          })
+        } else if (result.status === 'rejected') {
+          console.error('Failed to load entity:', result.reason)
         }
       }
 
@@ -76,7 +75,12 @@ export function EntitySelectorDropdown() {
     if (roboledgerGraphs.length > 0) {
       loadEntities()
     }
-  }, [roboledgerGraphs])
+  }, [
+    roboledgerGraphs,
+    currentEntity,
+    graphState.currentGraphId,
+    setCurrentEntity,
+  ])
 
   const handleEntitySelect = async (entity: Entity, graphId: string) => {
     setIsOpen(false)

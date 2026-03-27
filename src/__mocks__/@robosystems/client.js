@@ -91,6 +91,10 @@ export const getGraphMonthlyBill = vi.fn()
 export const getGraphBillingHistory = vi.fn()
 export const getGraphUsageDetails = vi.fn()
 
+// Ledger functions
+export const getLedgerEntity = vi.fn()
+export const updateLedgerEntity = vi.fn()
+
 // Connection functions
 export const getConnectionOptions = vi.fn()
 export const listConnections = vi.fn()

@@ -221,7 +221,7 @@ export default function ModernConnectionsContent() {
 
   // ── Provider setup callbacks ──
 
-  const handleSetupSuccess = (connectionId: string) => {
+  const handleSetupSuccess = () => {
     showSuccess('Connection created successfully')
     closeMarketplace()
     loadConnections()
