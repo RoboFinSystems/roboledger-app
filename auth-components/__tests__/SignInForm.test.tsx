@@ -167,6 +167,49 @@ describe('SignInForm', () => {
 
       expect(mockUseSSOInstance.handleSSOLogin).toHaveBeenCalled()
     })
+
+    it('should redirect to default redirectTo when SSO login succeeds without returnUrl', async () => {
+      // No returnUrl in URL params
+      Object.defineProperty(window, 'location', {
+        value: { ...window.location, search: '', href: '' },
+        writable: true,
+      })
+
+      mockUseSSOInstance.handleSSOLogin.mockResolvedValue(mockUser)
+      const mockOnSuccess = vi.fn()
+
+      render(<SignInForm {...defaultProps} onSuccess={mockOnSuccess} />)
+
+      await waitFor(() => {
+        expect(mockOnSuccess).toHaveBeenCalledWith(mockUser)
+      })
+
+      expect(window.location.href).toBe('/dashboard')
+    })
+
+    it('should not redirect to default redirectTo when SSO login succeeds with returnUrl', async () => {
+      // returnUrl present in URL params — handleSSOLogin handles that redirect
+      Object.defineProperty(window, 'location', {
+        value: {
+          ...window.location,
+          search: '?returnUrl=/custom-page',
+          href: '',
+        },
+        writable: true,
+      })
+
+      mockUseSSOInstance.handleSSOLogin.mockResolvedValue(mockUser)
+      const mockOnSuccess = vi.fn()
+
+      render(<SignInForm {...defaultProps} onSuccess={mockOnSuccess} />)
+
+      await waitFor(() => {
+        expect(mockOnSuccess).toHaveBeenCalledWith(mockUser)
+      })
+
+      // Should NOT redirect to default /dashboard since returnUrl exists
+      expect(window.location.href).not.toBe('/dashboard')
+    })
   })
 
   describe('Form Submission', () => {
