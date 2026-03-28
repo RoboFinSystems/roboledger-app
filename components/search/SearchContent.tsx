@@ -20,6 +20,7 @@ import { HiChevronDown, HiChevronUp, HiSearch } from 'react-icons/hi'
 import ReactMarkdown from 'react-markdown'
 
 import { useGraphContext } from '../../contexts'
+import { useIsRepository } from '../../components/RepositoryGuard'
 import { customTheme } from '../../theme'
 import { PageLayout } from '../PageLayout'
 import type { SearchConfig } from './types'
@@ -29,6 +30,7 @@ const PAGE_SIZE = 20
 export function SearchContent({ config }: { config: SearchConfig }) {
   const { state: graphState } = useGraphContext()
   const graphId = graphState.currentGraphId
+  const { isRepository } = useIsRepository()
 
   // Search state
   const [query, setQuery] = useState('')
@@ -59,9 +61,9 @@ export function SearchContent({ config }: { config: SearchConfig }) {
   const [showFilters, setShowFilters] = useState(config.showFilters ?? false)
   const filters = config.filters ?? { sourceType: true }
 
-  // Load document stats when graph changes
+  // Load document stats when graph changes (skip for shared repositories)
   useEffect(() => {
-    if (!graphId) {
+    if (!graphId || isRepository) {
       setDocCount(null)
       return
     }
@@ -72,7 +74,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
         }
       })
       .catch(() => {})
-  }, [graphId])
+  }, [graphId, isRepository])
 
   // Reset when graph changes
   useEffect(() => {
@@ -201,7 +203,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {config.description}
-            {docCount !== null && (
+            {docCount !== null && docCount > 0 && (
               <span className="ml-2 text-gray-400 dark:text-gray-500">
                 ({docCount} document{docCount !== 1 ? 's' : ''} indexed)
               </span>
