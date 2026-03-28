@@ -531,6 +531,7 @@ export function BrowseRepositories({
         show={!!planChangeModal}
         onClose={() => !changingPlan && setPlanChangeModal(null)}
         size="md"
+        theme={customTheme.modal}
       >
         <ModalHeader>
           {planChangeModal?.isUpgrade ? 'Upgrade' : 'Downgrade'} Plan

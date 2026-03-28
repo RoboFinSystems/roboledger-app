@@ -384,7 +384,12 @@ export default function ModernConnectionsContent() {
         </div>
 
         {/* ── Marketplace / Setup Modal ── */}
-        <Modal show={marketplaceOpen} onClose={closeMarketplace} size="2xl">
+        <Modal
+          theme={customTheme.modal}
+          show={marketplaceOpen}
+          onClose={closeMarketplace}
+          size="2xl"
+        >
           <ModalHeader>
             <div className="flex items-center gap-3">
               <HiLink className="h-5 w-5 text-gray-500" />
@@ -438,7 +443,11 @@ export default function ModernConnectionsContent() {
         </Modal>
 
         {/* ── Delete Confirmation Modal ── */}
-        <Modal show={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
+        <Modal
+          theme={customTheme.modal}
+          show={deleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+        >
           <ModalHeader>Delete Connection</ModalHeader>
           <ModalBody>
             <p className="text-gray-700 dark:text-gray-300">
@@ -448,19 +457,11 @@ export default function ModernConnectionsContent() {
             </p>
           </ModalBody>
           <ModalFooter>
-            <Button
-              color="gray"
-              onClick={() => setDeleteModalOpen(false)}
-              theme={customTheme.button}
-            >
-              Cancel
-            </Button>
-            <Button
-              color="failure"
-              onClick={handleDeleteConnection}
-              theme={customTheme.button}
-            >
+            <Button color="failure" onClick={handleDeleteConnection}>
               Delete Connection
+            </Button>
+            <Button color="gray" onClick={() => setDeleteModalOpen(false)}>
+              Cancel
             </Button>
           </ModalFooter>
         </Modal>

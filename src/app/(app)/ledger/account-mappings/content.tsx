@@ -657,6 +657,7 @@ const AccountMappingsContent: FC = function () {
 
       {/* Create Structure Modal */}
       <Modal
+        theme={customTheme.modal}
         show={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         size="md"
@@ -713,6 +714,7 @@ const AccountMappingsContent: FC = function () {
 
       {/* Add Mapping Modal */}
       <Modal
+        theme={customTheme.modal}
         show={showAddMappingModal}
         onClose={() => setShowAddMappingModal(false)}
         size="xl"
