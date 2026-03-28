@@ -10,12 +10,12 @@ import {
   TextInput,
 } from 'flowbite-react'
 import { useRef, useState } from 'react'
-import { customTheme } from '../../theme'
 import {
   TurnstileWidget,
   type TurnstileWidgetRef,
 } from '../../auth-components/TurnstileWidget'
 import { useUser } from '../../hooks'
+import { customTheme } from '../../theme'
 import {
   isTurnstileEnabled,
   isTurnstileValid,
@@ -109,7 +109,12 @@ export default function SupportModal({
   }
 
   return (
-    <Modal show={isOpen} onClose={handleClose} size="lg" theme={customTheme.modal}>
+    <Modal
+      show={isOpen}
+      onClose={handleClose}
+      size="lg"
+      theme={customTheme.modal}
+    >
       <ModalHeader>Contact Support</ModalHeader>
       <ModalBody>
         {submitStatus === 'success' ? (
