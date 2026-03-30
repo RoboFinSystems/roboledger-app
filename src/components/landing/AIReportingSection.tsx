@@ -1,7 +1,10 @@
+import FloatingElementsVariant from './FloatingElementsVariant'
+
 export default function AIReportingSection() {
   return (
     <section id="ai-reporting" className="relative bg-black py-20">
       <div className="absolute inset-0 bg-linear-to-br from-violet-900/30 via-purple-900/20 to-black"></div>
+      <FloatingElementsVariant variant="ai-reporting" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-16 text-center">
           <div className="mb-4 inline-block rounded-full bg-violet-500/20 px-4 py-1 text-sm font-semibold text-violet-400">

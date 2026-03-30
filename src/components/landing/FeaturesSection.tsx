@@ -1,3 +1,5 @@
+import FloatingElementsVariant from './FloatingElementsVariant'
+
 export default function FeaturesSection() {
   const features = [
     {
@@ -147,7 +149,8 @@ export default function FeaturesSection() {
       id="features"
       className="relative bg-linear-to-b from-black to-zinc-900 py-16 sm:py-24"
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <FloatingElementsVariant variant="features" />
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Paradigm Shift Header */}
         <div className="mb-12 text-center">
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">

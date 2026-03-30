@@ -1,3 +1,5 @@
+import FloatingElementsVariant from './FloatingElementsVariant'
+
 export default function OutputFormats() {
   const formats = [
     {
@@ -133,7 +135,8 @@ export default function OutputFormats() {
 
   return (
     <section className="relative bg-zinc-950 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <FloatingElementsVariant variant="output-formats" />
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-16 text-center">
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
             One Report, Infinite Views

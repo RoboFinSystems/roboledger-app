@@ -85,6 +85,18 @@ export default function Header() {
               </svg>
               GitHub
             </a>
+            <Link
+              href="/login"
+              className="px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:text-white"
+            >
+              Login
+            </Link>
+            <Link
+              href="/register"
+              className="rounded-lg bg-linear-to-r from-violet-500 to-purple-500 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-violet-500/25 transition-all hover:shadow-violet-500/40"
+            >
+              Register
+            </Link>
           </nav>
 
           {/* Mobile Menu Button */}
@@ -168,6 +180,22 @@ export default function Header() {
                 </svg>
                 GitHub
               </a>
+              <div className="border-t border-gray-800 pt-2">
+                <Link
+                  href="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="mx-4 mt-2 block rounded-lg bg-linear-to-r from-violet-500 to-purple-500 px-4 py-2 text-center text-sm font-medium text-white shadow-lg shadow-violet-500/25"
+                >
+                  Register
+                </Link>
+              </div>
             </div>
           </nav>
         )}
