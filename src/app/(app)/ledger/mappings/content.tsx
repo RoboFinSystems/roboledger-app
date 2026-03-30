@@ -563,8 +563,7 @@ const MappingsContent: FC = function () {
                                             )
                                           }
                                           disabled={
-                                            isDeleting ===
-                                            (assoc.id as string)
+                                            isDeleting === (assoc.id as string)
                                           }
                                         >
                                           {isDeleting ===
@@ -607,12 +606,12 @@ const MappingsContent: FC = function () {
                               <Select
                                 sizing="sm"
                                 value={selectedGaap}
-                                onChange={(e) => setSelectedGaap(e.target.value)}
+                                onChange={(e) =>
+                                  setSelectedGaap(e.target.value)
+                                }
                                 className="min-w-[200px] flex-1"
                               >
-                                <option value="">
-                                  Select GAAP concept...
-                                </option>
+                                <option value="">Select GAAP concept...</option>
                                 {gaapElements.map((el) => (
                                   <option key={el.id} value={el.id}>
                                     {el.name}
@@ -629,11 +628,7 @@ const MappingsContent: FC = function () {
                                   isSaving || !selectedCoa || !selectedGaap
                                 }
                               >
-                                {isSaving ? (
-                                  <Spinner size="xs" />
-                                ) : (
-                                  'Save'
-                                )}
+                                {isSaving ? <Spinner size="xs" /> : 'Save'}
                               </Button>
                               <Button
                                 theme={customTheme.button}

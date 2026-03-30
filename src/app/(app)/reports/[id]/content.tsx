@@ -468,7 +468,7 @@ const ReportViewerContent: FC = function () {
             {/* Own graphs */}
             {shareableGraphs.length > 0 && (
               <div className="space-y-2">
-                <Label className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                <Label className="text-xs font-semibold tracking-wide text-gray-400 uppercase">
                   Your Graphs
                 </Label>
                 {shareableGraphs.map((g) => (
@@ -478,9 +478,7 @@ const ReportViewerContent: FC = function () {
                       checked={selectedTargets.has(g.graphId)}
                       onChange={() => toggleTarget(g.graphId)}
                     />
-                    <Label htmlFor={`share-${g.graphId}`}>
-                      {g.graphName}
-                    </Label>
+                    <Label htmlFor={`share-${g.graphId}`}>{g.graphName}</Label>
                   </div>
                 ))}
               </div>
@@ -488,7 +486,7 @@ const ReportViewerContent: FC = function () {
 
             {/* External graph IDs */}
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              <Label className="text-xs font-semibold tracking-wide text-gray-400 uppercase">
                 External Graph IDs
               </Label>
               <input
