@@ -191,11 +191,11 @@
 .animate-pulsate-gradient-subtle {
   background: linear-gradient(
     90deg,
+    #e9d5ff,
     #c084fc,
-    #a855f7,
-    #d946ef,
-    #a855f7,
-    #c084fc
+    #f0abfc,
+    #c084fc,
+    #e9d5ff
   );
   background-size: 200% 100%;
   background-clip: text;

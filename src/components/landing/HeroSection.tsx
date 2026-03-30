@@ -33,7 +33,7 @@ export default function HeroSection() {
           </p>
 
           <div className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-4 sm:gap-6 md:mt-16 md:grid-cols-3">
-            <div className="group relative overflow-hidden rounded-2xl border border-gray-800 bg-linear-to-br from-zinc-900 to-zinc-800 p-4 transition-all duration-300 hover:border-violet-500/50 sm:p-6">
+            <div className="group relative overflow-hidden rounded-2xl border border-violet-500/20 bg-violet-950/20 p-4 backdrop-blur-sm transition-all duration-300 hover:border-violet-500/50 hover:bg-violet-950/30 sm:p-6">
               <div className="absolute inset-0 bg-linear-to-br from-violet-500/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
               <div className="relative">
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-violet-500/20">
@@ -60,7 +60,7 @@ export default function HeroSection() {
               </div>
             </div>
 
-            <div className="group relative overflow-hidden rounded-2xl border border-gray-800 bg-linear-to-br from-zinc-900 to-zinc-800 p-4 transition-all duration-300 hover:border-purple-500/50 sm:p-6">
+            <div className="group relative overflow-hidden rounded-2xl border border-purple-500/20 bg-purple-950/20 p-4 backdrop-blur-sm transition-all duration-300 hover:border-purple-500/50 hover:bg-purple-950/30 sm:p-6">
               <div className="absolute inset-0 bg-linear-to-br from-purple-500/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
               <div className="relative">
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-purple-500/20">
@@ -88,12 +88,12 @@ export default function HeroSection() {
               </div>
             </div>
 
-            <div className="group relative overflow-hidden rounded-2xl border border-gray-800 bg-linear-to-br from-zinc-900 to-zinc-800 p-4 transition-all duration-300 hover:border-purple-500/50 sm:p-6">
-              <div className="absolute inset-0 bg-linear-to-br from-purple-500/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+            <div className="group relative overflow-hidden rounded-2xl border border-fuchsia-500/20 bg-fuchsia-950/20 p-4 backdrop-blur-sm transition-all duration-300 hover:border-fuchsia-500/50 hover:bg-fuchsia-950/30 sm:p-6">
+              <div className="absolute inset-0 bg-linear-to-br from-fuchsia-500/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
               <div className="relative">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-purple-500/20">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-fuchsia-500/20">
                   <svg
-                    className="h-6 w-6 text-purple-400"
+                    className="h-6 w-6 text-fuchsia-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

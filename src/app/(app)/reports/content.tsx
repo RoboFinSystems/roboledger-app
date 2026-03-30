@@ -140,15 +140,9 @@ const ReportsContent: FC = function () {
               <h3 className="font-heading mb-4 text-xl font-bold dark:text-white">
                 No Reports Found
               </h3>
-              <p className="mb-4 text-gray-500 dark:text-gray-400">
+              <p className="text-gray-500 dark:text-gray-400">
                 Create your first financial report to get started.
               </p>
-              <Link href="/reports/new">
-                <Button theme={customTheme.button} color="primary">
-                  <HiOutlinePlusCircle className="mr-2 h-5 w-5" />
-                  Create Report
-                </Button>
-              </Link>
             </div>
           ) : (
             <Table theme={customTheme.table}>
