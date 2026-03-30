@@ -231,7 +231,11 @@ const ReportViewerContent: FC = function () {
   // Load report metadata
   useEffect(() => {
     const loadReport = async () => {
-      if (!graphId || !reportId) return
+      if (!graphId || !reportId) {
+        setIsLoading(false)
+        setError('Report not found — missing graph context.')
+        return
+      }
 
       try {
         setIsLoading(true)

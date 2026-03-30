@@ -63,7 +63,7 @@ const MappingsContent: FC = function () {
   const [detail, setDetail] = useState<MappingDetailResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingDetail, setIsLoadingDetail] = useState(false)
-  const [isAutoMapping, setIsAutoMapping] = useState(false)
+  const [autoMappingIds, setAutoMappingIds] = useState<Set<string>>(new Set())
   const [isCreating, setIsCreating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
@@ -157,7 +157,7 @@ const MappingsContent: FC = function () {
       if (!currentGraph) return
 
       try {
-        setIsAutoMapping(true)
+        setAutoMappingIds((prev) => new Set(prev).add(mappingId))
         setError(null)
         await extensions.ledger.autoMap(currentGraph.graphId, mappingId)
 
@@ -172,12 +172,20 @@ const MappingsContent: FC = function () {
           } catch {
             // ignore
           }
-          setIsAutoMapping(false)
+          setAutoMappingIds((prev) => {
+            const next = new Set(prev)
+            next.delete(mappingId)
+            return next
+          })
         }, 5000)
       } catch (err) {
         console.error('Auto-map failed:', err)
         setError('Auto-mapping failed. Please try again.')
-        setIsAutoMapping(false)
+        setAutoMappingIds((prev) => {
+          const next = new Set(prev)
+          next.delete(mappingId)
+          return next
+        })
       }
     },
     [currentGraph]
@@ -461,9 +469,9 @@ const MappingsContent: FC = function () {
                           e.stopPropagation()
                           handleAutoMap(mapping.id)
                         }}
-                        disabled={isAutoMapping}
+                        disabled={autoMappingIds.has(mapping.id)}
                       >
-                        {isAutoMapping ? (
+                        {autoMappingIds.has(mapping.id) ? (
                           <Spinner size="xs" />
                         ) : (
                           <>
@@ -501,7 +509,7 @@ const MappingsContent: FC = function () {
                                     assoc: Record<string, unknown>,
                                     idx: number
                                   ) => (
-                                    <TableRow key={idx}>
+                                    <TableRow key={(assoc.id as string) || idx}>
                                       <TableCell className="font-medium dark:text-white">
                                         {(assoc.from_element_name as string) ||
                                           'Unknown'}
