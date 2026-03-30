@@ -11,9 +11,9 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'RoboLedger | Accounting and FP&A Agent',
+  title: 'RoboLedger | AI-Native Financial Reporting',
   description:
-    'AI-powered accounting and financial planning agent. Connect your books, automate reporting, and get real-time insights into your financial operations.',
+    'AI-powered financial reporting platform. Transform natural language requests into complete, validated financial statements powered by Claude AI and RoboSystems.',
   icons: {
     icon: '/images/logos/roboledger.png',
   },

@@ -277,8 +277,8 @@ const TrialBalanceContent: FC = function () {
         <Alert theme={customTheme.alert} color="info">
           <span className="font-medium">US-GAAP View:</span> This view
           aggregates accounts using element mappings. Configure mappings in{' '}
-          <a href="/ledger/account-mappings" className="font-medium underline">
-            Account Mappings
+          <a href="/ledger/mappings" className="font-medium underline">
+            Mappings
           </a>{' '}
           to see aggregated balances.
         </Alert>
