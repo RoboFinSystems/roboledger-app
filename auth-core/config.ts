@@ -17,7 +17,7 @@ export const APP_CONFIGS: Record<string, AppConfig> = {
     name: 'roboledger',
     displayName: 'RoboLedger',
     url: process.env.NEXT_PUBLIC_ROBOLEDGER_APP_URL || 'https://roboledger.ai',
-    description: 'Accounting and FP&A Agent',
+    description: 'Accounting & Reporting Agent',
     initials: 'RL',
     colorClass: 'bg-secondary-600 dark:bg-secondary-500',
   },
