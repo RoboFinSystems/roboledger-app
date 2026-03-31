@@ -132,8 +132,8 @@ describe('EntitySelectorDropdown', () => {
 
     mockUseEntity.mockReturnValue({
       currentEntity: {
-        identifier: 'existing',
-        name: 'Existing Entity',
+        identifier: 'g1',
+        name: 'Already Selected Entity',
         parentEntityId: null,
         isParent: true,
       },
@@ -144,7 +144,7 @@ describe('EntitySelectorDropdown', () => {
     mockGetLedgerEntity.mockResolvedValue({
       data: {
         id: 'g1',
-        name: 'New Entity',
+        name: 'Already Selected Entity',
         parent_entity_id: null,
         is_parent: true,
       },

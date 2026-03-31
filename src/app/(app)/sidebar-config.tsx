@@ -41,7 +41,6 @@ export const getNavigationItems = (
           label: 'Ledger',
           items: [
             { href: '/ledger/chart-of-accounts', label: 'Chart of Accounts' },
-            { href: '/ledger/mappings', label: 'Mappings' },
             { href: '/ledger/transactions', label: 'Transactions' },
             { href: '/ledger/trial-balance', label: 'Trial Balance' },
           ],

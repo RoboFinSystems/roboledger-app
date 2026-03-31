@@ -117,18 +117,18 @@ const TransactionsContent: FC = function () {
         setIsLoading(true)
         setError(null)
 
-        const roboledgerGraphs = graphState.graphs.filter(
-          GraphFilters.roboledger
-        )
+        const currentGraph = graphState.graphs
+          .filter(GraphFilters.roboledger)
+          .find((g) => g.graphId === graphState.currentGraphId)
 
-        if (roboledgerGraphs.length === 0) {
+        if (!currentGraph) {
           setTransactions([])
           return
         }
 
         const allTransactions: TransactionRow[] = []
 
-        for (const graph of roboledgerGraphs) {
+        for (const graph of [currentGraph]) {
           try {
             const response = await SDK.listLedgerTransactions({
               path: { graph_id: graph.graphId },
@@ -182,7 +182,7 @@ const TransactionsContent: FC = function () {
     }
 
     loadTransactions()
-  }, [graphState.graphs, startDate, endDate])
+  }, [graphState.graphs, graphState.currentGraphId, startDate, endDate])
 
   // Load line items for a transaction via detail endpoint
   const loadLineItems = useCallback(

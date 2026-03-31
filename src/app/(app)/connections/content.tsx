@@ -365,19 +365,10 @@ export default function ModernConnectionsContent() {
                 <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
                   No connections yet
                 </h3>
-                <p className="mb-6 max-w-md text-center text-sm text-gray-500 dark:text-gray-400">
+                <p className="max-w-md text-center text-sm text-gray-500 dark:text-gray-400">
                   Connect your data sources to automatically import
                   transactions, chart of accounts, and other financial data.
                 </p>
-                <Button
-                  color="primary"
-                  theme={customTheme.button}
-                  onClick={openMarketplace}
-                  size="lg"
-                >
-                  <HiPlus className="mr-2 h-5 w-5" />
-                  Add Connection
-                </Button>
               </div>
             </Card>
           )}

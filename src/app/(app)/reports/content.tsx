@@ -62,8 +62,11 @@ const ReportsContent: FC = function () {
 
   const currentGraph = useMemo(() => {
     const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
-    return roboledgerGraphs[0]
-  }, [graphState.graphs])
+    return (
+      roboledgerGraphs.find((g) => g.graphId === graphState.currentGraphId) ??
+      roboledgerGraphs[0]
+    )
+  }, [graphState.graphs, graphState.currentGraphId])
 
   useEffect(() => {
     const loadReports = async () => {

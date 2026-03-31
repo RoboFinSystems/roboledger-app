@@ -12,6 +12,7 @@ vi.mock('@/lib/core', () => ({
     <div>{children}</div>
   ),
   useGraphContext: vi.fn(),
+  useEntity: vi.fn(),
 }))
 
 vi.mock('@/components/PageHeader', () => ({
@@ -38,11 +39,12 @@ vi.mock('react-icons/hi', () => ({
   HiSearch: () => <span />,
 }))
 
-import { useGraphContext } from '@/lib/core'
+import { useEntity, useGraphContext } from '@/lib/core'
 import { getLedgerEntity } from '@robosystems/client'
 import EntitiesListPageContent from '../content'
 
 const mockUseGraphContext = vi.mocked(useGraphContext)
+const mockUseEntity = vi.mocked(useEntity)
 const mockGetLedgerEntity = vi.mocked(getLedgerEntity)
 
 const makeGraph = (id: string, name: string) => ({
@@ -58,6 +60,11 @@ const makeGraph = (id: string, name: string) => ({
 describe('EntitiesListPageContent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockUseEntity.mockReturnValue({
+      currentEntity: null,
+      setCurrentEntity: vi.fn(),
+      clearEntity: vi.fn(),
+    } as any)
     mockUseGraphContext.mockReturnValue({
       state: {
         graphs: [],
