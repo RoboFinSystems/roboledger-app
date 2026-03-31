@@ -6,6 +6,7 @@ import {
   customTheme,
   GraphFilters,
   PageLayout,
+  useEntity,
   useGraphContext,
 } from '@/lib/core'
 import * as SDK from '@robosystems/client'
@@ -30,12 +31,12 @@ interface EntityWithGraph extends Entity {
   _graphId: string
   _graphName: string
   _graphCreatedAt?: string
-  _entityType?: string
-  _status?: string
+  _graphType?: string
 }
 
 const EntitiesListPageContent: FC = function () {
   const { state: graphState } = useGraphContext()
+  const { currentEntity } = useEntity()
   const [entities, setEntities] = useState<EntityWithGraph[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -51,6 +52,11 @@ const EntitiesListPageContent: FC = function () {
         const roboledgerGraphs = graphState.graphs.filter(
           GraphFilters.roboledger
         )
+
+        if (roboledgerGraphs.length === 0) {
+          setEntities([])
+          return
+        }
 
         const results = await Promise.allSettled(
           roboledgerGraphs.map((graph) =>
@@ -73,8 +79,7 @@ const EntitiesListPageContent: FC = function () {
               _graphId: graph.graphId,
               _graphName: graph.graphName,
               _graphCreatedAt: graph.createdAt,
-              _entityType: data.entity_type,
-              _status: data.status,
+              _graphType: graph.graphType,
             })
           } else if (result.status === 'rejected') {
             console.error('Error loading entity:', result.reason)
@@ -158,53 +163,59 @@ const EntitiesListPageContent: FC = function () {
                 <TableHeadCell>Entity</TableHeadCell>
                 <TableHeadCell>Graph</TableHeadCell>
                 <TableHeadCell>Type</TableHeadCell>
-                <TableHeadCell>Status</TableHeadCell>
                 <TableHeadCell>Created</TableHeadCell>
+                <TableHeadCell>Selected</TableHeadCell>
               </TableHead>
               <TableBody>
-                {filteredEntities.map((entity) => (
-                  <TableRow key={entity._graphId}>
-                    <TableCell className="font-medium text-gray-900 dark:text-white">
-                      <div className="flex flex-col">
-                        <span className="font-semibold">{entity.name}</span>
-                        <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
-                          {entity.identifier}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-600 dark:text-gray-300">
-                        {entity._graphName}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {entity._entityType ? (
+                {filteredEntities.map((entity) => {
+                  const isSelected =
+                    currentEntity?.identifier === entity.identifier &&
+                    graphState.currentGraphId === entity._graphId
+
+                  return (
+                    <TableRow key={entity._graphId}>
+                      <TableCell className="font-medium text-gray-900 dark:text-white">
+                        <div className="flex flex-col">
+                          <span className="font-semibold">{entity.name}</span>
+                          <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
+                            {entity.identifier}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="text-sm text-gray-600 dark:text-gray-300">
+                            {entity._graphName}
+                          </span>
+                          <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
+                            {entity._graphId}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
                         <Badge color="gray" size="sm">
-                          {entity._entityType}
+                          {entity._graphType || 'entity'}
                         </Badge>
-                      ) : (
-                        <span className="text-sm text-gray-400">--</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        color={entity._status === 'active' ? 'success' : 'gray'}
-                        size="sm"
-                      >
-                        {entity._status || 'active'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {entity._graphCreatedAt
-                          ? new Date(
-                              entity._graphCreatedAt
-                            ).toLocaleDateString()
-                          : '--'}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          {entity._graphCreatedAt
+                            ? new Date(
+                                entity._graphCreatedAt
+                              ).toLocaleDateString()
+                            : '--'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {isSelected && (
+                          <Badge color="success" size="sm">
+                            active
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           )}

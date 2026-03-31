@@ -33,6 +33,7 @@ export function EntitySelectorDropdown() {
   )
 
   // Load parent entity for each roboledger graph
+  // Only re-fetch when the graph list itself changes, not on entity/graph selection
   useEffect(() => {
     const loadEntities = async () => {
       setIsLoading(true)
@@ -62,41 +63,39 @@ export function EntitySelectorDropdown() {
 
       setEntitiesByGraph(entityMap)
       setIsLoading(false)
-
-      if (currentEntity) {
-        // Validate current entity still exists in loaded data
-        const entityValues = Array.from(entityMap.values())
-        const entityStillValid = entityValues.some(
-          (e) => e.identifier === currentEntity.identifier
-        )
-        if (!entityStillValid) {
-          // Stale entity from a previous session — clear and auto-select
-          setCurrentEntity(null)
-          if (graphState.currentGraphId) {
-            const entity = entityMap.get(graphState.currentGraphId)
-            if (entity) {
-              setCurrentEntity(entity)
-            }
-          }
-        }
-      } else if (graphState.currentGraphId) {
-        // No entity selected — auto-select for current graph
-        const entity = entityMap.get(graphState.currentGraphId)
-        if (entity) {
-          setCurrentEntity(entity)
-        }
-      }
     }
 
     if (roboledgerGraphs.length > 0) {
       loadEntities()
     }
-  }, [
-    roboledgerGraphs,
-    currentEntity,
-    graphState.currentGraphId,
-    setCurrentEntity,
-  ])
+  }, [roboledgerGraphs])
+
+  // Sync entity selection with current graph
+  // Runs when entities finish loading, graph changes, or entity is cleared
+  useEffect(() => {
+    if (isLoading || entitiesByGraph.size === 0) return
+
+    if (currentEntity) {
+      // Validate current entity still exists in loaded data
+      const entityStillValid = Array.from(entitiesByGraph.values()).some(
+        (e) => e.identifier === currentEntity.identifier
+      )
+      if (!entityStillValid) {
+        // Stale entity — clear and auto-select for current graph
+        const entity = graphState.currentGraphId
+          ? entitiesByGraph.get(graphState.currentGraphId)
+          : undefined
+        setCurrentEntity(entity ?? null)
+      }
+    } else if (graphState.currentGraphId) {
+      // No entity selected — auto-select for current graph
+      const entity = entitiesByGraph.get(graphState.currentGraphId)
+      if (entity) {
+        setCurrentEntity(entity)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally omit currentEntity to avoid re-triggering after setting it
+  }, [isLoading, entitiesByGraph, graphState.currentGraphId, setCurrentEntity])
 
   const handleEntitySelect = async (entity: Entity, graphId: string) => {
     setIsOpen(false)
