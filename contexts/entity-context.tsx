@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useState,
   type PropsWithChildren,
 } from 'react'
@@ -76,6 +77,28 @@ export function EntityProvider({
     },
     [graphState.currentGraphId]
   )
+
+  // Validate entity cookie against user's actual graphs on load
+  // If the cookie's graphId doesn't belong to the current user, clear it
+  useEffect(() => {
+    if (
+      currentEntity &&
+      initialEntityCookie?.graphId &&
+      !graphState.isLoading &&
+      graphState.graphs.length > 0
+    ) {
+      const graphExists = graphState.graphs.some(
+        (g) => g.graphId === initialEntityCookie.graphId
+      )
+      if (!graphExists) {
+        setCurrentEntityState(null)
+        clearEntitySelection().catch((error) => {
+          console.error('Failed to clear stale entity selection:', error)
+        })
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally omit currentEntity to avoid re-triggering after clearing
+  }, [graphState.isLoading, graphState.graphs, initialEntityCookie])
 
   const clearEntity = useCallback(async () => {
     setCurrentEntityState(null)

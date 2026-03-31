@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { clearEntitySelection } from '../actions/entity-actions'
 import { clearGraphSelection } from '../actions/graph-actions'
 import { performLogoutCleanup } from '../auth-core/cleanup'
 import { RoboSystemsAuthClient } from '../auth-core/client'
@@ -164,11 +165,17 @@ export function AuthProvider({
         // Clear session warning
         setSessionWarning({ show: false, timeLeft: 0 })
 
-        // Clear graph selection cookie (server-side)
+        // Clear graph and entity selection cookies (server-side)
         try {
           await clearGraphSelection()
         } catch (error) {
           debugLog('Failed to clear graph selection cookie', error)
+        }
+
+        try {
+          await clearEntitySelection()
+        } catch (error) {
+          debugLog('Failed to clear entity selection cookie', error)
         }
 
         // Perform comprehensive cleanup of all user-specific data
