@@ -63,8 +63,24 @@ export function EntitySelectorDropdown() {
       setEntitiesByGraph(entityMap)
       setIsLoading(false)
 
-      // Auto-select entity for current graph if none selected
-      if (!currentEntity && graphState.currentGraphId) {
+      if (currentEntity) {
+        // Validate current entity still exists in loaded data
+        const entityValues = Array.from(entityMap.values())
+        const entityStillValid = entityValues.some(
+          (e) => e.identifier === currentEntity.identifier
+        )
+        if (!entityStillValid) {
+          // Stale entity from a previous session — clear and auto-select
+          setCurrentEntity(null)
+          if (graphState.currentGraphId) {
+            const entity = entityMap.get(graphState.currentGraphId)
+            if (entity) {
+              setCurrentEntity(entity)
+            }
+          }
+        }
+      } else if (graphState.currentGraphId) {
+        // No entity selected — auto-select for current graph
         const entity = entityMap.get(graphState.currentGraphId)
         if (entity) {
           setCurrentEntity(entity)

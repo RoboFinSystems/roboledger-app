@@ -107,18 +107,18 @@ const TrialBalanceContent: FC = function () {
         setIsLoading(true)
         setError(null)
 
-        const roboledgerGraphs = graphState.graphs.filter(
-          GraphFilters.roboledger
-        )
+        const currentGraph = graphState.graphs
+          .filter(GraphFilters.roboledger)
+          .find((g) => g.graphId === graphState.currentGraphId)
 
-        if (roboledgerGraphs.length === 0) {
+        if (!currentGraph) {
           setData([])
           return
         }
 
         const allRows: TrialBalanceRowWithGraph[] = []
 
-        for (const graph of roboledgerGraphs) {
+        for (const graph of [currentGraph]) {
           try {
             const response = await SDK.getLedgerTrialBalance({
               path: { graph_id: graph.graphId },
@@ -168,7 +168,7 @@ const TrialBalanceContent: FC = function () {
     }
 
     loadTrialBalance()
-  }, [graphState.graphs])
+  }, [graphState.graphs, graphState.currentGraphId])
 
   // Filter data
   const filteredData = useMemo(() => {

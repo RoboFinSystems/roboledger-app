@@ -14,6 +14,7 @@ export function clearUserCookies(): void {
   // List of user-specific cookies to clear
   const userCookies = [
     'selected-graph', // Graph selection state
+    'selected-entity', // Entity selection state
     'credit-visibility', // UI preferences
     // Note: auth-token is cleared by the backend
     // Note: sidebar-collapsed is kept as it's a UI preference that can persist
