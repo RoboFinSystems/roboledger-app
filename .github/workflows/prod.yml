@@ -117,13 +117,12 @@ jobs:
       # Container & Application Configuration
       ecr_repository: ${{ vars.ECR_REPOSITORY || 'roboledger-app' }}
       ecr_image_tag: ${{ needs.build.outputs.image_tag }}
-      # App Runner Compute Configuration
-      cpu: ${{ vars.CPU_PROD || '0.25 vCPU' }}
-      memory: ${{ vars.MEMORY_PROD || '0.5 GB' }}
+      # ECS Express Compute Configuration
+      cpu: ${{ vars.CPU_PROD || '256' }}
+      memory: ${{ vars.MEMORY_PROD || '512' }}
       # Auto-scaling Configuration
       capacity_min: ${{ vars.CAPACITY_MIN_PROD || '1' }}
       capacity_max: ${{ vars.CAPACITY_MAX_PROD || '10' }}
-      max_concurrency: ${{ vars.MAX_CONCURRENCY_PROD || '100' }}
       # Domain & DNS Configuration (required for public mode)
       domain_name: ${{ vars.DOMAIN_NAME_PROD || 'roboledger.ai' }}
       domain_name_root: ${{ vars.DOMAIN_NAME_ROOT || 'roboledger.ai' }}

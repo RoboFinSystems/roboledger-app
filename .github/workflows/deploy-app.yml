@@ -62,34 +62,29 @@ on:
         required: true
         type: string
 
-      # App Runner Compute Configuration
+      # ECS Express Compute Configuration
       cpu:
-        description: 'CPU for App Runner instance'
+        description: 'CPU units for ECS task (256, 512, 1024, 2048)'
         required: false
         type: string
-        default: '0.25 vCPU'
+        default: '256'
       memory:
-        description: 'Memory for App Runner instance'
+        description: 'Memory in MiB for ECS task (512, 1024, 2048, 3072, 4096)'
         required: false
         type: string
-        default: '0.5 GB'
+        default: '512'
 
       # Auto-scaling Configuration
       capacity_min:
-        description: 'Minimum number of instances for auto scaling'
+        description: 'Minimum number of tasks for auto scaling'
         required: false
         type: string
         default: '1'
       capacity_max:
-        description: 'Maximum number of instances for auto scaling'
+        description: 'Maximum number of tasks for auto scaling'
         required: false
         type: string
         default: '10'
-      max_concurrency:
-        description: 'Maximum concurrent requests per instance before scaling'
-        required: false
-        type: string
-        default: '100'
 
       # Domain & DNS Configuration (required only when app_access_mode=public)
       domain_name:
@@ -171,7 +166,7 @@ jobs:
             echo "is_new_stack=false" >> $GITHUB_OUTPUT
           fi
 
-          # Build parameters JSON file (handles spaces in values correctly)
+          # Build parameters JSON file
           cat > /tmp/cfn-params.json << 'PARAMS_EOF'
           [
             {"ParameterKey": "Environment", "ParameterValue": "${{ inputs.environment }}"},
@@ -187,7 +182,6 @@ jobs:
             {"ParameterKey": "StaticAssetsBucketDomainName", "ParameterValue": "${{ inputs.static_assets_bucket_domain }}"},
             {"ParameterKey": "CapacityMin", "ParameterValue": "${{ inputs.capacity_min }}"},
             {"ParameterKey": "CapacityMax", "ParameterValue": "${{ inputs.capacity_max }}"},
-            {"ParameterKey": "MaxConcurrency", "ParameterValue": "${{ inputs.max_concurrency }}"},
             {"ParameterKey": "NotificationEmail", "ParameterValue": "${{ inputs.notification_email }}"}
           ]
           PARAMS_EOF
@@ -207,21 +201,18 @@ jobs:
 
           # Deploy or update the stack
           if [ "$STACK_ACTION" = "create-stack" ]; then
-            # Create new stack
             aws cloudformation $STACK_ACTION \
               --stack-name ${{ inputs.stack_name }} \
               --template-body file://cloudformation/template.yaml \
               --capabilities CAPABILITY_NAMED_IAM \
               --parameters file:///tmp/cfn-params.json
           else
-            # Update existing stack, handling "No updates" error
             UPDATE_OUTPUT=$(aws cloudformation $STACK_ACTION \
               --stack-name ${{ inputs.stack_name }} \
               --template-body file://cloudformation/template.yaml \
               --capabilities CAPABILITY_NAMED_IAM \
               --parameters file:///tmp/cfn-params.json 2>&1) || true
 
-            # Check if the error was "No updates are to be performed"
             if echo "$UPDATE_OUTPUT" | grep -q "No updates are to be performed"; then
               echo "Stack is already up to date - no changes needed"
               echo "is_new_stack=false" >> $GITHUB_OUTPUT
@@ -241,53 +232,57 @@ jobs:
           timeout: '1800'
           interval: '10'
 
-      - name: Get App Runner Service Info
+      - name: Get ECS Service Info
         id: get-service-info
         run: |
-          # Get the App Runner service ARN from stack outputs
+          # Get the ECS Express service endpoint from stack outputs
+          SERVICE_ENDPOINT=$(aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.stack_name }} \
+            --query "Stacks[0].Outputs[?OutputKey=='ECSServiceEndpoint'].OutputValue" \
+            --output text)
+
+          echo "service_endpoint=$SERVICE_ENDPOINT" >> $GITHUB_OUTPUT
+          echo "ECS Service Endpoint: $SERVICE_ENDPOINT"
+
+          # Get the service ARN
           SERVICE_ARN=$(aws cloudformation describe-stacks \
             --stack-name ${{ inputs.stack_name }} \
-            --query "Stacks[0].Outputs[?OutputKey=='AppRunnerServiceArn'].OutputValue" \
+            --query "Stacks[0].Outputs[?OutputKey=='ECSServiceArn'].OutputValue" \
             --output text)
 
           echo "service_arn=$SERVICE_ARN" >> $GITHUB_OUTPUT
-          echo "App Runner Service ARN: $SERVICE_ARN"
+          echo "ECS Service ARN: $SERVICE_ARN"
 
-          # Get the service URL
-          SERVICE_URL=$(aws cloudformation describe-stacks \
-            --stack-name ${{ inputs.stack_name }} \
-            --query "Stacks[0].Outputs[?OutputKey=='AppRunnerServiceUrl'].OutputValue" \
-            --output text)
-
-          echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
-          echo "App Runner Service URL: $SERVICE_URL"
-
-      - name: Wait for App Runner Deployment
+      - name: Wait for ECS Express Service
         run: |
           SERVICE_ARN="${{ steps.get-service-info.outputs.service_arn }}"
           MAX_ATTEMPTS=60
           SLEEP_INTERVAL=10
 
-          echo "Waiting for App Runner service to become ready..."
+          echo "Waiting for ECS Express service to become active..."
 
           for i in $(seq 1 $MAX_ATTEMPTS); do
-            STATUS=$(aws apprunner describe-service \
+            STATUS=$(aws ecs describe-express-gateway-service \
               --service-arn "$SERVICE_ARN" \
-              --query "Service.Status" \
-              --output text)
+              --query "service.status.statusCode" \
+              --output text 2>/dev/null || echo "UNKNOWN")
 
             echo "Attempt $i/$MAX_ATTEMPTS: Service status is $STATUS"
 
-            if [ "$STATUS" = "RUNNING" ]; then
-              echo "App Runner service is running!"
+            if [ "$STATUS" = "ACTIVE" ]; then
+              echo "ECS Express service is active!"
               break
-            elif [ "$STATUS" = "CREATE_FAILED" ] || [ "$STATUS" = "DELETE_FAILED" ] || [ "$STATUS" = "UPDATE_FAILED" ]; then
-              echo "ERROR: App Runner service deployment failed with status: $STATUS"
+            elif [ "$STATUS" = "FAILED" ]; then
+              REASON=$(aws ecs describe-express-gateway-service \
+                --service-arn "$SERVICE_ARN" \
+                --query "service.status.statusReason" \
+                --output text 2>/dev/null || echo "unknown")
+              echo "ERROR: ECS Express service failed: $REASON"
               exit 1
             fi
 
             if [ $i -eq $MAX_ATTEMPTS ]; then
-              echo "ERROR: Timeout waiting for App Runner service to become ready"
+              echo "ERROR: Timeout waiting for ECS Express service to become active"
               exit 1
             fi
 
@@ -296,8 +291,8 @@ jobs:
 
       - name: Verify Health Check
         run: |
-          SERVICE_URL="${{ steps.get-service-info.outputs.service_url }}"
-          HEALTH_URL="https://${SERVICE_URL}/api/utilities/health"
+          SERVICE_ENDPOINT="${{ steps.get-service-info.outputs.service_endpoint }}"
+          HEALTH_URL="https://${SERVICE_ENDPOINT}/api/utilities/health"
 
           echo "Checking health endpoint: $HEALTH_URL"
 
@@ -331,4 +326,4 @@ jobs:
           fi
 
           echo ""
-          echo "App Runner Service URL: ${{ steps.get-service-info.outputs.service_url }}"
+          echo "ECS Service Endpoint: ${{ steps.get-service-info.outputs.service_endpoint }}"
