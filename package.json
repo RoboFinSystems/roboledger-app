@@ -86,7 +86,7 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^4.1.11",
     "ts-node": "^10",
-    "typescript": "^5.7.2",
+    "typescript": "^6.0.2",
     "vitest": "^3"
   }
 }
