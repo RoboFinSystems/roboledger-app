@@ -113,12 +113,20 @@ const ReportsContent: FC = function () {
         description="View and manage financial reports"
         gradient="from-orange-500 to-red-600"
         actions={
-          <Link href="/reports/new">
-            <Button theme={customTheme.button} color="primary">
-              <HiOutlinePlusCircle className="mr-2 h-5 w-5" />
-              Create Report
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/reports/publish-lists">
+              <Button theme={customTheme.button} color="light">
+                <HiShare className="mr-2 h-5 w-5" />
+                Publish Lists
+              </Button>
+            </Link>
+            <Link href="/reports/new">
+              <Button theme={customTheme.button} color="primary">
+                <HiOutlinePlusCircle className="mr-2 h-5 w-5" />
+                Create Report
+              </Button>
+            </Link>
+          </div>
         }
       />
 
