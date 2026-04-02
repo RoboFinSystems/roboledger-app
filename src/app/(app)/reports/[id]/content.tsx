@@ -1,14 +1,9 @@
 'use client'
 
 import { PageHeader } from '@/components/PageHeader'
-import {
-  customTheme,
-  extensions,
-  GraphFilters,
-  PageLayout,
-  useGraphContext,
-} from '@/lib/core'
+import { customTheme, extensions, PageLayout } from '@/lib/core'
 import type {
+  PublishList,
   Report,
   StatementData,
   StatementRow,
@@ -18,7 +13,6 @@ import {
   Badge,
   Button,
   Card,
-  Checkbox,
   Label,
   Modal,
   ModalBody,
@@ -35,7 +29,7 @@ import {
 import Link from 'next/link'
 import { useParams, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   HiCheckCircle,
   HiChevronLeft,
@@ -70,11 +64,20 @@ const formatDate = (dateString: string | null): string => {
   })
 }
 
-const StatementTable: FC<{ data: StatementData }> = ({ data }) => {
+const StatementTable: FC<{
+  data: StatementData
+  entityName?: string | null
+}> = ({ data, entityName }) => {
   const hasComparative = data.rows.some((r) => r.priorValue !== null)
-
   return (
     <div className="overflow-x-auto">
+      {entityName && (
+        <div className="border-b border-gray-200 bg-gray-50 py-3 text-center dark:border-gray-700 dark:bg-gray-800">
+          <p className="text-sm font-bold tracking-widest text-gray-900 uppercase dark:text-white">
+            {entityName}
+          </p>
+        </div>
+      )}
       <Table theme={customTheme.table}>
         <TableHead>
           <TableHeadCell className="w-1/2">{data.structureName}</TableHeadCell>
@@ -147,7 +150,6 @@ const StatementTable: FC<{ data: StatementData }> = ({ data }) => {
 const ReportViewerContent: FC = function () {
   const params = useParams()
   const searchParams = useSearchParams()
-  const { state: graphState } = useGraphContext()
   const reportId = params.id as string
   const graphId = searchParams.get('graph')
 
@@ -160,33 +162,27 @@ const ReportViewerContent: FC = function () {
 
   // Share modal state
   const [showShareModal, setShowShareModal] = useState(false)
-  const [selectedTargets, setSelectedTargets] = useState<Set<string>>(new Set())
-  const [externalGraphId, setExternalGraphId] = useState('')
+  const [publishLists, setPublishLists] = useState<PublishList[]>([])
+  const [selectedListId, setSelectedListId] = useState<string | null>(null)
+  const [isLoadingLists, setIsLoadingLists] = useState(false)
   const [isSharing, setIsSharing] = useState(false)
   const [shareResult, setShareResult] = useState<string | null>(null)
 
-  // Other roboledger graphs to share to (exclude current graph)
-  const shareableGraphs = useMemo(() => {
-    return graphState.graphs
-      .filter(GraphFilters.roboledger)
-      .filter((g) => g.graphId !== graphId)
-  }, [graphState.graphs, graphId])
-
-  // All target graph IDs (own graphs + external)
-  const allTargetIds = useMemo(() => {
-    const ids = new Set(selectedTargets)
-    const trimmed = externalGraphId.trim()
-    if (trimmed) {
-      // Support comma-separated IDs
-      trimmed.split(/[,\s]+/).forEach((id) => {
-        if (id) ids.add(id)
-      })
+  const loadPublishLists = useCallback(async () => {
+    if (!graphId) return
+    try {
+      setIsLoadingLists(true)
+      const lists = await extensions.reports.listPublishLists(graphId)
+      setPublishLists(lists)
+    } catch (err) {
+      console.error('Failed to load publish lists:', err)
+    } finally {
+      setIsLoadingLists(false)
     }
-    return ids
-  }, [selectedTargets, externalGraphId])
+  }, [graphId])
 
   const handleShare = useCallback(async () => {
-    if (!graphId || !reportId || allTargetIds.size === 0) return
+    if (!graphId || !reportId || !selectedListId) return
 
     try {
       setIsSharing(true)
@@ -194,39 +190,26 @@ const ReportViewerContent: FC = function () {
       const result = await extensions.reports.share(
         graphId,
         reportId,
-        Array.from(allTargetIds)
+        selectedListId
       )
 
       const succeeded = result.results.filter(
         (r) => r.status === 'shared'
       ).length
       const failed = result.results.filter((r) => r.status === 'error')
-      let msg = `Shared to ${succeeded} graph${succeeded !== 1 ? 's' : ''} successfully.`
+      let msg = `Shared to ${succeeded} recipient${succeeded !== 1 ? 's' : ''} successfully.`
       if (failed.length > 0) {
         msg += ` ${failed.length} failed: ${failed.map((f) => f.error || f.targetGraphId).join(', ')}`
       }
       setShareResult(msg)
-      setSelectedTargets(new Set())
-      setExternalGraphId('')
+      setSelectedListId(null)
     } catch (err) {
       console.error('Share failed:', err)
       setShareResult('Failed to share report.')
     } finally {
       setIsSharing(false)
     }
-  }, [graphId, reportId, allTargetIds])
-
-  const toggleTarget = useCallback((gid: string) => {
-    setSelectedTargets((prev) => {
-      const next = new Set(prev)
-      if (next.has(gid)) {
-        next.delete(gid)
-      } else {
-        next.add(gid)
-      }
-      return next
-    })
-  }, [])
+  }, [graphId, reportId, selectedListId])
 
   // Load report metadata
   useEffect(() => {
@@ -323,7 +306,7 @@ const ReportViewerContent: FC = function () {
       <PageHeader
         icon={HiDocumentReport}
         title={report.name}
-        description={`${formatDate(report.periodStart)} — ${formatDate(report.periodEnd)}`}
+        description={`${report.entityName ? `${report.entityName} — ` : ''}${formatDate(report.periodStart)} — ${formatDate(report.periodEnd)}`}
         gradient="from-orange-500 to-red-600"
         actions={
           <>
@@ -334,6 +317,8 @@ const ReportViewerContent: FC = function () {
                   color="purple"
                   onClick={() => {
                     setShareResult(null)
+                    setSelectedListId(null)
+                    loadPublishLists()
                     setShowShareModal(true)
                   }}
                 >
@@ -357,7 +342,8 @@ const ReportViewerContent: FC = function () {
           <div className="flex items-center gap-2 text-sm text-blue-400">
             <HiShare className="h-4 w-4" />
             <span>
-              Shared report — received{' '}
+              Shared report
+              {report.entityName ? ` from ${report.entityName}` : ''} — received{' '}
               {report.sharedAt ? formatDate(report.sharedAt.split('T')[0]) : ''}
             </span>
           </div>
@@ -387,7 +373,7 @@ const ReportViewerContent: FC = function () {
           </div>
         ) : statement && statement.rows.length > 0 ? (
           <>
-            <StatementTable data={statement} />
+            <StatementTable data={statement} entityName={report.entityName} />
 
             {/* Validation */}
             {statement.validation && (
@@ -465,45 +451,59 @@ const ReportViewerContent: FC = function () {
 
           <div className="space-y-4">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Share a snapshot copy of this report. Recipients get a read-only
-              copy that won&apos;t change if your books are updated.
+              Share a snapshot copy of this report to a publish list. Recipients
+              get a read-only copy that won&apos;t change if your books are
+              updated.
             </p>
 
-            {/* Own graphs */}
-            {shareableGraphs.length > 0 && (
+            {isLoadingLists ? (
+              <div className="flex justify-center py-4">
+                <Spinner size="md" />
+              </div>
+            ) : publishLists.length === 0 ? (
+              <div className="rounded-lg border border-gray-200 p-4 text-center dark:border-gray-700">
+                <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                  No publish lists yet.
+                </p>
+                <Link href="/reports/publish-lists">
+                  <Button theme={customTheme.button} size="sm" color="purple">
+                    Create a Publish List
+                  </Button>
+                </Link>
+              </div>
+            ) : (
               <div className="space-y-2">
                 <Label className="text-xs font-semibold tracking-wide text-gray-400 uppercase">
-                  Your Graphs
+                  Select a Publish List
                 </Label>
-                {shareableGraphs.map((g) => (
-                  <div key={g.graphId} className="flex items-center gap-3">
-                    <Checkbox
-                      id={`share-${g.graphId}`}
-                      checked={selectedTargets.has(g.graphId)}
-                      onChange={() => toggleTarget(g.graphId)}
-                    />
-                    <Label htmlFor={`share-${g.graphId}`}>{g.graphName}</Label>
-                  </div>
+                {publishLists.map((list) => (
+                  <button
+                    key={list.id}
+                    onClick={() => setSelectedListId(list.id)}
+                    className={`w-full rounded-lg border p-3 text-left transition-colors ${
+                      selectedListId === list.id
+                        ? 'border-purple-500 bg-purple-50 dark:border-purple-400 dark:bg-purple-900/20'
+                        : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium dark:text-white">
+                        {list.name}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {list.memberCount} recipient
+                        {list.memberCount !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    {list.description && (
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {list.description}
+                      </p>
+                    )}
+                  </button>
                 ))}
               </div>
             )}
-
-            {/* External graph IDs */}
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold tracking-wide text-gray-400 uppercase">
-                External Graph IDs
-              </Label>
-              <input
-                type="text"
-                value={externalGraphId}
-                onChange={(e) => setExternalGraphId(e.target.value)}
-                placeholder="e.g. kg1abc123, kg2def456"
-                className="w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-purple-500 focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-              />
-              <p className="text-xs text-gray-400">
-                Comma-separated graph IDs from any account
-              </p>
-            </div>
           </div>
         </ModalBody>
         <ModalFooter>
@@ -511,11 +511,10 @@ const ReportViewerContent: FC = function () {
             theme={customTheme.button}
             color="purple"
             onClick={handleShare}
-            disabled={isSharing || allTargetIds.size === 0}
+            disabled={isSharing || !selectedListId}
           >
             {isSharing ? <Spinner size="sm" className="mr-2" /> : null}
-            Share to {allTargetIds.size} graph
-            {allTargetIds.size !== 1 ? 's' : ''}
+            Share Report
           </Button>
           <Button
             theme={customTheme.button}
