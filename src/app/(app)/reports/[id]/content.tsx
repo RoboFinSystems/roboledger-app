@@ -68,7 +68,7 @@ const StatementTable: FC<{
   data: StatementData
   entityName?: string | null
 }> = ({ data, entityName }) => {
-  const hasComparative = data.rows.some((r) => r.priorValue !== null)
+  const periods = data.periods
   return (
     <div className="overflow-x-auto">
       {entityName && (
@@ -81,21 +81,19 @@ const StatementTable: FC<{
       <Table theme={customTheme.table}>
         <TableHead>
           <TableHeadCell className="w-1/2">{data.structureName}</TableHeadCell>
-          <TableHeadCell className="text-right">
-            {formatDate(data.periodStart)} — {formatDate(data.periodEnd)}
-          </TableHeadCell>
-          {hasComparative && (
-            <TableHeadCell className="text-right">
-              {formatDate(data.comparativePeriodStart)} —{' '}
-              {formatDate(data.comparativePeriodEnd)}
+          {periods.map((period, i) => (
+            <TableHeadCell key={i} className="text-right">
+              {period.label ||
+                `${formatDate(period.start)} — ${formatDate(period.end)}`}
             </TableHeadCell>
-          )}
+          ))}
         </TableHead>
         <TableBody>
           {data.rows.map((row: StatementRow, idx: number) => {
             const indent = row.depth * 24
             const isBold = row.isSubtotal
-            const isZero = row.currentValue === 0
+            const primaryValue = row.values[0] ?? 0
+            const isZero = primaryValue === 0
 
             return (
               <TableRow
@@ -112,32 +110,22 @@ const StatementTable: FC<{
                 >
                   {row.elementName}
                 </TableCell>
-                <TableCell
-                  className={`text-right font-mono ${
-                    isBold
-                      ? 'font-semibold text-gray-900 dark:text-white'
-                      : 'text-gray-700 dark:text-gray-300'
-                  } ${isZero && !isBold ? 'text-gray-400 dark:text-gray-500' : ''}`}
-                >
-                  {formatCurrency(row.currentValue)}
-                </TableCell>
-                {hasComparative && (
+                {row.values.map((value, i) => (
                   <TableCell
+                    key={i}
                     className={`text-right font-mono ${
                       isBold
                         ? 'font-semibold text-gray-900 dark:text-white'
                         : 'text-gray-700 dark:text-gray-300'
                     } ${
-                      (row.priorValue ?? 0) === 0 && !isBold
+                      (value ?? 0) === 0 && !isBold
                         ? 'text-gray-400 dark:text-gray-500'
                         : ''
                     }`}
                   >
-                    {row.priorValue !== null
-                      ? formatCurrency(row.priorValue)
-                      : '—'}
+                    {value !== null ? formatCurrency(value) : '—'}
                   </TableCell>
-                )}
+                ))}
               </TableRow>
             )
           })}
@@ -306,7 +294,7 @@ const ReportViewerContent: FC = function () {
       <PageHeader
         icon={HiDocumentReport}
         title={report.name}
-        description={`${report.entityName ? `${report.entityName} — ` : ''}${formatDate(report.periodStart)} — ${formatDate(report.periodEnd)}`}
+        description={`${report.entityName ? `${report.entityName} — ` : ''}${report.periodType === 'quarterly' || !report.periodStart ? report.name : `${formatDate(report.periodStart)} — ${formatDate(report.periodEnd)}`}`}
         gradient="from-orange-500 to-red-600"
         actions={
           <>
