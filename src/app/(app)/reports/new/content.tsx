@@ -124,7 +124,12 @@ function buildPresetPeriods(
     case 'this_month': {
       const start = `${year}-${pad(month + 1)}-01`
       const end = `${year}-${pad(month + 1)}-${lastDayOfMonth(year, month)}`
-      return { periodStart: start, periodEnd: end, comparative: false, periods: undefined }
+      return {
+        periodStart: start,
+        periodEnd: end,
+        comparative: false,
+        periods: undefined,
+      }
     }
 
     case 'last_month': {
@@ -132,7 +137,12 @@ function buildPresetPeriods(
       const prevYear = month === 0 ? year - 1 : year
       const start = `${prevYear}-${pad(prevMonth + 1)}-01`
       const end = `${prevYear}-${pad(prevMonth + 1)}-${lastDayOfMonth(prevYear, prevMonth)}`
-      return { periodStart: start, periodEnd: end, comparative: true, periods: undefined }
+      return {
+        periodStart: start,
+        periodEnd: end,
+        comparative: true,
+        periods: undefined,
+      }
     }
 
     case 'this_quarter': {
@@ -140,7 +150,12 @@ function buildPresetPeriods(
       const qStart = q * 3
       const start = `${year}-${pad(qStart + 1)}-01`
       const end = `${year}-${pad(qStart + 3)}-${lastDayOfMonth(year, qStart + 2)}`
-      return { periodStart: start, periodEnd: end, comparative: false, periods: undefined }
+      return {
+        periodStart: start,
+        periodEnd: end,
+        comparative: false,
+        periods: undefined,
+      }
     }
 
     case 'last_quarter': {
@@ -150,7 +165,12 @@ function buildPresetPeriods(
       const qStart = prevQ * 3
       const start = `${prevYear}-${pad(qStart + 1)}-01`
       const end = `${prevYear}-${pad(qStart + 3)}-${lastDayOfMonth(prevYear, qStart + 2)}`
-      return { periodStart: start, periodEnd: end, comparative: true, periods: undefined }
+      return {
+        periodStart: start,
+        periodEnd: end,
+        comparative: true,
+        periods: undefined,
+      }
     }
 
     case 'monthly_ytd': {
@@ -213,7 +233,12 @@ function buildPresetPeriods(
 
     case 'custom':
     default:
-      return { periodStart: '', periodEnd: '', comparative: true, periods: undefined }
+      return {
+        periodStart: '',
+        periodEnd: '',
+        comparative: true,
+        periods: undefined,
+      }
   }
 }
 
@@ -228,8 +253,11 @@ const ReportBuilderContent: FC = function () {
   const [periodStart, setPeriodStart] = useState('')
   const [periodEnd, setPeriodEnd] = useState('')
   const [comparative, setComparative] = useState(true)
-  const [selectedPreset, setSelectedPreset] = useState<PresetKey>('last_quarter')
-  const [periods, setPeriods] = useState<PeriodSpecInput[] | undefined>(undefined)
+  const [selectedPreset, setSelectedPreset] =
+    useState<PresetKey>('last_quarter')
+  const [periods, setPeriods] = useState<PeriodSpecInput[] | undefined>(
+    undefined
+  )
 
   // Data state
   const [mappings, setMappings] = useState<MappingInfo[]>([])
@@ -604,7 +632,9 @@ const ReportBuilderContent: FC = function () {
                   <span className="font-medium dark:text-white">Period:</span>{' '}
                   {periodStart} to {periodEnd}
                   {comparative && (
-                    <span className="ml-2 text-gray-500">+ prior period comparison</span>
+                    <span className="ml-2 text-gray-500">
+                      + prior period comparison
+                    </span>
                   )}
                 </div>
               )}
