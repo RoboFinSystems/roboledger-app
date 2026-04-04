@@ -46,13 +46,6 @@ const STATUS_COLORS: Record<string, string> = {
   reversed: 'failure',
 }
 
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount / 100)
-}
-
 const formatCurrencyDollars = (amount: number): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -190,6 +183,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
           />
           <span className="text-gray-500">to</span>
           <input
+            id="period-end"
+            aria-label="Period End"
             type="date"
             value={periodEnd}
             onChange={(e) => setPeriodEnd(e.target.value)}
@@ -338,7 +333,7 @@ const FactsModal: FC<FactsModalProps> = ({ graphId, schedule, onClose }) => {
               <TableBody>
                 {groupedFacts.map(([_key, periodFacts]) =>
                   periodFacts.map((fact, idx) => (
-                    <TableRow key={`${fact.elementId}_${fact.periodStart}`}>
+                    <TableRow key={`${fact.elementId}_${fact.periodStart}_${idx}`}>
                       {idx === 0 && (
                         <TableCell
                           rowSpan={periodFacts.length}
@@ -489,10 +484,9 @@ const SchedulesContent: FC = function () {
                           <span className="font-semibold">{schedule.name}</span>
                           {schedule.scheduleMetadata?.method && (
                             <span className="text-xs text-gray-500">
-                              {String(schedule.scheduleMetadata.method).replace(
-                                '_',
-                                ' '
-                              )}
+                              {String(
+                                schedule.scheduleMetadata.method
+                              ).replaceAll('_', ' ')}
                             </span>
                           )}
                         </div>
