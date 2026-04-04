@@ -29,6 +29,7 @@ gh api repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/issues/<NUMB
 ```
 
 **Important `gh pr view --json` field reference** (common mistakes to avoid):
+
 - Use `reviews` not `reviewers` (reviewers is not a valid field)
 - Use `reviewRequests` for pending review requests
 - Use `headRefOid` for the HEAD commit SHA

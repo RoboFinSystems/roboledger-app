@@ -333,7 +333,9 @@ const FactsModal: FC<FactsModalProps> = ({ graphId, schedule, onClose }) => {
               <TableBody>
                 {groupedFacts.map(([_key, periodFacts]) =>
                   periodFacts.map((fact, idx) => (
-                    <TableRow key={`${fact.elementId}_${fact.periodStart}_${idx}`}>
+                    <TableRow
+                      key={`${fact.elementId}_${fact.periodStart}_${idx}`}
+                    >
                       {idx === 0 && (
                         <TableCell
                           rowSpan={periodFacts.length}
