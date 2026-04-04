@@ -83,7 +83,8 @@ const StatementTable: FC<{
           <TableHeadCell className="w-1/2">{data.structureName}</TableHeadCell>
           {periods.map((period, i) => (
             <TableHeadCell key={i} className="text-right">
-              {formatDate(period.start)} — {formatDate(period.end)}
+              {period.label ||
+                `${formatDate(period.start)} — ${formatDate(period.end)}`}
             </TableHeadCell>
           ))}
         </TableHead>
@@ -293,7 +294,7 @@ const ReportViewerContent: FC = function () {
       <PageHeader
         icon={HiDocumentReport}
         title={report.name}
-        description={`${report.entityName ? `${report.entityName} — ` : ''}${formatDate(report.periodStart)} — ${formatDate(report.periodEnd)}`}
+        description={`${report.entityName ? `${report.entityName} — ` : ''}${report.periodType === 'quarterly' || !report.periodStart ? report.name : `${formatDate(report.periodStart)} — ${formatDate(report.periodEnd)}`}`}
         gradient="from-orange-500 to-red-600"
         actions={
           <>
