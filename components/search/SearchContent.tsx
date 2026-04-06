@@ -19,6 +19,7 @@ import {
 import { useCallback, useEffect, useState } from 'react'
 import { HiChevronDown, HiChevronUp, HiSearch } from 'react-icons/hi'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 import { useIsRepository } from '../../components/RepositoryGuard'
 import { useGraphContext } from '../../contexts'
@@ -449,6 +450,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
                     <div>
                       <div className="prose prose-sm prose-gray max-h-96 max-w-none overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-800">
                         <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
                           components={{
                             h1: ({ children }) => (
                               <h1 className="text-gray-900 dark:text-white">
@@ -484,6 +486,28 @@ export function SearchContent({ config }: { config: SearchConfig }) {
                               <strong className="text-gray-900 dark:text-white">
                                 {children}
                               </strong>
+                            ),
+                            table: ({ children }) => (
+                              <div className="overflow-x-auto">
+                                <table className="min-w-full border-collapse text-sm">
+                                  {children}
+                                </table>
+                              </div>
+                            ),
+                            thead: ({ children }) => (
+                              <thead className="border-b-2 border-gray-300 dark:border-gray-600">
+                                {children}
+                              </thead>
+                            ),
+                            th: ({ children }) => (
+                              <th className="px-3 py-2 text-left font-semibold text-gray-900 dark:text-white">
+                                {children}
+                              </th>
+                            ),
+                            td: ({ children }) => (
+                              <td className="border-t border-gray-200 px-3 py-2 text-gray-700 dark:border-gray-700 dark:text-gray-200">
+                                {children}
+                              </td>
                             ),
                           }}
                         >
