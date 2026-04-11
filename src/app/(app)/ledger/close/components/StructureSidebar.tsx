@@ -9,12 +9,7 @@ import { HiChevronLeft, HiChevronRight } from 'react-icons/hi'
 // ── Types ──────────────────────────────────────────────────────────────
 
 export type SelectedItem =
-  | {
-      type: 'statement'
-      reportId: string
-      structureType: string
-      label: string
-    }
+  | { type: 'statement'; reportId: string; structureType: string }
   | { type: 'schedule'; structureId: string; name: string }
   | { type: 'account_rollups'; mappingId: string; name: string }
   | { type: 'trial_balance' }
@@ -29,7 +24,6 @@ function itemToSelected(item: ClosingBookItem): SelectedItem {
         type: 'statement',
         reportId: item.report_id || '',
         structureType: item.structure_type || '',
-        label: item.name,
       }
     case 'schedule':
       return {

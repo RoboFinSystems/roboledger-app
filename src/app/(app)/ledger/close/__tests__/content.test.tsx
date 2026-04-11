@@ -66,7 +66,6 @@ vi.mock('../components/StructureSidebar', () => ({
           type: 'statement',
           reportId: item.report_id || '',
           structureType: item.structure_type || '',
-          label: item.name,
         }
       case 'schedule':
         return { type: 'schedule', structureId: item.id, name: item.name }

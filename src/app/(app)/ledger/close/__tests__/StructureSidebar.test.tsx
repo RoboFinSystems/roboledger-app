@@ -121,7 +121,6 @@ describe('StructureSidebar', () => {
       type: 'statement',
       reportId: 'rpt_01',
       structureType: 'income_statement',
-      label: 'Income Statement',
     }
     render(
       <StructureSidebar
@@ -191,7 +190,6 @@ describe('StructureSidebar', () => {
       type: 'statement',
       reportId: 'rpt_01',
       structureType: 'balance_sheet',
-      label: 'Balance Sheet',
     })
   })
 

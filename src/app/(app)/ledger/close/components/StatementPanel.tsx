@@ -128,6 +128,8 @@ function buildPeriods(preset: PresetKey): {
       }
     }
     case 'annual_yoy': {
+      // Assumes Jan–Dec fiscal year. Non-standard fiscal years will need
+      // a user-configurable fiscal year end setting in the future.
       const periods: PeriodSpecInput[] = [
         { start: `${year}-01-01`, end: `${year}-12-31`, label: `FY ${year}` },
         {
