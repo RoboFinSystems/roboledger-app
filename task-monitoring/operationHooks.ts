@@ -1,7 +1,7 @@
 'use client'
 
 import {
-  changeRepositoryPlan,
+  changeSubscriptionPlan,
   client,
   createCheckoutSession,
   createGraph as createGraphAPI,
@@ -535,7 +535,7 @@ export function useRepositorySubscription() {
       setIsSubscribing(true)
 
       try {
-        const response = await changeRepositoryPlan({
+        const response = await changeSubscriptionPlan({
           client,
           path: { graph_id: data.repository_name },
           body: { new_plan_name: data.new_plan_name },
