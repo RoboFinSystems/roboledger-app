@@ -14,18 +14,10 @@ import {
 } from 'flowbite-react'
 import { Fragment, useCallback, useEffect, useState, type FC } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
+import { formatCurrency } from '../utils'
 import type { FactRow } from './FactsTable'
 import FactsTable from './FactsTable'
 import type { ViewMode } from './ViewModeToggle'
-
-const formatCurrency = (value: number): string => {
-  const abs = Math.abs(value)
-  const formatted = abs.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-  return value < 0 ? `(${formatted})` : formatted
-}
 
 interface AccountRollupsPanelProps {
   graphId: string

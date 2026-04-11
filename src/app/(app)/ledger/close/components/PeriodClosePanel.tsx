@@ -17,19 +17,13 @@ import type { FC } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { HiCheck, HiClock, HiExclamationCircle } from 'react-icons/hi'
 import { TbFileInvoice } from 'react-icons/tb'
+import { formatCurrencyDollars } from '../utils'
 
 const STATUS_COLORS: Record<string, string> = {
   posted: 'success',
   draft: 'warning',
   pending: 'gray',
   reversed: 'failure',
-}
-
-const formatCurrencyDollars = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
 }
 
 interface PeriodClosePanelProps {

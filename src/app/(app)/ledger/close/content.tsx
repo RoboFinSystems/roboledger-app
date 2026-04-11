@@ -30,7 +30,6 @@ const CloseContent: FC = function () {
 
   // Sidebar data — single API call returns all categories
   const [categories, setCategories] = useState<ClosingBookCategory[]>([])
-  const [hasData, setHasData] = useState(false)
   const [entityName, setEntityName] = useState<string | null>(null)
   const [mappingId, setMappingId] = useState<string | null>(null)
   const [isSidebarLoading, setIsSidebarLoading] = useState(true)
@@ -66,15 +65,14 @@ const CloseContent: FC = function () {
       ])
 
       setCategories(response.categories)
-      setHasData(response.has_data)
       setEntityName(entity?.name ?? null)
 
-      // Extract mapping ID from account rollups category for report regeneration
-      const rollupsCategory = response.categories.find(
-        (c) => c.label === 'Account Rollups'
-      )
-      if (rollupsCategory?.items?.[0]) {
-        setMappingId(rollupsCategory.items[0].id)
+      // Extract mapping ID for report regeneration (find first account_rollups item across all categories)
+      const rollupItem = response.categories
+        .flatMap((c) => c.items)
+        .find((i) => i.item_type === 'account_rollups')
+      if (rollupItem) {
+        setMappingId(rollupItem.id)
       }
 
       // Auto-select first item from first category
@@ -192,6 +190,7 @@ const CloseContent: FC = function () {
                 viewMode={viewMode}
               />
             ) : selectedItem.type === 'trial_balance' && currentGraph ? (
+              // TODO: Replace with inline TrialBalancePanel (data exists at /ledger/trial-balance)
               <div className="py-12 text-center text-gray-500 dark:text-gray-400">
                 <p className="mb-2">Trial Balance</p>
                 <p className="text-xs">

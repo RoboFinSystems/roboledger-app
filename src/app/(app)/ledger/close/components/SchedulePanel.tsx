@@ -16,24 +16,10 @@ import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
 import { TbFileInvoice } from 'react-icons/tb'
+import { formatCurrencyDollars, formatMonth } from '../utils'
 import type { FactRow } from './FactsTable'
 import FactsTable from './FactsTable'
 import type { ViewMode } from './ViewModeToggle'
-
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
-}
-
-const formatMonth = (dateString: string): string => {
-  const date = new Date(dateString + 'T00:00:00')
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-  })
-}
 
 interface SchedulePanelProps {
   graphId: string
@@ -51,7 +37,7 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
   const [facts, setFacts] = useState<ScheduleFact[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [creatingEntry, setCreatingEntry] = useState(false)
+  const [creatingEntry, setCreatingEntry] = useState<string | null>(null)
 
   const loadFacts = useCallback(async () => {
     try {
@@ -86,8 +72,9 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
   }, [facts])
 
   const handleCreateEntry = async (periodEnd: string, periodStart: string) => {
+    const periodKey = `${periodStart}_${periodEnd}`
     try {
-      setCreatingEntry(true)
+      setCreatingEntry(periodKey)
       await extensions.ledger.createClosingEntry(
         graphId,
         structureId,
@@ -100,7 +87,7 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
       console.error('Error creating closing entry:', err)
       setError('Failed to create closing entry.')
     } finally {
-      setCreatingEntry(false)
+      setCreatingEntry(null)
     }
   }
 
@@ -178,7 +165,7 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
                     {fact.elementName}
                   </TableCell>
                   <TableCell className="text-right font-mono text-gray-900 dark:text-white">
-                    {formatCurrency(fact.value)}
+                    {formatCurrencyDollars(fact.value)}
                   </TableCell>
                   {idx === 0 && (
                     <TableCell
@@ -189,12 +176,16 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
                         theme={customTheme.button}
                         size="xs"
                         color="primary"
-                        disabled={creatingEntry}
+                        disabled={
+                          creatingEntry ===
+                          `${fact.periodStart}_${fact.periodEnd}`
+                        }
                         onClick={() =>
                           handleCreateEntry(fact.periodEnd, fact.periodStart)
                         }
                       >
-                        {creatingEntry ? (
+                        {creatingEntry ===
+                        `${fact.periodStart}_${fact.periodEnd}` ? (
                           <Spinner size="sm" className="mr-1" />
                         ) : (
                           <TbFileInvoice className="mr-1 h-3.5 w-3.5" />

@@ -14,25 +14,7 @@ import {
   TableRow,
 } from 'flowbite-react'
 import type { FC } from 'react'
-
-const formatCurrency = (value: number): string => {
-  const abs = Math.abs(value)
-  const formatted = abs.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-  return value < 0 ? `(${formatted})` : formatted
-}
-
-const formatDate = (dateString: string | null): string => {
-  if (!dateString) return 'N/A'
-  const date = new Date(dateString + 'T00:00:00')
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
-}
+import { formatCurrency, formatDate } from '../utils'
 
 interface StatementTableProps {
   data: StatementData
