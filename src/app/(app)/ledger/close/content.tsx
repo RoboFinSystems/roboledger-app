@@ -22,6 +22,7 @@ import StructureSidebar, {
   itemToSelected,
   type SelectedItem,
 } from './components/StructureSidebar'
+import TrialBalancePanel from './components/TrialBalancePanel'
 import type { ViewMode } from './components/ViewModeToggle'
 import ViewModeToggle from './components/ViewModeToggle'
 
@@ -190,20 +191,7 @@ const CloseContent: FC = function () {
                 viewMode={viewMode}
               />
             ) : selectedItem.type === 'trial_balance' && currentGraph ? (
-              // TODO: Replace with inline TrialBalancePanel (data exists at /ledger/trial-balance)
-              <div className="py-12 text-center text-gray-500 dark:text-gray-400">
-                <p className="mb-2">Trial Balance</p>
-                <p className="text-xs">
-                  View the full trial balance on the{' '}
-                  <a
-                    href="/ledger/trial-balance"
-                    className="text-blue-500 hover:underline dark:text-blue-400"
-                  >
-                    Trial Balance page
-                  </a>
-                  .
-                </p>
-              </div>
+              <TrialBalancePanel graphId={currentGraph.graphId} />
             ) : selectedItem.type === 'period_close' && currentGraph ? (
               <PeriodClosePanel
                 graphId={currentGraph.graphId}
