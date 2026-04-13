@@ -42,13 +42,15 @@ const CLASSIFICATION_LABELS: Record<string, string> = {
   expense: 'Expense',
 }
 
+// Values returned by /trial-balance are already in dollars (the backend
+// divides by 100 before returning). Do not divide again.
 function formatCurrency(value: number): string {
   if (value === 0) return '–'
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
-  }).format(value / 100)
+  }).format(value)
 }
 
 // ── Component ──────────────────────────────────────────────────────────
@@ -139,7 +141,7 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
       </div>
 
       {/* Classification summary cards */}
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {(['asset', 'liability', 'equity', 'revenue', 'expense'] as const).map(
           (cls) => (
             <div
@@ -183,8 +185,8 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
             <TableHeadCell className="text-right">Net Balance</TableHeadCell>
           </TableHead>
           <TableBody>
-            {rows.map((row, idx) => (
-              <TableRow key={idx}>
+            {rows.map((row) => (
+              <TableRow key={`${row.classification}:${row.accountName}`}>
                 <TableCell className="font-medium text-gray-900 dark:text-white">
                   {row.accountName}
                 </TableCell>

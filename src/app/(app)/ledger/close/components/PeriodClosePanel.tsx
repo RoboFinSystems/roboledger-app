@@ -177,6 +177,10 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
 
   useEffect(() => {
     if (selectedPeriod) {
+      // Reset the stale-sync override when the user moves between periods.
+      // The override is intentionally opt-in per period so that enabling it
+      // for one close doesn't silently carry over to the next.
+      setAllowStaleSync(false)
       loadCloseStatus()
       loadDrafts()
     }
@@ -197,29 +201,32 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     }
   }, [graphId, loadCalendar])
 
-  const handleCreateEntry = async (structureId: string) => {
-    if (!selectedPeriod) return
-    try {
-      setCreatingEntry(structureId)
-      setError(null)
-      const { start, end } = periodBounds(selectedPeriod)
-      await extensions.ledger.createClosingEntry(
-        graphId,
-        structureId,
-        end,
-        start,
-        end
-      )
-      onEntryCreated?.()
-      await loadCloseStatus()
-      await loadDrafts()
-    } catch (err) {
-      console.error('Error creating closing entry:', err)
-      setError('Failed to create closing entry.')
-    } finally {
-      setCreatingEntry(null)
-    }
-  }
+  const handleCreateEntry = useCallback(
+    async (structureId: string) => {
+      if (!selectedPeriod) return
+      try {
+        setCreatingEntry(structureId)
+        setError(null)
+        const { start, end } = periodBounds(selectedPeriod)
+        await extensions.ledger.createClosingEntry(
+          graphId,
+          structureId,
+          end,
+          start,
+          end
+        )
+        onEntryCreated?.()
+        await loadCloseStatus()
+        await loadDrafts()
+      } catch (err) {
+        console.error('Error creating closing entry:', err)
+        setError('Failed to create closing entry.')
+      } finally {
+        setCreatingEntry(null)
+      }
+    },
+    [graphId, selectedPeriod, onEntryCreated, loadCloseStatus, loadDrafts]
+  )
 
   const handleClosePeriod = useCallback(async () => {
     if (!selectedPeriod) return

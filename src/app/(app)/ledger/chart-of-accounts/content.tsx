@@ -125,6 +125,21 @@ const ACCOUNT_TYPE_ORDER: Record<string, number> = {
   'Other Expense': 14,
 }
 
+// Sort accounts by CoA code first (1xxx/2xxx/... ordering), falling back to
+// QB account_type order, then name. Applied at every tree level so child
+// accounts within a parent follow the same ordering as the roots.
+function compareAccountNodes(a: TreeNode, b: TreeNode): number {
+  const ca = a.code ?? ''
+  const cb = b.code ?? ''
+  if (ca !== cb) {
+    return ca.localeCompare(cb, undefined, { numeric: true })
+  }
+  const ta = ACCOUNT_TYPE_ORDER[a.account_type || ''] ?? 99
+  const tb = ACCOUNT_TYPE_ORDER[b.account_type || ''] ?? 99
+  if (ta !== tb) return ta - tb
+  return a.name.localeCompare(b.name)
+}
+
 function flattenTree(
   nodes: TreeNode[],
   graphId: string,
@@ -144,7 +159,8 @@ function flattenTree(
       _graphName: graphName,
     })
     if (node.children && node.children.length > 0) {
-      result.push(...flattenTree(node.children, graphId, graphName))
+      const sortedChildren = [...node.children].sort(compareAccountNodes)
+      result.push(...flattenTree(sortedChildren, graphId, graphName))
     }
   }
   return result
@@ -356,17 +372,7 @@ const ChartOfAccountsContent: FC = function () {
         // final tiebreaker.
         if (accountResponse.data) {
           const roots = (accountResponse.data.roots || []) as TreeNode[]
-          roots.sort((a, b) => {
-            const ca = a.code ?? ''
-            const cb = b.code ?? ''
-            if (ca !== cb) {
-              return ca.localeCompare(cb, undefined, { numeric: true })
-            }
-            const ta = ACCOUNT_TYPE_ORDER[a.account_type || ''] ?? 99
-            const tb = ACCOUNT_TYPE_ORDER[b.account_type || ''] ?? 99
-            if (ta !== tb) return ta - tb
-            return a.name.localeCompare(b.name)
-          })
+          roots.sort(compareAccountNodes)
           setAccounts(
             flattenTree(roots, currentGraph.graphId, currentGraph.graphName)
           )

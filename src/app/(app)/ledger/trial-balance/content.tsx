@@ -463,6 +463,11 @@ const TrialBalanceContent: FC = function () {
                 {filteredData.map((row) => (
                   <TableRow key={`${row._graphId}-${row.accountId}`}>
                     <TableCell className="font-medium text-gray-900 dark:text-white">
+                      {row.accountCode && (
+                        <span className="mr-2 font-mono text-xs text-gray-500 dark:text-gray-400">
+                          {row.accountCode}
+                        </span>
+                      )}
                       {row.accountName}
                     </TableCell>
                     <TableCell>
