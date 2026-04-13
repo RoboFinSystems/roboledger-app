@@ -92,6 +92,19 @@ const formatCurrency = (amount: number): string => {
 
 type ViewMode = 'coa' | 'usgaap'
 
+// Row shape returned by the /trial-balance/mapped endpoint. Values are
+// already in dollars (the backend divides by 100 before returning).
+interface MappedTrialBalanceRow {
+  reporting_element_id: string
+  qname: string
+  reporting_name: string
+  classification: ElementClassification
+  balance_type: string
+  total_debits: number
+  total_credits: number
+  net_balance: number
+}
+
 const TrialBalanceContent: FC = function () {
   const { state: graphState } = useGraphContext()
   const [data, setData] = useState<TrialBalanceRowWithGraph[]>([])
@@ -99,8 +112,46 @@ const TrialBalanceContent: FC = function () {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('coa')
+  const [mappingId, setMappingId] = useState<string | null>(null)
 
-  // Load trial balance data
+  // Resolve the active CoA→GAAP mapping once per graph. We need its
+  // structure ID to fetch the aggregated trial balance.
+  useEffect(() => {
+    const loadMapping = async () => {
+      const currentGraph = graphState.graphs
+        .filter(GraphFilters.roboledger)
+        .find((g) => g.graphId === graphState.currentGraphId)
+      if (!currentGraph) {
+        setMappingId(null)
+        return
+      }
+      try {
+        // The /mappings endpoint returns `structures`, not `mappings` —
+        // it's a list of Structure rows filtered to structure_type='coa_mapping'.
+        const response = await SDK.listMappings({
+          path: { graph_id: currentGraph.graphId },
+        })
+        const structures = (
+          response.data as {
+            structures?: Array<{ id: string; is_active: boolean }>
+          }
+        )?.structures
+        const active = structures?.find((s) => s.is_active) ?? structures?.[0]
+        setMappingId(active?.id ?? null)
+      } catch (err) {
+        console.error('Error loading mappings:', err)
+        setMappingId(null)
+      }
+    }
+    loadMapping()
+  }, [graphState.graphs, graphState.currentGraphId])
+
+  // Load trial balance data. `viewMode` swaps the endpoint:
+  //
+  //   coa    → /trial-balance — raw Chart of Accounts rows (account_type
+  //            ordered to mirror QuickBooks)
+  //   usgaap → /trial-balance/mapped — rows aggregated to US-GAAP reporting
+  //            elements via the graph's CoA→GAAP mapping. Sorted by qname.
   useEffect(() => {
     const loadTrialBalance = async () => {
       try {
@@ -118,15 +169,15 @@ const TrialBalanceContent: FC = function () {
 
         const allRows: TrialBalanceRowWithGraph[] = []
 
-        for (const graph of [currentGraph]) {
-          try {
-            const response = await SDK.getLedgerTrialBalance({
-              path: { graph_id: graph.graphId },
-            })
+        if (viewMode === 'coa') {
+          const response = await SDK.getLedgerTrialBalance({
+            path: { graph_id: currentGraph.graphId },
+          })
 
-            if (response.data) {
-              const rows = response.data.rows || []
-              const graphRows: TrialBalanceRowWithGraph[] = rows.map((row) => ({
+          if (response.data) {
+            const rows = response.data.rows || []
+            for (const row of rows) {
+              allRows.push({
                 accountId: row.account_id,
                 accountCode: row.account_code,
                 accountName: row.account_name,
@@ -138,26 +189,66 @@ const TrialBalanceContent: FC = function () {
                 totalDebits: row.total_debits,
                 totalCredits: row.total_credits,
                 netBalance: row.net_balance,
-                _graphId: graph.graphId,
-                _graphName: graph.graphName,
-              }))
-
-              allRows.push(...graphRows)
+                _graphId: currentGraph.graphId,
+                _graphName: currentGraph.graphName,
+              })
             }
-          } catch (err) {
-            console.error(
-              `Error loading trial balance from graph ${graph.graphName}:`,
-              err
-            )
           }
+
+          // Preserve CoA order: primary sort by account code (natural/numeric
+          // when possible), secondary by QB AccountType if it's populated,
+          // fallback by name. Real CoAs assign codes in type-grouping ranges
+          // (1xxx assets, 2xxx liabilities, 3xxx equity, 4xxx revenue, 5xxx
+          // expenses) so account_code order and CoA display order match.
+          allRows.sort((a, b) => {
+            const ca = a.accountCode ?? ''
+            const cb = b.accountCode ?? ''
+            if (ca !== cb) {
+              return ca.localeCompare(cb, undefined, { numeric: true })
+            }
+            const ta = ACCOUNT_TYPE_ORDER[a.accountType || ''] ?? 99
+            const tb = ACCOUNT_TYPE_ORDER[b.accountType || ''] ?? 99
+            if (ta !== tb) return ta - tb
+            return a.accountName.localeCompare(b.accountName)
+          })
+        } else {
+          // usgaap mode
+          if (!mappingId) {
+            setData([])
+            setError(
+              'No active CoA → US-GAAP mapping found for this graph. ' +
+                'Configure mappings on the Chart of Accounts page to see aggregated balances.'
+            )
+            return
+          }
+          const response = await SDK.getMappedTrialBalance({
+            path: { graph_id: currentGraph.graphId },
+            query: { mapping_id: mappingId },
+          })
+          const rows =
+            (response.data as { rows?: MappedTrialBalanceRow[] })?.rows ?? []
+          for (const row of rows) {
+            // Strip the namespace prefix from the qname for display
+            // (e.g., "us-gaap:RetainedEarnings" → "RetainedEarnings")
+            const shortCode = row.qname.includes(':')
+              ? (row.qname.split(':').pop() ?? row.qname)
+              : row.qname
+            allRows.push({
+              accountId: row.reporting_element_id,
+              accountCode: shortCode,
+              accountName: row.reporting_name,
+              classification: row.classification,
+              accountType: null, // not meaningful for GAAP aggregation
+              totalDebits: row.total_debits,
+              totalCredits: row.total_credits,
+              netBalance: row.net_balance,
+              _graphId: currentGraph.graphId,
+              _graphName: currentGraph.graphName,
+            })
+          }
+          // Already sorted by qname server-side — keep that order.
         }
 
-        allRows.sort((a, b) => {
-          const ta = ACCOUNT_TYPE_ORDER[a.accountType || ''] ?? 99
-          const tb = ACCOUNT_TYPE_ORDER[b.accountType || ''] ?? 99
-          if (ta !== tb) return ta - tb
-          return a.accountName.localeCompare(b.accountName)
-        })
         setData(allRows)
       } catch (err) {
         console.error('Error loading trial balance:', err)
@@ -168,7 +259,7 @@ const TrialBalanceContent: FC = function () {
     }
 
     loadTrialBalance()
-  }, [graphState.graphs, graphState.currentGraphId])
+  }, [graphState.graphs, graphState.currentGraphId, viewMode, mappingId])
 
   // Filter data
   const filteredData = useMemo(() => {
@@ -275,12 +366,13 @@ const TrialBalanceContent: FC = function () {
       {/* US-GAAP Mode Notice */}
       {viewMode === 'usgaap' && (
         <Alert theme={customTheme.alert} color="info">
-          <span className="font-medium">US-GAAP View:</span> This view
-          aggregates accounts using element mappings. Configure mappings in{' '}
+          <span className="font-medium">US-GAAP View:</span> Balances aggregated
+          to US-GAAP reporting elements via the active CoA→GAAP mapping. Edit
+          mappings on the{' '}
           <a href="/ledger/chart-of-accounts" className="font-medium underline">
             Chart of Accounts
           </a>{' '}
-          to see aggregated balances.
+          page.
         </Alert>
       )}
 
@@ -371,6 +463,11 @@ const TrialBalanceContent: FC = function () {
                 {filteredData.map((row) => (
                   <TableRow key={`${row._graphId}-${row.accountId}`}>
                     <TableCell className="font-medium text-gray-900 dark:text-white">
+                      {row.accountCode && (
+                        <span className="mr-2 font-mono text-xs text-gray-500 dark:text-gray-400">
+                          {row.accountCode}
+                        </span>
+                      )}
                       {row.accountName}
                     </TableCell>
                     <TableCell>

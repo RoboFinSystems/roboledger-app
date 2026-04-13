@@ -68,6 +68,7 @@ const ALL_CLASSIFICATIONS: ElementClassification[] = [
 
 interface AccountRow {
   id: string
+  code: string | null
   name: string
   classification: ElementClassification
   balance_type: string
@@ -79,6 +80,7 @@ interface AccountRow {
 
 interface TreeNode {
   id: string
+  code?: string | null
   name: string
   classification: string
   account_type?: string | null
@@ -123,6 +125,21 @@ const ACCOUNT_TYPE_ORDER: Record<string, number> = {
   'Other Expense': 14,
 }
 
+// Sort accounts by CoA code first (1xxx/2xxx/... ordering), falling back to
+// QB account_type order, then name. Applied at every tree level so child
+// accounts within a parent follow the same ordering as the roots.
+function compareAccountNodes(a: TreeNode, b: TreeNode): number {
+  const ca = a.code ?? ''
+  const cb = b.code ?? ''
+  if (ca !== cb) {
+    return ca.localeCompare(cb, undefined, { numeric: true })
+  }
+  const ta = ACCOUNT_TYPE_ORDER[a.account_type || ''] ?? 99
+  const tb = ACCOUNT_TYPE_ORDER[b.account_type || ''] ?? 99
+  if (ta !== tb) return ta - tb
+  return a.name.localeCompare(b.name)
+}
+
 function flattenTree(
   nodes: TreeNode[],
   graphId: string,
@@ -132,6 +149,7 @@ function flattenTree(
   for (const node of nodes) {
     result.push({
       id: node.id,
+      code: node.code ?? null,
       name: node.name,
       classification: node.classification as ElementClassification,
       balance_type: node.balance_type,
@@ -141,7 +159,8 @@ function flattenTree(
       _graphName: graphName,
     })
     if (node.children && node.children.length > 0) {
-      result.push(...flattenTree(node.children, graphId, graphName))
+      const sortedChildren = [...node.children].sort(compareAccountNodes)
+      result.push(...flattenTree(sortedChildren, graphId, graphName))
     }
   }
   return result
@@ -346,15 +365,14 @@ const ChartOfAccountsContent: FC = function () {
             .catch(() => [] as MappingInfo[]),
         ])
 
-        // Process accounts
+        // Process accounts — sort by CoA code first so the list matches
+        // the user's CoA numbering scheme (1xxx assets, 2xxx liabilities,
+        // 3xxx equity, 4xxx revenue, 5-7xxx expenses). Fall back to QB's
+        // account_type ordering when the code is missing, and name as a
+        // final tiebreaker.
         if (accountResponse.data) {
           const roots = (accountResponse.data.roots || []) as TreeNode[]
-          roots.sort((a, b) => {
-            const ta = ACCOUNT_TYPE_ORDER[a.account_type || ''] ?? 99
-            const tb = ACCOUNT_TYPE_ORDER[b.account_type || ''] ?? 99
-            if (ta !== tb) return ta - tb
-            return a.name.localeCompare(b.name)
-          })
+          roots.sort(compareAccountNodes)
           setAccounts(
             flattenTree(roots, currentGraph.graphId, currentGraph.graphName)
           )
@@ -566,9 +584,11 @@ const ChartOfAccountsContent: FC = function () {
   // Filter accounts
   const filteredAccounts = useMemo(() => {
     return accounts.filter((account) => {
+      const q = searchTerm.toLowerCase()
       const matchesSearch =
         searchTerm === '' ||
-        account.name.toLowerCase().includes(searchTerm.toLowerCase())
+        account.name.toLowerCase().includes(q) ||
+        (account.code?.toLowerCase().includes(q) ?? false)
 
       const matchesClassification =
         selectedClassification === null ||
@@ -802,6 +822,11 @@ const ChartOfAccountsContent: FC = function () {
                         >
                           {account.depth > 0 && (
                             <span className="mr-1 text-gray-400">└</span>
+                          )}
+                          {account.code && (
+                            <span className="mr-2 font-mono text-xs text-gray-500 dark:text-gray-400">
+                              {account.code}
+                            </span>
                           )}
                           {account.name}
                         </span>
