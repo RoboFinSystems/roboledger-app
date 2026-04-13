@@ -187,7 +187,7 @@ describe('CloseContent', () => {
     })
   })
 
-  it('auto-selects first statement item', async () => {
+  it('defaults to period_close hub even when statements exist', async () => {
     const graph = makeGraph('kg_test')
     mockUseGraphContext.mockReturnValue(makeGraphState([graph], 'kg_test'))
     mockGetClosingBookStructures.mockResolvedValue({
@@ -212,8 +212,7 @@ describe('CloseContent', () => {
     render(<CloseContent />)
 
     await waitFor(() => {
-      expect(screen.getByTestId('statement-panel')).toBeInTheDocument()
-      expect(screen.getByText('income_statement')).toBeInTheDocument()
+      expect(screen.getByTestId('period-close-panel')).toBeInTheDocument()
     })
   })
 

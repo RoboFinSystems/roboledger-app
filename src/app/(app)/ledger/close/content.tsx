@@ -19,7 +19,6 @@ import PeriodClosePanel from './components/PeriodClosePanel'
 import SchedulePanel from './components/SchedulePanel'
 import StatementPanel from './components/StatementPanel'
 import StructureSidebar, {
-  itemToSelected,
   type SelectedItem,
 } from './components/StructureSidebar'
 import TrialBalancePanel from './components/TrialBalancePanel'
@@ -76,13 +75,11 @@ const CloseContent: FC = function () {
         setMappingId(rollupItem.id)
       }
 
-      // Auto-select first item from first category
-      const firstCategory = response.categories[0]
-      if (firstCategory?.items?.length > 0) {
-        setSelectedItem(itemToSelected(firstCategory.items[0]))
-      } else {
-        setSelectedItem({ type: 'period_close' })
-      }
+      // Default to the Period Close hub — it's the operational home for
+      // the close workflow (fiscal calendar state, drafts, close button).
+      // Users can still drill into statements, schedules, or rollups from
+      // the sidebar.
+      setSelectedItem({ type: 'period_close' })
     } catch (err) {
       console.error('Error loading closing book data:', err)
       setError('Failed to load closing book data.')

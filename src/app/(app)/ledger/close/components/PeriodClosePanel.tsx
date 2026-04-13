@@ -417,7 +417,9 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
                   <TableCell className="font-medium text-gray-900 dark:text-white">
                     {item.structureName}
                   </TableCell>
-                  <TableCell>{formatCurrencyDollars(item.amount)}</TableCell>
+                  <TableCell className="text-gray-900 dark:text-white">
+                    {formatCurrencyDollars(item.amount)}
+                  </TableCell>
                   <TableCell>
                     <Badge
                       color={STATUS_COLORS[item.status] || 'gray'}
@@ -618,7 +620,9 @@ interface SummaryFieldProps {
 }
 
 const SummaryField: FC<SummaryFieldProps> = ({ label, children }) => (
-  <div className="flex flex-col">
+  // Default text color at the wrapper so children without their own color
+  // class (e.g., the value <span>s below) pick up the right theme color.
+  <div className="flex flex-col text-gray-900 dark:text-white">
     <span className="text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">
       {label}
     </span>
@@ -636,15 +640,15 @@ const DraftReviewPanel: FC<DraftReviewPanelProps> = ({ drafts, isLoading }) => {
 
   return (
     <Card theme={customTheme.card}>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between text-gray-900 dark:text-white">
         <h3 className="text-lg font-semibold">
           Draft review ({drafts.draftCount})
         </h3>
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-gray-500">
+          <span className="text-gray-500 dark:text-gray-400">
             Debit: {formatCurrencyDollars(drafts.totalDebit / 100)}
           </span>
-          <span className="text-gray-500">
+          <span className="text-gray-500 dark:text-gray-400">
             Credit: {formatCurrencyDollars(drafts.totalCredit / 100)}
           </span>
           {drafts.allBalanced ? (
@@ -662,14 +666,14 @@ const DraftReviewPanel: FC<DraftReviewPanelProps> = ({ drafts, isLoading }) => {
         {drafts.drafts.map((d) => (
           <div
             key={d.entryId}
-            className="rounded border border-gray-200 p-3 text-sm dark:border-gray-700"
+            className="rounded border border-gray-200 p-3 text-sm text-gray-900 dark:border-gray-700 dark:text-white"
           >
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <span className="font-medium">
                   {d.sourceStructureName ?? d.memo ?? d.entryId}
                 </span>
-                <span className="ml-2 text-xs text-gray-500">
+                <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
                   {d.postingDate}
                 </span>
                 {d.provenance && (
@@ -693,16 +697,16 @@ const DraftReviewPanel: FC<DraftReviewPanelProps> = ({ drafts, isLoading }) => {
               <TableBody>
                 {d.lineItems.map((li) => (
                   <TableRow key={li.lineItemId}>
-                    <TableCell className="text-xs">
+                    <TableCell className="text-xs text-gray-700 dark:text-gray-200">
                       {li.elementCode ? `${li.elementCode} · ` : ''}
                       {li.elementName}
                     </TableCell>
-                    <TableCell className="w-32 text-right text-xs">
+                    <TableCell className="w-32 text-right text-xs text-gray-700 dark:text-gray-200">
                       {li.debitAmount > 0
                         ? formatCurrencyDollars(li.debitAmount / 100)
                         : ''}
                     </TableCell>
-                    <TableCell className="w-32 text-right text-xs">
+                    <TableCell className="w-32 text-right text-xs text-gray-700 dark:text-gray-200">
                       {li.creditAmount > 0
                         ? formatCurrencyDollars(li.creditAmount / 100)
                         : ''}
@@ -748,7 +752,7 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
     <Card theme={customTheme.card}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-lg font-semibold">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
             Close {formatPeriod(selectedPeriod)}
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">
