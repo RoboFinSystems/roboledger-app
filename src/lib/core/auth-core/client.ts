@@ -136,10 +136,7 @@ export class RoboSystemsAuthClient {
           },
         })
       } catch (err) {
-        console.warn(
-          '[AuthClient] Failed to seed SDK extensions config:',
-          err
-        )
+        console.warn('[AuthClient] Failed to seed SDK extensions config:', err)
       }
     }
 
