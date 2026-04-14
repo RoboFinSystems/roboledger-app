@@ -2,9 +2,9 @@
 
 import { customTheme, extensions } from '@/lib/core'
 import type {
-  FiscalCalendarState,
-  PeriodCloseStatus,
-  PeriodDraftsView,
+  LedgerFiscalCalendar,
+  LedgerPeriodCloseStatus,
+  LedgerPeriodDrafts,
 } from '@robosystems/client/extensions'
 import {
   Badge,
@@ -90,10 +90,11 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   onEntryCreated,
 }) => {
   // ── State ────────────────────────────────────────────────────────────
-  const [calendar, setCalendar] = useState<FiscalCalendarState | null>(null)
+  const [calendar, setCalendar] = useState<LedgerFiscalCalendar | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null)
-  const [closeStatus, setCloseStatus] = useState<PeriodCloseStatus | null>(null)
-  const [drafts, setDrafts] = useState<PeriodDraftsView | null>(null)
+  const [closeStatus, setCloseStatus] =
+    useState<LedgerPeriodCloseStatus | null>(null)
+  const [drafts, setDrafts] = useState<LedgerPeriodDrafts | null>(null)
 
   const [isLoadingCalendar, setIsLoadingCalendar] = useState(true)
   const [isLoadingStatus, setIsLoadingStatus] = useState(false)
@@ -549,7 +550,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
 // ── Sub-components ───────────────────────────────────────────────────
 
 interface CalendarSummaryProps {
-  calendar: FiscalCalendarState
+  calendar: LedgerFiscalCalendar
   onRefresh: () => void
 }
 
@@ -638,7 +639,7 @@ const SummaryField: FC<SummaryFieldProps> = ({ label, children }) => (
 )
 
 interface DraftReviewPanelProps {
-  drafts: PeriodDraftsView
+  drafts: LedgerPeriodDrafts
   isLoading: boolean
 }
 
@@ -730,9 +731,9 @@ const DraftReviewPanel: FC<DraftReviewPanelProps> = ({ drafts, isLoading }) => {
 }
 
 interface ClosePeriodActionProps {
-  calendar: FiscalCalendarState
+  calendar: LedgerFiscalCalendar
   selectedPeriod: string
-  drafts: PeriodDraftsView | null
+  drafts: LedgerPeriodDrafts | null
   isClosing: boolean
   allowStaleSync: boolean
   onToggleStaleSync: (value: boolean) => void

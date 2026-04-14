@@ -1,6 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const mockGetEntity = vi.fn()
+
 vi.mock('@/lib/core', () => ({
   customTheme: { card: {}, alert: {}, table: {}, textInput: {} },
   GraphFilters: {
@@ -13,6 +15,14 @@ vi.mock('@/lib/core', () => ({
   ),
   useGraphContext: vi.fn(),
   useEntity: vi.fn(),
+  // The page now reads via extensions.ledger.getEntity(graphId) directly.
+  // The facade returns the entity object (camelCase) or null — no REST
+  // envelope wrapper.
+  extensions: {
+    ledger: {
+      getEntity: (graphId: string) => mockGetEntity(graphId),
+    },
+  },
 }))
 
 vi.mock('@/components/PageHeader', () => ({
@@ -40,12 +50,10 @@ vi.mock('react-icons/hi', () => ({
 }))
 
 import { useEntity, useGraphContext } from '@/lib/core'
-import { getLedgerEntity } from '@robosystems/client'
 import EntitiesListPageContent from '../content'
 
 const mockUseGraphContext = vi.mocked(useGraphContext)
 const mockUseEntity = vi.mocked(useEntity)
-const mockGetLedgerEntity = vi.mocked(getLedgerEntity)
 
 const makeGraph = (id: string, name: string) => ({
   graphId: id,
@@ -85,7 +93,7 @@ describe('EntitiesListPageContent', () => {
       setCurrentGraph: vi.fn(),
     } as any)
 
-    mockGetLedgerEntity.mockReturnValue(new Promise(() => {})) // never resolves
+    mockGetEntity.mockReturnValue(new Promise(() => {})) // never resolves
 
     render(<EntitiesListPageContent />)
     expect(screen.getByTestId('spinner')).toBeInTheDocument()
@@ -106,16 +114,14 @@ describe('EntitiesListPageContent', () => {
       setCurrentGraph: vi.fn(),
     } as any)
 
-    mockGetLedgerEntity.mockImplementation(({ path }: any) =>
+    mockGetEntity.mockImplementation((graphId: string) =>
       Promise.resolve({
-        data: {
-          id: path.graph_id,
-          name: `Entity for ${path.graph_id}`,
-          parent_entity_id: null,
-          is_parent: true,
-          entity_type: 'corporation',
-          status: 'active',
-        },
+        id: graphId,
+        name: `Entity for ${graphId}`,
+        parentEntityId: null,
+        isParent: true,
+        entityType: 'corporation',
+        status: 'active',
       })
     )
 
@@ -127,7 +133,7 @@ describe('EntitiesListPageContent', () => {
     })
 
     // Both calls should have been made (parallel)
-    expect(mockGetLedgerEntity).toHaveBeenCalledTimes(2)
+    expect(mockGetEntity).toHaveBeenCalledTimes(2)
   })
 
   it('handles partial failures gracefully', async () => {
@@ -138,14 +144,12 @@ describe('EntitiesListPageContent', () => {
       setCurrentGraph: vi.fn(),
     } as any)
 
-    mockGetLedgerEntity
+    mockGetEntity
       .mockResolvedValueOnce({
-        data: {
-          id: 'g1',
-          name: 'Entity 1',
-          parent_entity_id: null,
-          is_parent: true,
-        },
+        id: 'g1',
+        name: 'Entity 1',
+        parentEntityId: null,
+        isParent: true,
       })
       .mockRejectedValueOnce(new Error('API error'))
 
@@ -178,13 +182,11 @@ describe('EntitiesListPageContent', () => {
       setCurrentGraph: vi.fn(),
     } as any)
 
-    mockGetLedgerEntity.mockResolvedValueOnce({
-      data: {
-        id: 'g1',
-        name: 'Ledger Entity',
-        parent_entity_id: null,
-        is_parent: true,
-      },
+    mockGetEntity.mockResolvedValueOnce({
+      id: 'g1',
+      name: 'Ledger Entity',
+      parentEntityId: null,
+      isParent: true,
     })
 
     render(<EntitiesListPageContent />)
@@ -194,6 +196,6 @@ describe('EntitiesListPageContent', () => {
     })
 
     // Only the roboledger graph should have been queried
-    expect(mockGetLedgerEntity).toHaveBeenCalledTimes(1)
+    expect(mockGetEntity).toHaveBeenCalledTimes(1)
   })
 })

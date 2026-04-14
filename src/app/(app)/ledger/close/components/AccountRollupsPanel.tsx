@@ -1,7 +1,7 @@
 'use client'
 
 import { customTheme, extensions } from '@/lib/core'
-import type { AccountRollupsResponse } from '@robosystems/client'
+import type { LedgerAccountRollups } from '@robosystems/client/extensions'
 import {
   Badge,
   Spinner,
@@ -30,7 +30,7 @@ const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
   mappingId,
   viewMode,
 }) => {
-  const [data, setData] = useState<AccountRollupsResponse | null>(null)
+  const [data, setData] = useState<LedgerAccountRollups | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -88,11 +88,11 @@ const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
     for (const group of data.groups) {
       for (const account of group.accounts) {
         facts.push({
-          elementName: account.account_name,
-          elementQname: `→ ${group.reporting_qname}`,
+          elementName: account.accountName,
+          elementQname: `→ ${group.reportingQname}`,
           periodStart: 'Current',
           periodEnd: null,
-          value: account.net_balance,
+          value: account.netBalance,
           unit: 'USD',
         })
       }
@@ -108,8 +108,8 @@ const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
           Account Rollups
         </p>
         <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-          {data.mapping_name} — {data.total_mapped} mapped
-          {data.total_unmapped > 0 && `, ${data.total_unmapped} unmapped`}
+          {data.mappingName} — {data.totalMapped} mapped
+          {data.totalUnmapped > 0 && `, ${data.totalUnmapped} unmapped`}
         </p>
       </div>
 
@@ -121,14 +121,14 @@ const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
           </TableHead>
           <TableBody>
             {data.groups.map((group) => (
-              <Fragment key={group.reporting_element_id}>
+              <Fragment key={group.reportingElementId}>
                 {/* Reporting element header */}
                 <TableRow className="bg-gray-50 dark:bg-gray-800/50">
                   <TableCell
                     style={{ paddingLeft: '16px' }}
                     className="font-semibold text-gray-900 dark:text-white"
                   >
-                    {group.reporting_name}
+                    {group.reportingName}
                     <Badge color="gray" size="xs" className="ml-2 inline-block">
                       {group.classification}
                     </Badge>
@@ -140,26 +140,26 @@ const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
 
                 {/* CoA account detail rows */}
                 {group.accounts.map((account) => (
-                  <TableRow key={account.element_id}>
+                  <TableRow key={account.elementId}>
                     <TableCell
                       style={{ paddingLeft: '40px' }}
                       className="text-gray-600 dark:text-gray-300"
                     >
-                      {account.account_code && (
+                      {account.accountCode && (
                         <span className="mr-2 font-mono text-xs text-gray-400">
-                          {account.account_code}
+                          {account.accountCode}
                         </span>
                       )}
-                      {account.account_name}
+                      {account.accountName}
                     </TableCell>
                     <TableCell
                       className={`text-right font-mono text-gray-700 dark:text-gray-300 ${
-                        account.net_balance === 0
+                        account.netBalance === 0
                           ? 'text-gray-400 dark:text-gray-500'
                           : ''
                       }`}
                     >
-                      {formatCurrency(account.net_balance)}
+                      {formatCurrency(account.netBalance)}
                     </TableCell>
                   </TableRow>
                 ))}

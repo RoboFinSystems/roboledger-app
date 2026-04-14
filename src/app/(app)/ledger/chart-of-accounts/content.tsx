@@ -6,15 +6,14 @@ import {
   extensions,
   GraphFilters,
   PageLayout,
-  SDK,
   useGraphContext,
 } from '@/lib/core'
 import type { ElementClassification } from '@/lib/ledger'
 import type {
-  MappingCoverage,
-  MappingInfo,
+  LedgerMapping,
+  LedgerMappingCoverage,
+  LedgerMappingInfo,
 } from '@robosystems/client/extensions'
-import type { MappingDetailResponse } from '@robosystems/client/types'
 import {
   Badge,
   Button,
@@ -83,10 +82,10 @@ interface TreeNode {
   code?: string | null
   name: string
   classification: string
-  account_type?: string | null
-  balance_type: string
+  accountType?: string | null
+  balanceType: string
   depth: number
-  is_active: boolean
+  isActive: boolean
   children?: TreeNode[]
 }
 
@@ -134,8 +133,8 @@ function compareAccountNodes(a: TreeNode, b: TreeNode): number {
   if (ca !== cb) {
     return ca.localeCompare(cb, undefined, { numeric: true })
   }
-  const ta = ACCOUNT_TYPE_ORDER[a.account_type || ''] ?? 99
-  const tb = ACCOUNT_TYPE_ORDER[b.account_type || ''] ?? 99
+  const ta = ACCOUNT_TYPE_ORDER[a.accountType || ''] ?? 99
+  const tb = ACCOUNT_TYPE_ORDER[b.accountType || ''] ?? 99
   if (ta !== tb) return ta - tb
   return a.name.localeCompare(b.name)
 }
@@ -152,9 +151,9 @@ function flattenTree(
       code: node.code ?? null,
       name: node.name,
       classification: node.classification as ElementClassification,
-      balance_type: node.balance_type,
+      balance_type: node.balanceType,
       depth: node.depth,
-      is_active: node.is_active,
+      is_active: node.isActive,
       _graphId: graphId,
       _graphName: graphName,
     })
@@ -318,14 +317,13 @@ const ChartOfAccountsContent: FC = function () {
     useState<ElementClassification | null>(null)
 
   // Mapping state
-  const [mappings, setMappings] = useState<MappingInfo[]>([])
+  const [mappings, setMappings] = useState<LedgerMappingInfo[]>([])
   const [selectedMappingId, setSelectedMappingId] = useState<string | null>(
     null
   )
-  const [mappingDetail, setMappingDetail] =
-    useState<MappingDetailResponse | null>(null)
+  const [mappingDetail, setMappingDetail] = useState<LedgerMapping | null>(null)
   const [mappingCoverage, setMappingCoverage] =
-    useState<MappingCoverage | null>(null)
+    useState<LedgerMappingCoverage | null>(null)
   const [isAutoMapping, setIsAutoMapping] = useState(false)
 
   // Inline editing state
@@ -356,13 +354,11 @@ const ChartOfAccountsContent: FC = function () {
         setError(null)
 
         // Load account tree and mappings in parallel
-        const [accountResponse, mappingList] = await Promise.all([
-          SDK.getLedgerAccountTree({
-            path: { graph_id: currentGraph.graphId },
-          }),
+        const [accountTree, mappingList] = await Promise.all([
+          extensions.ledger.getAccountTree(currentGraph.graphId),
           extensions.ledger
             .listMappings(currentGraph.graphId)
-            .catch(() => [] as MappingInfo[]),
+            .catch(() => [] as LedgerMappingInfo[]),
         ])
 
         // Process accounts — sort by CoA code first so the list matches
@@ -370,8 +366,8 @@ const ChartOfAccountsContent: FC = function () {
         // 3xxx equity, 4xxx revenue, 5-7xxx expenses). Fall back to QB's
         // account_type ordering when the code is missing, and name as a
         // final tiebreaker.
-        if (accountResponse.data) {
-          const roots = (accountResponse.data.roots || []) as TreeNode[]
+        if (accountTree) {
+          const roots = (accountTree.roots || []) as unknown as TreeNode[]
           roots.sort(compareAccountNodes)
           setAccounts(
             flattenTree(roots, currentGraph.graphId, currentGraph.graphName)
@@ -406,10 +402,7 @@ const ChartOfAccountsContent: FC = function () {
 
       try {
         const [detail, coverage, gaapResult] = await Promise.all([
-          extensions.ledger.getMappingDetail(
-            currentGraph.graphId,
-            selectedMappingId
-          ),
+          extensions.ledger.getMapping(currentGraph.graphId, selectedMappingId),
           extensions.ledger
             .getMappingCoverage(currentGraph.graphId, selectedMappingId)
             .catch(() => null),
@@ -457,18 +450,16 @@ const ChartOfAccountsContent: FC = function () {
     const map = new Map<string, GaapMapping>()
     if (!mappingDetail?.associations) return map
 
-    for (const assoc of mappingDetail.associations as Array<
-      Record<string, unknown>
-    >) {
-      const fromId = assoc.from_element_id as string
+    for (const assoc of mappingDetail.associations) {
+      const fromId = assoc.fromElementId
       if (fromId) {
         map.set(fromId, {
-          gaapName: (assoc.to_element_name as string) || '',
-          gaapQname: (assoc.to_element_qname as string) || '',
-          confidence: (assoc.confidence as number) ?? 0,
-          associationId: assoc.id as string,
+          gaapName: assoc.toElementName ?? '',
+          gaapQname: assoc.toElementQname ?? '',
+          confidence: assoc.confidence ?? 0,
+          associationId: assoc.id,
           fromElementId: fromId,
-          toElementId: assoc.to_element_id as string,
+          toElementId: assoc.toElementId,
         })
       }
     }
@@ -480,10 +471,7 @@ const ChartOfAccountsContent: FC = function () {
     if (!currentGraph || !selectedMappingId) return
     try {
       const [detail, coverage] = await Promise.all([
-        extensions.ledger.getMappingDetail(
-          currentGraph.graphId,
-          selectedMappingId
-        ),
+        extensions.ledger.getMapping(currentGraph.graphId, selectedMappingId),
         extensions.ledger
           .getMappingCoverage(currentGraph.graphId, selectedMappingId)
           .catch(() => null),
@@ -505,21 +493,22 @@ const ChartOfAccountsContent: FC = function () {
         // If replacing existing mapping, delete old first
         const existing = gaapByElementId.get(accountId)
         if (existing) {
-          await extensions.ledger.deleteMapping(
+          await extensions.ledger.deleteMappingAssociation(
             currentGraph.graphId,
-            selectedMappingId,
-            existing.associationId
+            {
+              mapping_id: selectedMappingId,
+              association_id: existing.associationId,
+            }
           )
         }
 
         // Create new mapping using account.id directly as the from element ID
-        await extensions.ledger.createMapping(
-          currentGraph.graphId,
-          selectedMappingId,
-          accountId,
-          gaapElement.id,
-          1.0
-        )
+        await extensions.ledger.createMappingAssociation(currentGraph.graphId, {
+          mapping_id: selectedMappingId,
+          from_element_id: accountId,
+          to_element_id: gaapElement.id,
+          confidence: 1.0,
+        })
 
         await refreshMappingData()
         setEditingAccountId(null)
@@ -543,11 +532,10 @@ const ChartOfAccountsContent: FC = function () {
 
       setIsSaving(true)
       try {
-        await extensions.ledger.deleteMapping(
-          currentGraph.graphId,
-          selectedMappingId,
-          existing.associationId
-        )
+        await extensions.ledger.deleteMappingAssociation(currentGraph.graphId, {
+          mapping_id: selectedMappingId,
+          association_id: existing.associationId,
+        })
         await refreshMappingData()
         setEditingAccountId(null)
       } catch (err) {
@@ -567,7 +555,9 @@ const ChartOfAccountsContent: FC = function () {
     try {
       setIsAutoMapping(true)
       setError(null)
-      await extensions.ledger.autoMap(currentGraph.graphId, selectedMappingId)
+      await extensions.ledger.autoMapElements(currentGraph.graphId, {
+        mapping_id: selectedMappingId,
+      })
 
       // Poll for updated data after agent completes
       setTimeout(async () => {

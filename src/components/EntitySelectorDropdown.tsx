@@ -1,9 +1,13 @@
 'use client'
 
 import type { Entity } from '@/lib/core'
-import { GraphFilters, useEntity, useGraphContext } from '@/lib/core'
+import {
+  extensions,
+  GraphFilters,
+  useEntity,
+  useGraphContext,
+} from '@/lib/core'
 import { useSSO } from '@/lib/core/auth-core/sso'
-import * as SDK from '@robosystems/client'
 import { useEffect, useMemo, useState } from 'react'
 import { HiChevronDown, HiOfficeBuilding } from 'react-icons/hi'
 
@@ -39,22 +43,21 @@ export function EntitySelectorDropdown() {
       setIsLoading(true)
       const results = await Promise.allSettled(
         roboledgerGraphs.map((graph) =>
-          SDK.getLedgerEntity({ path: { graph_id: graph.graphId } }).then(
-            (response) => ({ graph, response })
-          )
+          extensions.ledger
+            .getEntity(graph.graphId)
+            .then((entity) => ({ graph, entity }))
         )
       )
 
       const entityMap = new Map<string, Entity>()
       for (const result of results) {
-        if (result.status === 'fulfilled' && result.value.response.data) {
-          const { graph, response } = result.value
-          const data = response.data as any
+        if (result.status === 'fulfilled' && result.value.entity) {
+          const { graph, entity } = result.value
           entityMap.set(graph.graphId, {
-            identifier: data.id || data.uri || '',
-            name: data.name || 'Unnamed Entity',
-            parentEntityId: data.parent_entity_id,
-            isParent: data.is_parent,
+            identifier: entity.id || entity.uri || '',
+            name: entity.name || 'Unnamed Entity',
+            parentEntityId: entity.parentEntityId,
+            isParent: entity.isParent,
           })
         } else if (result.status === 'rejected') {
           console.error('Failed to load entity:', result.reason)

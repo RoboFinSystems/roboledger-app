@@ -3,9 +3,9 @@
 import { PageHeader } from '@/components/PageHeader'
 import {
   customTheme,
+  extensions,
   GraphFilters,
   PageLayout,
-  SDK,
   useGraphContext,
 } from '@/lib/core'
 import {
@@ -130,17 +130,17 @@ const TransactionsContent: FC = function () {
 
         for (const graph of [currentGraph]) {
           try {
-            const response = await SDK.listLedgerTransactions({
-              path: { graph_id: graph.graphId },
-              query: {
-                start_date: startDate || undefined,
-                end_date: endDate || undefined,
+            const result = await extensions.ledger.listTransactions(
+              graph.graphId,
+              {
+                startDate: startDate || undefined,
+                endDate: endDate || undefined,
                 limit: 500,
-              },
-            })
+              }
+            )
 
-            if (response.data) {
-              const rows = response.data.transactions || []
+            if (result) {
+              const rows = result.transactions || []
               const graphTransactions: TransactionRow[] = rows.map((row) => ({
                 id: row.id,
                 number: row.number ?? null,
@@ -149,7 +149,7 @@ const TransactionsContent: FC = function () {
                 amount: row.amount,
                 currency: row.currency,
                 date: row.date,
-                merchant_name: row.merchant_name ?? null,
+                merchant_name: row.merchantName ?? null,
                 description: row.description ?? null,
                 source: row.source,
                 status: row.status,
@@ -196,23 +196,21 @@ const TransactionsContent: FC = function () {
       setLoadingLineItems((prev) => new Set(prev).add(key))
 
       try {
-        const response = await SDK.getLedgerTransaction({
-          path: {
-            graph_id: transaction._graphId,
-            transaction_id: transaction.id,
-          },
-        })
+        const detail = await extensions.ledger.getTransaction(
+          transaction._graphId,
+          transaction.id
+        )
 
-        if (response.data) {
+        if (detail) {
           const items: LineItemRow[] = []
-          for (const entry of response.data.entries || []) {
-            for (const li of entry.line_items || []) {
+          for (const entry of detail.entries || []) {
+            for (const li of entry.lineItems || []) {
               items.push({
                 id: li.id,
-                account_name: li.account_name ?? null,
-                account_code: li.account_code ?? null,
-                debit_amount: li.debit_amount,
-                credit_amount: li.credit_amount,
+                account_name: li.accountName ?? null,
+                account_code: li.accountCode ?? null,
+                debit_amount: li.debitAmount,
+                credit_amount: li.creditAmount,
                 description: li.description ?? null,
               })
             }

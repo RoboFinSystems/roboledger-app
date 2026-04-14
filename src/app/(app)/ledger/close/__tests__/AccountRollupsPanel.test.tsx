@@ -43,64 +43,67 @@ vi.mock('../components/FactsTable', () => ({
   ),
 }))
 
-import type { AccountRollupsResponse } from '@robosystems/client'
+import type { LedgerAccountRollups } from '@robosystems/client/extensions'
 import AccountRollupsPanel from '../components/AccountRollupsPanel'
 
+// Mock data shape mirrors the GraphQL `accountRollups` field (camelCase).
+// The panel reads snake_case was replaced by camelCase in PR #617.
 const makeResponse = (
-  overrides?: Partial<AccountRollupsResponse>
-): AccountRollupsResponse => ({
-  mapping_id: 'struct_map_01',
-  mapping_name: 'GAAP Mapping',
-  groups: [
-    {
-      reporting_element_id: 'elem_cash',
-      reporting_name: 'Cash and Cash Equivalents',
-      reporting_qname: 'us-gaap:CashAndCashEquivalents',
-      classification: 'asset',
-      balance_type: 'debit',
-      total: 15250.0,
-      accounts: [
-        {
-          element_id: 'coa_checking',
-          account_name: 'BofA Checking',
-          account_code: '1010',
-          total_debits: 100000.0,
-          total_credits: 90000.0,
-          net_balance: 10000.0,
-        },
-        {
-          element_id: 'coa_savings',
-          account_name: 'Savings Account',
-          account_code: '1020',
-          total_debits: 5250.0,
-          total_credits: 0,
-          net_balance: 5250.0,
-        },
-      ],
-    },
-    {
-      reporting_element_id: 'elem_rev',
-      reporting_name: 'Revenue',
-      reporting_qname: 'us-gaap:Revenues',
-      classification: 'revenue',
-      balance_type: 'credit',
-      total: 8000.0,
-      accounts: [
-        {
-          element_id: 'coa_sales',
-          account_name: 'Sales Revenue',
-          account_code: '4000',
-          total_debits: 0,
-          total_credits: 8000.0,
-          net_balance: 8000.0,
-        },
-      ],
-    },
-  ],
-  total_mapped: 3,
-  total_unmapped: 2,
-  ...overrides,
-})
+  overrides?: Partial<LedgerAccountRollups>
+): LedgerAccountRollups =>
+  ({
+    mappingId: 'struct_map_01',
+    mappingName: 'GAAP Mapping',
+    groups: [
+      {
+        reportingElementId: 'elem_cash',
+        reportingName: 'Cash and Cash Equivalents',
+        reportingQname: 'us-gaap:CashAndCashEquivalents',
+        classification: 'asset',
+        balanceType: 'debit',
+        total: 15250.0,
+        accounts: [
+          {
+            elementId: 'coa_checking',
+            accountName: 'BofA Checking',
+            accountCode: '1010',
+            totalDebits: 100000.0,
+            totalCredits: 90000.0,
+            netBalance: 10000.0,
+          },
+          {
+            elementId: 'coa_savings',
+            accountName: 'Savings Account',
+            accountCode: '1020',
+            totalDebits: 5250.0,
+            totalCredits: 0,
+            netBalance: 5250.0,
+          },
+        ],
+      },
+      {
+        reportingElementId: 'elem_rev',
+        reportingName: 'Revenue',
+        reportingQname: 'us-gaap:Revenues',
+        classification: 'revenue',
+        balanceType: 'credit',
+        total: 8000.0,
+        accounts: [
+          {
+            elementId: 'coa_sales',
+            accountName: 'Sales Revenue',
+            accountCode: '4000',
+            totalDebits: 0,
+            totalCredits: 8000.0,
+            netBalance: 8000.0,
+          },
+        ],
+      },
+    ],
+    totalMapped: 3,
+    totalUnmapped: 2,
+    ...overrides,
+  }) as LedgerAccountRollups
 
 describe('AccountRollupsPanel', () => {
   it('shows spinner while loading', () => {
@@ -226,7 +229,7 @@ describe('AccountRollupsPanel', () => {
 
   it('shows empty state when no groups', async () => {
     mockGetAccountRollups.mockResolvedValue(
-      makeResponse({ groups: [], total_mapped: 0, total_unmapped: 0 })
+      makeResponse({ groups: [], totalMapped: 0, totalUnmapped: 0 })
     )
     render(
       <AccountRollupsPanel
@@ -279,7 +282,7 @@ describe('AccountRollupsPanel', () => {
 
   it('calls getAccountRollups with correct params', async () => {
     mockGetAccountRollups.mockResolvedValue(
-      makeResponse({ groups: [], total_mapped: 0, total_unmapped: 0 })
+      makeResponse({ groups: [], totalMapped: 0, totalUnmapped: 0 })
     )
     render(
       <AccountRollupsPanel
@@ -300,20 +303,20 @@ describe('AccountRollupsPanel', () => {
       makeResponse({
         groups: [
           {
-            reporting_element_id: 'elem_loss',
-            reporting_name: 'Net Loss',
-            reporting_qname: 'us-gaap:NetLoss',
+            reportingElementId: 'elem_loss',
+            reportingName: 'Net Loss',
+            reportingQname: 'us-gaap:NetLoss',
             classification: 'expense',
-            balance_type: 'debit',
+            balanceType: 'debit',
             total: -500.0,
             accounts: [
               {
-                element_id: 'coa_loss',
-                account_name: 'Operating Loss',
-                account_code: '9000',
-                total_debits: 0,
-                total_credits: 500.0,
-                net_balance: -500.0,
+                elementId: 'coa_loss',
+                accountName: 'Operating Loss',
+                accountCode: '9000',
+                totalDebits: 0,
+                totalCredits: 500.0,
+                netBalance: -500.0,
               },
             ],
           },

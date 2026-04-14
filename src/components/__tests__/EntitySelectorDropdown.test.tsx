@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mockSetCurrentGraph = vi.fn()
 const mockSetCurrentEntity = vi.fn()
 const mockNavigateToApp = vi.fn()
+const mockGetEntity = vi.fn()
 
 vi.mock('@/lib/core', () => ({
   GraphFilters: {
@@ -13,6 +14,13 @@ vi.mock('@/lib/core', () => ({
   },
   useGraphContext: vi.fn(),
   useEntity: vi.fn(),
+  // The component now calls extensions.ledger.getEntity(graphId) directly
+  // — no more raw `getLedgerEntity` SDK import.
+  extensions: {
+    ledger: {
+      getEntity: (graphId: string) => mockGetEntity(graphId),
+    },
+  },
 }))
 
 vi.mock('@/lib/core/auth-core/sso', () => ({
@@ -25,12 +33,10 @@ vi.mock('react-icons/hi', () => ({
 }))
 
 import { useEntity, useGraphContext } from '@/lib/core'
-import { getLedgerEntity } from '@robosystems/client'
 import { EntitySelectorDropdown } from '../EntitySelectorDropdown'
 
 const mockUseGraphContext = vi.mocked(useGraphContext)
 const mockUseEntity = vi.mocked(useEntity)
-const mockGetLedgerEntity = vi.mocked(getLedgerEntity)
 
 const makeGraph = (id: string, name: string) => ({
   graphId: id,
@@ -75,21 +81,19 @@ describe('EntitySelectorDropdown', () => {
       setCurrentGraph: mockSetCurrentGraph,
     } as any)
 
-    mockGetLedgerEntity.mockImplementation(({ path }: any) =>
+    mockGetEntity.mockImplementation((graphId: string) =>
       Promise.resolve({
-        data: {
-          id: path.graph_id,
-          name: `Entity ${path.graph_id}`,
-          parent_entity_id: null,
-          is_parent: true,
-        },
+        id: graphId,
+        name: `Entity ${graphId}`,
+        parentEntityId: null,
+        isParent: true,
       })
     )
 
     render(<EntitySelectorDropdown />)
 
     await waitFor(() => {
-      expect(mockGetLedgerEntity).toHaveBeenCalledTimes(2)
+      expect(mockGetEntity).toHaveBeenCalledTimes(2)
     })
   })
 
@@ -101,13 +105,11 @@ describe('EntitySelectorDropdown', () => {
       setCurrentGraph: mockSetCurrentGraph,
     } as any)
 
-    mockGetLedgerEntity.mockResolvedValue({
-      data: {
-        id: 'g1',
-        name: 'Auto Entity',
-        parent_entity_id: null,
-        is_parent: true,
-      },
+    mockGetEntity.mockResolvedValue({
+      id: 'g1',
+      name: 'Auto Entity',
+      parentEntityId: null,
+      isParent: true,
     })
 
     render(<EntitySelectorDropdown />)
@@ -141,19 +143,17 @@ describe('EntitySelectorDropdown', () => {
       clearEntity: vi.fn(),
     } as any)
 
-    mockGetLedgerEntity.mockResolvedValue({
-      data: {
-        id: 'g1',
-        name: 'Already Selected Entity',
-        parent_entity_id: null,
-        is_parent: true,
-      },
+    mockGetEntity.mockResolvedValue({
+      id: 'g1',
+      name: 'Already Selected Entity',
+      parentEntityId: null,
+      isParent: true,
     })
 
     render(<EntitySelectorDropdown />)
 
     await waitFor(() => {
-      expect(mockGetLedgerEntity).toHaveBeenCalledTimes(1)
+      expect(mockGetEntity).toHaveBeenCalledTimes(1)
     })
 
     expect(mockSetCurrentEntity).not.toHaveBeenCalled()
@@ -178,13 +178,11 @@ describe('EntitySelectorDropdown', () => {
       clearEntity: vi.fn(),
     } as any)
 
-    mockGetLedgerEntity.mockResolvedValue({
-      data: {
-        id: 'g1',
-        name: 'My Company',
-        parent_entity_id: null,
-        is_parent: true,
-      },
+    mockGetEntity.mockResolvedValue({
+      id: 'g1',
+      name: 'My Company',
+      parentEntityId: null,
+      isParent: true,
     })
 
     render(<EntitySelectorDropdown />)
@@ -202,14 +200,12 @@ describe('EntitySelectorDropdown', () => {
       setCurrentGraph: mockSetCurrentGraph,
     } as any)
 
-    mockGetLedgerEntity.mockImplementation(({ path }: any) =>
+    mockGetEntity.mockImplementation((graphId: string) =>
       Promise.resolve({
-        data: {
-          id: path.graph_id,
-          name: `Entity ${path.graph_id}`,
-          parent_entity_id: null,
-          is_parent: true,
-        },
+        id: graphId,
+        name: `Entity ${graphId}`,
+        parentEntityId: null,
+        isParent: true,
       })
     )
 
@@ -217,7 +213,7 @@ describe('EntitySelectorDropdown', () => {
 
     // Wait for entities to load
     await waitFor(() => {
-      expect(mockGetLedgerEntity).toHaveBeenCalledTimes(2)
+      expect(mockGetEntity).toHaveBeenCalledTimes(2)
     })
 
     // Click dropdown button
@@ -238,21 +234,19 @@ describe('EntitySelectorDropdown', () => {
       setCurrentGraph: mockSetCurrentGraph,
     } as any)
 
-    mockGetLedgerEntity.mockImplementation(({ path }: any) =>
+    mockGetEntity.mockImplementation((graphId: string) =>
       Promise.resolve({
-        data: {
-          id: path.graph_id,
-          name: `Entity ${path.graph_id}`,
-          parent_entity_id: null,
-          is_parent: true,
-        },
+        id: graphId,
+        name: `Entity ${graphId}`,
+        parentEntityId: null,
+        isParent: true,
       })
     )
 
     render(<EntitySelectorDropdown />)
 
     await waitFor(() => {
-      expect(mockGetLedgerEntity).toHaveBeenCalledTimes(2)
+      expect(mockGetEntity).toHaveBeenCalledTimes(2)
     })
 
     // Open dropdown
@@ -280,12 +274,12 @@ describe('EntitySelectorDropdown', () => {
       setCurrentGraph: mockSetCurrentGraph,
     } as any)
 
-    mockGetLedgerEntity.mockRejectedValue(new Error('Network error'))
+    mockGetEntity.mockRejectedValue(new Error('Network error'))
 
     render(<EntitySelectorDropdown />)
 
     await waitFor(() => {
-      expect(mockGetLedgerEntity).toHaveBeenCalledTimes(1)
+      expect(mockGetEntity).toHaveBeenCalledTimes(1)
     })
 
     // Should not crash — button should still render
@@ -300,19 +294,17 @@ describe('EntitySelectorDropdown', () => {
       setCurrentGraph: mockSetCurrentGraph,
     } as any)
 
-    mockGetLedgerEntity.mockResolvedValue({
-      data: {
-        id: 'g1',
-        name: 'Entity 1',
-        parent_entity_id: null,
-        is_parent: true,
-      },
+    mockGetEntity.mockResolvedValue({
+      id: 'g1',
+      name: 'Entity 1',
+      parentEntityId: null,
+      isParent: true,
     })
 
     render(<EntitySelectorDropdown />)
 
     await waitFor(() => {
-      expect(mockGetLedgerEntity).toHaveBeenCalledTimes(1)
+      expect(mockGetEntity).toHaveBeenCalledTimes(1)
     })
 
     fireEvent.click(screen.getByText('Select Entity'))

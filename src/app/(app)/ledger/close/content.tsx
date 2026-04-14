@@ -8,7 +8,7 @@ import {
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
-import type { ClosingBookCategory } from '@robosystems/client'
+import type { LedgerClosingBookStructures } from '@robosystems/client/extensions'
 import { Card, Spinner } from 'flowbite-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -29,7 +29,9 @@ const CloseContent: FC = function () {
   const { state: graphState } = useGraphContext()
 
   // Sidebar data — single API call returns all categories
-  const [categories, setCategories] = useState<ClosingBookCategory[]>([])
+  const [categories, setCategories] = useState<
+    LedgerClosingBookStructures['categories']
+  >([])
   const [entityName, setEntityName] = useState<string | null>(null)
   const [mappingId, setMappingId] = useState<string | null>(null)
   const [isSidebarLoading, setIsSidebarLoading] = useState(true)
@@ -64,13 +66,13 @@ const CloseContent: FC = function () {
         extensions.ledger.getEntity(currentGraph.graphId).catch(() => null),
       ])
 
-      setCategories(response.categories)
+      setCategories(response?.categories ?? [])
       setEntityName(entity?.name ?? null)
 
       // Extract mapping ID for report regeneration (find first account_rollups item across all categories)
-      const rollupItem = response.categories
+      const rollupItem = (response?.categories ?? [])
         .flatMap((c) => c.items)
-        .find((i) => i.item_type === 'account_rollups')
+        .find((i) => i.itemType === 'account_rollups')
       if (rollupItem) {
         setMappingId(rollupItem.id)
       }

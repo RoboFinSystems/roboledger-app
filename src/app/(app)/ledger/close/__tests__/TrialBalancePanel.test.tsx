@@ -1,13 +1,14 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-const mockGetLedgerTrialBalance = vi.fn()
+const mockGetTrialBalance = vi.fn()
 
 vi.mock('@/lib/core', () => ({
   customTheme: { table: {} },
-  SDK: {
-    getLedgerTrialBalance: (...args: any[]) =>
-      mockGetLedgerTrialBalance(...args),
+  extensions: {
+    ledger: {
+      getTrialBalance: (...args: any[]) => mockGetTrialBalance(...args),
+    },
   },
 }))
 
@@ -28,19 +29,23 @@ vi.mock('flowbite-react', () => ({
 
 import TrialBalancePanel from '../components/TrialBalancePanel'
 
+// The facade now returns the unwrapped GraphQL `trialBalance` field shape
+// directly (camelCase), not a `{ data: { rows } }` envelope.
 const makeResponse = (rows: Array<Record<string, unknown>>) => ({
-  data: { rows },
+  totalDebits: rows.reduce((s, r) => s + ((r.totalDebits as number) ?? 0), 0),
+  totalCredits: rows.reduce((s, r) => s + ((r.totalCredits as number) ?? 0), 0),
+  rows,
 })
 
 describe('TrialBalancePanel', () => {
   it('renders a spinner while loading', () => {
-    mockGetLedgerTrialBalance.mockReturnValue(new Promise(() => {}))
+    mockGetTrialBalance.mockReturnValue(new Promise(() => {}))
     render(<TrialBalancePanel graphId="kg_test" />)
     expect(screen.getByTestId('spinner')).toBeInTheDocument()
   })
 
   it('renders an error message on API failure', async () => {
-    mockGetLedgerTrialBalance.mockRejectedValue(new Error('boom'))
+    mockGetTrialBalance.mockRejectedValue(new Error('boom'))
     render(<TrialBalancePanel graphId="kg_test" />)
     await waitFor(() => {
       expect(
@@ -50,7 +55,7 @@ describe('TrialBalancePanel', () => {
   })
 
   it('renders zero accounts when the response is empty', async () => {
-    mockGetLedgerTrialBalance.mockResolvedValue(makeResponse([]))
+    mockGetTrialBalance.mockResolvedValue(makeResponse([]))
     render(<TrialBalancePanel graphId="kg_test" />)
     await waitFor(() => {
       expect(screen.getByText('0 accounts')).toBeInTheDocument()
@@ -61,14 +66,14 @@ describe('TrialBalancePanel', () => {
     // The /trial-balance endpoint already returns dollars. Regression test
     // for the bug where the panel divided the value again, displaying
     // amounts 100x too small.
-    mockGetLedgerTrialBalance.mockResolvedValue(
+    mockGetTrialBalance.mockResolvedValue(
       makeResponse([
         {
-          account_name: 'BofA Checking',
+          accountName: 'BofA Checking',
           classification: 'asset',
-          total_debits: 15250,
-          total_credits: 0,
-          net_balance: 15250,
+          totalDebits: 15250,
+          totalCredits: 0,
+          netBalance: 15250,
         },
       ])
     )
@@ -85,21 +90,21 @@ describe('TrialBalancePanel', () => {
   })
 
   it('aggregates totals across rows and renders them in the totals row', async () => {
-    mockGetLedgerTrialBalance.mockResolvedValue(
+    mockGetTrialBalance.mockResolvedValue(
       makeResponse([
         {
-          account_name: 'Cash',
+          accountName: 'Cash',
           classification: 'asset',
-          total_debits: 1000,
-          total_credits: 0,
-          net_balance: 1000,
+          totalDebits: 1000,
+          totalCredits: 0,
+          netBalance: 1000,
         },
         {
-          account_name: 'Revenue',
+          accountName: 'Revenue',
           classification: 'revenue',
-          total_debits: 0,
-          total_credits: 750,
-          net_balance: -750,
+          totalDebits: 0,
+          totalCredits: 750,
+          netBalance: -750,
         },
       ])
     )
@@ -115,13 +120,11 @@ describe('TrialBalancePanel', () => {
     expect(screen.getAllByText('$750.00').length).toBeGreaterThan(0)
   })
 
-  it('calls the SDK with the correct graph id', async () => {
-    mockGetLedgerTrialBalance.mockResolvedValue(makeResponse([]))
+  it('calls the facade with the correct graph id', async () => {
+    mockGetTrialBalance.mockResolvedValue(makeResponse([]))
     render(<TrialBalancePanel graphId="kg_mygraph" />)
     await waitFor(() => {
-      expect(mockGetLedgerTrialBalance).toHaveBeenCalledWith({
-        path: { graph_id: 'kg_mygraph' },
-      })
+      expect(mockGetTrialBalance).toHaveBeenCalledWith('kg_mygraph')
     })
   })
 })

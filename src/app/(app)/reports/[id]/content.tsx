@@ -175,19 +175,31 @@ const ReportViewerContent: FC = function () {
     try {
       setIsSharing(true)
       setShareResult(null)
-      const result = await extensions.reports.share(
+      const ack = await extensions.reports.share(
         graphId,
         reportId,
         selectedListId
       )
 
-      const succeeded = result.results.filter(
-        (r) => r.status === 'shared'
-      ).length
-      const failed = result.results.filter((r) => r.status === 'error')
+      // `share` is a sync backend dispatch today — the envelope's `result`
+      // carries the backend's ShareReportResponse payload (a list of
+      // per-target outcomes). Shape: { report_id, results: [...] }.
+      const shareResults =
+        (
+          ack.result as {
+            results?: Array<{
+              target_graph_id: string
+              status: string
+              error: string | null
+              fact_count?: number
+            }>
+          } | null
+        )?.results ?? []
+      const succeeded = shareResults.filter((r) => r.status === 'shared').length
+      const failed = shareResults.filter((r) => r.status === 'error')
       let msg = `Shared to ${succeeded} recipient${succeeded !== 1 ? 's' : ''} successfully.`
       if (failed.length > 0) {
-        msg += ` ${failed.length} failed: ${failed.map((f) => f.error || f.targetGraphId).join(', ')}`
+        msg += ` ${failed.length} failed: ${failed.map((f) => f.error || f.target_graph_id).join(', ')}`
       }
       setShareResult(msg)
       setSelectedListId(null)
