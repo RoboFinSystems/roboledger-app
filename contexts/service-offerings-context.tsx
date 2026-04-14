@@ -17,10 +17,7 @@ export interface ServiceOfferings {
       monthlyPrice: number
       monthlyCredits: number
       features: string[]
-      limits?: {
-        maxNodes?: number
-        maxRelationships?: number
-      }
+      instanceStorageLimitGb?: number
       creditMultiplier: number
     }
   }
@@ -115,10 +112,7 @@ export function ServiceOfferingsProvider({
               features: tier.features || [],
               creditMultiplier:
                 apiData.graph_subscriptions?.tier_multipliers?.[tier.name] || 1,
-              limits: {
-                maxNodes: tier.max_nodes,
-                maxRelationships: tier.max_relationships,
-              },
+              instanceStorageLimitGb: tier.instance_storage_limit_gb,
             }
           })
         }
