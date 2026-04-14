@@ -30,30 +30,18 @@ describe('graph-tiers', () => {
         display_name: 'Free',
         monthly_price: 0,
         max_subgraphs: 0,
-        limits: {
-          max_nodes: 1000,
-          max_relationships: 1000,
-        },
       },
       {
         tier: 'basic',
         display_name: 'Basic',
         monthly_price: 29,
         max_subgraphs: 1,
-        limits: {
-          max_nodes: 10000,
-          max_relationships: 10000,
-        },
       },
       {
         tier: 'premium',
         display_name: 'Premium',
         monthly_price: 99,
         max_subgraphs: 5,
-        limits: {
-          max_nodes: 100000,
-          max_relationships: 100000,
-        },
       },
     ] as GraphTier[],
   }

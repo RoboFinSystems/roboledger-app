@@ -3,6 +3,7 @@ export interface SearchFilterConfig {
   entity?: boolean
   formType?: boolean
   fiscalYear?: boolean
+  semantic?: boolean
 }
 
 export interface SearchConfig {
