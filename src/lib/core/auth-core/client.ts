@@ -32,18 +32,21 @@ import type {
   SSOTokenResponse,
 } from './types'
 
-// Try to import SDK extensions for enhanced features
-let RoboSystemsExtensions: any = null
 // Global config hook for the extensions package's lazy default singleton
 // (`import { extensions } from '@robosystems/client/extensions'`). We must
 // set this BEFORE the singleton is first accessed — the singleton reads the
 // token at construction time and never re-reads it. Without this, the
 // GraphQL client inside LedgerClient/InvestorClient has no credentials and
 // every resolver call returns UNAUTHENTICATED.
+//
+// Lazy-required so auth-core keeps working on SDK versions that predate
+// the extensions surface (e.g. during a gradual `@robosystems/client`
+// upgrade); a missing module here falls through to a no-op, which just
+// means the extensions singleton is unconfigured but the core REST auth
+// path still works.
 let setSDKExtensionsConfig: any = null
 try {
   const extensions = require('@robosystems/client/extensions')
-  RoboSystemsExtensions = extensions.RoboSystemsExtensions
   setSDKExtensionsConfig = extensions.setSDKExtensionsConfig
 } catch {
   // SDK extensions not available in this version
@@ -114,7 +117,6 @@ export class RoboSystemsAuthClient {
         const { getToken, getValidToken } = require('./token-storage')
         setSDKExtensionsConfig({
           baseUrl: baseUrl.replace(/\/$/, ''),
-          credentials: 'include',
           // Priming `token` with the current storage value isn't required
           // since the provider always wins, but it gives the singleton a
           // sensible initial value before the first async refresh.
@@ -207,6 +209,32 @@ export class RoboSystemsAuthClient {
     this.client.delete = wrapWithAuthAndErrorHandling(originalDelete, 'DELETE')
   }
 
+  /**
+   * Push the latest auth token into the SDK extensions global config.
+   *
+   * Called from every auth success path (`login` / `register` / SSO
+   * token exchange / verify-email) so the SDK extensions singleton
+   * stays in sync with the current credential.
+   *
+   * The GraphQL read path already has refresh via `tokenProvider`
+   * (wired in `configureClientWithAuth`) and does not depend on this
+   * static field. But the SDK's React hooks (`useQuery`, `useOperation`,
+   * `useStreamingQuery`, …) still read `getSDKExtensionsConfig().token`
+   * via `extractTokenFromSDKClient` to seed their inner `QueryClient`
+   * / `OperationClient` instances. Keeping the static field updated
+   * after every auth success keeps those hook-owned clients
+   * authenticated across login/register/SSO transitions.
+   *
+   * No-op when the SDK extensions module isn't installed.
+   */
+  private syncExtensionsConfigToken(token: string): void {
+    if (!setSDKExtensionsConfig) return
+    setSDKExtensionsConfig({
+      baseUrl: this.client.getConfig().baseUrl,
+      token,
+    })
+  }
+
   async login(email: string, password: string): Promise<AuthResponse> {
     const response = await loginUser({
       client: this.client,
@@ -224,33 +252,12 @@ export class RoboSystemsAuthClient {
         sdkResponse.refresh_threshold || 300
       )
 
-      // Configure SDK extensions with the new token if available
-      if (RoboSystemsExtensions) {
-        // Create a new extensions instance with the token
-        const extensions = new RoboSystemsExtensions({
-          baseUrl: this.client.getConfig().baseUrl,
-          credentials: 'include',
-          token: sdkResponse.token,
-          s3EndpointUrl: process.env.NEXT_PUBLIC_S3_ENDPOINT_URL, // For LocalStack in local dev
-        })
-        // Store for later use if needed
-        if (typeof window !== 'undefined') {
-          ;(window as any).__roboSystemsExtensions = extensions
-        }
-      }
-      // Push the fresh token into the extensions package's global config so
-      // the lazy default singleton (`import { extensions } from
-      // '@robosystems/client/extensions'`) constructs with the token on its
-      // first access. Without this the components that import `extensions`
-      // directly get an unauthenticated singleton and every GraphQL call
-      // fails with UNAUTHENTICATED.
-      if (setSDKExtensionsConfig) {
-        setSDKExtensionsConfig({
-          baseUrl: this.client.getConfig().baseUrl,
-          credentials: 'include',
-          token: sdkResponse.token,
-        })
-      }
+      // Keep the SDK extensions singleton's static `token` field in
+      // sync. The GraphQL read path refreshes via `tokenProvider`
+      // independently, but the React hooks surface still reads the
+      // static field at hook-init time — see `syncExtensionsConfigToken`
+      // for the full rationale.
+      this.syncExtensionsConfigToken(sdkResponse.token)
     }
 
     return {
@@ -296,33 +303,12 @@ export class RoboSystemsAuthClient {
         sdkResponse.refresh_threshold || 300
       )
 
-      // Configure SDK extensions with the new token if available
-      if (RoboSystemsExtensions) {
-        // Create a new extensions instance with the token
-        const extensions = new RoboSystemsExtensions({
-          baseUrl: this.client.getConfig().baseUrl,
-          credentials: 'include',
-          token: sdkResponse.token,
-          s3EndpointUrl: process.env.NEXT_PUBLIC_S3_ENDPOINT_URL, // For LocalStack in local dev
-        })
-        // Store for later use if needed
-        if (typeof window !== 'undefined') {
-          ;(window as any).__roboSystemsExtensions = extensions
-        }
-      }
-      // Push the fresh token into the extensions package's global config so
-      // the lazy default singleton (`import { extensions } from
-      // '@robosystems/client/extensions'`) constructs with the token on its
-      // first access. Without this the components that import `extensions`
-      // directly get an unauthenticated singleton and every GraphQL call
-      // fails with UNAUTHENTICATED.
-      if (setSDKExtensionsConfig) {
-        setSDKExtensionsConfig({
-          baseUrl: this.client.getConfig().baseUrl,
-          credentials: 'include',
-          token: sdkResponse.token,
-        })
-      }
+      // Keep the SDK extensions singleton's static `token` field in
+      // sync. The GraphQL read path refreshes via `tokenProvider`
+      // independently, but the React hooks surface still reads the
+      // static field at hook-init time — see `syncExtensionsConfigToken`
+      // for the full rationale.
+      this.syncExtensionsConfigToken(sdkResponse.token)
     }
 
     return {
@@ -460,33 +446,12 @@ export class RoboSystemsAuthClient {
         sdkResponse.refresh_threshold || 300
       )
 
-      // Configure SDK extensions with the new token if available
-      if (RoboSystemsExtensions) {
-        // Create a new extensions instance with the token
-        const extensions = new RoboSystemsExtensions({
-          baseUrl: this.client.getConfig().baseUrl,
-          credentials: 'include',
-          token: sdkResponse.token,
-          s3EndpointUrl: process.env.NEXT_PUBLIC_S3_ENDPOINT_URL, // For LocalStack in local dev
-        })
-        // Store for later use if needed
-        if (typeof window !== 'undefined') {
-          ;(window as any).__roboSystemsExtensions = extensions
-        }
-      }
-      // Push the fresh token into the extensions package's global config so
-      // the lazy default singleton (`import { extensions } from
-      // '@robosystems/client/extensions'`) constructs with the token on its
-      // first access. Without this the components that import `extensions`
-      // directly get an unauthenticated singleton and every GraphQL call
-      // fails with UNAUTHENTICATED.
-      if (setSDKExtensionsConfig) {
-        setSDKExtensionsConfig({
-          baseUrl: this.client.getConfig().baseUrl,
-          credentials: 'include',
-          token: sdkResponse.token,
-        })
-      }
+      // Keep the SDK extensions singleton's static `token` field in
+      // sync. The GraphQL read path refreshes via `tokenProvider`
+      // independently, but the React hooks surface still reads the
+      // static field at hook-init time — see `syncExtensionsConfigToken`
+      // for the full rationale.
+      this.syncExtensionsConfigToken(sdkResponse.token)
     }
 
     // Reset retry count on success
@@ -635,33 +600,12 @@ export class RoboSystemsAuthClient {
         sdkResponse.refresh_threshold || 300
       )
 
-      // Configure SDK extensions with the new token if available
-      if (RoboSystemsExtensions) {
-        // Create a new extensions instance with the token
-        const extensions = new RoboSystemsExtensions({
-          baseUrl: this.client.getConfig().baseUrl,
-          credentials: 'include',
-          token: sdkResponse.token,
-          s3EndpointUrl: process.env.NEXT_PUBLIC_S3_ENDPOINT_URL, // For LocalStack in local dev
-        })
-        // Store for later use if needed
-        if (typeof window !== 'undefined') {
-          ;(window as any).__roboSystemsExtensions = extensions
-        }
-      }
-      // Push the fresh token into the extensions package's global config so
-      // the lazy default singleton (`import { extensions } from
-      // '@robosystems/client/extensions'`) constructs with the token on its
-      // first access. Without this the components that import `extensions`
-      // directly get an unauthenticated singleton and every GraphQL call
-      // fails with UNAUTHENTICATED.
-      if (setSDKExtensionsConfig) {
-        setSDKExtensionsConfig({
-          baseUrl: this.client.getConfig().baseUrl,
-          credentials: 'include',
-          token: sdkResponse.token,
-        })
-      }
+      // Keep the SDK extensions singleton's static `token` field in
+      // sync. The GraphQL read path refreshes via `tokenProvider`
+      // independently, but the React hooks surface still reads the
+      // static field at hook-init time — see `syncExtensionsConfigToken`
+      // for the full rationale.
+      this.syncExtensionsConfigToken(sdkResponse.token)
     }
 
     return {
