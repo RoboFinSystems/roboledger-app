@@ -60,12 +60,17 @@ vi.mock('../components/StructureSidebar', () => ({
     </div>
   ),
   itemToSelected: (item: any) => {
-    switch (item.item_type) {
+    // Field names must match the real `StructureSidebar.itemToSelected`
+    // signature (camelCase from the GraphQL response). A previous version
+    // of this mock used snake_case (`item_type` / `report_id` /
+    // `structure_type`), which silently always fell through to the
+    // `default` branch and masked any real item-selection breakage.
+    switch (item.itemType) {
       case 'statement':
         return {
           type: 'statement',
-          reportId: item.report_id || '',
-          structureType: item.structure_type || '',
+          reportId: item.reportId || '',
+          structureType: item.structureType || '',
         }
       case 'schedule':
         return { type: 'schedule', structureId: item.id, name: item.name }
@@ -161,16 +166,16 @@ describe('CloseContent', () => {
             {
               id: 'struct_is',
               name: 'Income Statement',
-              item_type: 'statement',
-              structure_type: 'income_statement',
-              report_id: 'rpt_01',
+              itemType: 'statement',
+              structureType: 'income_statement',
+              reportId: 'rpt_01',
             },
           ],
         },
         {
           label: 'Period Close',
           items: [
-            { id: 'pc', name: 'Current Period', item_type: 'period_close' },
+            { id: 'pc', name: 'Current Period', itemType: 'period_close' },
           ],
         },
       ],
@@ -198,9 +203,9 @@ describe('CloseContent', () => {
             {
               id: 'struct_is',
               name: 'Income Statement',
-              item_type: 'statement',
-              structure_type: 'income_statement',
-              report_id: 'rpt_01',
+              itemType: 'statement',
+              structureType: 'income_statement',
+              reportId: 'rpt_01',
             },
           ],
         },
