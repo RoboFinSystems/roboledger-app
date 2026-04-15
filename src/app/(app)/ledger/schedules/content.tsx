@@ -9,9 +9,9 @@ import {
   useGraphContext,
 } from '@/lib/core'
 import type {
-  PeriodCloseStatus,
-  Schedule,
-  ScheduleFact,
+  LedgerPeriodCloseStatus,
+  LedgerSchedule,
+  LedgerScheduleFact,
 } from '@robosystems/client/extensions'
 import {
   Badge,
@@ -81,7 +81,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   graphId,
   onEntryCreated,
 }) => {
-  const [closeStatus, setCloseStatus] = useState<PeriodCloseStatus | null>(null)
+  const [closeStatus, setCloseStatus] =
+    useState<LedgerPeriodCloseStatus | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [creatingEntry, setCreatingEntry] = useState<string | null>(null)
@@ -264,12 +265,12 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
 
 interface FactsModalProps {
   graphId: string
-  schedule: Schedule | null
+  schedule: LedgerSchedule | null
   onClose: () => void
 }
 
 const FactsModal: FC<FactsModalProps> = ({ graphId, schedule, onClose }) => {
-  const [facts, setFacts] = useState<ScheduleFact[]>([])
+  const [facts, setFacts] = useState<LedgerScheduleFact[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -298,7 +299,7 @@ const FactsModal: FC<FactsModalProps> = ({ graphId, schedule, onClose }) => {
 
   // Group facts by period
   const groupedFacts = useMemo(() => {
-    const groups: Record<string, ScheduleFact[]> = {}
+    const groups: Record<string, LedgerScheduleFact[]> = {}
     for (const fact of facts) {
       const key = `${fact.periodStart}_${fact.periodEnd}`
       if (!groups[key]) groups[key] = []
@@ -362,12 +363,11 @@ const FactsModal: FC<FactsModalProps> = ({ graphId, schedule, onClose }) => {
 
 const SchedulesContent: FC = function () {
   const { state: graphState } = useGraphContext()
-  const [schedules, setSchedules] = useState<Schedule[]>([])
+  const [schedules, setSchedules] = useState<LedgerSchedule[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(
-    null
-  )
+  const [selectedSchedule, setSelectedSchedule] =
+    useState<LedgerSchedule | null>(null)
   const [showClosePanel, setShowClosePanel] = useState(false)
 
   const currentGraph = useMemo(() => {

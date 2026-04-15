@@ -13,9 +13,11 @@ vi.mock('react-icons/hi', () => ({
   HiChevronRight: () => <span data-testid="icon-expand" />,
 }))
 
-import type { ClosingBookCategory } from '@robosystems/client'
+import type { LedgerClosingBookStructures } from '@robosystems/client/extensions'
 import type { SelectedItem } from '../components/StructureSidebar'
 import StructureSidebar from '../components/StructureSidebar'
+
+type ClosingBookCategory = LedgerClosingBookStructures['categories'][number]
 
 const makeCategories = (): ClosingBookCategory[] => [
   {
@@ -24,16 +26,16 @@ const makeCategories = (): ClosingBookCategory[] => [
       {
         id: 'struct_is',
         name: 'Income Statement',
-        item_type: 'statement',
-        structure_type: 'income_statement',
-        report_id: 'rpt_01',
+        itemType: 'statement',
+        structureType: 'income_statement',
+        reportId: 'rpt_01',
       },
       {
         id: 'struct_bs',
         name: 'Balance Sheet',
-        item_type: 'statement',
-        structure_type: 'balance_sheet',
-        report_id: 'rpt_01',
+        itemType: 'statement',
+        structureType: 'balance_sheet',
+        reportId: 'rpt_01',
       },
     ],
   },
@@ -43,7 +45,7 @@ const makeCategories = (): ClosingBookCategory[] => [
       {
         id: 'struct_map_01',
         name: 'GAAP Mapping',
-        item_type: 'account_rollups',
+        itemType: 'account_rollups',
       },
     ],
   },
@@ -53,8 +55,8 @@ const makeCategories = (): ClosingBookCategory[] => [
       {
         id: 'struct_depr',
         name: 'Office Furniture Depreciation',
-        item_type: 'schedule',
-        structure_type: 'schedule',
+        itemType: 'schedule',
+        structureType: 'schedule',
       },
     ],
   },
@@ -64,7 +66,7 @@ const makeCategories = (): ClosingBookCategory[] => [
       {
         id: 'period_close',
         name: 'Current Period Status',
-        item_type: 'period_close',
+        itemType: 'period_close',
       },
     ],
   },

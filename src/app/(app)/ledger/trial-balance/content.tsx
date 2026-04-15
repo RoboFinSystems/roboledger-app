@@ -3,9 +3,9 @@
 import { PageHeader } from '@/components/PageHeader'
 import {
   customTheme,
+  extensions,
   GraphFilters,
   PageLayout,
-  SDK,
   useGraphContext,
 } from '@/lib/core'
 import type { ElementClassification } from '@/lib/ledger'
@@ -92,19 +92,6 @@ const formatCurrency = (amount: number): string => {
 
 type ViewMode = 'coa' | 'usgaap'
 
-// Row shape returned by the /trial-balance/mapped endpoint. Values are
-// already in dollars (the backend divides by 100 before returning).
-interface MappedTrialBalanceRow {
-  reporting_element_id: string
-  qname: string
-  reporting_name: string
-  classification: ElementClassification
-  balance_type: string
-  total_debits: number
-  total_credits: number
-  net_balance: number
-}
-
 const TrialBalanceContent: FC = function () {
   const { state: graphState } = useGraphContext()
   const [data, setData] = useState<TrialBalanceRowWithGraph[]>([])
@@ -126,17 +113,11 @@ const TrialBalanceContent: FC = function () {
         return
       }
       try {
-        // The /mappings endpoint returns `structures`, not `mappings` —
-        // it's a list of Structure rows filtered to structure_type='coa_mapping'.
-        const response = await SDK.listMappings({
-          path: { graph_id: currentGraph.graphId },
-        })
-        const structures = (
-          response.data as {
-            structures?: Array<{ id: string; is_active: boolean }>
-          }
-        )?.structures
-        const active = structures?.find((s) => s.is_active) ?? structures?.[0]
+        // Filtered server-side to structure_type='coa_mapping'.
+        const structures = await extensions.ledger.listMappings(
+          currentGraph.graphId
+        )
+        const active = structures.find((s) => s.isActive) ?? structures[0]
         setMappingId(active?.id ?? null)
       } catch (err) {
         console.error('Error loading mappings:', err)
@@ -170,25 +151,22 @@ const TrialBalanceContent: FC = function () {
         const allRows: TrialBalanceRowWithGraph[] = []
 
         if (viewMode === 'coa') {
-          const response = await SDK.getLedgerTrialBalance({
-            path: { graph_id: currentGraph.graphId },
-          })
+          const result = await extensions.ledger.getTrialBalance(
+            currentGraph.graphId
+          )
 
-          if (response.data) {
-            const rows = response.data.rows || []
+          if (result) {
+            const rows = result.rows || []
             for (const row of rows) {
               allRows.push({
-                accountId: row.account_id,
-                accountCode: row.account_code,
-                accountName: row.account_name,
+                accountId: row.accountId,
+                accountCode: row.accountCode,
+                accountName: row.accountName,
                 classification: row.classification as ElementClassification,
-                accountType:
-                  ((row as Record<string, unknown>).account_type as
-                    | string
-                    | null) ?? null,
-                totalDebits: row.total_debits,
-                totalCredits: row.total_credits,
-                netBalance: row.net_balance,
+                accountType: row.accountType ?? null,
+                totalDebits: row.totalDebits,
+                totalCredits: row.totalCredits,
+                netBalance: row.netBalance,
                 _graphId: currentGraph.graphId,
                 _graphName: currentGraph.graphName,
               })
@@ -221,12 +199,11 @@ const TrialBalanceContent: FC = function () {
             )
             return
           }
-          const response = await SDK.getMappedTrialBalance({
-            path: { graph_id: currentGraph.graphId },
-            query: { mapping_id: mappingId },
-          })
-          const rows =
-            (response.data as { rows?: MappedTrialBalanceRow[] })?.rows ?? []
+          const mapped = await extensions.ledger.getMappedTrialBalance(
+            currentGraph.graphId,
+            mappingId
+          )
+          const rows = mapped?.rows ?? []
           for (const row of rows) {
             // Strip the namespace prefix from the qname for display
             // (e.g., "us-gaap:RetainedEarnings" → "RetainedEarnings")
@@ -234,14 +211,14 @@ const TrialBalanceContent: FC = function () {
               ? (row.qname.split(':').pop() ?? row.qname)
               : row.qname
             allRows.push({
-              accountId: row.reporting_element_id,
+              accountId: row.reportingElementId,
               accountCode: shortCode,
-              accountName: row.reporting_name,
-              classification: row.classification,
+              accountName: row.reportingName,
+              classification: row.classification as ElementClassification,
               accountType: null, // not meaningful for GAAP aggregation
-              totalDebits: row.total_debits,
-              totalCredits: row.total_credits,
-              netBalance: row.net_balance,
+              totalDebits: row.totalDebits,
+              totalCredits: row.totalCredits,
+              netBalance: row.netBalance,
               _graphId: currentGraph.graphId,
               _graphName: currentGraph.graphName,
             })

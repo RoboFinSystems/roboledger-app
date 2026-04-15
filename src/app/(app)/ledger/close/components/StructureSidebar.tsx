@@ -1,12 +1,17 @@
 'use client'
 
-import type { ClosingBookCategory, ClosingBookItem } from '@robosystems/client'
+import type { LedgerClosingBookStructures } from '@robosystems/client/extensions'
 import { Button, Spinner } from 'flowbite-react'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi'
 
 // ── Types ──────────────────────────────────────────────────────────────
+
+// Derived from the GraphQL `closingBookStructures` field — the sidebar's
+// data comes from `extensions.ledger.getClosingBookStructures()`.
+type ClosingBookCategory = LedgerClosingBookStructures['categories'][number]
+type ClosingBookItem = ClosingBookCategory['items'][number]
 
 export type SelectedItem =
   | { type: 'statement'; reportId: string; structureType: string }
@@ -18,12 +23,12 @@ export type SelectedItem =
 // ── Helpers ────────────────────────────────────────────────────────────
 
 function itemToSelected(item: ClosingBookItem): SelectedItem {
-  switch (item.item_type) {
+  switch (item.itemType) {
     case 'statement':
       return {
         type: 'statement',
-        reportId: item.report_id || '',
-        structureType: item.structure_type || '',
+        reportId: item.reportId || '',
+        structureType: item.structureType || '',
       }
     case 'schedule':
       return {
@@ -54,19 +59,19 @@ function isActive(
   switch (selected.type) {
     case 'statement':
       return (
-        item.item_type === 'statement' &&
-        item.structure_type === selected.structureType
+        item.itemType === 'statement' &&
+        item.structureType === selected.structureType
       )
     case 'schedule':
-      return item.item_type === 'schedule' && item.id === selected.structureId
+      return item.itemType === 'schedule' && item.id === selected.structureId
     case 'account_rollups':
       return (
-        item.item_type === 'account_rollups' && item.id === selected.mappingId
+        item.itemType === 'account_rollups' && item.id === selected.mappingId
       )
     case 'trial_balance':
-      return item.item_type === 'trial_balance'
+      return item.itemType === 'trial_balance'
     case 'period_close':
-      return item.item_type === 'period_close'
+      return item.itemType === 'period_close'
   }
 }
 

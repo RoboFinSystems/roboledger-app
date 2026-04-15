@@ -1,7 +1,7 @@
 'use client'
 
 import { customTheme, extensions } from '@/lib/core'
-import type { ScheduleFact } from '@robosystems/client/extensions'
+import type { LedgerScheduleFact } from '@robosystems/client/extensions'
 import {
   Button,
   Spinner,
@@ -34,7 +34,7 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
   scheduleName,
   viewMode,
 }) => {
-  const [facts, setFacts] = useState<ScheduleFact[]>([])
+  const [facts, setFacts] = useState<LedgerScheduleFact[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [creatingEntry, setCreatingEntry] = useState<string | null>(null)
@@ -62,7 +62,7 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
 
   // Group facts by period
   const groupedFacts = useMemo(() => {
-    const groups: Record<string, ScheduleFact[]> = {}
+    const groups: Record<string, LedgerScheduleFact[]> = {}
     for (const fact of facts) {
       const key = `${fact.periodStart}_${fact.periodEnd}`
       if (!groups[key]) groups[key] = []

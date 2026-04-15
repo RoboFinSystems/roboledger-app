@@ -4,12 +4,12 @@ import { PageHeader } from '@/components/PageHeader'
 import type { Entity } from '@/lib/core'
 import {
   customTheme,
+  extensions,
   GraphFilters,
   PageLayout,
   useEntity,
   useGraphContext,
 } from '@/lib/core'
-import * as SDK from '@robosystems/client'
 import {
   Alert,
   Badge,
@@ -60,22 +60,21 @@ const EntitiesListPageContent: FC = function () {
 
         const results = await Promise.allSettled(
           roboledgerGraphs.map((graph) =>
-            SDK.getLedgerEntity({ path: { graph_id: graph.graphId } }).then(
-              (response) => ({ graph, response })
-            )
+            extensions.ledger
+              .getEntity(graph.graphId)
+              .then((entity) => ({ graph, entity }))
           )
         )
 
         const allEntities: EntityWithGraph[] = []
         for (const result of results) {
-          if (result.status === 'fulfilled' && result.value.response.data) {
-            const { graph, response } = result.value
-            const data = response.data as any
+          if (result.status === 'fulfilled' && result.value.entity) {
+            const { graph, entity } = result.value
             allEntities.push({
-              identifier: data.id || data.uri || '',
-              name: data.name || 'Unnamed Entity',
-              parentEntityId: data.parent_entity_id,
-              isParent: data.is_parent,
+              identifier: entity.id || entity.uri || '',
+              name: entity.name || 'Unnamed Entity',
+              parentEntityId: entity.parentEntityId,
+              isParent: entity.isParent,
               _graphId: graph.graphId,
               _graphName: graph.graphName,
               _graphCreatedAt: graph.createdAt,

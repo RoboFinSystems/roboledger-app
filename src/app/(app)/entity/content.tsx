@@ -1,9 +1,15 @@
 'use client'
 
 import { PageHeader } from '@/components/PageHeader'
-import { customTheme, PageLayout, useEntity, useGraphContext } from '@/lib/core'
-import type { LedgerEntityResponse } from '@robosystems/client'
-import * as SDK from '@robosystems/client'
+import {
+  customTheme,
+  extensions,
+  PageLayout,
+  useEntity,
+  useGraphContext,
+} from '@/lib/core'
+import type { LedgerEntity } from '@robosystems/client/extensions'
+import type { UpdateEntityRequest } from '@robosystems/client/types'
 import {
   Alert,
   Badge,
@@ -21,7 +27,7 @@ const EntityInfoPageContent: FC = function () {
   const { currentEntity, setCurrentEntity } = useEntity()
   const graphId = graphState.currentGraphId
 
-  const [entity, setEntity] = useState<LedgerEntityResponse | null>(null)
+  const [entity, setEntity] = useState<LedgerEntity | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
@@ -34,21 +40,17 @@ const EntityInfoPageContent: FC = function () {
     setLoading(true)
     setError(null)
     try {
-      const response = await SDK.getLedgerEntity({
-        path: { graph_id: graphId },
-      })
-      if (response.data) {
-        setEntity(response.data as LedgerEntityResponse)
-      }
-    } catch (err: any) {
-      const status = err?.status || err?.response?.status
-      if (status === 404) {
+      const loaded = await extensions.ledger.getEntity(graphId)
+      if (loaded === null) {
         setError(
           'No entity found for this graph. The extensions database may not be initialized yet.'
         )
       } else {
-        setError('Failed to load entity details.')
+        setEntity(loaded)
       }
+    } catch (err) {
+      console.error('Error loading entity:', err)
+      setError('Failed to load entity details.')
     } finally {
       setLoading(false)
     }
@@ -60,27 +62,29 @@ const EntityInfoPageContent: FC = function () {
 
   const startEditing = () => {
     if (!entity) return
+    // formData keys are snake_case to match the UpdateEntityRequest body;
+    // the display uses the camelCase shape returned by GraphQL.
     setFormData({
       name: entity.name || '',
-      legal_name: entity.legal_name || '',
+      legal_name: entity.legalName || '',
       phone: entity.phone || '',
       website: entity.website || '',
       industry: entity.industry || '',
-      entity_type: entity.entity_type || '',
-      state_of_incorporation: entity.state_of_incorporation || '',
-      fiscal_year_end: entity.fiscal_year_end || '',
-      tax_id: entity.tax_id || '',
+      entity_type: entity.entityType || '',
+      state_of_incorporation: entity.stateOfIncorporation || '',
+      fiscal_year_end: entity.fiscalYearEnd || '',
+      tax_id: entity.taxId || '',
       lei: entity.lei || '',
       ticker: entity.ticker || '',
       exchange: entity.exchange || '',
       cik: entity.cik || '',
       sic: entity.sic || '',
-      sic_description: entity.sic_description || '',
-      address_line1: entity.address_line1 || '',
-      address_city: entity.address_city || '',
-      address_state: entity.address_state || '',
-      address_postal_code: entity.address_postal_code || '',
-      address_country: entity.address_country || '',
+      sic_description: entity.sicDescription || '',
+      address_line1: entity.addressLine1 || '',
+      address_city: entity.addressCity || '',
+      address_state: entity.addressState || '',
+      address_postal_code: entity.addressPostalCode || '',
+      address_country: entity.addressCountry || '',
     })
     setSaveError(null)
     setEditing(true)
@@ -91,15 +95,41 @@ const EntityInfoPageContent: FC = function () {
     setSaveError(null)
   }
 
+  // Map snake_case form keys back to the camelCase field on the loaded
+  // entity, so we can detect which fields actually changed.
+  const FORM_TO_ENTITY_KEY: Record<string, keyof LedgerEntity> = {
+    name: 'name',
+    legal_name: 'legalName',
+    phone: 'phone',
+    website: 'website',
+    industry: 'industry',
+    entity_type: 'entityType',
+    state_of_incorporation: 'stateOfIncorporation',
+    fiscal_year_end: 'fiscalYearEnd',
+    tax_id: 'taxId',
+    lei: 'lei',
+    ticker: 'ticker',
+    exchange: 'exchange',
+    cik: 'cik',
+    sic: 'sic',
+    sic_description: 'sicDescription',
+    address_line1: 'addressLine1',
+    address_city: 'addressCity',
+    address_state: 'addressState',
+    address_postal_code: 'addressPostalCode',
+    address_country: 'addressCountry',
+  }
+
   const handleSave = async () => {
     if (!graphId || !entity) return
     setSaving(true)
     setSaveError(null)
 
-    // Build update body — only send fields that changed
+    // Build update body — only send fields that changed (snake_case body).
     const updates: Record<string, string | null> = {}
     for (const [key, value] of Object.entries(formData)) {
-      const original = (entity as any)[key] || ''
+      const entityKey = FORM_TO_ENTITY_KEY[key]
+      const original = entityKey ? (entity[entityKey] as string) || '' : ''
       if (value !== original) {
         updates[key] = value || null
       }
@@ -112,24 +142,23 @@ const EntityInfoPageContent: FC = function () {
     }
 
     try {
-      const response = await SDK.updateLedgerEntity({
-        path: { graph_id: graphId },
-        body: updates as any,
+      const updated = await extensions.ledger.updateEntity(
+        graphId,
+        updates as UpdateEntityRequest
+      )
+      setEntity(updated)
+      // Update the entity context so the dropdown reflects changes
+      setCurrentEntity({
+        identifier: updated.id || updated.uri || '',
+        name: updated.name,
+        parentEntityId: updated.parentEntityId,
+        isParent: updated.isParent,
       })
-      if (response.data) {
-        const updated = response.data as LedgerEntityResponse
-        setEntity(updated)
-        // Update the entity context so the dropdown reflects changes
-        setCurrentEntity({
-          identifier: updated.id || updated.uri || '',
-          name: updated.name,
-          parentEntityId: updated.parent_entity_id,
-          isParent: updated.is_parent,
-        })
-        setEditing(false)
-      }
-    } catch (err: any) {
-      setSaveError(err?.message || 'Failed to update entity.')
+      setEditing(false)
+    } catch (err) {
+      setSaveError(
+        err instanceof Error ? err.message : 'Failed to update entity.'
+      )
     } finally {
       setSaving(false)
     }
@@ -256,7 +285,7 @@ const EntityInfoPageContent: FC = function () {
                 />
                 <EditableField
                   label="Legal Name"
-                  value={entity.legal_name}
+                  value={entity.legalName}
                   field="legal_name"
                   editing={editing}
                   formData={formData}
@@ -264,7 +293,7 @@ const EntityInfoPageContent: FC = function () {
                 />
                 <EditableField
                   label="Entity Type"
-                  value={entity.entity_type}
+                  value={entity.entityType}
                   field="entity_type"
                   editing={editing}
                   formData={formData}
@@ -331,7 +360,7 @@ const EntityInfoPageContent: FC = function () {
                 />
                 <EditableField
                   label="Address"
-                  value={entity.address_line1}
+                  value={entity.addressLine1}
                   field="address_line1"
                   editing={editing}
                   formData={formData}
@@ -339,7 +368,7 @@ const EntityInfoPageContent: FC = function () {
                 />
                 <EditableField
                   label="City"
-                  value={entity.address_city}
+                  value={entity.addressCity}
                   field="address_city"
                   editing={editing}
                   formData={formData}
@@ -347,7 +376,7 @@ const EntityInfoPageContent: FC = function () {
                 />
                 <EditableField
                   label="State"
-                  value={entity.address_state}
+                  value={entity.addressState}
                   field="address_state"
                   editing={editing}
                   formData={formData}
@@ -355,7 +384,7 @@ const EntityInfoPageContent: FC = function () {
                 />
                 <EditableField
                   label="Postal Code"
-                  value={entity.address_postal_code}
+                  value={entity.addressPostalCode}
                   field="address_postal_code"
                   editing={editing}
                   formData={formData}
@@ -363,7 +392,7 @@ const EntityInfoPageContent: FC = function () {
                 />
                 <EditableField
                   label="Country"
-                  value={entity.address_country}
+                  value={entity.addressCountry}
                   field="address_country"
                   editing={editing}
                   formData={formData}
@@ -382,7 +411,7 @@ const EntityInfoPageContent: FC = function () {
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <EditableField
                   label="State of Incorporation"
-                  value={entity.state_of_incorporation}
+                  value={entity.stateOfIncorporation}
                   field="state_of_incorporation"
                   editing={editing}
                   formData={formData}
@@ -390,7 +419,7 @@ const EntityInfoPageContent: FC = function () {
                 />
                 <EditableField
                   label="Fiscal Year End"
-                  value={entity.fiscal_year_end}
+                  value={entity.fiscalYearEnd}
                   field="fiscal_year_end"
                   editing={editing}
                   formData={formData}
@@ -399,7 +428,7 @@ const EntityInfoPageContent: FC = function () {
                 />
                 <EditableField
                   label="Tax ID"
-                  value={entity.tax_id}
+                  value={entity.taxId}
                   field="tax_id"
                   editing={editing}
                   formData={formData}
@@ -447,7 +476,7 @@ const EntityInfoPageContent: FC = function () {
                 />
                 <EditableField
                   label="SIC Description"
-                  value={entity.sic_description}
+                  value={entity.sicDescription}
                   field="sic_description"
                   editing={editing}
                   formData={formData}
@@ -483,23 +512,23 @@ const EntityInfoPageContent: FC = function () {
                     </dd>
                   </div>
                 )}
-                {entity.created_at && (
+                {entity.createdAt && (
                   <div>
                     <dt className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">
                       Created
                     </dt>
                     <dd className="text-sm text-gray-900 dark:text-white">
-                      {new Date(entity.created_at).toLocaleDateString()}
+                      {new Date(entity.createdAt).toLocaleDateString()}
                     </dd>
                   </div>
                 )}
-                {entity.updated_at && (
+                {entity.updatedAt && (
                   <div>
                     <dt className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">
                       Last Updated
                     </dt>
                     <dd className="text-sm text-gray-900 dark:text-white">
-                      {new Date(entity.updated_at).toLocaleDateString()}
+                      {new Date(entity.updatedAt).toLocaleDateString()}
                     </dd>
                   </div>
                 )}

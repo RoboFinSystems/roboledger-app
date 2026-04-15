@@ -213,7 +213,7 @@ const StatementPanel: FC<StatementPanelProps> = ({
         const { periodStart, periodEnd, comparative, periods } =
           buildPeriods(preset)
 
-        const report = await extensions.reports.create(graphId, {
+        const ack = await extensions.reports.create(graphId, {
           name: `${structureType === 'income_statement' ? 'Income Statement' : 'Balance Sheet'} — ${preset.replace(/_/g, ' ')}`,
           mappingId,
           periodStart,
@@ -222,7 +222,12 @@ const StatementPanel: FC<StatementPanelProps> = ({
           periods,
         })
 
-        setActiveReportId(report.id)
+        // `create` is synchronous on the backend today — the envelope's
+        // `result` carries the freshly-created report row, including its id.
+        const newReportId = ack.result?.id as string | undefined
+        if (newReportId) {
+          setActiveReportId(newReportId)
+        }
       } catch (err) {
         console.error('Error regenerating report:', err)
         setError('Failed to regenerate report with new period.')

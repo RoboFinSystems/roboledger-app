@@ -9,8 +9,8 @@ import {
   useGraphContext,
 } from '@/lib/core'
 import type {
-  MappingCoverage,
-  MappingInfo,
+  LedgerMappingCoverage,
+  LedgerMappingInfo,
   PeriodSpecInput,
 } from '@robosystems/client/extensions'
 import {
@@ -260,11 +260,11 @@ const ReportBuilderContent: FC = function () {
   )
 
   // Data state
-  const [mappings, setMappings] = useState<MappingInfo[]>([])
+  const [mappings, setMappings] = useState<LedgerMappingInfo[]>([])
   const [selectedMappingId, setSelectedMappingId] = useState<string | null>(
     null
   )
-  const [coverage, setCoverage] = useState<MappingCoverage | null>(null)
+  const [coverage, setCoverage] = useState<LedgerMappingCoverage | null>(null)
   const [isLoadingMappings, setIsLoadingMappings] = useState(true)
 
   // Generation state
@@ -348,7 +348,9 @@ const ReportBuilderContent: FC = function () {
     try {
       setIsAutoMapping(true)
       setError(null)
-      await extensions.ledger.autoMap(currentGraph.graphId, selectedMappingId)
+      await extensions.ledger.autoMapElements(currentGraph.graphId, {
+        mapping_id: selectedMappingId,
+      })
       // Refresh coverage after auto-map completes
       // The agent runs async, so we poll for updated coverage
       setTimeout(async () => {
@@ -379,7 +381,7 @@ const ReportBuilderContent: FC = function () {
       setIsGenerating(true)
       setError(null)
 
-      const report = await extensions.reports.create(currentGraph.graphId, {
+      const ack = await extensions.reports.create(currentGraph.graphId, {
         name: reportName || `Report ${periodStart} to ${periodEnd}`,
         mappingId: selectedMappingId,
         periodStart,
@@ -388,7 +390,13 @@ const ReportBuilderContent: FC = function () {
         periods,
       })
 
-      router.push(`/reports/${report.id}?graph=${currentGraph.graphId}`)
+      // `create` runs synchronously today — the envelope's `result`
+      // carries the freshly-created report row (including its id).
+      const newReportId = ack.result?.id as string | undefined
+      if (!newReportId) {
+        throw new Error('Report creation did not return an id.')
+      }
+      router.push(`/reports/${newReportId}?graph=${currentGraph.graphId}`)
     } catch (err) {
       console.error('Report generation failed:', err)
       setError('Failed to generate report. Please try again.')

@@ -14,11 +14,14 @@ import {
   Select,
   Spinner,
   TextInput,
+  ToggleSwitch,
 } from 'flowbite-react'
 import { useCallback, useEffect, useState } from 'react'
 import { HiChevronDown, HiChevronUp, HiSearch } from 'react-icons/hi'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
+import { useIsRepository } from '../../components/RepositoryGuard'
 import { useGraphContext } from '../../contexts'
 import { customTheme } from '../../theme'
 import { PageLayout } from '../PageLayout'
@@ -29,6 +32,7 @@ const PAGE_SIZE = 20
 export function SearchContent({ config }: { config: SearchConfig }) {
   const { state: graphState } = useGraphContext()
   const graphId = graphState.currentGraphId
+  const { isRepository } = useIsRepository()
 
   // Search state
   const [query, setQuery] = useState('')
@@ -36,6 +40,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
   const [entity, setEntity] = useState('')
   const [formType, setFormType] = useState('')
   const [fiscalYear, setFiscalYear] = useState('')
+  const [semantic, setSemantic] = useState(false)
 
   // Results state
   const [results, setResults] = useState<SearchHit[]>([])
@@ -59,9 +64,9 @@ export function SearchContent({ config }: { config: SearchConfig }) {
   const [showFilters, setShowFilters] = useState(config.showFilters ?? false)
   const filters = config.filters ?? { sourceType: true }
 
-  // Load document stats when graph changes
+  // Load document stats when graph changes (skip for shared repositories)
   useEffect(() => {
-    if (!graphId) {
+    if (!graphId || isRepository) {
       setDocCount(null)
       return
     }
@@ -72,7 +77,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
         }
       })
       .catch(() => {})
-  }, [graphId])
+  }, [graphId, isRepository])
 
   // Reset when graph changes
   useEffect(() => {
@@ -108,6 +113,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
           const parsed = parseInt(fiscalYear, 10)
           if (Number.isFinite(parsed)) body.fiscal_year = parsed
         }
+        if (semantic) body.semantic = true
 
         const res = await SDK.searchDocuments({
           path: { graph_id: graphId },
@@ -129,7 +135,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
         setLoading(false)
       }
     },
-    [graphId, query, sourceType, entity, formType, fiscalYear]
+    [graphId, query, sourceType, entity, formType, fiscalYear, semantic]
   )
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -168,7 +174,8 @@ export function SearchContent({ config }: { config: SearchConfig }) {
     filters.entity ||
     filters.formType ||
     filters.fiscalYear ||
-    filters.sourceType
+    filters.sourceType ||
+    filters.semantic
 
   if (!graphId) {
     return (
@@ -201,7 +208,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {config.description}
-            {docCount !== null && (
+            {docCount !== null && docCount > 0 && (
               <span className="ml-2 text-gray-400 dark:text-gray-500">
                 ({docCount} document{docCount !== 1 ? 's' : ''} indexed)
               </span>
@@ -246,6 +253,13 @@ export function SearchContent({ config }: { config: SearchConfig }) {
                   <HiChevronDown className="h-4 w-4" />
                 )}
               </button>
+            )}
+            {filters.semantic && (
+              <ToggleSwitch
+                checked={semantic}
+                onChange={setSemantic}
+                label="Semantic search"
+              />
             )}
           </div>
 
@@ -436,6 +450,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
                     <div>
                       <div className="prose prose-sm prose-gray max-h-96 max-w-none overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-800">
                         <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
                           components={{
                             h1: ({ children }) => (
                               <h1 className="text-gray-900 dark:text-white">
@@ -471,6 +486,28 @@ export function SearchContent({ config }: { config: SearchConfig }) {
                               <strong className="text-gray-900 dark:text-white">
                                 {children}
                               </strong>
+                            ),
+                            table: ({ children }) => (
+                              <div className="overflow-x-auto">
+                                <table className="min-w-full border-collapse text-sm">
+                                  {children}
+                                </table>
+                              </div>
+                            ),
+                            thead: ({ children }) => (
+                              <thead className="border-b-2 border-gray-300 dark:border-gray-600">
+                                {children}
+                              </thead>
+                            ),
+                            th: ({ children }) => (
+                              <th className="px-3 py-2 text-left font-semibold text-gray-900 dark:text-white">
+                                {children}
+                              </th>
+                            ),
+                            td: ({ children }) => (
+                              <td className="border-t border-gray-200 px-3 py-2 text-gray-700 dark:border-gray-700 dark:text-gray-200">
+                                {children}
+                              </td>
                             ),
                           }}
                         >

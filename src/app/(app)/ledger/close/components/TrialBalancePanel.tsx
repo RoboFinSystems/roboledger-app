@@ -1,6 +1,6 @@
 'use client'
 
-import { customTheme, SDK } from '@/lib/core'
+import { customTheme, extensions } from '@/lib/core'
 import {
   Badge,
   Spinner,
@@ -69,21 +69,16 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
       setIsLoading(true)
       setError(null)
 
-      const response = await SDK.getLedgerTrialBalance({
-        path: { graph_id: graphId },
-      })
+      const result = await extensions.ledger.getTrialBalance(graphId)
 
-      if (response.data) {
-        const data =
-          (response.data as { rows?: Array<Record<string, unknown>> }).rows ??
-          []
+      if (result) {
         setRows(
-          data.map((row) => ({
-            accountName: (row.account_name as string) ?? '',
-            classification: (row.classification as string) ?? '',
-            totalDebits: (row.total_debits as number) ?? 0,
-            totalCredits: (row.total_credits as number) ?? 0,
-            netBalance: (row.net_balance as number) ?? 0,
+          (result.rows || []).map((row) => ({
+            accountName: row.accountName ?? '',
+            classification: row.classification ?? '',
+            totalDebits: row.totalDebits ?? 0,
+            totalCredits: row.totalCredits ?? 0,
+            netBalance: row.netBalance ?? 0,
           }))
         )
       }
