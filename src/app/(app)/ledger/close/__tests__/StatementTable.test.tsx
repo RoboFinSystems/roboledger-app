@@ -22,7 +22,7 @@ vi.mock('flowbite-react', () => ({
   ),
 }))
 
-import type { StatementData } from '@robosystems/client/extensions'
+import type { StatementData } from '@robosystems/client/clients'
 import StatementTable from '../components/StatementTable'
 
 const makeStatement = (overrides?: Partial<StatementData>): StatementData => ({

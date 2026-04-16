@@ -7,7 +7,7 @@ const mockUseGraphContext = vi.fn()
 
 vi.mock('@/lib/core', () => ({
   customTheme: { card: {} },
-  extensions: {
+  clients: {
     ledger: {
       getClosingBookStructures: (...args: any[]) =>
         mockGetClosingBookStructures(...args),

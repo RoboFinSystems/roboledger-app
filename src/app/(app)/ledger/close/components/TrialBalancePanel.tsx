@@ -1,6 +1,6 @@
 'use client'
 
-import { customTheme, extensions } from '@/lib/core'
+import { customTheme, clients } from '@/lib/core'
 import {
   Badge,
   Spinner,
@@ -69,7 +69,7 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
       setIsLoading(true)
       setError(null)
 
-      const result = await extensions.ledger.getTrialBalance(graphId)
+      const result = await clients.ledger.getTrialBalance(graphId)
 
       if (result) {
         setRows(

@@ -4,7 +4,7 @@ import { PageHeader } from '@/components/PageHeader'
 import type { Entity } from '@/lib/core'
 import {
   customTheme,
-  extensions,
+  clients,
   GraphFilters,
   PageLayout,
   useEntity,
@@ -60,7 +60,7 @@ const EntitiesListPageContent: FC = function () {
 
         const results = await Promise.allSettled(
           roboledgerGraphs.map((graph) =>
-            extensions.ledger
+            clients.ledger
               .getEntity(graph.graphId)
               .then((entity) => ({ graph, entity }))
           )

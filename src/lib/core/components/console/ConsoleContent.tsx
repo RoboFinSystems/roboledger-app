@@ -320,9 +320,9 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
     const startTime = Date.now()
 
     try {
-      const { extensions } = await import('@robosystems/client/extensions')
+      const { clients } = await import('@robosystems/client/clients')
 
-      const result = await extensions.agent.executeQuery(
+      const result = await clients.agent.executeQuery(
         graphId,
         {
           message: userQuery,

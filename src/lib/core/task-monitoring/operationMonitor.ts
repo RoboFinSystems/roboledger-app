@@ -11,7 +11,7 @@ import { client } from '@robosystems/client'
 // Import SDK extensions - check at runtime
 const getSDKExtensions = async () => {
   try {
-    return await import('@robosystems/client/extensions')
+    return await import('@robosystems/client/clients')
   } catch (error) {
     console.error('SDK extensions not available:', error)
     return null

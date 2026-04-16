@@ -2,7 +2,7 @@
 
 import type { Entity } from '@/lib/core'
 import {
-  extensions,
+  clients,
   GraphFilters,
   useEntity,
   useGraphContext,
@@ -43,7 +43,7 @@ export function EntitySelectorDropdown() {
       setIsLoading(true)
       const results = await Promise.allSettled(
         roboledgerGraphs.map((graph) =>
-          extensions.ledger
+          clients.ledger
             .getEntity(graph.graphId)
             .then((entity) => ({ graph, entity }))
         )

@@ -3,7 +3,7 @@
 import { PageHeader } from '@/components/PageHeader'
 import {
   customTheme,
-  extensions,
+  clients,
   GraphFilters,
   PageLayout,
   useGraphContext,
@@ -130,7 +130,7 @@ const TransactionsContent: FC = function () {
 
         for (const graph of [currentGraph]) {
           try {
-            const result = await extensions.ledger.listTransactions(
+            const result = await clients.ledger.listTransactions(
               graph.graphId,
               {
                 startDate: startDate || undefined,
@@ -196,7 +196,7 @@ const TransactionsContent: FC = function () {
       setLoadingLineItems((prev) => new Set(prev).add(key))
 
       try {
-        const detail = await extensions.ledger.getTransaction(
+        const detail = await clients.ledger.getTransaction(
           transaction._graphId,
           transaction.id
         )

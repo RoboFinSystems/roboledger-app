@@ -3,12 +3,12 @@
 import { PageHeader } from '@/components/PageHeader'
 import {
   customTheme,
-  extensions,
+  clients,
   PageLayout,
   useEntity,
   useGraphContext,
 } from '@/lib/core'
-import type { LedgerEntity } from '@robosystems/client/extensions'
+import type { LedgerEntity } from '@robosystems/client/clients'
 import type { UpdateEntityRequest } from '@robosystems/client/types'
 import {
   Alert,
@@ -40,7 +40,7 @@ const EntityInfoPageContent: FC = function () {
     setLoading(true)
     setError(null)
     try {
-      const loaded = await extensions.ledger.getEntity(graphId)
+      const loaded = await clients.ledger.getEntity(graphId)
       if (loaded === null) {
         setError(
           'No entity found for this graph. The extensions database may not be initialized yet.'
@@ -142,7 +142,7 @@ const EntityInfoPageContent: FC = function () {
     }
 
     try {
-      const updated = await extensions.ledger.updateEntity(
+      const updated = await clients.ledger.updateEntity(
         graphId,
         updates as UpdateEntityRequest
       )

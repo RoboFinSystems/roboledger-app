@@ -8,13 +8,13 @@ vi.mock('@robosystems/client', () => ({
   },
 }))
 
-vi.mock('@robosystems/client/extensions', () => ({
+vi.mock('@robosystems/client/clients', () => ({
   OperationClient: vi.fn(),
   extractTokenFromSDKClient: vi.fn(),
 }))
 
 import { client } from '@robosystems/client'
-import { OperationClient } from '@robosystems/client/extensions'
+import { OperationClient } from '@robosystems/client/clients'
 
 const mockClient = client as unknown as {
   getConfig: ReturnType<typeof vi.fn>

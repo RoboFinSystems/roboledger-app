@@ -3,7 +3,7 @@
 import { PageHeader } from '@/components/PageHeader'
 import {
   customTheme,
-  extensions,
+  clients,
   GraphFilters,
   PageLayout,
   useGraphContext,
@@ -11,7 +11,7 @@ import {
 import type {
   PublishList,
   PublishListDetail,
-} from '@robosystems/client/extensions'
+} from '@robosystems/client/clients'
 import {
   Alert,
   Badge,
@@ -79,7 +79,7 @@ const PublishListsContent: FC = function () {
     try {
       setIsLoading(true)
       setError(null)
-      const result = await extensions.reports.listPublishLists(graphId)
+      const result = await clients.reports.listPublishLists(graphId)
       setLists(result)
     } catch (err) {
       console.error('Failed to load publish lists:', err)
@@ -93,7 +93,7 @@ const PublishListsContent: FC = function () {
     async (listId: string) => {
       if (!graphId) return
       try {
-        const detail = await extensions.reports.getPublishList(graphId, listId)
+        const detail = await clients.reports.getPublishList(graphId, listId)
         setSelectedList(detail)
       } catch (err) {
         console.error('Failed to load list detail:', err)
@@ -111,7 +111,7 @@ const PublishListsContent: FC = function () {
     if (!graphId || !newListName.trim()) return
     try {
       setIsCreating(true)
-      await extensions.reports.createPublishList(
+      await clients.reports.createPublishList(
         graphId,
         newListName.trim(),
         newListDescription.trim() || undefined
@@ -132,7 +132,7 @@ const PublishListsContent: FC = function () {
     async (listId: string) => {
       if (!graphId) return
       try {
-        await extensions.reports.deletePublishList(graphId, listId)
+        await clients.reports.deletePublishList(graphId, listId)
         if (selectedList?.id === listId) setSelectedList(null)
         await loadLists()
       } catch (err) {
@@ -148,7 +148,7 @@ const PublishListsContent: FC = function () {
     try {
       setIsAddingMember(true)
       setAddMemberError(null)
-      await extensions.reports.addMembers(graphId, selectedList.id, [
+      await clients.reports.addMembers(graphId, selectedList.id, [
         newMemberGraphId.trim(),
       ])
       setNewMemberGraphId('')
@@ -168,7 +168,7 @@ const PublishListsContent: FC = function () {
     async (memberId: string) => {
       if (!graphId || !selectedList) return
       try {
-        await extensions.reports.removeMember(
+        await clients.reports.removeMember(
           graphId,
           selectedList.id,
           memberId

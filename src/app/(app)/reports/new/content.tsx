@@ -3,7 +3,7 @@
 import { PageHeader } from '@/components/PageHeader'
 import {
   customTheme,
-  extensions,
+  clients,
   GraphFilters,
   PageLayout,
   useGraphContext,
@@ -12,7 +12,7 @@ import type {
   LedgerMappingCoverage,
   LedgerMappingInfo,
   PeriodSpecInput,
-} from '@robosystems/client/extensions'
+} from '@robosystems/client/clients'
 import {
   Alert,
   Badge,
@@ -301,7 +301,7 @@ const ReportBuilderContent: FC = function () {
 
       try {
         setIsLoadingMappings(true)
-        const result = await extensions.ledger.listMappings(
+        const result = await clients.ledger.listMappings(
           currentGraph.graphId
         )
         setMappings(result)
@@ -328,7 +328,7 @@ const ReportBuilderContent: FC = function () {
       }
 
       try {
-        const result = await extensions.ledger.getMappingCoverage(
+        const result = await clients.ledger.getMappingCoverage(
           currentGraph.graphId,
           selectedMappingId
         )
@@ -348,14 +348,14 @@ const ReportBuilderContent: FC = function () {
     try {
       setIsAutoMapping(true)
       setError(null)
-      await extensions.ledger.autoMapElements(currentGraph.graphId, {
+      await clients.ledger.autoMapElements(currentGraph.graphId, {
         mapping_id: selectedMappingId,
       })
       // Refresh coverage after auto-map completes
       // The agent runs async, so we poll for updated coverage
       setTimeout(async () => {
         try {
-          const result = await extensions.ledger.getMappingCoverage(
+          const result = await clients.ledger.getMappingCoverage(
             currentGraph.graphId,
             selectedMappingId
           )
@@ -381,7 +381,7 @@ const ReportBuilderContent: FC = function () {
       setIsGenerating(true)
       setError(null)
 
-      const ack = await extensions.reports.create(currentGraph.graphId, {
+      const ack = await clients.reports.create(currentGraph.graphId, {
         name: reportName || `Report ${periodStart} to ${periodEnd}`,
         mappingId: selectedMappingId,
         periodStart,

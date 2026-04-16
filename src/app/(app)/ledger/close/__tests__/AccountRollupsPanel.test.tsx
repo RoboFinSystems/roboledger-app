@@ -5,7 +5,7 @@ const mockGetAccountRollups = vi.fn()
 
 vi.mock('@/lib/core', () => ({
   customTheme: { table: {} },
-  extensions: {
+  clients: {
     ledger: {
       getAccountRollups: (...args: any[]) => mockGetAccountRollups(...args),
     },
@@ -43,7 +43,7 @@ vi.mock('../components/FactsTable', () => ({
   ),
 }))
 
-import type { LedgerAccountRollups } from '@robosystems/client/extensions'
+import type { LedgerAccountRollups } from '@robosystems/client/clients'
 import AccountRollupsPanel from '../components/AccountRollupsPanel'
 
 // Mock data shape mirrors the GraphQL `accountRollups` field (camelCase).

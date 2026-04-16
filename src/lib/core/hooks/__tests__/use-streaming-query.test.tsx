@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockStreamQuery = vi.fn()
 
-vi.mock('@robosystems/client/extensions', () => ({
+vi.mock('@robosystems/client/clients', () => ({
   streamQuery: mockStreamQuery,
 }))
 

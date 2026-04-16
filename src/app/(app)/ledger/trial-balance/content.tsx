@@ -3,7 +3,7 @@
 import { PageHeader } from '@/components/PageHeader'
 import {
   customTheme,
-  extensions,
+  clients,
   GraphFilters,
   PageLayout,
   useGraphContext,
@@ -114,7 +114,7 @@ const TrialBalanceContent: FC = function () {
       }
       try {
         // Filtered server-side to structure_type='coa_mapping'.
-        const structures = await extensions.ledger.listMappings(
+        const structures = await clients.ledger.listMappings(
           currentGraph.graphId
         )
         const active = structures.find((s) => s.isActive) ?? structures[0]
@@ -151,7 +151,7 @@ const TrialBalanceContent: FC = function () {
         const allRows: TrialBalanceRowWithGraph[] = []
 
         if (viewMode === 'coa') {
-          const result = await extensions.ledger.getTrialBalance(
+          const result = await clients.ledger.getTrialBalance(
             currentGraph.graphId
           )
 
@@ -199,7 +199,7 @@ const TrialBalanceContent: FC = function () {
             )
             return
           }
-          const mapped = await extensions.ledger.getMappedTrialBalance(
+          const mapped = await clients.ledger.getMappedTrialBalance(
             currentGraph.graphId,
             mappingId
           )

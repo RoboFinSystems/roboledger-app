@@ -1,10 +1,10 @@
 'use client'
 
-import { customTheme, extensions } from '@/lib/core'
+import { customTheme, clients } from '@/lib/core'
 import type {
   PeriodSpecInput,
   StatementData,
-} from '@robosystems/client/extensions'
+} from '@robosystems/client/clients'
 import { Badge, Button, Spinner } from 'flowbite-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useState } from 'react'
@@ -178,7 +178,7 @@ const StatementPanel: FC<StatementPanelProps> = ({
     try {
       setIsLoading(true)
       setError(null)
-      const data = await extensions.reports.statement(
+      const data = await clients.reports.statement(
         graphId,
         activeReportId,
         structureType
@@ -213,7 +213,7 @@ const StatementPanel: FC<StatementPanelProps> = ({
         const { periodStart, periodEnd, comparative, periods } =
           buildPeriods(preset)
 
-        const ack = await extensions.reports.create(graphId, {
+        const ack = await clients.reports.create(graphId, {
           name: `${structureType === 'income_statement' ? 'Income Statement' : 'Balance Sheet'} — ${preset.replace(/_/g, ' ')}`,
           mappingId,
           periodStart,

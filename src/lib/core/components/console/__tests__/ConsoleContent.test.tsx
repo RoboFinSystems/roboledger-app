@@ -17,8 +17,8 @@ vi.mock('../../../theme', () => ({
   },
 }))
 
-vi.mock('@robosystems/client/extensions', () => ({
-  extensions: {
+vi.mock('@robosystems/client/clients', () => ({
+  clients: {
     agent: {
       executeQuery: vi.fn(),
     },
@@ -26,14 +26,14 @@ vi.mock('@robosystems/client/extensions', () => ({
 }))
 
 // Import after mocks
-import { extensions } from '@robosystems/client/extensions'
+import { clients } from '@robosystems/client/clients'
 import { useGraphContext } from '../../../contexts'
 import { useStreamingQuery } from '../../../hooks'
 import { ConsoleContent } from '../ConsoleContent'
 
 const mockUseGraphContext = vi.mocked(useGraphContext)
 const mockUseStreamingQuery = vi.mocked(useStreamingQuery)
-const mockAgentExecuteQuery = vi.mocked(extensions.agent.executeQuery)
+const mockAgentExecuteQuery = vi.mocked(clients.agent.executeQuery)
 
 const TEST_CONFIG: ConsoleConfig = {
   header: {

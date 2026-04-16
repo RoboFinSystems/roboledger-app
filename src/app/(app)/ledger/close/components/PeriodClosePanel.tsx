@@ -1,11 +1,11 @@
 'use client'
 
-import { customTheme, extensions } from '@/lib/core'
+import { customTheme, clients } from '@/lib/core'
 import type {
   LedgerFiscalCalendar,
   LedgerPeriodCloseStatus,
   LedgerPeriodDrafts,
-} from '@robosystems/client/extensions'
+} from '@robosystems/client/clients'
 import {
   Badge,
   Button,
@@ -116,7 +116,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     try {
       setIsLoadingCalendar(true)
       setError(null)
-      const cal = await extensions.ledger.getFiscalCalendar(graphId)
+      const cal = await clients.ledger.getFiscalCalendar(graphId)
       setCalendar(cal)
       // Default to the first period in the catch-up sequence, or
       // closed_through when nothing is pending.
@@ -141,7 +141,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     try {
       setIsLoadingStatus(true)
       const { start, end } = periodBounds(selectedPeriod)
-      const status = await extensions.ledger.getPeriodCloseStatus(
+      const status = await clients.ledger.getPeriodCloseStatus(
         graphId,
         start,
         end
@@ -159,7 +159,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     if (!selectedPeriod) return
     try {
       setIsLoadingDrafts(true)
-      const result = await extensions.ledger.listPeriodDrafts(
+      const result = await clients.ledger.listPeriodDrafts(
         graphId,
         selectedPeriod
       )
@@ -192,7 +192,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     try {
       setIsInitializing(true)
       setError(null)
-      await extensions.ledger.initializeLedger(graphId, {})
+      await clients.ledger.initializeLedger(graphId, {})
       await loadCalendar()
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -209,7 +209,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
         setCreatingEntry(structureId)
         setError(null)
         const { start, end } = periodBounds(selectedPeriod)
-        await extensions.ledger.createClosingEntry(
+        await clients.ledger.createClosingEntry(
           graphId,
           structureId,
           end,
@@ -234,7 +234,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     try {
       setIsClosing(true)
       setError(null)
-      const result = await extensions.ledger.closePeriod(
+      const result = await clients.ledger.closePeriod(
         graphId,
         selectedPeriod,
         { allowStaleSync }
@@ -264,7 +264,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     try {
       setIsReopening(true)
       setError(null)
-      const newCal = await extensions.ledger.reopenPeriod(
+      const newCal = await clients.ledger.reopenPeriod(
         graphId,
         reopenTarget,
         reopenReason.trim()

@@ -33,7 +33,7 @@ import type {
 } from './types'
 
 // Global config hook for the extensions package's lazy default singleton
-// (`import { extensions } from '@robosystems/client/extensions'`). We must
+// (`import { extensions } from '@robosystems/client/clients'`). We must
 // set this BEFORE the singleton is first accessed — the singleton reads the
 // token at construction time and never re-reads it. Without this, the
 // GraphQL client inside LedgerClient/InvestorClient has no credentials and
@@ -44,10 +44,10 @@ import type {
 // upgrade); a missing module here falls through to a no-op, which just
 // means the extensions singleton is unconfigured but the core REST auth
 // path still works.
-let setSDKExtensionsConfig: any = null
+let setSDKClientConfig: any = null
 try {
-  const extensions = require('@robosystems/client/extensions')
-  setSDKExtensionsConfig = extensions.setSDKExtensionsConfig
+  const extensions = require('@robosystems/client/clients')
+  setSDKClientConfig = extensions.setSDKClientConfig
 } catch {
   // SDK extensions not available in this version
 }
@@ -101,7 +101,7 @@ export class RoboSystemsAuthClient {
 
     // Wire the SDK extensions singleton to pull a fresh JWT on every
     // GraphQL request. The `extensions` singleton at
-    // `@robosystems/client/extensions` lazy-builds on first access; if we
+    // `@robosystems/client/clients` lazy-builds on first access; if we
     // seeded a static `token` it would get captured there and go stale the
     // moment the JWT rotates (~every 30 min). Instead we register a
     // `tokenProvider` callback that reads the latest token from storage on
@@ -111,11 +111,11 @@ export class RoboSystemsAuthClient {
     // methods are wrapped below to inject `Authorization: Bearer` per-call
     // — this block is only about the GraphQL read path that runs inside
     // LedgerClient / InvestorClient / ReportClient via graphql-request.
-    if (setSDKExtensionsConfig && typeof window !== 'undefined') {
+    if (setSDKClientConfig && typeof window !== 'undefined') {
       try {
         // Lazy-required to avoid pulling token-storage into server bundles.
         const { getToken, getValidToken } = require('./token-storage')
-        setSDKExtensionsConfig({
+        setSDKClientConfig({
           baseUrl: baseUrl.replace(/\/$/, ''),
           // Priming `token` with the current storage value isn't required
           // since the provider always wins, but it gives the singleton a
@@ -219,7 +219,7 @@ export class RoboSystemsAuthClient {
    * The GraphQL read path already has refresh via `tokenProvider`
    * (wired in `configureClientWithAuth`) and does not depend on this
    * static field. But the SDK's React hooks (`useQuery`, `useOperation`,
-   * `useStreamingQuery`, …) still read `getSDKExtensionsConfig().token`
+   * `useStreamingQuery`, …) still read `getSDKClientConfig().token`
    * via `extractTokenFromSDKClient` to seed their inner `QueryClient`
    * / `OperationClient` instances. Keeping the static field updated
    * after every auth success keeps those hook-owned clients
@@ -228,8 +228,8 @@ export class RoboSystemsAuthClient {
    * No-op when the SDK extensions module isn't installed.
    */
   private syncExtensionsConfigToken(token: string): void {
-    if (!setSDKExtensionsConfig) return
-    setSDKExtensionsConfig({
+    if (!setSDKClientConfig) return
+    setSDKClientConfig({
       baseUrl: this.client.getConfig().baseUrl,
       token,
     })

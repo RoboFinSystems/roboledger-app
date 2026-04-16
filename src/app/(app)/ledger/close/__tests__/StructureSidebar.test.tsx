@@ -13,7 +13,7 @@ vi.mock('react-icons/hi', () => ({
   HiChevronRight: () => <span data-testid="icon-expand" />,
 }))
 
-import type { LedgerClosingBookStructures } from '@robosystems/client/extensions'
+import type { LedgerClosingBookStructures } from '@robosystems/client/clients'
 import type { SelectedItem } from '../components/StructureSidebar'
 import StructureSidebar from '../components/StructureSidebar'
 

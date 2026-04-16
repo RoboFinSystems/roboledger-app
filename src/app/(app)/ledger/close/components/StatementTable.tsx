@@ -4,7 +4,7 @@ import { customTheme } from '@/lib/core'
 import type {
   StatementData,
   StatementRow,
-} from '@robosystems/client/extensions'
+} from '@robosystems/client/clients'
 import {
   Table,
   TableBody,

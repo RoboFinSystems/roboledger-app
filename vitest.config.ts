@@ -31,7 +31,7 @@ export default defineConfig({
     alias: {
       '@': srcDir,
       'react-markdown': reactMarkdownMock,
-      '@robosystems/client/extensions': clientExtensionsMock,
+      '@robosystems/client/clients': clientExtensionsMock,
       '@robosystems/client/sdk': clientSdkMock,
       '@robosystems/client': clientMock,
     },
