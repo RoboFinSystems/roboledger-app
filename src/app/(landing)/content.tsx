@@ -6,10 +6,10 @@ import FinalCTA from '@/components/landing/FinalCTA'
 import Footer from '@/components/landing/Footer'
 import Header from '@/components/landing/Header'
 import HeroSection from '@/components/landing/HeroSection'
-import OpenSourceSection from '@/components/landing/OpenSourceSection'
 import OutputFormats from '@/components/landing/OutputFormats'
 import PlatformSection from '@/components/landing/PlatformSection'
 import ReportCreator from '@/components/landing/ReportCreator'
+import WorkflowSection from '@/components/landing/WorkflowSection'
 
 export default function LandingPageContent() {
   return (
@@ -19,11 +19,11 @@ export default function LandingPageContent() {
       <main>
         <HeroSection />
         <FeaturesSection />
+        <WorkflowSection />
         <ReportCreator />
         <OutputFormats />
         <AIReportingSection />
         <PlatformSection />
-        <OpenSourceSection />
         <FinalCTA />
       </main>
 
