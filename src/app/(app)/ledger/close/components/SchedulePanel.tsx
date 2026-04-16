@@ -1,6 +1,6 @@
 'use client'
 
-import { customTheme, clients } from '@/lib/core'
+import { clients, customTheme } from '@/lib/core'
 import type { LedgerScheduleFact } from '@robosystems/client/clients'
 import {
   Button,
@@ -43,10 +43,7 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
     try {
       setIsLoading(true)
       setError(null)
-      const result = await clients.ledger.getScheduleFacts(
-        graphId,
-        structureId
-      )
+      const result = await clients.ledger.getScheduleFacts(graphId, structureId)
       setFacts(result)
     } catch (err) {
       console.error('Error loading schedule facts:', err)

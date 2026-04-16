@@ -1,7 +1,7 @@
 'use client'
 
 import { PageHeader } from '@/components/PageHeader'
-import { customTheme, clients, PageLayout } from '@/lib/core'
+import { clients, customTheme, PageLayout } from '@/lib/core'
 import type {
   PublishList,
   Report,
@@ -175,11 +175,7 @@ const ReportViewerContent: FC = function () {
     try {
       setIsSharing(true)
       setShareResult(null)
-      const ack = await clients.reports.share(
-        graphId,
-        reportId,
-        selectedListId
-      )
+      const ack = await clients.reports.share(graphId, reportId, selectedListId)
 
       // `share` is a sync backend dispatch today — the envelope's `result`
       // carries the backend's ShareReportResponse payload (a list of

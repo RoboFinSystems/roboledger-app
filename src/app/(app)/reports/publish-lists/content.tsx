@@ -2,8 +2,8 @@
 
 import { PageHeader } from '@/components/PageHeader'
 import {
-  customTheme,
   clients,
+  customTheme,
   GraphFilters,
   PageLayout,
   useGraphContext,
@@ -168,11 +168,7 @@ const PublishListsContent: FC = function () {
     async (memberId: string) => {
       if (!graphId || !selectedList) return
       try {
-        await clients.reports.removeMember(
-          graphId,
-          selectedList.id,
-          memberId
-        )
+        await clients.reports.removeMember(graphId, selectedList.id, memberId)
         await loadListDetail(selectedList.id)
         await loadLists()
       } catch (err) {

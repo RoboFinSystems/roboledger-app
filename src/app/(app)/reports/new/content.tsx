@@ -2,8 +2,8 @@
 
 import { PageHeader } from '@/components/PageHeader'
 import {
-  customTheme,
   clients,
+  customTheme,
   GraphFilters,
   PageLayout,
   useGraphContext,
@@ -301,9 +301,7 @@ const ReportBuilderContent: FC = function () {
 
       try {
         setIsLoadingMappings(true)
-        const result = await clients.ledger.listMappings(
-          currentGraph.graphId
-        )
+        const result = await clients.ledger.listMappings(currentGraph.graphId)
         setMappings(result)
         if (result.length > 0) {
           setSelectedMappingId(result[0].id)

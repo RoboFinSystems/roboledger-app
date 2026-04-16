@@ -1,10 +1,7 @@
 'use client'
 
 import { customTheme } from '@/lib/core'
-import type {
-  StatementData,
-  StatementRow,
-} from '@robosystems/client/clients'
+import type { StatementData, StatementRow } from '@robosystems/client/clients'
 import {
   Table,
   TableBody,

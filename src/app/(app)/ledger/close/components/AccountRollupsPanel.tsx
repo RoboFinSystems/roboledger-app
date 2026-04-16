@@ -1,6 +1,6 @@
 'use client'
 
-import { customTheme, clients } from '@/lib/core'
+import { clients, customTheme } from '@/lib/core'
 import type { LedgerAccountRollups } from '@robosystems/client/clients'
 import {
   Badge,

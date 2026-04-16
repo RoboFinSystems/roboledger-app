@@ -1,6 +1,6 @@
 'use client'
 
-import { customTheme, clients } from '@/lib/core'
+import { clients, customTheme } from '@/lib/core'
 import type {
   LedgerFiscalCalendar,
   LedgerPeriodCloseStatus,
@@ -234,11 +234,9 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     try {
       setIsClosing(true)
       setError(null)
-      const result = await clients.ledger.closePeriod(
-        graphId,
-        selectedPeriod,
-        { allowStaleSync }
-      )
+      const result = await clients.ledger.closePeriod(graphId, selectedPeriod, {
+        allowStaleSync,
+      })
       setCalendar(result.fiscalCalendar)
       // Advance selection to the next period (or stay on closed_through)
       const next =

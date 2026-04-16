@@ -2,8 +2,8 @@
 
 import { PageHeader } from '@/components/PageHeader'
 import {
-  customTheme,
   clients,
+  customTheme,
   GraphFilters,
   PageLayout,
   useGraphContext,
@@ -493,13 +493,10 @@ const ChartOfAccountsContent: FC = function () {
         // If replacing existing mapping, delete old first
         const existing = gaapByElementId.get(accountId)
         if (existing) {
-          await clients.ledger.deleteMappingAssociation(
-            currentGraph.graphId,
-            {
-              mapping_id: selectedMappingId,
-              association_id: existing.associationId,
-            }
-          )
+          await clients.ledger.deleteMappingAssociation(currentGraph.graphId, {
+            mapping_id: selectedMappingId,
+            association_id: existing.associationId,
+          })
         }
 
         // Create new mapping using account.id directly as the from element ID
