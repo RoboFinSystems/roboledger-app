@@ -148,7 +148,7 @@ const PublishListsContent: FC = function () {
     try {
       setIsAddingMember(true)
       setAddMemberError(null)
-      await clients.reports.addMembers(graphId, selectedList.id, [
+      await clients.reports.addPublishListMembers(graphId, selectedList.id, [
         newMemberGraphId.trim(),
       ])
       setNewMemberGraphId('')
@@ -168,7 +168,11 @@ const PublishListsContent: FC = function () {
     async (memberId: string) => {
       if (!graphId || !selectedList) return
       try {
-        await clients.reports.removeMember(graphId, selectedList.id, memberId)
+        await clients.reports.removePublishListMember(
+          graphId,
+          selectedList.id,
+          memberId
+        )
         await loadListDetail(selectedList.id)
         await loadLists()
       } catch (err) {

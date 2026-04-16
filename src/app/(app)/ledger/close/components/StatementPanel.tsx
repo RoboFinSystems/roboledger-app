@@ -178,7 +178,7 @@ const StatementPanel: FC<StatementPanelProps> = ({
     try {
       setIsLoading(true)
       setError(null)
-      const data = await clients.reports.statement(
+      const data = await clients.reports.getStatement(
         graphId,
         activeReportId,
         structureType
@@ -213,7 +213,7 @@ const StatementPanel: FC<StatementPanelProps> = ({
         const { periodStart, periodEnd, comparative, periods } =
           buildPeriods(preset)
 
-        const ack = await clients.reports.create(graphId, {
+        const ack = await clients.reports.createReport(graphId, {
           name: `${structureType === 'income_statement' ? 'Income Statement' : 'Balance Sheet'} — ${preset.replace(/_/g, ' ')}`,
           mappingId,
           periodStart,

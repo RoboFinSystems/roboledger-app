@@ -379,7 +379,7 @@ const ReportBuilderContent: FC = function () {
       setIsGenerating(true)
       setError(null)
 
-      const ack = await clients.reports.create(currentGraph.graphId, {
+      const ack = await clients.reports.createReport(currentGraph.graphId, {
         name: reportName || `Report ${periodStart} to ${periodEnd}`,
         mappingId: selectedMappingId,
         periodStart,
@@ -388,7 +388,7 @@ const ReportBuilderContent: FC = function () {
         periods,
       })
 
-      // `create` runs synchronously today — the envelope's `result`
+      // `createReport` runs synchronously today — the envelope's `result`
       // carries the freshly-created report row (including its id).
       const newReportId = ack.result?.id as string | undefined
       if (!newReportId) {

@@ -80,7 +80,9 @@ const ReportsContent: FC = function () {
         setIsLoading(true)
         setError(null)
 
-        const reportList = await clients.reports.list(currentGraph.graphId)
+        const reportList = await clients.reports.listReports(
+          currentGraph.graphId
+        )
 
         const mapped: ReportWithGraph[] = reportList.map((r) => ({
           ...r,
