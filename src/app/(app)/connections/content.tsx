@@ -245,12 +245,13 @@ export default function ModernConnectionsContent() {
       })
 
       const syncData = syncResponse.data as any
-      if (syncData?.task_id) {
+      const operationId = syncData?.operationId
+      if (operationId) {
         setActiveTasks((prev) =>
-          new Map(prev).set(syncData.task_id, {
-            task_id: syncData.task_id,
+          new Map(prev).set(operationId, {
+            task_id: operationId,
             status: syncData.status || 'pending',
-            message: syncData.message || 'Sync started...',
+            message: syncData.result?.message || 'Sync started...',
           })
         )
         showSuccess('Sync started successfully')

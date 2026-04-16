@@ -154,20 +154,18 @@ export function useEntityCreationTask() {
           body: entityData,
         })
 
-        // The response is typed as unknown, but should contain task_id
         const responseData = response.data as {
-          task_id: string
+          operationId: string
           status: string
-          message?: string
         }
 
-        if (!responseData?.task_id) {
-          throw new Error('No task ID returned from company creation')
+        if (!responseData?.operationId) {
+          throw new Error('No operation ID returned from company creation')
         }
 
         // Start monitoring the task
         const result = await taskMonitoring.startMonitoring(
-          responseData.task_id
+          responseData.operationId
         )
         return result
       } catch (error) {

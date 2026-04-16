@@ -4,39 +4,84 @@ A shared library of React components, hooks, utilities, and types used across Ro
 
 ## Overview
 
-This repository contains reusable components that are shared between:
+This repository contains reusable components shared between:
 
-- **robosystems-app** - Graph database management interface
-- **roboledger-app** - Accounting and bookkeeping interface
-- **roboinvestor-app** - Investment management interface
+- **robosystems-app** — Graph database management interface
+- **roboledger-app** — Accounting and bookkeeping interface
+- **roboinvestor-app** — Investment management interface
 
 ## Structure
 
 ```
+├── actions/                  # Next.js Server Actions
+│   ├── entity-actions.ts     # Entity creation and management
+│   └── graph-actions.ts      # Graph creation and lifecycle
 ├── auth-components/          # Authentication UI components
+│   ├── AppSwitcher.tsx       # Cross-app navigation switcher
+│   ├── AuthGuard.tsx         # Route protection wrapper
 │   ├── AuthProvider.tsx      # Authentication context provider
-│   ├── SignInForm.tsx        # Login form component
-│   └── SignUpForm.tsx        # Registration form component
-├── auth-core/               # Authentication logic and types
-│   ├── client.ts            # Authentication client
-│   ├── hooks.ts             # Authentication hooks
-│   └── types.ts             # Authentication TypeScript types
-├── contexts/                # React contexts
-│   └── sidebar-context.tsx  # Sidebar state management
-├── hooks/                   # Custom React hooks
-│   └── use-media-query.ts   # Media query hook for responsive design
-├── lib/                     # Utility libraries
-│   └── sidebar-cookie.ts    # Sidebar state persistence
-├── theme/                   # UI theming
-│   └── flowbite-theme.ts    # Flowbite React custom theme
-├── types/                   # Shared TypeScript definitions
-│   └── user.d.ts           # User type definitions
-├── ui-components/          # Reusable UI components
-│   ├── api-keys/           # API key management components
-│   ├── forms/              # Form components and validation
-│   ├── layout/             # Layout and container components
-│   └── settings/           # Settings page components
-└── index.ts                # Main export file
+│   ├── SessionWarningDialog.tsx  # Session expiry warning
+│   ├── SignInForm.tsx        # Login form
+│   ├── SignUpForm.tsx        # Registration form
+│   └── TurnstileWidget.tsx   # Cloudflare Turnstile CAPTCHA
+├── auth-core/                # Authentication logic and types
+│   ├── cleanup.ts            # Session cleanup utilities
+│   ├── client.ts             # Authentication client
+│   ├── config.ts             # Auth configuration
+│   ├── hooks.ts              # useAuth and related hooks
+│   ├── sso.ts                # SSO/OAuth support
+│   ├── token-storage.ts      # JWT storage utilities
+│   └── types.ts              # Auth TypeScript types
+├── components/               # Shared UI components
+│   ├── console/              # Terminal-style output display
+│   ├── repositories/         # Repository browsing and subscriptions
+│   ├── search/               # Search UI
+│   ├── EntitySelector.tsx    # Entity picker component
+│   ├── GraphSelectorCore.tsx # Graph picker component
+│   ├── PageLayout.tsx        # Standard page layout
+│   └── RepositoryGuard.tsx   # Repository access protection
+├── contexts/                 # React contexts
+│   ├── entity-context.tsx    # Active entity state
+│   ├── graph-context.tsx     # Active graph state
+│   ├── org-context.tsx       # Organization state
+│   ├── service-offerings-context.tsx  # Available plans and tiers
+│   └── sidebar-context.tsx   # Sidebar collapsed/expanded state
+├── hooks/                    # Custom React hooks
+│   ├── use-api-error.ts      # API error normalization
+│   ├── use-media-query.ts    # Responsive breakpoint detection
+│   ├── use-streaming-query.ts  # SSE streaming data hook
+│   ├── use-toast.tsx         # Toast notification hook
+│   ├── use-user-limits.ts    # User quota and limit checks
+│   └── use-user.ts           # Current user data hook
+├── lib/                      # Utility libraries
+│   ├── entity-cookie.ts      # Entity selection persistence
+│   ├── graph-cookie.ts       # Graph selection persistence
+│   ├── graph-tiers.ts        # Tier display helpers
+│   └── sidebar-cookie.ts     # Sidebar state persistence
+├── task-monitoring/          # Background job and operation tracking
+│   ├── hooks.ts              # useTaskMonitoring, useEntityCreationTask
+│   ├── operationErrors.ts    # Operation error types
+│   ├── operationHooks.ts     # useOperationMonitoring, useGraphCreation
+│   ├── operationMonitor.ts   # SSE-based operation monitor
+│   ├── operationTypes.ts     # Shared operation types
+│   ├── taskMonitor.ts        # Polling-based task monitor (fallback)
+│   └── types.ts              # Task and operation TypeScript types
+├── theme/                    # UI theming
+│   └── flowbite-theme.ts     # Flowbite React custom theme
+├── types/                    # Shared TypeScript definitions
+│   ├── entity.d.ts           # Entity type definitions
+│   └── user.d.ts             # User type definitions
+├── ui-components/            # Reusable UI components
+│   ├── api-keys/             # API key management
+│   ├── chat/                 # Chat UI (header, input, messages, deep research toggle)
+│   ├── forms/                # Form components and validation
+│   ├── layout/               # Navbar, sidebar, page containers
+│   ├── settings/             # Settings page components
+│   ├── support/              # Support modal
+│   ├── Logo.tsx              # RoboSystems logo component
+│   └── Spinner.tsx           # Loading spinner
+└── utils/                    # Utility functions
+    └── turnstile-config.ts   # Cloudflare Turnstile configuration
 ```
 
 ## Technology Stack
@@ -50,127 +95,80 @@ This repository contains reusable components that are shared between:
 
 ## Usage as Git Subtree
 
-### Initial Setup
-
-Add this repository as a subtree to your app:
+Each consuming app has npm scripts for subtree management:
 
 ```bash
-# In your app directory (roboinvestor-app, roboledger-app, etc.)
-git subtree add --prefix=src/lib/core \
-  https://github.com/yourorg/robosystems-core.git main --squash
+npm run core:pull        # Pull latest changes from core repository
+npm run core:push        # Push local core changes back to repository
+npm run core:add         # Initial setup (only needed once)
 ```
 
-### Pull Updates
+### Workflow
 
-Get the latest common components:
+1. **Before making changes**: `npm run core:pull` to get latest
+2. **Make and test changes** in your app
+3. **Push back**: `npm run core:push` to share with other apps
+4. **Sync other apps**: Run `npm run core:pull` in each other app
+
+### Manual Commands
 
 ```bash
+# Pull updates
 git subtree pull --prefix=src/lib/core \
-  https://github.com/yourorg/robosystems-core.git main --squash
-```
+  https://github.com/RoboFinSystems/robosystems-core.git main --squash
 
-### Push Changes
-
-Push your improvements back to the common repository:
-
-```bash
+# Push changes
 git subtree push --prefix=src/lib/core \
-  https://github.com/yourorg/robosystems-core.git main
+  https://github.com/RoboFinSystems/robosystems-core.git main
 ```
 
-## Component Usage
+## Key Patterns
 
-### Import from Common
+### Task Monitoring
+
+Two monitors handle async operations:
+
+- **`operationMonitor`** — SSE-based, used for graph lifecycle ops (create, materialize, etc.) that return `OperationEnvelope` with an `operationId`
+- **`taskMonitor`** — Polling-based fallback for older task-style operations
 
 ```typescript
-import {
-  useMediaQuery,
-  useSidebarContext,
-  SidebarProvider,
-  customTheme,
-  sidebarCookie,
-} from '@/lib/core'
+import { useOperationMonitoring, useGraphCreation } from '@/lib/core/task-monitoring'
 
-import type { CommonUser, SidebarCookie } from '@/lib/core'
+// Monitor a graph operation via SSE
+const { startMonitoring, progress, result } = useOperationMonitoring()
+await startMonitoring(operationId)
+
+// Full graph creation with monitoring
+const { createGraph, isCreating } = useGraphCreation()
+await createGraph({ graph_type: 'entity', graph_name: 'Acme Corp', ... })
+```
+
+### Contexts
+
+```typescript
+import { useGraphContext, useOrgContext } from '@/lib/core/contexts'
+
+function MyComponent() {
+  const { currentGraphId, setCurrentGraphId } = useGraphContext()
+  const { org } = useOrgContext()
+}
 ```
 
 ### Authentication
 
 ```typescript
-import { useAuth, AuthProvider } from '@/lib/core'
-
-function MyApp() {
-  return (
-    <AuthProvider>
-      <MyComponents />
-    </AuthProvider>
-  )
-}
-
-function MyComponent() {
-  const { user, isAuthenticated, login, logout } = useAuth()
-  // ... component logic
-}
-```
-
-### Sidebar Management
-
-```typescript
-import { SidebarProvider, useSidebarContext } from '@/lib/core'
-
-function Layout({ children }) {
-  return (
-    <SidebarProvider initialCollapsed={false}>
-      <MySidebar />
-      <main>{children}</main>
-    </SidebarProvider>
-  )
-}
-
-function MySidebar() {
-  const { desktop, mobile } = useSidebarContext()
-  // ... sidebar logic
-}
-```
-
-### Responsive Design
-
-```typescript
-import { useMediaQuery } from '@/lib/core'
-
-function ResponsiveComponent() {
-  const isMobile = useMediaQuery('(max-width: 768px)')
-
-  return (
-    <div className={isMobile ? 'mobile-layout' : 'desktop-layout'}>
-      {/* component content */}
-    </div>
-  )
-}
-```
-
-### API Integration
-
-```typescript
-import { SDK } from '@/lib/core'
-import type { UserResponse } from '@/lib/core/sdk/types.gen'
-
-async function fetchUser() {
-  const response = await SDK.getCurrentUser()
-  const userData = response.data as UserResponse
-  return userData
-}
+import { useAuth, AuthProvider, AuthGuard } from '@/lib/core/auth-core'
+import { SignInForm, SignUpForm } from '@/lib/core/auth-components'
 ```
 
 ## Development Guidelines
 
 ### Adding New Components
 
-1. **Create component** in appropriate directory
-2. **Add TypeScript types** in `types/` if needed
-3. **Export from index.ts** files
-4. **Update main index.ts** to include new exports
-5. **Test in one app** before pushing to common repo
+1. Create component in the appropriate directory
+2. Add TypeScript types in `types/` if needed
+3. Export from the directory's `index.ts`
+4. Test in one app before pushing to core
 
 ### Naming Conventions
 
@@ -179,46 +177,13 @@ async function fetchUser() {
 - **Types**: PascalCase (`SidebarCookie`)
 - **Utilities**: camelCase (`sidebarCookie`)
 
-### TypeScript Patterns
-
-- Use `type` for simple types, `interface` for objects
-- Prefer runtime type guards over direct assertions
-- Export types from `types/` directory
-- Use generated SDK types when available
-
 ## Testing
 
-Components should be tested in the consuming applications. Common patterns:
+Tests live in `__tests__/` directories alongside the source files. Run tests in the consuming application:
 
-```typescript
-import { render, screen } from '@testing-library/react'
-import { SidebarProvider } from '@/lib/core'
-
-test('sidebar provider works', () => {
-  render(
-    <SidebarProvider initialCollapsed={false}>
-      <TestComponent />
-    </SidebarProvider>
-  )
-  // ... test logic
-})
+```bash
+npm run test
 ```
-
-## Versioning
-
-This repository follows semantic versioning principles:
-
-- **Major**: Breaking changes to public APIs
-- **Minor**: New features, non-breaking changes
-- **Patch**: Bug fixes, internal improvements
-
-## Contributing
-
-1. Make changes in your app's `src/lib/core` directory
-2. Test thoroughly in your app
-3. Push changes back to this repository
-4. Update other apps to pull the latest changes
-5. Ensure all apps pass their test suites
 
 ## Security
 
