@@ -347,10 +347,10 @@ export function useGraphCreation() {
         // Check if response contains operation_id (async) or direct result
         const responseData = response.data as any
 
-        if (responseData?.operation_id) {
+        if (responseData?.operationId) {
           // Async operation - monitor it
           const result = await operationMonitoring.startMonitoring(
-            responseData.operation_id
+            responseData.operationId
           )
           setIsCreating(false)
           return result
