@@ -32,8 +32,8 @@ import type {
   SSOTokenResponse,
 } from './types'
 
-// Global config hook for the extensions package's lazy default singleton
-// (`import { extensions } from '@robosystems/client/clients'`). We must
+// Global config hook for the clients package's lazy default singleton
+// (`import { clients } from '@robosystems/client/clients'`). We must
 // set this BEFORE the singleton is first accessed — the singleton reads the
 // token at construction time and never re-reads it. Without this, the
 // GraphQL client inside LedgerClient/InvestorClient has no credentials and
@@ -46,8 +46,8 @@ import type {
 // path still works.
 let setSDKClientConfig: any = null
 try {
-  const extensions = require('@robosystems/client/clients')
-  setSDKClientConfig = extensions.setSDKClientConfig
+  const clientsModule = require('@robosystems/client/clients')
+  setSDKClientConfig = clientsModule.setSDKClientConfig
 } catch {
   // SDK extensions not available in this version
 }
@@ -227,7 +227,7 @@ export class RoboSystemsAuthClient {
    *
    * No-op when the SDK extensions module isn't installed.
    */
-  private syncExtensionsConfigToken(token: string): void {
+  private syncClientConfigToken(token: string): void {
     if (!setSDKClientConfig) return
     setSDKClientConfig({
       baseUrl: this.client.getConfig().baseUrl,
@@ -255,9 +255,9 @@ export class RoboSystemsAuthClient {
       // Keep the SDK extensions singleton's static `token` field in
       // sync. The GraphQL read path refreshes via `tokenProvider`
       // independently, but the React hooks surface still reads the
-      // static field at hook-init time — see `syncExtensionsConfigToken`
+      // static field at hook-init time — see `syncClientConfigToken`
       // for the full rationale.
-      this.syncExtensionsConfigToken(sdkResponse.token)
+      this.syncClientConfigToken(sdkResponse.token)
     }
 
     return {
@@ -306,9 +306,9 @@ export class RoboSystemsAuthClient {
       // Keep the SDK extensions singleton's static `token` field in
       // sync. The GraphQL read path refreshes via `tokenProvider`
       // independently, but the React hooks surface still reads the
-      // static field at hook-init time — see `syncExtensionsConfigToken`
+      // static field at hook-init time — see `syncClientConfigToken`
       // for the full rationale.
-      this.syncExtensionsConfigToken(sdkResponse.token)
+      this.syncClientConfigToken(sdkResponse.token)
     }
 
     return {
@@ -449,9 +449,9 @@ export class RoboSystemsAuthClient {
       // Keep the SDK extensions singleton's static `token` field in
       // sync. The GraphQL read path refreshes via `tokenProvider`
       // independently, but the React hooks surface still reads the
-      // static field at hook-init time — see `syncExtensionsConfigToken`
+      // static field at hook-init time — see `syncClientConfigToken`
       // for the full rationale.
-      this.syncExtensionsConfigToken(sdkResponse.token)
+      this.syncClientConfigToken(sdkResponse.token)
     }
 
     // Reset retry count on success
@@ -603,9 +603,9 @@ export class RoboSystemsAuthClient {
       // Keep the SDK extensions singleton's static `token` field in
       // sync. The GraphQL read path refreshes via `tokenProvider`
       // independently, but the React hooks surface still reads the
-      // static field at hook-init time — see `syncExtensionsConfigToken`
+      // static field at hook-init time — see `syncClientConfigToken`
       // for the full rationale.
-      this.syncExtensionsConfigToken(sdkResponse.token)
+      this.syncClientConfigToken(sdkResponse.token)
     }
 
     return {

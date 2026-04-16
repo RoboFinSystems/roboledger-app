@@ -43,7 +43,7 @@ const EntityInfoPageContent: FC = function () {
       const loaded = await clients.ledger.getEntity(graphId)
       if (loaded === null) {
         setError(
-          'No entity found for this graph. The extensions database may not be initialized yet.'
+          'No entity found for this graph. The ledger database may not be initialized yet.'
         )
       } else {
         setEntity(loaded)
