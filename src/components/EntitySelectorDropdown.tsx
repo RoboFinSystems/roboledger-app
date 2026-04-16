@@ -1,12 +1,7 @@
 'use client'
 
 import type { Entity } from '@/lib/core'
-import {
-  extensions,
-  GraphFilters,
-  useEntity,
-  useGraphContext,
-} from '@/lib/core'
+import { clients, GraphFilters, useEntity, useGraphContext } from '@/lib/core'
 import { useSSO } from '@/lib/core/auth-core/sso'
 import { useEffect, useMemo, useState } from 'react'
 import { HiChevronDown, HiOfficeBuilding } from 'react-icons/hi'
@@ -43,7 +38,7 @@ export function EntitySelectorDropdown() {
       setIsLoading(true)
       const results = await Promise.allSettled(
         roboledgerGraphs.map((graph) =>
-          extensions.ledger
+          clients.ledger
             .getEntity(graph.graphId)
             .then((entity) => ({ graph, entity }))
         )

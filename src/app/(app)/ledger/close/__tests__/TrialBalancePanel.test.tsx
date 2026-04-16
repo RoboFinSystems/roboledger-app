@@ -5,7 +5,7 @@ const mockGetTrialBalance = vi.fn()
 
 vi.mock('@/lib/core', () => ({
   customTheme: { table: {} },
-  extensions: {
+  clients: {
     ledger: {
       getTrialBalance: (...args: any[]) => mockGetTrialBalance(...args),
     },

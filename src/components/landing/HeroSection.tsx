@@ -102,16 +102,16 @@ export default function HeroSection() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
+                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
                     />
                   </svg>
                 </div>
                 <h3 className="mb-2 text-center text-lg font-semibold text-white">
-                  Knowledge Graph Powered
+                  AI Console
                 </h3>
                 <p className="text-center text-sm text-gray-400">
-                  Built on RoboSystems' knowledge graph platform for semantic
-                  queries on complex business relationships
+                  Ask Claude AI questions about your books — query transactions,
+                  explore trends, and get instant financial insights
                 </p>
               </div>
             </div>

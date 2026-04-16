@@ -2,8 +2,8 @@
 
 import { PageHeader } from '@/components/PageHeader'
 import {
+  clients,
   customTheme,
-  extensions,
   GraphFilters,
   PageLayout,
   useGraphContext,
@@ -12,7 +12,7 @@ import type {
   LedgerMappingCoverage,
   LedgerMappingInfo,
   PeriodSpecInput,
-} from '@robosystems/client/extensions'
+} from '@robosystems/client/clients'
 import {
   Alert,
   Badge,
@@ -301,9 +301,7 @@ const ReportBuilderContent: FC = function () {
 
       try {
         setIsLoadingMappings(true)
-        const result = await extensions.ledger.listMappings(
-          currentGraph.graphId
-        )
+        const result = await clients.ledger.listMappings(currentGraph.graphId)
         setMappings(result)
         if (result.length > 0) {
           setSelectedMappingId(result[0].id)
@@ -328,7 +326,7 @@ const ReportBuilderContent: FC = function () {
       }
 
       try {
-        const result = await extensions.ledger.getMappingCoverage(
+        const result = await clients.ledger.getMappingCoverage(
           currentGraph.graphId,
           selectedMappingId
         )
@@ -348,14 +346,14 @@ const ReportBuilderContent: FC = function () {
     try {
       setIsAutoMapping(true)
       setError(null)
-      await extensions.ledger.autoMapElements(currentGraph.graphId, {
+      await clients.ledger.autoMapElements(currentGraph.graphId, {
         mapping_id: selectedMappingId,
       })
       // Refresh coverage after auto-map completes
       // The agent runs async, so we poll for updated coverage
       setTimeout(async () => {
         try {
-          const result = await extensions.ledger.getMappingCoverage(
+          const result = await clients.ledger.getMappingCoverage(
             currentGraph.graphId,
             selectedMappingId
           )
@@ -381,7 +379,7 @@ const ReportBuilderContent: FC = function () {
       setIsGenerating(true)
       setError(null)
 
-      const ack = await extensions.reports.create(currentGraph.graphId, {
+      const ack = await clients.reports.createReport(currentGraph.graphId, {
         name: reportName || `Report ${periodStart} to ${periodEnd}`,
         mappingId: selectedMappingId,
         periodStart,
@@ -390,7 +388,7 @@ const ReportBuilderContent: FC = function () {
         periods,
       })
 
-      // `create` runs synchronously today — the envelope's `result`
+      // `createReport` runs synchronously today — the envelope's `result`
       // carries the freshly-created report row (including its id).
       const newReportId = ack.result?.id as string | undefined
       if (!newReportId) {

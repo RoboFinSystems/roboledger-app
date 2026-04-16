@@ -1,13 +1,13 @@
 'use client'
 
 import { PageHeader } from '@/components/PageHeader'
-import { customTheme, extensions, PageLayout } from '@/lib/core'
+import { clients, customTheme, PageLayout } from '@/lib/core'
 import type {
   PublishList,
   Report,
   StatementData,
   StatementRow,
-} from '@robosystems/client/extensions'
+} from '@robosystems/client/clients'
 import {
   Alert,
   Badge,
@@ -160,7 +160,7 @@ const ReportViewerContent: FC = function () {
     if (!graphId) return
     try {
       setIsLoadingLists(true)
-      const lists = await extensions.reports.listPublishLists(graphId)
+      const lists = await clients.reports.listPublishLists(graphId)
       setPublishLists(lists)
     } catch (err) {
       console.error('Failed to load publish lists:', err)
@@ -175,13 +175,13 @@ const ReportViewerContent: FC = function () {
     try {
       setIsSharing(true)
       setShareResult(null)
-      const ack = await extensions.reports.share(
+      const ack = await clients.reports.shareReport(
         graphId,
         reportId,
         selectedListId
       )
 
-      // `share` is a sync backend dispatch today — the envelope's `result`
+      // `shareReport` is a sync backend dispatch today — the envelope's `result`
       // carries the backend's ShareReportResponse payload (a list of
       // per-target outcomes). Shape: { report_id, results: [...] }.
       const shareResults =
@@ -223,7 +223,7 @@ const ReportViewerContent: FC = function () {
       try {
         setIsLoading(true)
         setError(null)
-        const r = await extensions.reports.get(graphId, reportId)
+        const r = await clients.reports.getReport(graphId, reportId)
         setReport(r)
 
         // Auto-select first structure
@@ -248,7 +248,7 @@ const ReportViewerContent: FC = function () {
 
       try {
         setIsLoadingStatement(true)
-        const data = await extensions.reports.statement(
+        const data = await clients.reports.getStatement(
           graphId,
           reportId,
           structureType

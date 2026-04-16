@@ -14,9 +14,9 @@ vi.mock('@/lib/core', () => ({
   },
   useGraphContext: vi.fn(),
   useEntity: vi.fn(),
-  // The component now calls extensions.ledger.getEntity(graphId) directly
+  // The component now calls clients.ledger.getEntity(graphId) directly
   // — no more raw `getLedgerEntity` SDK import.
-  extensions: {
+  clients: {
     ledger: {
       getEntity: (graphId: string) => mockGetEntity(graphId),
     },

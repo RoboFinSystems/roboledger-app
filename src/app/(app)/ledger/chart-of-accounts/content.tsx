@@ -2,8 +2,8 @@
 
 import { PageHeader } from '@/components/PageHeader'
 import {
+  clients,
   customTheme,
-  extensions,
   GraphFilters,
   PageLayout,
   useGraphContext,
@@ -13,7 +13,7 @@ import type {
   LedgerMapping,
   LedgerMappingCoverage,
   LedgerMappingInfo,
-} from '@robosystems/client/extensions'
+} from '@robosystems/client/clients'
 import {
   Badge,
   Button,
@@ -355,8 +355,8 @@ const ChartOfAccountsContent: FC = function () {
 
         // Load account tree and mappings in parallel
         const [accountTree, mappingList] = await Promise.all([
-          extensions.ledger.getAccountTree(currentGraph.graphId),
-          extensions.ledger
+          clients.ledger.getAccountTree(currentGraph.graphId),
+          clients.ledger
             .listMappings(currentGraph.graphId)
             .catch(() => [] as LedgerMappingInfo[]),
         ])
@@ -402,13 +402,13 @@ const ChartOfAccountsContent: FC = function () {
 
       try {
         const [detail, coverage, gaapResult] = await Promise.all([
-          extensions.ledger.getMapping(currentGraph.graphId, selectedMappingId),
-          extensions.ledger
+          clients.ledger.getMapping(currentGraph.graphId, selectedMappingId),
+          clients.ledger
             .getMappingCoverage(currentGraph.graphId, selectedMappingId)
             .catch(() => null),
           // Load GAAP elements for the dropdown (once)
           gaapElements.length === 0
-            ? extensions.ledger
+            ? clients.ledger
                 .listElements(currentGraph.graphId, {
                   source: 'us-gaap',
                   isAbstract: false,
@@ -471,8 +471,8 @@ const ChartOfAccountsContent: FC = function () {
     if (!currentGraph || !selectedMappingId) return
     try {
       const [detail, coverage] = await Promise.all([
-        extensions.ledger.getMapping(currentGraph.graphId, selectedMappingId),
-        extensions.ledger
+        clients.ledger.getMapping(currentGraph.graphId, selectedMappingId),
+        clients.ledger
           .getMappingCoverage(currentGraph.graphId, selectedMappingId)
           .catch(() => null),
       ])
@@ -493,17 +493,14 @@ const ChartOfAccountsContent: FC = function () {
         // If replacing existing mapping, delete old first
         const existing = gaapByElementId.get(accountId)
         if (existing) {
-          await extensions.ledger.deleteMappingAssociation(
-            currentGraph.graphId,
-            {
-              mapping_id: selectedMappingId,
-              association_id: existing.associationId,
-            }
-          )
+          await clients.ledger.deleteMappingAssociation(currentGraph.graphId, {
+            mapping_id: selectedMappingId,
+            association_id: existing.associationId,
+          })
         }
 
         // Create new mapping using account.id directly as the from element ID
-        await extensions.ledger.createMappingAssociation(currentGraph.graphId, {
+        await clients.ledger.createMappingAssociation(currentGraph.graphId, {
           mapping_id: selectedMappingId,
           from_element_id: accountId,
           to_element_id: gaapElement.id,
@@ -532,7 +529,7 @@ const ChartOfAccountsContent: FC = function () {
 
       setIsSaving(true)
       try {
-        await extensions.ledger.deleteMappingAssociation(currentGraph.graphId, {
+        await clients.ledger.deleteMappingAssociation(currentGraph.graphId, {
           mapping_id: selectedMappingId,
           association_id: existing.associationId,
         })
@@ -555,7 +552,7 @@ const ChartOfAccountsContent: FC = function () {
     try {
       setIsAutoMapping(true)
       setError(null)
-      await extensions.ledger.autoMapElements(currentGraph.graphId, {
+      await clients.ledger.autoMapElements(currentGraph.graphId, {
         mapping_id: selectedMappingId,
       })
 

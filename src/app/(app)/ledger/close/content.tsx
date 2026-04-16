@@ -2,13 +2,13 @@
 
 import { PageHeader } from '@/components/PageHeader'
 import {
+  clients,
   customTheme,
-  extensions,
   GraphFilters,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
-import type { LedgerClosingBookStructures } from '@robosystems/client/extensions'
+import type { LedgerClosingBookStructures } from '@robosystems/client/clients'
 import { Card, Spinner } from 'flowbite-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -62,8 +62,8 @@ const CloseContent: FC = function () {
       setError(null)
 
       const [response, entity] = await Promise.all([
-        extensions.ledger.getClosingBookStructures(currentGraph.graphId),
-        extensions.ledger.getEntity(currentGraph.graphId).catch(() => null),
+        clients.ledger.getClosingBookStructures(currentGraph.graphId),
+        clients.ledger.getEntity(currentGraph.graphId).catch(() => null),
       ])
 
       setCategories(response?.categories ?? [])

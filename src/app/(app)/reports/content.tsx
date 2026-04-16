@@ -2,13 +2,13 @@
 
 import { PageHeader } from '@/components/PageHeader'
 import {
+  clients,
   customTheme,
-  extensions,
   GraphFilters,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
-import type { Report } from '@robosystems/client/extensions'
+import type { Report } from '@robosystems/client/clients'
 import {
   Badge,
   Button,
@@ -80,7 +80,9 @@ const ReportsContent: FC = function () {
         setIsLoading(true)
         setError(null)
 
-        const reportList = await extensions.reports.list(currentGraph.graphId)
+        const reportList = await clients.reports.listReports(
+          currentGraph.graphId
+        )
 
         const mapped: ReportWithGraph[] = reportList.map((r) => ({
           ...r,

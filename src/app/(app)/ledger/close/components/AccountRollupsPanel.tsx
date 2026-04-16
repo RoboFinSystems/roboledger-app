@@ -1,7 +1,7 @@
 'use client'
 
-import { customTheme, extensions } from '@/lib/core'
-import type { LedgerAccountRollups } from '@robosystems/client/extensions'
+import { clients, customTheme } from '@/lib/core'
+import type { LedgerAccountRollups } from '@robosystems/client/clients'
 import {
   Badge,
   Spinner,
@@ -38,7 +38,7 @@ const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
     try {
       setIsLoading(true)
       setError(null)
-      const response = await extensions.ledger.getAccountRollups(graphId, {
+      const response = await clients.ledger.getAccountRollups(graphId, {
         mappingId,
       })
       setData(response)

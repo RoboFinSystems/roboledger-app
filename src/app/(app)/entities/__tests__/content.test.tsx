@@ -15,10 +15,10 @@ vi.mock('@/lib/core', () => ({
   ),
   useGraphContext: vi.fn(),
   useEntity: vi.fn(),
-  // The page now reads via extensions.ledger.getEntity(graphId) directly.
+  // The page now reads via clients.ledger.getEntity(graphId) directly.
   // The facade returns the entity object (camelCase) or null — no REST
   // envelope wrapper.
-  extensions: {
+  clients: {
     ledger: {
       getEntity: (graphId: string) => mockGetEntity(graphId),
     },

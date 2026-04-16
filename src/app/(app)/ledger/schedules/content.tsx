@@ -2,8 +2,8 @@
 
 import { PageHeader } from '@/components/PageHeader'
 import {
+  clients,
   customTheme,
-  extensions,
   GraphFilters,
   PageLayout,
   useGraphContext,
@@ -12,7 +12,7 @@ import type {
   LedgerPeriodCloseStatus,
   LedgerSchedule,
   LedgerScheduleFact,
-} from '@robosystems/client/extensions'
+} from '@robosystems/client/clients'
 import {
   Badge,
   Button,
@@ -100,7 +100,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     try {
       setIsLoading(true)
       setError(null)
-      const status = await extensions.ledger.getPeriodCloseStatus(
+      const status = await clients.ledger.getPeriodCloseStatus(
         graphId,
         periodStart,
         periodEnd
@@ -123,7 +123,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   const handleCreateEntry = async (structureId: string) => {
     try {
       setCreatingEntry(structureId)
-      await extensions.ledger.createClosingEntry(
+      await clients.ledger.createClosingEntry(
         graphId,
         structureId,
         periodEnd,
@@ -281,7 +281,7 @@ const FactsModal: FC<FactsModalProps> = ({ graphId, schedule, onClose }) => {
       try {
         setIsLoading(true)
         setError(null)
-        const result = await extensions.ledger.getScheduleFacts(
+        const result = await clients.ledger.getScheduleFacts(
           graphId,
           schedule.structureId
         )
@@ -388,7 +388,7 @@ const SchedulesContent: FC = function () {
     try {
       setIsLoading(true)
       setError(null)
-      const result = await extensions.ledger.listSchedules(currentGraph.graphId)
+      const result = await clients.ledger.listSchedules(currentGraph.graphId)
       setSchedules(result)
     } catch (err) {
       console.error('Error loading schedules:', err)

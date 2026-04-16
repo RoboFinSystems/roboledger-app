@@ -1,6 +1,6 @@
 'use client'
 
-import type { LedgerClosingBookStructures } from '@robosystems/client/extensions'
+import type { LedgerClosingBookStructures } from '@robosystems/client/clients'
 import { Button, Spinner } from 'flowbite-react'
 import type { FC } from 'react'
 import { useState } from 'react'

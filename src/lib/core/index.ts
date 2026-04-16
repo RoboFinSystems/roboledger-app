@@ -198,16 +198,16 @@ export type {
 // Export SDK with namespace to avoid conflicts
 export * as SDK from '@robosystems/client'
 
-// Export SDK Extensions (available with @robosystems/client v0.1.22+)
+// Export SDK Clients (available with @robosystems/client v0.3.2+)
 export {
+  clients,
   EventType,
   executeQuery,
-  extensions,
   monitorOperation,
   OperationClient,
   QueryClient,
   QueuedQueryError,
-  RoboSystemsExtensions,
+  RoboSystemsClients,
   SSEClient,
   streamQuery,
   useMultipleOperations,
@@ -222,10 +222,10 @@ export {
   type QueryRequest,
   type QueryResult,
   type QueuedQueryResponse,
-  type RoboSystemsExtensionConfig,
+  type RoboSystemsClientConfig,
   type SSEConfig,
   type SSEEvent,
-} from '@robosystems/client/extensions'
+} from '@robosystems/client/clients'
 
 // Export task monitoring utilities
 export {

@@ -1,7 +1,7 @@
 'use client'
 
-import { customTheme, extensions } from '@/lib/core'
-import type { LedgerScheduleFact } from '@robosystems/client/extensions'
+import { clients, customTheme } from '@/lib/core'
+import type { LedgerScheduleFact } from '@robosystems/client/clients'
 import {
   Button,
   Spinner,
@@ -43,10 +43,7 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
     try {
       setIsLoading(true)
       setError(null)
-      const result = await extensions.ledger.getScheduleFacts(
-        graphId,
-        structureId
-      )
+      const result = await clients.ledger.getScheduleFacts(graphId, structureId)
       setFacts(result)
     } catch (err) {
       console.error('Error loading schedule facts:', err)
@@ -75,7 +72,7 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
     const periodKey = `${periodStart}_${periodEnd}`
     try {
       setCreatingEntry(periodKey)
-      await extensions.ledger.createClosingEntry(
+      await clients.ledger.createClosingEntry(
         graphId,
         structureId,
         periodEnd,

@@ -26,9 +26,23 @@ export default function AIReportingSection() {
               From Request to Report in Seconds
             </h3>
             <div className="space-y-4 text-gray-300">
-              <div className="rounded-lg bg-black/30 p-4">
-                <div className="mb-2 text-sm text-purple-300">You say:</div>
-                <p className="italic">"Create a balance sheet for Q4 2024"</p>
+              <div className="space-y-2">
+                <div className="rounded-lg bg-black/30 p-3">
+                  <div className="mb-1 text-xs text-purple-300">
+                    Report Creator
+                  </div>
+                  <p className="text-sm italic">
+                    "Create a balance sheet for Q4 2024"
+                  </p>
+                </div>
+                <div className="rounded-lg bg-black/30 p-3">
+                  <div className="mb-1 text-xs text-fuchsia-300">
+                    AI Console
+                  </div>
+                  <p className="text-sm italic">
+                    "Which accounts had the most activity this quarter?"
+                  </p>
+                </div>
               </div>
               <div className="flex justify-center">
                 <svg
@@ -46,12 +60,14 @@ export default function AIReportingSection() {
                 </svg>
               </div>
               <div className="rounded-lg bg-black/30 p-4">
-                <div className="mb-2 text-sm text-green-300">AI delivers:</div>
+                <div className="mb-2 text-sm text-green-300">
+                  Claude delivers:
+                </div>
                 <ul className="space-y-1 text-sm">
                   <li>✓ Complete, validated balance sheet</li>
                   <li>✓ XBRL-compliant formatting</li>
-                  <li>✓ Variance explanations</li>
-                  <li>✓ Multiple output formats (Excel, PDF, interactive)</li>
+                  <li>✓ Transaction analysis &amp; trend summaries</li>
+                  <li>✓ Export to Excel or formatted statement</li>
                 </ul>
               </div>
             </div>
@@ -102,11 +118,12 @@ export default function AIReportingSection() {
                 <span className="mr-3 flex h-8 w-8 items-center justify-center rounded-full bg-violet-500 text-sm">
                   4
                 </span>
-                Continuous Learning
+                AI Console for Ad-Hoc Analysis
               </h4>
               <p className="text-sm text-gray-300">
-                System learns from your corrections and preferences, improving
-                report quality over time
+                Beyond reports, use the AI Console to ask Claude anything about
+                your books — query transactions, compare periods, or explore
+                your chart of accounts in natural language
               </p>
             </div>
           </div>
