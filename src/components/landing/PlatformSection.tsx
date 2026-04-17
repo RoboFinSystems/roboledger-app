@@ -106,19 +106,17 @@ export default function PlatformSection() {
                     </span>
                   </div>
                   <div className="text-xs text-gray-400">
-                    Core entities, taxonomy, time periods
+                    Entities, elements, taxonomy
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {['Entity', 'Element', 'Period', 'Unit'].map(
-                      (comp, cidx) => (
-                        <span
-                          key={cidx}
-                          className="rounded bg-purple-900/50 px-2 py-0.5 text-xs text-purple-300"
-                        >
-                          {comp}
-                        </span>
-                      )
-                    )}
+                    {['Entity', 'Element', 'Taxonomy'].map((comp, cidx) => (
+                      <span
+                        key={cidx}
+                        className="rounded bg-purple-900/50 px-2 py-0.5 text-xs text-purple-300"
+                      >
+                        {comp}
+                      </span>
+                    ))}
                   </div>
                 </div>
 
@@ -132,16 +130,14 @@ export default function PlatformSection() {
                     Journal entries, line items, processes
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {['Transaction', 'LineItem', 'Process'].map(
-                      (comp, cidx) => (
-                        <span
-                          key={cidx}
-                          className="rounded bg-green-900/50 px-2 py-0.5 text-xs text-green-300"
-                        >
-                          {comp}
-                        </span>
-                      )
-                    )}
+                    {['Transaction', 'Entry', 'LineItem'].map((comp, cidx) => (
+                      <span
+                        key={cidx}
+                        className="rounded bg-green-900/50 px-2 py-0.5 text-xs text-green-300"
+                      >
+                        {comp}
+                      </span>
+                    ))}
                   </div>
                 </div>
 
@@ -152,19 +148,17 @@ export default function PlatformSection() {
                     </span>
                   </div>
                   <div className="text-xs text-gray-400">
-                    Financial statements, facts, structures
+                    Financial statements and facts
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {['Report', 'Fact', 'Structure', 'Association'].map(
-                      (comp, cidx) => (
-                        <span
-                          key={cidx}
-                          className="rounded bg-violet-900/50 px-2 py-0.5 text-xs text-violet-300"
-                        >
-                          {comp}
-                        </span>
-                      )
-                    )}
+                    {['Report', 'Fact'].map((comp, cidx) => (
+                      <span
+                        key={cidx}
+                        className="rounded bg-violet-900/50 px-2 py-0.5 text-xs text-violet-300"
+                      >
+                        {comp}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -214,14 +208,38 @@ export default function PlatformSection() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                          d="M13 10V3L4 14h7v7l9-11h-7z"
                         />
                       </svg>
                     </div>
-                    <div className="font-semibold text-white">AI Agents</div>
+                    <div className="font-semibold text-white">MCP Tools</div>
                   </div>
                   <p className="text-xs text-gray-400">
-                    Claude AI with MCP-powered analysis
+                    Month-end close in Claude Desktop via @robosystems/mcp
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-gray-800 bg-gradient-to-br from-zinc-900 to-fuchsia-950/20 p-4">
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-fuchsia-600">
+                      <svg
+                        className="h-4 w-4 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                        />
+                      </svg>
+                    </div>
+                    <div className="font-semibold text-white">API Access</div>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    Python, TypeScript, and REST clients
                   </p>
                 </div>
               </div>
