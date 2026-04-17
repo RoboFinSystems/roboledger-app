@@ -254,7 +254,7 @@ function EntityDropdownItem<T extends SelectableEntity>({
     <DropdownItem
       onClick={() => onEntityChange(entity)}
       disabled={isDisabled}
-      className={`text-left ${isSelected ? 'bg-gray-700/50' : ''}`}
+      className={`text-left ${isSelected ? 'bg-gray-200 dark:bg-gray-700/50' : ''}`}
     >
       <div className="flex w-full items-center gap-3">
         <div
@@ -271,12 +271,10 @@ function EntityDropdownItem<T extends SelectableEntity>({
           )}
         </div>
         <div className="min-w-0 flex-1 text-left">
-          <div
-            className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-white'}`}
-          >
+          <div className="text-sm font-medium text-gray-900 dark:text-white">
             {entity.name}
           </div>
-          <div className="truncate text-xs text-gray-400">
+          <div className="truncate text-xs text-gray-500 dark:text-gray-400">
             {entity.id.slice(0, 10)}
           </div>
         </div>
