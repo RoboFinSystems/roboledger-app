@@ -73,7 +73,7 @@ jobs:
   # ===========================================================================
   ecr-build:
     runs-on: ${{ fromJSON(inputs.runner_config) }}
-    timeout-minutes: 20
+    timeout-minutes: 30
     permissions:
       id-token: write
       contents: read
@@ -249,42 +249,47 @@ jobs:
 
       - name: Build and push Docker image to ECR
         if: steps.resolve.outputs.needs_build == 'true'
+        uses: nick-fields/retry@v3
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ steps.resolve.outputs.image_tag }}
           VERSION_TAG: ${{ steps.resolve.outputs.version_tag }}
           IS_RELEASE: ${{ steps.resolve.outputs.is_release }}
-        run: |
-          export DOCKER_BUILDKIT=1
-          export COMPOSE_DOCKER_CLI_BUILD=1
+        with:
+          timeout_minutes: 12
+          max_attempts: 2
+          retry_on: any
+          command: |
+            export DOCKER_BUILDKIT=1
+            export COMPOSE_DOCKER_CLI_BUILD=1
 
-          ECR_URL="${ECR_REGISTRY}/${ECR_REPOSITORY}"
+            ECR_URL="${ECR_REGISTRY}/${ECR_REPOSITORY}"
 
-          # Build tags - git-sha-env is always the primary tag
-          TAGS="-t ${ECR_URL}:${IMAGE_TAG}"
+            # Build tags - git-sha-env is always the primary tag
+            TAGS="-t ${ECR_URL}:${IMAGE_TAG}"
 
-          # Add version tag as metadata for ECR
-          if [[ -n "$VERSION_TAG" ]]; then
-            TAGS="$TAGS -t ${ECR_URL}:${VERSION_TAG}"
-          fi
+            # Add version tag as metadata for ECR
+            if [[ -n "$VERSION_TAG" ]]; then
+              TAGS="$TAGS -t ${ECR_URL}:${VERSION_TAG}"
+            fi
 
-          # Add latest tag for prod environment releases
-          if [[ "${{ inputs.environment }}" == "prod" ]] && [[ "$IS_RELEASE" == "true" ]]; then
-            TAGS="$TAGS -t ${ECR_URL}:latest"
-          fi
+            # Add latest tag for prod environment releases
+            if [[ "${{ inputs.environment }}" == "prod" ]] && [[ "$IS_RELEASE" == "true" ]]; then
+              TAGS="$TAGS -t ${ECR_URL}:latest"
+            fi
 
-          echo "🏗️ Building with tags:"
-          echo "$TAGS" | tr ' ' '\n' | grep -E '^-t' | sed 's/-t /  /'
+            echo "🏗️ Building with tags:"
+            echo "$TAGS" | tr ' ' '\n' | grep -E '^-t' | sed 's/-t /  /'
 
-          # Build and push to ECR (amd64 only for ECS/Fargate)
-          docker buildx build \
-            --platform linux/amd64 \
-            --push \
-            --cache-from type=gha,scope=ecr \
-            --cache-to type=gha,scope=ecr,mode=max \
-            $TAGS \
-            -f Dockerfile .
+            # Build and push to ECR (amd64 only for ECS/Fargate)
+            docker buildx build \
+              --platform linux/amd64 \
+              --push \
+              --cache-from type=gha,scope=ecr \
+              --cache-to type=gha,scope=ecr,mode=max \
+              $TAGS \
+              -f Dockerfile .
 
       - name: Add version tags to existing image
         if: steps.resolve.outputs.needs_build == 'false' && steps.resolve.outputs.version_tag != ''
@@ -387,7 +392,7 @@ jobs:
   dockerhub-build:
     if: ${{ inputs.publish_to_dockerhub == true }}
     runs-on: ${{ fromJSON(inputs.runner_config) }}
-    timeout-minutes: 25
+    timeout-minutes: 45
     permissions:
       contents: read
     steps:
@@ -474,30 +479,35 @@ jobs:
 
       - name: Build and push to Docker Hub
         if: steps.version.outputs.is_release == 'true'
-        run: |
-          export DOCKER_BUILDKIT=1
-          export COMPOSE_DOCKER_CLI_BUILD=1
+        uses: nick-fields/retry@v3
+        env:
+          VERSION_TAG: ${{ steps.version.outputs.version_tag }}
+        with:
+          timeout_minutes: 18
+          max_attempts: 2
+          retry_on: any
+          command: |
+            export DOCKER_BUILDKIT=1
+            export COMPOSE_DOCKER_CLI_BUILD=1
 
-          VERSION_TAG="${{ steps.version.outputs.version_tag }}"
+            # Prepare Docker Hub tags
+            TAGS="-t robofinsystems/roboledger-app:latest"
+            TAGS="$TAGS -t robofinsystems/roboledger-app:$VERSION_TAG"
 
-          # Prepare Docker Hub tags
-          TAGS="-t robofinsystems/roboledger-app:latest"
-          TAGS="$TAGS -t robofinsystems/roboledger-app:$VERSION_TAG"
+            echo "🚀 Publishing configurable image to Docker Hub"
 
-          echo "🚀 Publishing configurable image to Docker Hub"
+            # Build for both amd64 and arm64 (for Mac M1/M2 users)
+            # SBOM and provenance attestations improve Docker Hub security score
+            docker buildx build \
+              --platform linux/amd64,linux/arm64 \
+              --push \
+              --sbom=true \
+              --provenance=mode=max \
+              $TAGS \
+              -f Dockerfile .
 
-          # Build for both amd64 and arm64 (for Mac M1/M2 users)
-          # SBOM and provenance attestations improve Docker Hub security score
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            --push \
-            --sbom=true \
-            --provenance=mode=max \
-            $TAGS \
-            -f Dockerfile .
-
-          echo "📋 Docker Hub image tags created:"
-          echo "$TAGS" | tr ' ' '\n' | grep -E '^-t' | sed 's/-t /  - /'
+            echo "📋 Docker Hub image tags created:"
+            echo "$TAGS" | tr ' ' '\n' | grep -E '^-t' | sed 's/-t /  - /'
 
       - name: Skip non-release build
         if: steps.version.outputs.is_release != 'true'
