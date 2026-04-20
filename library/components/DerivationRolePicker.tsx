@@ -10,11 +10,31 @@ export function DerivationRolePicker({
   disabled?: boolean
 }) {
   const values: Array<{ value: string; label: string; title?: string }> = [
-    { value: 'primitive', label: 'Primitive', title: 'Leaf element — basic stock, flow, or CF delta' },
-    { value: 'aggregate', label: 'Aggregate', title: 'RollUp head (subtotals, totals, NetCashFlow rollups)' },
-    { value: 'ratio', label: 'Ratio', title: 'Computed metric (ROA, CurrentRatio)' },
-    { value: 'identifier', label: 'Identifier', title: 'Entity/document metadata' },
-    { value: 'structural', label: 'Structural', title: 'Abstracts, hypercubes, LineItems — grouping only' },
+    {
+      value: 'primitive',
+      label: 'Primitive',
+      title: 'Leaf element — basic stock, flow, or CF delta',
+    },
+    {
+      value: 'aggregate',
+      label: 'Aggregate',
+      title: 'RollUp head (subtotals, totals, NetCashFlow rollups)',
+    },
+    {
+      value: 'ratio',
+      label: 'Ratio',
+      title: 'Computed metric (ROA, CurrentRatio)',
+    },
+    {
+      value: 'identifier',
+      label: 'Identifier',
+      title: 'Entity/document metadata',
+    },
+    {
+      value: 'structural',
+      label: 'Structural',
+      title: 'Abstracts, hypercubes, LineItems — grouping only',
+    },
   ]
   const chip = (active: boolean) =>
     `rounded px-2 py-1 text-xs ${

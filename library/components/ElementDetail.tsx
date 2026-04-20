@@ -5,7 +5,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { HiExternalLink } from 'react-icons/hi'
 import { customTheme } from '../../theme'
 import { arcTypeColor, classificationColor } from '../colors'
-import type { LibraryClient, LibraryElementArc, LibraryElementDetail } from '../types'
+import type {
+  LibraryClient,
+  LibraryElementArc,
+  LibraryElementDetail,
+} from '../types'
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
@@ -78,7 +82,10 @@ export function ElementDetail({
 
   return (
     <section className="col-span-12 min-h-0 md:col-span-5">
-      <Card theme={customTheme.card} className="flex h-full flex-col overflow-hidden">
+      <Card
+        theme={customTheme.card}
+        className="flex h-full flex-col overflow-hidden"
+      >
         {state === 'idle' && (
           <div className="flex h-full items-center justify-center text-sm text-gray-500 dark:text-gray-400">
             Select an element to view details
@@ -98,12 +105,17 @@ export function ElementDetail({
               >
                 {element.qname}
               </h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{element.name}</p>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {element.name}
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
               {element.classification && (
-                <Badge color={classificationColor(element.classification)} title="Economic nature (SFAC 6)">
+                <Badge
+                  color={classificationColor(element.classification)}
+                  title="Economic nature (SFAC 6)"
+                >
                   {element.classification}
                 </Badge>
               )}
@@ -141,7 +153,9 @@ export function ElementDetail({
                         <span>·</span>
                         <span>{lab.language}</span>
                       </div>
-                      <p className="text-sm text-gray-900 dark:text-gray-100">{lab.text}</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">
+                        {lab.text}
+                      </p>
                     </li>
                   ))}
                 </ul>
@@ -155,7 +169,10 @@ export function ElementDetail({
                 </h3>
                 <ul className="space-y-1">
                   {element.references.map((ref, i) => (
-                    <li key={i} className="text-sm text-gray-700 dark:text-gray-300">
+                    <li
+                      key={i}
+                      className="text-sm text-gray-700 dark:text-gray-300"
+                    >
                       {ref.refType && (
                         <Badge color="gray" size="xs" className="mr-2">
                           {ref.refType}
@@ -184,61 +201,65 @@ export function ElementDetail({
                   Mappings ({arcs.length})
                 </h3>
                 <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
-                  Cross-taxonomy arcs — equivalence, generalization, and type-subtype bridges. Click
-                  a peer to jump to it.
+                  Cross-taxonomy arcs — equivalence, generalization, and
+                  type-subtype bridges. Click a peer to jump to it.
                 </p>
                 <div className="space-y-3">
-                  {Array.from(arcsByTaxonomy.entries()).map(([taxonomyStandard, taxonomyArcs]) => (
-                    <div key={taxonomyStandard}>
-                      <div className="mb-1 flex items-center justify-between px-1">
-                        <span className="font-mono text-[11px] font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                          {taxonomyStandard}
-                        </span>
-                        <Badge color="gray" size="xs">
-                          {taxonomyArcs.length}
-                        </Badge>
-                      </div>
-                      <ul className="space-y-0.5">
-                        {taxonomyArcs.map((arc) => (
-                          <li key={arc.id}>
-                            <button
-                              onClick={() => onSelectElement(arc.peer.id)}
-                              className="w-full rounded px-2 py-1 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
-                              title={`${arc.associationType} · ${arc.direction}`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className="shrink-0 text-xs text-gray-400 dark:text-gray-500"
-                                  title={
-                                    arc.direction === 'outgoing'
-                                      ? 'this element → peer'
-                                      : 'peer → this element'
-                                  }
-                                >
-                                  {arc.direction === 'outgoing' ? '→' : '←'}
-                                </span>
-                                <span className="truncate font-mono text-xs text-blue-700 dark:text-blue-300">
-                                  {arc.peer.qname}
-                                </span>
-                                <Badge
-                                  color={arcTypeColor(arc.associationType)}
-                                  size="xs"
-                                  className="ml-auto shrink-0"
-                                >
-                                  {arc.associationType}
-                                </Badge>
-                              </div>
-                              {arc.peer.name && arc.peer.name !== arc.peer.qname.split(':').pop() && (
-                                <div className="truncate pl-5 text-xs text-gray-500 dark:text-gray-400">
-                                  {arc.peer.name}
+                  {Array.from(arcsByTaxonomy.entries()).map(
+                    ([taxonomyStandard, taxonomyArcs]) => (
+                      <div key={taxonomyStandard}>
+                        <div className="mb-1 flex items-center justify-between px-1">
+                          <span className="font-mono text-[11px] font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                            {taxonomyStandard}
+                          </span>
+                          <Badge color="gray" size="xs">
+                            {taxonomyArcs.length}
+                          </Badge>
+                        </div>
+                        <ul className="space-y-0.5">
+                          {taxonomyArcs.map((arc) => (
+                            <li key={arc.id}>
+                              <button
+                                onClick={() => onSelectElement(arc.peer.id)}
+                                className="w-full rounded px-2 py-1 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+                                title={`${arc.associationType} · ${arc.direction}`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className="shrink-0 text-xs text-gray-400 dark:text-gray-500"
+                                    title={
+                                      arc.direction === 'outgoing'
+                                        ? 'this element → peer'
+                                        : 'peer → this element'
+                                    }
+                                  >
+                                    {arc.direction === 'outgoing' ? '→' : '←'}
+                                  </span>
+                                  <span className="truncate font-mono text-xs text-blue-700 dark:text-blue-300">
+                                    {arc.peer.qname}
+                                  </span>
+                                  <Badge
+                                    color={arcTypeColor(arc.associationType)}
+                                    size="xs"
+                                    className="ml-auto shrink-0"
+                                  >
+                                    {arc.associationType}
+                                  </Badge>
                                 </div>
-                              )}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
+                                {arc.peer.name &&
+                                  arc.peer.name !==
+                                    arc.peer.qname.split(':').pop() && (
+                                    <div className="truncate pl-5 text-xs text-gray-500 dark:text-gray-400">
+                                      {arc.peer.name}
+                                    </div>
+                                  )}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
             )}

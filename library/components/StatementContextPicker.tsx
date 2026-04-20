@@ -15,8 +15,16 @@ export function StatementContextPicker({
     { value: 'cash_flow', label: 'CF' },
     { value: 'equity_changes', label: 'Equity Δ' },
     { value: 'disclosure', label: 'Disclosure' },
-    { value: 'metadata', label: 'Metadata', title: 'Entity / document identifiers' },
-    { value: 'analysis', label: 'Analysis', title: 'Ratios / computed metrics' },
+    {
+      value: 'metadata',
+      label: 'Metadata',
+      title: 'Entity / document identifiers',
+    },
+    {
+      value: 'analysis',
+      label: 'Analysis',
+      title: 'Ratios / computed metrics',
+    },
   ]
   const chip = (active: boolean) =>
     `rounded px-2 py-1 text-xs ${

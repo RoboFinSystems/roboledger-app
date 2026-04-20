@@ -1,4 +1,12 @@
-type BadgeColor = 'success' | 'failure' | 'warning' | 'info' | 'purple' | 'indigo' | 'pink' | 'gray'
+type BadgeColor =
+  | 'success'
+  | 'failure'
+  | 'warning'
+  | 'info'
+  | 'purple'
+  | 'indigo'
+  | 'pink'
+  | 'gray'
 
 export function classificationColor(cls: string): BadgeColor {
   switch (cls) {

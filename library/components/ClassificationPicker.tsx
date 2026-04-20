@@ -15,8 +15,16 @@ export function ClassificationPicker({
     { value: 'equity', label: 'Equity' },
   ]
   const flowClasses: Array<{ value: string; label: string; title?: string }> = [
-    { value: 'inflow', label: 'Inflow', title: 'Credit-flow primitive (was revenue + gain)' },
-    { value: 'outflow', label: 'Outflow', title: 'Debit-flow primitive (was expense + loss)' },
+    {
+      value: 'inflow',
+      label: 'Inflow',
+      title: 'Credit-flow primitive (was revenue + gain)',
+    },
+    {
+      value: 'outflow',
+      label: 'Outflow',
+      title: 'Debit-flow primitive (was expense + loss)',
+    },
     {
       value: 'cashflow',
       label: 'Cash Flow',
@@ -39,7 +47,11 @@ export function ClassificationPicker({
 
   return (
     <div className="flex flex-wrap gap-1">
-      <button onClick={() => onSelect(null)} disabled={disabled} className={allClass}>
+      <button
+        onClick={() => onSelect(null)}
+        disabled={disabled}
+        className={allClass}
+      >
         All
       </button>
       {stockClasses.map((c) => (
@@ -52,7 +64,9 @@ export function ClassificationPicker({
           {c.label}
         </button>
       ))}
-      <span className="mx-1 self-center text-gray-300 dark:text-gray-600">·</span>
+      <span className="mx-1 self-center text-gray-300 dark:text-gray-600">
+        ·
+      </span>
       {flowClasses.map((c) => (
         <button
           key={c.value}
@@ -64,7 +78,9 @@ export function ClassificationPicker({
           {c.label}
         </button>
       ))}
-      <span className="mx-1 self-center text-gray-300 dark:text-gray-600">·</span>
+      <span className="mx-1 self-center text-gray-300 dark:text-gray-600">
+        ·
+      </span>
       <button
         onClick={() => onSelect('abstract')}
         disabled={disabled}

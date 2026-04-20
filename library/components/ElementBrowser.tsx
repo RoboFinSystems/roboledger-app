@@ -5,7 +5,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { HiInformationCircle, HiSearch } from 'react-icons/hi'
 import { customTheme } from '../../theme'
 import { classificationColor, classificationLabel } from '../colors'
-import type { LibraryClient, LibraryElement, LibrarySearchResult } from '../types'
+import type {
+  LibraryClient,
+  LibraryElement,
+  LibrarySearchResult,
+} from '../types'
 import { ClassificationPicker } from './ClassificationPicker'
 import { DerivationRolePicker } from './DerivationRolePicker'
 import { StatementContextPicker } from './StatementContextPicker'
@@ -46,15 +50,23 @@ export function ElementBrowser({
     setError(null)
     try {
       const rows = searchMode
-        ? await client.searchLibraryElements(graphId, activeQuery, { limit: PAGE_SIZE })
+        ? await client.searchLibraryElements(graphId, activeQuery, {
+            limit: PAGE_SIZE,
+          })
         : await client.listLibraryElements(graphId, {
             taxonomyId: taxonomyId ?? undefined,
             classification:
-              classification && classification !== 'abstract' ? classification : undefined,
+              classification && classification !== 'abstract'
+                ? classification
+                : undefined,
             statementContext: statementContext ?? undefined,
             derivationRole: derivationRole ?? undefined,
             isAbstract:
-              classification === 'abstract' ? true : classification !== null ? false : null,
+              classification === 'abstract'
+                ? true
+                : classification !== null
+                  ? false
+                  : null,
             limit: PAGE_SIZE,
             offset,
           })
@@ -82,11 +94,20 @@ export function ElementBrowser({
 
   useEffect(() => {
     setOffset(0)
-  }, [taxonomyId, classification, statementContext, derivationRole, activeQuery])
+  }, [
+    taxonomyId,
+    classification,
+    statementContext,
+    derivationRole,
+    activeQuery,
+  ])
 
   return (
     <section className="col-span-12 min-h-0 md:col-span-4">
-      <Card theme={customTheme.card} className="flex h-full flex-col overflow-hidden">
+      <Card
+        theme={customTheme.card}
+        className="flex h-full flex-col overflow-hidden"
+      >
         <h2 className="font-heading shrink-0 text-lg font-semibold text-gray-900 dark:text-white">
           Elements
         </h2>
@@ -197,7 +218,11 @@ export function ElementBrowser({
             <span className="self-center text-xs text-gray-500 dark:text-gray-400">
               {offset + 1}–{offset + elements.length}
             </span>
-            <Button size="xs" color="gray" onClick={() => setOffset(offset + PAGE_SIZE)}>
+            <Button
+              size="xs"
+              color="gray"
+              onClick={() => setOffset(offset + PAGE_SIZE)}
+            >
               Next →
             </Button>
           </div>

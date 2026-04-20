@@ -15,7 +15,10 @@ export function TaxonomySidebar({
 }) {
   return (
     <aside className="col-span-12 min-h-0 md:col-span-3">
-      <Card theme={customTheme.card} className="flex h-full flex-col overflow-hidden">
+      <Card
+        theme={customTheme.card}
+        className="flex h-full flex-col overflow-hidden"
+      >
         <h2 className="font-heading shrink-0 text-lg font-semibold text-gray-900 dark:text-white">
           Taxonomies
         </h2>
@@ -38,7 +41,9 @@ export function TaxonomySidebar({
                       title={`${t.standard ?? '?'}/${t.version ?? ''}`}
                     >
                       {t.standard ?? '?'}
-                      <span className="text-gray-400 dark:text-gray-500">/{t.version ?? ''}</span>
+                      <span className="text-gray-400 dark:text-gray-500">
+                        /{t.version ?? ''}
+                      </span>
                     </span>
                     {t.elementCount !== null && (
                       <Badge color="gray" size="xs" className="shrink-0">
