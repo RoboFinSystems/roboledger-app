@@ -52,10 +52,12 @@ export default function LibraryContent() {
     null
   )
 
-  const reportingTaxonomies = useMemo(() => {
+  // Show reporting + CoA; exclude mapping and schedule taxonomies
+  const sidebarTaxonomies = useMemo(() => {
     const order: Record<string, number> = { sfac6: 0, fac: 1, 'rs-gaap': 2 }
+    const hidden = new Set(['mapping', 'schedule'])
     return taxonomies
-      .filter((t) => (t.taxonomyType ?? 'reporting') === 'reporting')
+      .filter((t) => !hidden.has(t.taxonomyType ?? 'reporting'))
       .sort((a, b) => {
         const ai = order[a.standard ?? ''] ?? 99
         const bi = order[b.standard ?? ''] ?? 99
@@ -144,7 +146,7 @@ export default function LibraryContent() {
           style={{ height: 'calc(100vh - 220px)', minHeight: '600px' }}
         >
           <TaxonomySidebar
-            taxonomies={reportingTaxonomies}
+            taxonomies={sidebarTaxonomies}
             selectedId={selectedTaxonomyId}
             onSelect={(id) => {
               setSelectedTaxonomyId(id)
