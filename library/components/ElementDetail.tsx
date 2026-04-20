@@ -62,11 +62,12 @@ export function ElementDetail({
   }, [client, graphId, elementId])
 
   const arcsByTaxonomy = useMemo(() => {
-    const groups = new Map<string, LibraryElementArc[]>()
+    const groups = new Map<string, { label: string; arcs: LibraryElementArc[] }>()
     for (const arc of arcs) {
-      const key = arc.taxonomyStandard ?? 'other'
-      if (!groups.has(key)) groups.set(key, [])
-      groups.get(key)!.push(arc)
+      const key = arc.taxonomyStandard ?? arc.structureName ?? arc.taxonomyName ?? 'other'
+      const label = arc.taxonomyStandard ?? arc.structureName ?? arc.taxonomyName ?? 'other'
+      if (!groups.has(key)) groups.set(key, { label, arcs: [] })
+      groups.get(key)!.arcs.push(arc)
     }
     return groups
   }, [arcs])
@@ -206,18 +207,18 @@ export function ElementDetail({
                 </p>
                 <div className="space-y-3">
                   {Array.from(arcsByTaxonomy.entries()).map(
-                    ([taxonomyStandard, taxonomyArcs]) => (
-                      <div key={taxonomyStandard}>
+                    ([key, { label, arcs: groupArcs }]) => (
+                      <div key={key}>
                         <div className="mb-1 flex items-center justify-between px-1">
                           <span className="font-mono text-[11px] font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                            {taxonomyStandard}
+                            {label}
                           </span>
                           <Badge color="gray" size="xs">
-                            {taxonomyArcs.length}
+                            {groupArcs.length}
                           </Badge>
                         </div>
                         <ul className="space-y-0.5">
-                          {taxonomyArcs.map((arc) => (
+                          {groupArcs.map((arc) => (
                             <li key={arc.id}>
                               <button
                                 onClick={() => onSelectElement(arc.peer.id)}
