@@ -62,10 +62,15 @@ export function ElementDetail({
   }, [client, graphId, elementId])
 
   const arcsByTaxonomy = useMemo(() => {
-    const groups = new Map<string, { label: string; arcs: LibraryElementArc[] }>()
+    const groups = new Map<
+      string,
+      { label: string; arcs: LibraryElementArc[] }
+    >()
     for (const arc of arcs) {
-      const key = arc.taxonomyStandard ?? arc.structureName ?? arc.taxonomyName ?? 'other'
-      const label = arc.taxonomyStandard ?? arc.structureName ?? arc.taxonomyName ?? 'other'
+      const key =
+        arc.taxonomyStandard ?? arc.structureName ?? arc.taxonomyName ?? 'other'
+      const label =
+        arc.taxonomyStandard ?? arc.structureName ?? arc.taxonomyName ?? 'other'
       if (!groups.has(key)) groups.set(key, { label, arcs: [] })
       groups.get(key)!.arcs.push(arc)
     }
