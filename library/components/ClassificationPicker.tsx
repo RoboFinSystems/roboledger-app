@@ -9,27 +9,32 @@ export function ClassificationPicker({
   onSelect: (value: string | null) => void
   disabled?: boolean
 }) {
-  const stockClasses: Array<{ value: string; label: string }> = [
+  const balanceSheetClasses: Array<{
+    value: string
+    label: string
+    title?: string
+  }> = [
     { value: 'asset', label: 'Asset' },
+    { value: 'contraAsset', label: 'Contra Asset' },
     { value: 'liability', label: 'Liability' },
+    { value: 'contraLiability', label: 'Contra Liability' },
     { value: 'equity', label: 'Equity' },
+    { value: 'contraEquity', label: 'Contra Equity' },
+    { value: 'temporaryEquity', label: 'Temp. Equity' },
   ]
-  const flowClasses: Array<{ value: string; label: string; title?: string }> = [
-    {
-      value: 'inflow',
-      label: 'Inflow',
-      title: 'Credit-flow primitive (was revenue + gain)',
-    },
-    {
-      value: 'outflow',
-      label: 'Outflow',
-      title: 'Debit-flow primitive (was expense + loss)',
-    },
-    {
-      value: 'cashflow',
-      label: 'Cash Flow',
-      title: 'Net cash movements + period-over-period movements',
-    },
+  const incomeStatementClasses: Array<{
+    value: string
+    label: string
+    title?: string
+  }> = [
+    { value: 'revenue', label: 'Revenue' },
+    { value: 'expense', label: 'Expense' },
+    { value: 'expenseReversal', label: 'Exp. Reversal' },
+    { value: 'gain', label: 'Gain' },
+    { value: 'loss', label: 'Loss' },
+    { value: 'comprehensiveIncome', label: 'OCI' },
+    { value: 'investmentByOwners', label: 'Investment' },
+    { value: 'distributionToOwners', label: 'Distribution' },
   ]
 
   const chipClass = (value: string) =>
@@ -54,11 +59,12 @@ export function ClassificationPicker({
       >
         All
       </button>
-      {stockClasses.map((c) => (
+      {balanceSheetClasses.map((c) => (
         <button
           key={c.value}
           onClick={() => onSelect(c.value)}
           disabled={disabled}
+          title={c.title}
           className={chipClass(c.value)}
         >
           {c.label}
@@ -67,7 +73,7 @@ export function ClassificationPicker({
       <span className="mx-1 self-center text-gray-300 dark:text-gray-600">
         ·
       </span>
-      {flowClasses.map((c) => (
+      {incomeStatementClasses.map((c) => (
         <button
           key={c.value}
           onClick={() => onSelect(c.value)}
