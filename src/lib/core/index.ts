@@ -195,6 +195,9 @@ export type {
   SupportMetadata,
 } from './ui-components'
 
+// Export library components, types, and helpers
+export * from './library'
+
 // Export SDK with namespace to avoid conflicts
 export * as SDK from '@robosystems/client'
 
