@@ -43,8 +43,8 @@
   },
   "dependencies": {
     "@aws-sdk/client-sns": "^3.1021.0",
-    "@robosystems/client": "file:../robosystems-typescript-client",
-    "flowbite": "^3.1",
+    "@robosystems/client": "0.3.8",
+    "flowbite": "^4.0.1",
     "flowbite-react": "^0.12.5",
     "intuit-oauth": "^4.1.0",
     "lru-cache": "^11.2.6",
