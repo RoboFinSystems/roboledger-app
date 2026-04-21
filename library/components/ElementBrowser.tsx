@@ -1,5 +1,11 @@
 'use client'
 
+import type {
+  LibraryClient,
+  LibraryElement,
+  LibrarySearchResult,
+  LibraryTaxonomy,
+} from '@robosystems/client/clients'
 import {
   Alert,
   Badge,
@@ -9,16 +15,10 @@ import {
   Spinner,
   TextInput,
 } from 'flowbite-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { HiInformationCircle, HiSearch } from 'react-icons/hi'
 import { customTheme } from '../../theme'
-import { classificationColor, classificationLabel } from '../colors'
-import type {
-  LibraryClient,
-  LibraryElement,
-  LibrarySearchResult,
-  LibraryTaxonomy,
-} from '../types'
+import { classificationColor } from '../colors'
 import { ClassificationPicker } from './ClassificationPicker'
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
@@ -56,35 +56,46 @@ export function ElementBrowser({
   const activeQuery = search.trim()
   const searchMode = activeQuery.length > 0
 
-  const load = useCallback(async () => {
+  useEffect(() => {
+    let cancelled = false
     setState('loading')
     setError(null)
-    try {
-      const rows = searchMode
-        ? await client.searchLibraryElements(graphId, activeQuery, {
-            limit: PAGE_SIZE,
-          })
-        : await client.listLibraryElements(graphId, {
-            taxonomyId: taxonomyId ?? undefined,
-            classification:
-              classification && classification !== 'abstract'
-                ? classification
-                : undefined,
-            activityType: activity ?? undefined,
-            isAbstract:
-              classification === 'abstract'
-                ? true
-                : classification !== null
-                  ? false
-                  : null,
-            limit: PAGE_SIZE,
-            offset,
-          })
-      setElements(rows)
-      setState('ready')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
-      setState('error')
+
+    const run = async () => {
+      try {
+        const rows = searchMode
+          ? await client.searchLibraryElements(graphId, activeQuery, {
+              limit: PAGE_SIZE,
+            })
+          : await client.listLibraryElements(graphId, {
+              taxonomyId: taxonomyId ?? undefined,
+              classification:
+                classification && classification !== 'abstract'
+                  ? classification
+                  : undefined,
+              activityType: activity ?? undefined,
+              isAbstract:
+                classification === 'abstract'
+                  ? true
+                  : classification !== null
+                    ? false
+                    : null,
+              limit: PAGE_SIZE,
+              offset,
+            })
+        if (cancelled) return
+        setElements(rows)
+        setState('ready')
+      } catch (err) {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : 'Unknown error')
+        setState('error')
+      }
+    }
+    run()
+
+    return () => {
+      cancelled = true
     }
   }, [
     client,
@@ -97,13 +108,22 @@ export function ElementBrowser({
     activeQuery,
   ])
 
-  useEffect(() => {
-    load()
-  }, [load])
-
-  useEffect(() => {
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
     setOffset(0)
-  }, [taxonomyId, classification, activity, activeQuery])
+  }
+  const handleClassificationChange = (value: string | null) => {
+    setClassification(value)
+    setOffset(0)
+  }
+  const handleActivityChange = (value: string | null) => {
+    setActivity(value)
+    setOffset(0)
+  }
+  const handleTaxonomyChange = (id: string) => {
+    setOffset(0)
+    onTaxonomyChange?.(id)
+  }
 
   const showTaxonomyDropdown = taxonomies && onTaxonomyChange
 
@@ -122,7 +142,7 @@ export function ElementBrowser({
             <Select
               sizing="sm"
               value={taxonomyId ?? ''}
-              onChange={(e) => onTaxonomyChange?.(e.target.value)}
+              onChange={(e) => handleTaxonomyChange(e.target.value)}
               className="shrink-0"
               aria-label="Taxonomy"
             >
@@ -142,7 +162,7 @@ export function ElementBrowser({
             sizing="sm"
             placeholder="Search qname, name, label…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="flex-1"
           />
         </div>
@@ -150,9 +170,9 @@ export function ElementBrowser({
         <div className="space-y-1">
           <ClassificationPicker
             selected={classification}
-            onSelect={setClassification}
+            onSelect={handleClassificationChange}
             activity={activity}
-            onActivityChange={setActivity}
+            onActivityChange={handleActivityChange}
             disabled={searchMode}
           />
         </div>
@@ -212,7 +232,7 @@ export function ElementBrowser({
                         ? 'hypercube'
                         : el.isAbstract
                           ? 'abstract'
-                          : classificationLabel(el.classification ?? '—')}
+                          : (el.classification ?? '—')}
                     </Badge>
                   </div>
                 </button>

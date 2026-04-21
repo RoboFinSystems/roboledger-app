@@ -1,16 +1,16 @@
 'use client'
 
-import { Badge, Card, Spinner } from 'flowbite-react'
-import { useEffect, useMemo, useState } from 'react'
-import { HiExternalLink } from 'react-icons/hi'
-import { customTheme } from '../../theme'
-import { arcTypeColor, classificationColor } from '../colors'
 import type {
   LibraryClient,
   LibraryElementArc,
   LibraryElementClassification,
   LibraryElementDetail,
-} from '../types'
+} from '@robosystems/client/clients'
+import { Alert, Badge, Card, Spinner } from 'flowbite-react'
+import { useEffect, useMemo, useState } from 'react'
+import { HiExternalLink, HiInformationCircle } from 'react-icons/hi'
+import { customTheme } from '../../theme'
+import { arcTypeColor, classificationColor } from '../colors'
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
@@ -44,16 +44,19 @@ export function ElementDetail({
     LibraryElementClassification[]
   >([])
   const [state, setState] = useState<LoadState>('idle')
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!elementId) {
       setElement(null)
       setArcs([])
       setClassifications([])
+      setError(null)
       setState('idle')
       return
     }
     setState('loading')
+    setError(null)
     Promise.all([
       client.getLibraryElement(graphId, { id: elementId }),
       client.getLibraryElementArcs(graphId, elementId),
@@ -65,7 +68,10 @@ export function ElementDetail({
         setClassifications(classRows)
         setState('ready')
       })
-      .catch(() => setState('error'))
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Failed to load element')
+        setState('error')
+      })
   }, [client, graphId, elementId])
 
   const arcsByTaxonomy = useMemo(() => {
@@ -117,6 +123,11 @@ export function ElementDetail({
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Spinner size="sm" /> Loading element…
           </div>
+        )}
+        {state === 'error' && (
+          <Alert color="failure" icon={HiInformationCircle}>
+            {error ?? 'Failed to load element'}
+          </Alert>
         )}
         {state === 'ready' && element && (
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
