@@ -106,7 +106,13 @@ case "$COMMAND" in
             exit 1
         fi
 
-        git subtree pull --prefix="$COMMON_PREFIX" "$COMMON_REPO" main --squash
+        # Refresh stat cache so `git subtree pull` doesn't trip on stale entries
+        # that report files as modified when their content is actually unchanged.
+        git update-index --really-refresh > /dev/null 2>&1 || true
+
+        # GIT_MERGE_AUTOEDIT=no accepts the default merge message without
+        # opening an editor for the merge commit created by --squash.
+        GIT_MERGE_AUTOEDIT=no git subtree pull --prefix="$COMMON_PREFIX" "$COMMON_REPO" main --squash
 
         echo -e "${GREEN}✅ Latest changes pulled successfully${NC}"
         echo "Run your tests to ensure compatibility"
@@ -122,6 +128,10 @@ case "$COMMAND" in
             echo "Use 'add' command first to set up the subtree"
             exit 1
         fi
+
+        # Refresh stat cache so the uncommitted-changes check below doesn't
+        # false-positive on stale index entries.
+        git update-index --really-refresh > /dev/null 2>&1 || true
 
         # Check for uncommitted changes
         UNCOMMITTED_CHANGES=false
