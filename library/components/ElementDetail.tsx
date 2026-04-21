@@ -103,7 +103,7 @@ export function ElementDetail({
   }, [element])
 
   return (
-    <section className="col-span-12 min-h-0 md:col-span-5">
+    <section className="col-span-12 min-h-0 md:col-span-7">
       <Card
         theme={customTheme.card}
         className="flex h-full flex-col overflow-hidden"
