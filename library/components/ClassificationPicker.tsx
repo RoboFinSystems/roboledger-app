@@ -84,6 +84,18 @@ export function ClassificationPicker({
           {c.label}
         </button>
       ))}
+      <button
+        onClick={() => onSelect('metric')}
+        disabled={disabled}
+        title="Derived metrics / subtotals (Net Income, Gross Profit, Comprehensive Income totals). Not SFAC 6 primary elements."
+        className={`rounded px-2 py-1 text-xs ${
+          selected === 'metric'
+            ? 'bg-pink-600 text-white'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200'
+        } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+      >
+        Metric
+      </button>
       <span className="mx-1 self-center text-gray-300 dark:text-gray-600">
         ·
       </span>

@@ -31,6 +31,8 @@ export function classificationColor(cls: string): BadgeColor {
     case 'investmentByOwners':
     case 'distributionToOwners':
       return 'indigo'
+    case 'metric':
+      return 'pink'
     default:
       return 'gray'
   }
