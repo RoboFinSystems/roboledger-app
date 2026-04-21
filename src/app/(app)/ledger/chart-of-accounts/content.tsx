@@ -98,6 +98,11 @@ interface GaapMapping {
   toElementId: string
 }
 
+interface AccountMappings {
+  fac: GaapMapping | null
+  rsGaap: GaapMapping | null
+}
+
 interface GaapElement {
   id: string
   name: string
@@ -210,7 +215,7 @@ function GaapDropdown({
     }
   }, [onClose])
 
-  // Group and sort: matching classification first
+  // Group and sort: matching classification first, then alphabetical by class name
   const grouped = useMemo(() => {
     const filtered = gaapElements.filter(
       (el) =>
@@ -219,23 +224,23 @@ function GaapDropdown({
         el.qname.toLowerCase().includes(search.toLowerCase())
     )
 
-    // Sort classifications: matching first, then alphabetical
-    const classOrder = [
-      accountClassification,
-      ...ALL_CLASSIFICATIONS.filter((c) => c !== accountClassification),
-    ]
+    // Collect all unique classifications present in this element set
+    const allClasses = Array.from(
+      new Set(filtered.map((el) => el.classification).filter(Boolean))
+    ).sort((a, b) => {
+      if (a === accountClassification) return -1
+      if (b === accountClassification) return 1
+      return a.localeCompare(b)
+    })
 
-    const groups: Array<{ classification: string; elements: GaapElement[] }> =
-      []
-    for (const cls of classOrder) {
-      const elements = filtered
-        .filter((el) => el.classification === cls)
-        .sort((a, b) => a.name.localeCompare(b.name))
-      if (elements.length > 0) {
-        groups.push({ classification: cls, elements })
-      }
-    }
-    return groups
+    return allClasses
+      .map((cls) => ({
+        classification: cls,
+        elements: filtered
+          .filter((el) => el.classification === cls)
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      }))
+      .filter((g) => g.elements.length > 0)
   }, [gaapElements, search, accountClassification])
 
   return (
@@ -260,7 +265,9 @@ function GaapDropdown({
             <div className="sticky top-0 bg-gray-100 px-3 py-1 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:bg-gray-700 dark:text-gray-400">
               {CLASSIFICATION_LABELS[
                 group.classification as ElementClassification
-              ] || group.classification}
+              ] ||
+                group.classification.charAt(0).toUpperCase() +
+                  group.classification.slice(1)}
               {group.classification === accountClassification && (
                 <span className="ml-1 text-purple-500"> — Best Match</span>
               )}
@@ -327,8 +334,12 @@ const ChartOfAccountsContent: FC = function () {
   const [isAutoMapping, setIsAutoMapping] = useState(false)
 
   // Inline editing state
-  const [gaapElements, setGaapElements] = useState<GaapElement[]>([])
-  const [editingAccountId, setEditingAccountId] = useState<string | null>(null)
+  const [facElements, setFacElements] = useState<GaapElement[]>([])
+  const [rsGaapElements, setRsGaapElements] = useState<GaapElement[]>([])
+  const [editingState, setEditingState] = useState<{
+    accountId: string
+    mode: 'fac' | 'rsGaap'
+  } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
   const currentGraph = useMemo(() => {
@@ -401,39 +412,63 @@ const ChartOfAccountsContent: FC = function () {
       }
 
       try {
-        const [detail, coverage, gaapResult] = await Promise.all([
+        const [detail, coverage, facResult, rsGaapResult] = await Promise.all([
           clients.ledger.getMapping(currentGraph.graphId, selectedMappingId),
           clients.ledger
             .getMappingCoverage(currentGraph.graphId, selectedMappingId)
             .catch(() => null),
-          // Load GAAP elements for the dropdown (once)
-          gaapElements.length === 0
+          // Load FAC elements for the dropdown (once)
+          facElements.length === 0
             ? clients.ledger
                 .listElements(currentGraph.graphId, {
-                  source: 'us-gaap',
+                  source: 'fac',
                   isAbstract: false,
-                  limit: 500,
+                  limit: 200,
                 })
                 .catch(() => ({ elements: [] }))
+            : null,
+          // Load rs-gaap elements in two pages (API max is 1000; ~1863 total)
+          rsGaapElements.length === 0
+            ? Promise.all([
+                clients.ledger
+                  .listElements(currentGraph.graphId, {
+                    source: 'rs-gaap',
+                    isAbstract: false,
+                    limit: 1000,
+                    offset: 0,
+                  })
+                  .catch(() => ({ elements: [] })),
+                clients.ledger
+                  .listElements(currentGraph.graphId, {
+                    source: 'rs-gaap',
+                    isAbstract: false,
+                    limit: 1000,
+                    offset: 1000,
+                  })
+                  .catch(() => ({ elements: [] })),
+              ]).then(([p1, p2]) => ({
+                elements: [
+                  ...((p1 as { elements?: unknown[] })?.elements ?? []),
+                  ...((p2 as { elements?: unknown[] })?.elements ?? []),
+                ],
+              }))
             : null,
         ])
 
         setMappingDetail(detail)
         setMappingCoverage(coverage)
 
-        if (gaapResult) {
-          const data = gaapResult as {
-            elements?: Array<Record<string, unknown>>
-          }
-          setGaapElements(
-            (data.elements ?? []).map((e) => ({
-              id: e.id as string,
-              name: e.name as string,
-              qname: (e.qname as string) ?? '',
-              classification: (e.classification as string) ?? '',
-            }))
-          )
+        const toGaapElements = (result: unknown) => {
+          const data = result as { elements?: Array<Record<string, unknown>> }
+          return (data?.elements ?? []).map((e) => ({
+            id: e.id as string,
+            name: e.name as string,
+            qname: (e.qname as string) ?? '',
+            classification: (e.classification as string) ?? '',
+          }))
         }
+        if (facResult) setFacElements(toGaapElements(facResult))
+        if (rsGaapResult) setRsGaapElements(toGaapElements(rsGaapResult))
       } catch (err) {
         console.error('Error loading mapping detail:', err)
         setMappingDetail(null)
@@ -442,25 +477,31 @@ const ChartOfAccountsContent: FC = function () {
     }
 
     loadMappingData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- gaapElements intentionally excluded to avoid re-fetching
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- facElements/rsGaapElements intentionally excluded to avoid re-fetching
   }, [currentGraph, selectedMappingId])
 
-  // Build GAAP lookup from mapping associations, keyed by from_element_id
+  // Build GAAP lookup from mapping associations, keyed by from_element_id.
+  // Each account can have both a FAC mapping (fac:*) and an rs-gaap mapping (rs-gaap:*).
   const gaapByElementId = useMemo(() => {
-    const map = new Map<string, GaapMapping>()
+    const map = new Map<string, AccountMappings>()
     if (!mappingDetail?.associations) return map
 
     for (const assoc of mappingDetail.associations) {
       const fromId = assoc.fromElementId
-      if (fromId) {
-        map.set(fromId, {
-          gaapName: assoc.toElementName ?? '',
-          gaapQname: assoc.toElementQname ?? '',
-          confidence: assoc.confidence ?? 0,
-          associationId: assoc.id,
-          fromElementId: fromId,
-          toElementId: assoc.toElementId,
-        })
+      if (!fromId) continue
+      const existing = map.get(fromId) ?? { fac: null, rsGaap: null }
+      const mapping: GaapMapping = {
+        gaapName: assoc.toElementName ?? '',
+        gaapQname: assoc.toElementQname ?? '',
+        confidence: assoc.confidence ?? 0,
+        associationId: assoc.id,
+        fromElementId: fromId,
+        toElementId: assoc.toElementId,
+      }
+      if (assoc.toElementQname?.startsWith('fac:')) {
+        map.set(fromId, { ...existing, fac: mapping })
+      } else {
+        map.set(fromId, { ...existing, rsGaap: mapping })
       }
     }
     return map
@@ -483,15 +524,20 @@ const ChartOfAccountsContent: FC = function () {
     }
   }, [currentGraph, selectedMappingId])
 
-  // Handle GAAP element selection
+  // Handle GAAP element selection (fac or rsGaap slot)
   const handleSelectGaap = useCallback(
-    async (accountId: string, gaapElement: GaapElement) => {
+    async (
+      accountId: string,
+      gaapElement: GaapElement,
+      mode: 'fac' | 'rsGaap'
+    ) => {
       if (!currentGraph || !selectedMappingId) return
 
       setIsSaving(true)
       try {
-        // If replacing existing mapping, delete old first
-        const existing = gaapByElementId.get(accountId)
+        const accountMappings = gaapByElementId.get(accountId)
+        const existing =
+          mode === 'fac' ? accountMappings?.fac : accountMappings?.rsGaap
         if (existing) {
           await clients.ledger.deleteMappingAssociation(currentGraph.graphId, {
             mapping_id: selectedMappingId,
@@ -499,7 +545,6 @@ const ChartOfAccountsContent: FC = function () {
           })
         }
 
-        // Create new mapping using account.id directly as the from element ID
         await clients.ledger.createMappingAssociation(currentGraph.graphId, {
           mapping_id: selectedMappingId,
           from_element_id: accountId,
@@ -508,7 +553,7 @@ const ChartOfAccountsContent: FC = function () {
         })
 
         await refreshMappingData()
-        setEditingAccountId(null)
+        setEditingState(null)
       } catch (err) {
         console.error('Failed to save mapping:', err)
         setError('Failed to save mapping.')
@@ -519,12 +564,14 @@ const ChartOfAccountsContent: FC = function () {
     [currentGraph, selectedMappingId, gaapByElementId, refreshMappingData]
   )
 
-  // Handle clear mapping
+  // Handle clear mapping (fac or rsGaap slot)
   const handleClearMapping = useCallback(
-    async (accountId: string) => {
+    async (accountId: string, mode: 'fac' | 'rsGaap') => {
       if (!currentGraph || !selectedMappingId) return
 
-      const existing = gaapByElementId.get(accountId)
+      const accountMappings = gaapByElementId.get(accountId)
+      const existing =
+        mode === 'fac' ? accountMappings?.fac : accountMappings?.rsGaap
       if (!existing) return
 
       setIsSaving(true)
@@ -534,7 +581,7 @@ const ChartOfAccountsContent: FC = function () {
           association_id: existing.associationId,
         })
         await refreshMappingData()
-        setEditingAccountId(null)
+        setEditingState(null)
       } catch (err) {
         console.error('Failed to clear mapping:', err)
         setError('Failed to clear mapping.')
@@ -797,8 +844,9 @@ const ChartOfAccountsContent: FC = function () {
               </TableHead>
               <TableBody>
                 {filteredAccounts.map((account) => {
-                  const gaap = gaapByElementId.get(account.id) ?? null
-                  const isEditing = editingAccountId === account.id
+                  const accountMappings =
+                    gaapByElementId.get(account.id) ?? null
+                  const isEditing = editingState?.accountId === account.id
 
                   return (
                     <TableRow key={`${account._graphId}-${account.id}`}>
@@ -850,36 +898,93 @@ const ChartOfAccountsContent: FC = function () {
                           ) : isEditing ? (
                             <GaapDropdown
                               accountClassification={account.classification}
-                              gaapElements={gaapElements}
-                              currentMapping={gaap}
-                              onSelect={(el) =>
-                                handleSelectGaap(account.id, el)
+                              gaapElements={
+                                editingState!.mode === 'fac'
+                                  ? facElements
+                                  : rsGaapElements
                               }
-                              onClear={() => handleClearMapping(account.id)}
-                              onClose={() => setEditingAccountId(null)}
+                              currentMapping={
+                                editingState!.mode === 'fac'
+                                  ? (accountMappings?.fac ?? null)
+                                  : (accountMappings?.rsGaap ?? null)
+                              }
+                              onSelect={(el) =>
+                                handleSelectGaap(
+                                  account.id,
+                                  el,
+                                  editingState!.mode
+                                )
+                              }
+                              onClear={() =>
+                                handleClearMapping(
+                                  account.id,
+                                  editingState!.mode
+                                )
+                              }
+                              onClose={() => setEditingState(null)}
                             />
                           ) : (
-                            <button
-                              type="button"
-                              onClick={() => setEditingAccountId(account.id)}
-                              className="group flex w-full cursor-pointer items-center justify-between rounded px-1 py-0.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                            >
-                              {gaap ? (
-                                <div className="flex flex-col">
-                                  <span className="text-sm font-medium text-purple-500 dark:text-purple-400">
-                                    {gaap.gaapName}
+                            <div className="flex flex-col gap-0.5">
+                              {/* FAC row */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setEditingState({
+                                    accountId: account.id,
+                                    mode: 'fac',
+                                  })
+                                }
+                                className="group flex w-full cursor-pointer items-center justify-between rounded px-1 py-0.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                              >
+                                <div className="flex min-w-0 flex-col">
+                                  <span className="text-[10px] font-semibold tracking-wide text-gray-400 uppercase dark:text-gray-500">
+                                    FAC
                                   </span>
-                                  <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
-                                    {gaap.gaapQname}
-                                  </span>
+                                  {accountMappings?.fac ? (
+                                    <span className="truncate font-mono text-xs text-blue-500 dark:text-blue-400">
+                                      {accountMappings.fac.gaapQname}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-gray-400">
+                                      Unmapped
+                                    </span>
+                                  )}
                                 </div>
-                              ) : (
-                                <span className="text-sm text-gray-400">
-                                  Unmapped
-                                </span>
-                              )}
-                              <HiPencil className="h-3.5 w-3.5 shrink-0 text-gray-300 transition-colors group-hover:text-purple-400 dark:text-gray-600 dark:group-hover:text-purple-400" />
-                            </button>
+                                <HiPencil className="ml-1 h-3 w-3 shrink-0 text-gray-300 transition-colors group-hover:text-purple-400 dark:text-gray-600 dark:group-hover:text-purple-400" />
+                              </button>
+                              {/* rs-gaap row */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setEditingState({
+                                    accountId: account.id,
+                                    mode: 'rsGaap',
+                                  })
+                                }
+                                className="group flex w-full cursor-pointer items-center justify-between rounded px-1 py-0.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                              >
+                                <div className="flex min-w-0 flex-col">
+                                  <span className="text-[10px] font-semibold tracking-wide text-gray-400 uppercase dark:text-gray-500">
+                                    rs-gaap
+                                  </span>
+                                  {accountMappings?.rsGaap ? (
+                                    <>
+                                      <span className="truncate text-sm font-medium text-purple-500 dark:text-purple-400">
+                                        {accountMappings.rsGaap.gaapName}
+                                      </span>
+                                      <span className="truncate font-mono text-xs text-gray-500 dark:text-gray-400">
+                                        {accountMappings.rsGaap.gaapQname}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className="text-xs text-gray-400">
+                                      Unmapped
+                                    </span>
+                                  )}
+                                </div>
+                                <HiPencil className="ml-1 h-3 w-3 shrink-0 text-gray-300 transition-colors group-hover:text-purple-400 dark:text-gray-600 dark:group-hover:text-purple-400" />
+                              </button>
+                            </div>
                           )}
                         </TableCell>
                       )}

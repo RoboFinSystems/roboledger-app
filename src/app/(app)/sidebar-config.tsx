@@ -2,6 +2,7 @@
 
 import type { SidebarItemData } from '@/lib/core'
 import {
+  HiBookOpen,
   HiHome,
   HiOutlineOfficeBuilding,
   HiSearch,
@@ -54,6 +55,11 @@ export const getNavigationItems = (
             { href: '/reports/new', label: 'Create Report' },
             { href: '/reports/publish-lists', label: 'Publish Lists' },
           ],
+        },
+        {
+          icon: HiBookOpen,
+          label: 'Library',
+          href: '/library',
         },
         {
           icon: HiTerminal,
