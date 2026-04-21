@@ -55,6 +55,7 @@ export function ElementDetail({
       setState('idle')
       return
     }
+    let cancelled = false
     setState('loading')
     setError(null)
     Promise.all([
@@ -63,15 +64,20 @@ export function ElementDetail({
       client.getLibraryElementClassifications(graphId, elementId),
     ])
       .then(([el, arcRows, classRows]) => {
+        if (cancelled) return
         setElement(el)
         setArcs(arcRows)
         setClassifications(classRows)
         setState('ready')
       })
       .catch((err) => {
+        if (cancelled) return
         setError(err instanceof Error ? err.message : 'Failed to load element')
         setState('error')
       })
+    return () => {
+      cancelled = true
+    }
   }, [client, graphId, elementId])
 
   const arcsByTaxonomy = useMemo(() => {
