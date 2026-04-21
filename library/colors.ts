@@ -11,17 +11,28 @@ type BadgeColor =
 export function classificationColor(cls: string): BadgeColor {
   switch (cls) {
     case 'asset':
+    case 'contraAsset':
       return 'success'
     case 'liability':
+    case 'contraLiability':
       return 'failure'
     case 'equity':
+    case 'contraEquity':
+    case 'temporaryEquity':
       return 'purple'
-    case 'inflow':
+    case 'revenue':
+    case 'expenseReversal':
+    case 'gain':
       return 'info'
-    case 'outflow':
+    case 'expense':
+    case 'loss':
       return 'warning'
-    case 'cashflow':
+    case 'comprehensiveIncome':
+    case 'investmentByOwners':
+    case 'distributionToOwners':
       return 'indigo'
+    case 'metric':
+      return 'pink'
     default:
       return 'gray'
   }
