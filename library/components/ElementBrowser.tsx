@@ -1,6 +1,14 @@
 'use client'
 
-import { Alert, Badge, Button, Card, Spinner, TextInput } from 'flowbite-react'
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Select,
+  Spinner,
+  TextInput,
+} from 'flowbite-react'
 import { useCallback, useEffect, useState } from 'react'
 import { HiInformationCircle, HiSearch } from 'react-icons/hi'
 import { customTheme } from '../../theme'
@@ -9,6 +17,7 @@ import type {
   LibraryClient,
   LibraryElement,
   LibrarySearchResult,
+  LibraryTaxonomy,
 } from '../types'
 import { ClassificationPicker } from './ClassificationPicker'
 
@@ -21,12 +30,17 @@ export function ElementBrowser({
   client,
   graphId,
   taxonomyId,
+  taxonomies,
+  onTaxonomyChange,
   selectedElementId,
   onSelectElement,
 }: {
   client: LibraryClient
   graphId: string
   taxonomyId: string | null
+  /** When provided, renders a taxonomy selector alongside search. */
+  taxonomies?: LibraryTaxonomy[]
+  onTaxonomyChange?: (id: string) => void
   selectedElementId: string | null
   onSelectElement: (id: string) => void
 }) {
@@ -37,6 +51,7 @@ export function ElementBrowser({
   const [search, setSearch] = useState('')
   const [offset, setOffset] = useState(0)
   const [classification, setClassification] = useState<string | null>(null)
+  const [activity, setActivity] = useState<string | null>(null)
 
   const activeQuery = search.trim()
   const searchMode = activeQuery.length > 0
@@ -55,6 +70,7 @@ export function ElementBrowser({
               classification && classification !== 'abstract'
                 ? classification
                 : undefined,
+            activityType: activity ?? undefined,
             isAbstract:
               classification === 'abstract'
                 ? true
@@ -76,6 +92,7 @@ export function ElementBrowser({
     taxonomyId,
     offset,
     classification,
+    activity,
     searchMode,
     activeQuery,
   ])
@@ -86,10 +103,12 @@ export function ElementBrowser({
 
   useEffect(() => {
     setOffset(0)
-  }, [taxonomyId, classification, activeQuery])
+  }, [taxonomyId, classification, activity, activeQuery])
+
+  const showTaxonomyDropdown = taxonomies && onTaxonomyChange
 
   return (
-    <section className="col-span-12 min-h-0 md:col-span-4">
+    <section className="col-span-12 min-h-0 md:col-span-5">
       <Card
         theme={customTheme.card}
         className="flex h-full flex-col overflow-hidden"
@@ -99,6 +118,25 @@ export function ElementBrowser({
         </h2>
 
         <div className="flex gap-2">
+          {showTaxonomyDropdown && (
+            <Select
+              sizing="sm"
+              value={taxonomyId ?? ''}
+              onChange={(e) => onTaxonomyChange?.(e.target.value)}
+              className="shrink-0"
+              aria-label="Taxonomy"
+            >
+              {taxonomies.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.standard ?? t.name}
+                  {t.version ? ` ${t.version}` : ''}
+                  {typeof t.elementCount === 'number'
+                    ? ` (${t.elementCount.toLocaleString()})`
+                    : ''}
+                </option>
+              ))}
+            </Select>
+          )}
           <TextInput
             icon={HiSearch}
             sizing="sm"
@@ -113,6 +151,8 @@ export function ElementBrowser({
           <ClassificationPicker
             selected={classification}
             onSelect={setClassification}
+            activity={activity}
+            onActivityChange={setActivity}
             disabled={searchMode}
           />
         </div>
