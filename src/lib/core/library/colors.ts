@@ -50,7 +50,3 @@ export function arcTypeColor(assocType: string): BadgeColor {
       return 'gray'
   }
 }
-
-export function classificationLabel(cls: string): string {
-  return cls
-}
