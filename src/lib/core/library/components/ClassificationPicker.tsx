@@ -3,10 +3,15 @@
 export function ClassificationPicker({
   selected,
   onSelect,
+  activity,
+  onActivityChange,
   disabled,
 }: {
   selected: string | null
   onSelect: (value: string | null) => void
+  /** Cash-flow activity axis (orthogonal to SFAC 6 EFS). Optional — omit to hide. */
+  activity?: string | null
+  onActivityChange?: (value: string | null) => void
   disabled?: boolean
 }) {
   const balanceSheetClasses: Array<{
@@ -36,6 +41,27 @@ export function ClassificationPicker({
     { value: 'investmentByOwners', label: 'Investment' },
     { value: 'distributionToOwners', label: 'Distribution' },
   ]
+  const activityClasses: Array<{
+    value: string
+    label: string
+    title?: string
+  }> = [
+    {
+      value: 'operatingActivity',
+      label: 'Operating',
+      title: 'Cash flows from operating activities',
+    },
+    {
+      value: 'investingActivity',
+      label: 'Investing',
+      title: 'Cash flows from investing activities',
+    },
+    {
+      value: 'financingActivity',
+      label: 'Financing',
+      title: 'Cash flows from financing activities',
+    },
+  ]
 
   const chipClass = (value: string) =>
     `rounded px-2 py-1 text-xs ${
@@ -49,6 +75,15 @@ export function ClassificationPicker({
       ? 'bg-blue-600 text-white'
       : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200'
   } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`
+
+  const activityChipClass = (value: string) =>
+    `rounded px-2 py-1 text-xs ${
+      activity === value
+        ? 'bg-emerald-600 text-white'
+        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200'
+    } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`
+
+  const showActivity = onActivityChange !== undefined
 
   return (
     <div className="flex flex-wrap gap-1">
@@ -111,6 +146,26 @@ export function ClassificationPicker({
       >
         Abstract
       </button>
+      {showActivity && (
+        <>
+          <span className="mx-1 self-center text-gray-300 dark:text-gray-600">
+            ·
+          </span>
+          {activityClasses.map((c) => (
+            <button
+              key={c.value}
+              onClick={() =>
+                onActivityChange?.(activity === c.value ? null : c.value)
+              }
+              disabled={disabled}
+              title={c.title}
+              className={activityChipClass(c.value)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </>
+      )}
     </div>
   )
 }
