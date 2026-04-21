@@ -8,6 +8,7 @@ import { arcTypeColor, classificationColor } from '../colors'
 import type {
   LibraryClient,
   LibraryElementArc,
+  LibraryElementClassification,
   LibraryElementDetail,
 } from '../types'
 
@@ -39,12 +40,16 @@ export function ElementDetail({
 }) {
   const [element, setElement] = useState<LibraryElementDetail | null>(null)
   const [arcs, setArcs] = useState<LibraryElementArc[]>([])
+  const [classifications, setClassifications] = useState<
+    LibraryElementClassification[]
+  >([])
   const [state, setState] = useState<LoadState>('idle')
 
   useEffect(() => {
     if (!elementId) {
       setElement(null)
       setArcs([])
+      setClassifications([])
       setState('idle')
       return
     }
@@ -52,10 +57,12 @@ export function ElementDetail({
     Promise.all([
       client.getLibraryElement(graphId, { id: elementId }),
       client.getLibraryElementArcs(graphId, elementId),
+      client.getLibraryElementClassifications(graphId, elementId),
     ])
-      .then(([el, arcRows]) => {
+      .then(([el, arcRows, classRows]) => {
         setElement(el)
         setArcs(arcRows)
+        setClassifications(classRows)
         setState('ready')
       })
       .catch(() => setState('error'))
@@ -76,6 +83,15 @@ export function ElementDetail({
     }
     return groups
   }, [arcs])
+
+  const classificationsByCategory = useMemo(() => {
+    const groups = new Map<string, LibraryElementClassification[]>()
+    for (const cls of classifications) {
+      if (!groups.has(cls.category)) groups.set(cls.category, [])
+      groups.get(cls.category)!.push(cls)
+    }
+    return groups
+  }, [classifications])
 
   const sortedLabels = useMemo(() => {
     if (!element) return []
@@ -120,19 +136,9 @@ export function ElementDetail({
               {element.classification && (
                 <Badge
                   color={classificationColor(element.classification)}
-                  title="Economic nature (SFAC 6)"
+                  title="FASB elementsOfFinancialStatements"
                 >
                   {element.classification}
-                </Badge>
-              )}
-              {element.statementContext && (
-                <Badge color="gray" title="Statement context">
-                  {element.statementContext}
-                </Badge>
-              )}
-              {element.derivationRole && (
-                <Badge color="purple" title="Derivation role">
-                  {element.derivationRole}
                 </Badge>
               )}
               <Badge color="gray">{element.balanceType}</Badge>
@@ -142,6 +148,40 @@ export function ElementDetail({
               {element.isMonetary && <Badge color="indigo">monetary</Badge>}
               <Badge color="info">{element.source}</Badge>
             </div>
+
+            {classificationsByCategory.size > 0 && (
+              <div>
+                <h3 className="font-heading mb-2 text-sm font-semibold text-gray-900 dark:text-white">
+                  Classifications
+                </h3>
+                <div className="space-y-2">
+                  {Array.from(classificationsByCategory.entries()).map(
+                    ([category, items]) => (
+                      <div key={category}>
+                        <div className="mb-1 px-1 font-mono text-[11px] font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                          {category}
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {items.map((cls) => (
+                            <Badge
+                              key={cls.identifier}
+                              color={
+                                category === 'elementsOfFinancialStatements'
+                                  ? classificationColor(cls.identifier)
+                                  : 'gray'
+                              }
+                              size="xs"
+                            >
+                              {cls.identifier}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
 
             {sortedLabels.length > 0 && (
               <div>
