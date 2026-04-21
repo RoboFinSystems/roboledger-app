@@ -8,6 +8,7 @@ export {
   clearToken,
   getAuthHeader,
   getToken,
+  getValidToken,
   handleAuthResponse,
   hasValidToken,
   storeToken,
