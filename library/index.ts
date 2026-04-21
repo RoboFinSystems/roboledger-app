@@ -1,20 +1,10 @@
-export {
-  arcTypeColor,
-  classificationColor,
-  classificationLabel,
-} from './colors'
-export { ClassificationPicker } from './components/ClassificationPicker'
-export { DerivationRolePicker } from './components/DerivationRolePicker'
-export { ElementBrowser } from './components/ElementBrowser'
-export { ElementDetail } from './components/ElementDetail'
-export { StatementContextPicker } from './components/StatementContextPicker'
-export { TaxonomySidebar } from './components/TaxonomySidebar'
-export { LIBRARY_GRAPH_ID, LibraryClient } from './types'
+export { LIBRARY_GRAPH_ID, LibraryClient } from '@robosystems/client/clients'
 export type {
   GetLibraryElementIdentifier,
   LibraryArc,
   LibraryElement,
   LibraryElementArc,
+  LibraryElementClassification,
   LibraryElementDetail,
   LibraryEquivalence,
   LibraryLabel,
@@ -26,4 +16,8 @@ export type {
   ListLibraryTaxonomyArcsOptions,
   ListLibraryTaxonomyArcsResult,
   SearchLibraryElementsOptions,
-} from './types'
+} from '@robosystems/client/clients'
+export { arcTypeColor, classificationColor } from './colors'
+export { ClassificationPicker } from './components/ClassificationPicker'
+export { ElementBrowser } from './components/ElementBrowser'
+export { ElementDetail } from './components/ElementDetail'
