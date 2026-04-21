@@ -11,8 +11,6 @@ import type {
   LibrarySearchResult,
 } from '../types'
 import { ClassificationPicker } from './ClassificationPicker'
-import { DerivationRolePicker } from './DerivationRolePicker'
-import { StatementContextPicker } from './StatementContextPicker'
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 type ListItem = LibraryElement | LibrarySearchResult
@@ -39,8 +37,6 @@ export function ElementBrowser({
   const [search, setSearch] = useState('')
   const [offset, setOffset] = useState(0)
   const [classification, setClassification] = useState<string | null>(null)
-  const [statementContext, setStatementContext] = useState<string | null>(null)
-  const [derivationRole, setDerivationRole] = useState<string | null>(null)
 
   const activeQuery = search.trim()
   const searchMode = activeQuery.length > 0
@@ -59,8 +55,6 @@ export function ElementBrowser({
               classification && classification !== 'abstract'
                 ? classification
                 : undefined,
-            statementContext: statementContext ?? undefined,
-            derivationRole: derivationRole ?? undefined,
             isAbstract:
               classification === 'abstract'
                 ? true
@@ -82,8 +76,6 @@ export function ElementBrowser({
     taxonomyId,
     offset,
     classification,
-    statementContext,
-    derivationRole,
     searchMode,
     activeQuery,
   ])
@@ -94,13 +86,7 @@ export function ElementBrowser({
 
   useEffect(() => {
     setOffset(0)
-  }, [
-    taxonomyId,
-    classification,
-    statementContext,
-    derivationRole,
-    activeQuery,
-  ])
+  }, [taxonomyId, classification, activeQuery])
 
   return (
     <section className="col-span-12 min-h-0 md:col-span-4">
@@ -127,16 +113,6 @@ export function ElementBrowser({
           <ClassificationPicker
             selected={classification}
             onSelect={setClassification}
-            disabled={searchMode}
-          />
-          <StatementContextPicker
-            selected={statementContext}
-            onSelect={setStatementContext}
-            disabled={searchMode}
-          />
-          <DerivationRolePicker
-            selected={derivationRole}
-            onSelect={setDerivationRole}
             disabled={searchMode}
           />
         </div>

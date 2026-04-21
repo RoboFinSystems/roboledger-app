@@ -3,6 +3,7 @@ export type {
   LibraryArc,
   LibraryElement,
   LibraryElementArc,
+  LibraryElementClassification,
   LibraryElementDetail,
   LibraryEquivalence,
   LibraryLabel,
