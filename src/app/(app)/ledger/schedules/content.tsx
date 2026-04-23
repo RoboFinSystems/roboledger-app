@@ -9,9 +9,9 @@ import {
   useGraphContext,
 } from '@/lib/core'
 import type {
+  InformationBlock,
+  InformationBlockFact,
   LedgerPeriodCloseStatus,
-  LedgerSchedule,
-  LedgerScheduleFact,
 } from '@robosystems/client/clients'
 import {
   Badge,
@@ -38,6 +38,44 @@ import {
   HiExclamationCircle,
 } from 'react-icons/hi'
 import { TbFileInvoice } from 'react-icons/tb'
+
+/** Fact with element name resolved from the envelope's elements[] list. */
+type ScheduleFactRow = InformationBlockFact & { elementName: string }
+
+/** Pre-digested view of a schedule Information Block for the list UI. */
+type ScheduleRow = {
+  structureId: string
+  name: string
+  method: string | null
+  totalPeriods: number
+  periodsWithEntries: number
+}
+
+/** Minimal shape FactsModal needs — pulled out so we're not dragging the
+ *  full Information Block envelope through the component. */
+type ScheduleFactsTarget = { structureId: string; name: string }
+
+/** Shape of artifact.mechanics for schedule blocks (API contract v0.3.9+). */
+type ScheduleMechanics = {
+  kind?: string
+  scheduleMetadata?: { method?: string }
+  periodsWithEntries?: number
+}
+
+/** Project an Information Block envelope onto the schedule list row shape. */
+function toScheduleRow(block: InformationBlock): ScheduleRow {
+  const mechanics = block.artifact.mechanics as ScheduleMechanics
+  const periodKeys = new Set(
+    block.facts.map((f) => `${f.periodStart ?? ''}_${f.periodEnd}`)
+  )
+  return {
+    structureId: block.id,
+    name: block.name,
+    method: mechanics.scheduleMetadata?.method ?? null,
+    totalPeriods: periodKeys.size,
+    periodsWithEntries: mechanics.periodsWithEntries ?? 0,
+  }
+}
 
 const STATUS_COLORS: Record<string, string> = {
   posted: 'success',
@@ -265,12 +303,12 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
 
 interface FactsModalProps {
   graphId: string
-  schedule: LedgerSchedule | null
+  schedule: ScheduleFactsTarget | null
   onClose: () => void
 }
 
 const FactsModal: FC<FactsModalProps> = ({ graphId, schedule, onClose }) => {
-  const [facts, setFacts] = useState<LedgerScheduleFact[]>([])
+  const [facts, setFacts] = useState<ScheduleFactRow[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -281,11 +319,21 @@ const FactsModal: FC<FactsModalProps> = ({ graphId, schedule, onClose }) => {
       try {
         setIsLoading(true)
         setError(null)
-        const result = await clients.ledger.getScheduleFacts(
+        const block = await clients.ledger.getInformationBlock(
           graphId,
           schedule.structureId
         )
-        setFacts(result)
+        if (!block) {
+          setFacts([])
+          return
+        }
+        const elementsById = new Map(block.elements.map((e) => [e.id, e]))
+        setFacts(
+          block.facts.map((f) => ({
+            ...f,
+            elementName: elementsById.get(f.elementId)?.name ?? '',
+          }))
+        )
       } catch (err) {
         console.error('Error loading facts:', err)
         setError('Failed to load schedule facts.')
@@ -299,7 +347,7 @@ const FactsModal: FC<FactsModalProps> = ({ graphId, schedule, onClose }) => {
 
   // Group facts by period
   const groupedFacts = useMemo(() => {
-    const groups: Record<string, LedgerScheduleFact[]> = {}
+    const groups: Record<string, ScheduleFactRow[]> = {}
     for (const fact of facts) {
       const key = `${fact.periodStart}_${fact.periodEnd}`
       if (!groups[key]) groups[key] = []
@@ -342,7 +390,9 @@ const FactsModal: FC<FactsModalProps> = ({ graphId, schedule, onClose }) => {
                           rowSpan={periodFacts.length}
                           className="align-top font-medium text-gray-900 dark:text-white"
                         >
-                          {formatMonth(fact.periodStart)}
+                          {fact.periodStart
+                            ? formatMonth(fact.periodStart)
+                            : '—'}
                         </TableCell>
                       )}
                       <TableCell>{fact.elementName}</TableCell>
@@ -363,11 +413,11 @@ const FactsModal: FC<FactsModalProps> = ({ graphId, schedule, onClose }) => {
 
 const SchedulesContent: FC = function () {
   const { state: graphState } = useGraphContext()
-  const [schedules, setSchedules] = useState<LedgerSchedule[]>([])
+  const [schedules, setSchedules] = useState<ScheduleRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedSchedule, setSelectedSchedule] =
-    useState<LedgerSchedule | null>(null)
+    useState<ScheduleFactsTarget | null>(null)
   const [showClosePanel, setShowClosePanel] = useState(false)
 
   const currentGraph = useMemo(() => {
@@ -388,8 +438,11 @@ const SchedulesContent: FC = function () {
     try {
       setIsLoading(true)
       setError(null)
-      const result = await clients.ledger.listSchedules(currentGraph.graphId)
-      setSchedules(result)
+      const blocks = await clients.ledger.listInformationBlocks(
+        currentGraph.graphId,
+        { blockType: 'schedule' }
+      )
+      setSchedules(blocks.map(toScheduleRow))
     } catch (err) {
       console.error('Error loading schedules:', err)
       setError('Failed to load schedules.')
@@ -484,11 +537,9 @@ const SchedulesContent: FC = function () {
                       <TableCell className="font-medium text-gray-900 dark:text-white">
                         <div className="flex flex-col">
                           <span className="font-semibold">{schedule.name}</span>
-                          {schedule.scheduleMetadata?.method && (
+                          {schedule.method && (
                             <span className="text-xs text-gray-500">
-                              {String(
-                                schedule.scheduleMetadata.method
-                              ).replaceAll('_', ' ')}
+                              {schedule.method.replaceAll('_', ' ')}
                             </span>
                           )}
                         </div>

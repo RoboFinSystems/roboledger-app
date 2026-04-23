@@ -1,7 +1,7 @@
 'use client'
 
 import { clients, customTheme } from '@/lib/core'
-import type { LedgerScheduleFact } from '@robosystems/client/clients'
+import type { InformationBlockFact } from '@robosystems/client/clients'
 import {
   Button,
   Spinner,
@@ -21,6 +21,9 @@ import type { FactRow } from './FactsTable'
 import FactsTable from './FactsTable'
 import type { ViewMode } from './ViewModeToggle'
 
+/** Fact with element name resolved from the envelope's elements[] list. */
+type ScheduleFactRow = InformationBlockFact & { elementName: string }
+
 interface SchedulePanelProps {
   graphId: string
   structureId: string
@@ -34,7 +37,7 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
   scheduleName,
   viewMode,
 }) => {
-  const [facts, setFacts] = useState<LedgerScheduleFact[]>([])
+  const [facts, setFacts] = useState<ScheduleFactRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [creatingEntry, setCreatingEntry] = useState<string | null>(null)
@@ -43,8 +46,21 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
     try {
       setIsLoading(true)
       setError(null)
-      const result = await clients.ledger.getScheduleFacts(graphId, structureId)
-      setFacts(result)
+      const block = await clients.ledger.getInformationBlock(
+        graphId,
+        structureId
+      )
+      if (!block) {
+        setFacts([])
+        return
+      }
+      const elementsById = new Map(block.elements.map((e) => [e.id, e]))
+      setFacts(
+        block.facts.map((f) => ({
+          ...f,
+          elementName: elementsById.get(f.elementId)?.name ?? '',
+        }))
+      )
     } catch (err) {
       console.error('Error loading schedule facts:', err)
       setError('Failed to load schedule facts.')
@@ -59,7 +75,7 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
 
   // Group facts by period
   const groupedFacts = useMemo(() => {
-    const groups: Record<string, LedgerScheduleFact[]> = {}
+    const groups: Record<string, ScheduleFactRow[]> = {}
     for (const fact of facts) {
       const key = `${fact.periodStart}_${fact.periodEnd}`
       if (!groups[key]) groups[key] = []
@@ -149,13 +165,13 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
           <TableBody>
             {groupedFacts.map(([key, periodFacts]) =>
               periodFacts.map((fact, idx) => (
-                <TableRow key={`${key}-${fact.elementId}-${idx}`}>
+                <TableRow key={`${key}-${fact.elementId}`}>
                   {idx === 0 && (
                     <TableCell
                       rowSpan={periodFacts.length}
                       className="align-top font-medium text-gray-900 dark:text-white"
                     >
-                      {formatMonth(fact.periodStart)}
+                      {fact.periodStart ? formatMonth(fact.periodStart) : '—'}
                     </TableCell>
                   )}
                   <TableCell className="text-gray-700 dark:text-gray-300">
