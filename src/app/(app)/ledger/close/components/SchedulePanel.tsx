@@ -165,13 +165,13 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
           <TableBody>
             {groupedFacts.map(([key, periodFacts]) =>
               periodFacts.map((fact, idx) => (
-                <TableRow key={`${key}-${fact.elementId}-${idx}`}>
+                <TableRow key={`${key}-${fact.elementId}`}>
                   {idx === 0 && (
                     <TableCell
                       rowSpan={periodFacts.length}
                       className="align-top font-medium text-gray-900 dark:text-white"
                     >
-                      {formatMonth(fact.periodStart)}
+                      {fact.periodStart ? formatMonth(fact.periodStart) : '—'}
                     </TableCell>
                   )}
                   <TableCell className="text-gray-700 dark:text-gray-300">

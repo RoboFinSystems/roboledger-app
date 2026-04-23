@@ -46,7 +46,6 @@ type ScheduleFactRow = InformationBlockFact & { elementName: string }
 type ScheduleRow = {
   structureId: string
   name: string
-  taxonomyName: string | null
   method: string | null
   totalPeriods: number
   periodsWithEntries: number
@@ -56,20 +55,22 @@ type ScheduleRow = {
  *  full Information Block envelope through the component. */
 type ScheduleFactsTarget = { structureId: string; name: string }
 
+/** Shape of artifact.mechanics for schedule blocks (API contract v0.3.9+). */
+type ScheduleMechanics = {
+  kind?: string
+  scheduleMetadata?: { method?: string }
+  periodsWithEntries?: number
+}
+
 /** Project an Information Block envelope onto the schedule list row shape. */
 function toScheduleRow(block: InformationBlock): ScheduleRow {
-  const mechanics = block.artifact.mechanics as {
-    kind?: string
-    scheduleMetadata?: { method?: string }
-    periodsWithEntries?: number
-  }
+  const mechanics = block.artifact.mechanics as ScheduleMechanics
   const periodKeys = new Set(
     block.facts.map((f) => `${f.periodStart ?? ''}_${f.periodEnd}`)
   )
   return {
     structureId: block.id,
     name: block.name,
-    taxonomyName: block.taxonomyName,
     method: mechanics.scheduleMetadata?.method ?? null,
     totalPeriods: periodKeys.size,
     periodsWithEntries: mechanics.periodsWithEntries ?? 0,
@@ -389,7 +390,9 @@ const FactsModal: FC<FactsModalProps> = ({ graphId, schedule, onClose }) => {
                           rowSpan={periodFacts.length}
                           className="align-top font-medium text-gray-900 dark:text-white"
                         >
-                          {formatMonth(fact.periodStart)}
+                          {fact.periodStart
+                            ? formatMonth(fact.periodStart)
+                            : '—'}
                         </TableCell>
                       )}
                       <TableCell>{fact.elementName}</TableCell>
