@@ -150,12 +150,12 @@ export function ElementDetail({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {element.classification && (
+              {element.trait && (
                 <Badge
-                  color={classificationColor(element.classification)}
+                  color={classificationColor(element.trait)}
                   title="FASB elementsOfFinancialStatements"
                 >
-                  {element.classification}
+                  {element.trait}
                 </Badge>
               )}
               <Badge color="gray">{element.balanceType}</Badge>

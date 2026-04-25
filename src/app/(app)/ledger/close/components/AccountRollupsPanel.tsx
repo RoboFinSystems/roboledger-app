@@ -130,7 +130,7 @@ const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
                   >
                     {group.reportingName}
                     <Badge color="gray" size="xs" className="ml-2 inline-block">
-                      {group.classification}
+                      {group.trait}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-mono font-semibold text-gray-900 dark:text-white">

@@ -59,7 +59,7 @@ const makeResponse = (
         reportingElementId: 'elem_cash',
         reportingName: 'Cash and Cash Equivalents',
         reportingQname: 'us-gaap:CashAndCashEquivalents',
-        classification: 'asset',
+        trait: 'asset',
         balanceType: 'debit',
         total: 15250.0,
         accounts: [
@@ -85,7 +85,7 @@ const makeResponse = (
         reportingElementId: 'elem_rev',
         reportingName: 'Revenue',
         reportingQname: 'us-gaap:Revenues',
-        classification: 'revenue',
+        trait: 'revenue',
         balanceType: 'credit',
         total: 8000.0,
         accounts: [
@@ -306,7 +306,7 @@ describe('AccountRollupsPanel', () => {
             reportingElementId: 'elem_loss',
             reportingName: 'Net Loss',
             reportingQname: 'us-gaap:NetLoss',
-            classification: 'expense',
+            trait: 'expense',
             balanceType: 'debit',
             total: -500.0,
             accounts: [
