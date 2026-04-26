@@ -14,8 +14,8 @@ type ClosingBookCategory = LedgerClosingBookStructures['categories'][number]
 type ClosingBookItem = ClosingBookCategory['items'][number]
 
 export type SelectedItem =
-  | { type: 'statement'; reportId: string; structureType: string }
-  | { type: 'schedule'; structureId: string; name: string }
+  | { type: 'statement'; structureId: string }
+  | { type: 'schedule'; structureId: string }
   | { type: 'account_rollups'; mappingId: string; name: string }
   | { type: 'trial_balance' }
   | { type: 'period_close' }
@@ -27,14 +27,12 @@ function itemToSelected(item: ClosingBookItem): SelectedItem {
     case 'statement':
       return {
         type: 'statement',
-        reportId: item.reportId || '',
-        structureType: item.structureType || '',
+        structureId: item.id,
       }
     case 'schedule':
       return {
         type: 'schedule',
         structureId: item.id,
-        name: item.name,
       }
     case 'account_rollups':
       return {
@@ -58,10 +56,7 @@ function isActive(
   if (!selected) return false
   switch (selected.type) {
     case 'statement':
-      return (
-        item.itemType === 'statement' &&
-        item.structureType === selected.structureType
-      )
+      return item.itemType === 'statement' && item.id === selected.structureId
     case 'schedule':
       return item.itemType === 'schedule' && item.id === selected.structureId
     case 'account_rollups':

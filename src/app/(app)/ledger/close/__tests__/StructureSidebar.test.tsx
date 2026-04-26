@@ -121,8 +121,7 @@ describe('StructureSidebar', () => {
   it('highlights active statement item', () => {
     const selected: SelectedItem = {
       type: 'statement',
-      reportId: 'rpt_01',
-      structureType: 'income_statement',
+      structureId: 'struct_is',
     }
     render(
       <StructureSidebar
@@ -143,7 +142,6 @@ describe('StructureSidebar', () => {
     const selected: SelectedItem = {
       type: 'schedule',
       structureId: 'struct_depr',
-      name: 'Office Furniture Depreciation',
     }
     render(
       <StructureSidebar
@@ -190,8 +188,7 @@ describe('StructureSidebar', () => {
     fireEvent.click(screen.getByText('Balance Sheet'))
     expect(onSelect).toHaveBeenCalledWith({
       type: 'statement',
-      reportId: 'rpt_01',
-      structureType: 'balance_sheet',
+      structureId: 'struct_bs',
     })
   })
 
@@ -209,7 +206,6 @@ describe('StructureSidebar', () => {
     expect(onSelect).toHaveBeenCalledWith({
       type: 'schedule',
       structureId: 'struct_depr',
-      name: 'Office Furniture Depreciation',
     })
   })
 

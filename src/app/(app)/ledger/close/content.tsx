@@ -170,8 +170,7 @@ const CloseContent: FC = function () {
             ) : selectedItem.type === 'statement' && currentGraph ? (
               <StatementPanel
                 graphId={currentGraph.graphId}
-                reportId={selectedItem.reportId}
-                structureType={selectedItem.structureType}
+                structureId={selectedItem.structureId}
                 viewMode={viewMode}
                 entityName={entityName}
                 mappingId={mappingId}
@@ -180,7 +179,6 @@ const CloseContent: FC = function () {
               <SchedulePanel
                 graphId={currentGraph.graphId}
                 structureId={selectedItem.structureId}
-                scheduleName={selectedItem.name}
                 viewMode={viewMode}
               />
             ) : selectedItem.type === 'account_rollups' && currentGraph ? (
