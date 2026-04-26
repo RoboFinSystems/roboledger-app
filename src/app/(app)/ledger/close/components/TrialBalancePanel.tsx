@@ -75,7 +75,7 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
         setRows(
           (result.rows || []).map((row) => ({
             accountName: row.accountName ?? '',
-            classification: row.classification ?? '',
+            classification: row.trait ?? '',
             totalDebits: row.totalDebits ?? 0,
             totalCredits: row.totalCredits ?? 0,
             netBalance: row.netBalance ?? 0,

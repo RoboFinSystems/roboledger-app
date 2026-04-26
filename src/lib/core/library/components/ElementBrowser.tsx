@@ -223,7 +223,7 @@ export function ElementBrowser({
                           ? 'indigo'
                           : el.isAbstract
                             ? 'purple'
-                            : classificationColor(el.classification ?? '')
+                            : classificationColor(el.trait ?? '')
                       }
                       size="xs"
                       className="shrink-0"
@@ -232,7 +232,7 @@ export function ElementBrowser({
                         ? 'hypercube'
                         : el.isAbstract
                           ? 'abstract'
-                          : (el.classification ?? '—')}
+                          : (el.trait ?? '—')}
                     </Badge>
                   </div>
                 </button>

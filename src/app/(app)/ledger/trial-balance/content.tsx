@@ -162,7 +162,7 @@ const TrialBalanceContent: FC = function () {
                 accountId: row.accountId,
                 accountCode: row.accountCode,
                 accountName: row.accountName,
-                classification: row.classification as ElementClassification,
+                classification: row.trait as ElementClassification,
                 accountType: row.accountType ?? null,
                 totalDebits: row.totalDebits,
                 totalCredits: row.totalCredits,
@@ -214,7 +214,7 @@ const TrialBalanceContent: FC = function () {
               accountId: row.reportingElementId,
               accountCode: shortCode,
               accountName: row.reportingName,
-              classification: row.classification as ElementClassification,
+              classification: row.trait as ElementClassification,
               accountType: null, // not meaningful for GAAP aggregation
               totalDebits: row.totalDebits,
               totalCredits: row.totalCredits,
