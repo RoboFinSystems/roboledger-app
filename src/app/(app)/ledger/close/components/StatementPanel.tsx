@@ -1,17 +1,13 @@
 'use client'
 
 import { clients, customTheme } from '@/lib/core'
-import type {
-  PeriodSpecInput,
-  StatementData,
-} from '@robosystems/client/clients'
-import { Badge, Button, Spinner } from 'flowbite-react'
+import type { PeriodSpecInput } from '@robosystems/client/clients'
+import { Button, Spinner } from 'flowbite-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useState } from 'react'
-import { HiCheckCircle, HiExclamationCircle } from 'react-icons/hi'
-import type { FactRow } from './FactsTable'
-import FactsTable from './FactsTable'
-import StatementTable from './StatementTable'
+import { HiExclamationCircle } from 'react-icons/hi'
+import BlockView from './blockview/BlockView'
+import type { EnvelopeBlock } from './blockview/types'
 import type { ViewMode } from './ViewModeToggle'
 
 // ── Period Presets ────────────────────────────────────────────────────
@@ -152,58 +148,64 @@ function buildPeriods(preset: PresetKey): {
 
 interface StatementPanelProps {
   graphId: string
-  reportId: string
-  structureType: string
+  structureId: string
   viewMode: ViewMode
   entityName: string | null
+  /**
+   * Mapping id used to regenerate reports for a different period via the
+   * preset bar. When omitted the preset bar is hidden — the panel still
+   * renders the latest envelope facts.
+   */
   mappingId?: string | null
 }
 
+/**
+ * Thin orchestration shell around the statement envelope. Owns the
+ * envelope fetch + period-preset regeneration; delegates all rendering
+ * to `BlockView`, which dispatches to the statement `Rendering`
+ * projection (or the uniform `FactTable` projection in facts mode).
+ *
+ * Period presets call `createReport` to produce a new FactSet for the
+ * requested range; the envelope is then refetched and naturally picks
+ * up the latest FactSet for this Structure.
+ */
 const StatementPanel: FC<StatementPanelProps> = ({
   graphId,
-  reportId,
-  structureType,
+  structureId,
   viewMode,
   entityName,
   mappingId,
 }) => {
-  const [statement, setStatement] = useState<StatementData | null>(null)
+  const [envelope, setEnvelope] = useState<EnvelopeBlock | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isRegenerating, setIsRegenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [activeReportId, setActiveReportId] = useState(reportId)
   const [selectedPreset, setSelectedPreset] = useState<PresetKey | null>(null)
 
-  const loadStatement = useCallback(async () => {
+  const loadEnvelope = useCallback(async () => {
     try {
       setIsLoading(true)
       setError(null)
-      const data = await clients.reports.getStatement(
+      const block = await clients.ledger.getInformationBlock(
         graphId,
-        activeReportId,
-        structureType
+        structureId
       )
-      setStatement(data)
+      setEnvelope(block ?? null)
     } catch (err) {
-      console.error('Error loading statement:', err)
+      console.error('Error loading statement envelope:', err)
       setError('Failed to load statement.')
     } finally {
       setIsLoading(false)
     }
-  }, [graphId, activeReportId, structureType])
+  }, [graphId, structureId])
 
   useEffect(() => {
-    setActiveReportId(reportId)
-  }, [reportId])
+    loadEnvelope()
+  }, [loadEnvelope])
 
-  useEffect(() => {
-    loadStatement()
-  }, [loadStatement])
-
-  // Regenerate report with a different period preset
   const handlePresetClick = useCallback(
     async (preset: PresetKey) => {
-      if (!mappingId) return
+      if (!mappingId || !envelope) return
 
       try {
         setIsRegenerating(true)
@@ -213,8 +215,9 @@ const StatementPanel: FC<StatementPanelProps> = ({
         const { periodStart, periodEnd, comparative, periods } =
           buildPeriods(preset)
 
-        const ack = await clients.reports.createReport(graphId, {
-          name: `${structureType === 'income_statement' ? 'Income Statement' : 'Balance Sheet'} — ${preset.replace(/_/g, ' ')}`,
+        const reportName = envelope.displayName ?? envelope.name ?? 'Report'
+        await clients.reports.createReport(graphId, {
+          name: `${reportName} — ${preset.replace(/_/g, ' ')}`,
           mappingId,
           periodStart,
           periodEnd,
@@ -222,12 +225,9 @@ const StatementPanel: FC<StatementPanelProps> = ({
           periods,
         })
 
-        // `create` is synchronous on the backend today — the envelope's
-        // `result` carries the freshly-created report row, including its id.
-        const newReportId = ack.result?.id as string | undefined
-        if (newReportId) {
-          setActiveReportId(newReportId)
-        }
+        // createReport synchronously persists a new FactSet for this
+        // Structure; refetching the envelope picks it up as the latest.
+        await loadEnvelope()
       } catch (err) {
         console.error('Error regenerating report:', err)
         setError('Failed to regenerate report with new period.')
@@ -235,7 +235,7 @@ const StatementPanel: FC<StatementPanelProps> = ({
         setIsRegenerating(false)
       }
     },
-    [graphId, mappingId, structureType]
+    [graphId, mappingId, envelope, loadEnvelope]
   )
 
   if (isLoading && !isRegenerating) {
@@ -246,7 +246,7 @@ const StatementPanel: FC<StatementPanelProps> = ({
     )
   }
 
-  if (error && !statement) {
+  if (error && !envelope) {
     return (
       <div className="flex items-center gap-2 py-8 text-red-500">
         <HiExclamationCircle className="h-5 w-5" />
@@ -255,7 +255,7 @@ const StatementPanel: FC<StatementPanelProps> = ({
     )
   }
 
-  if (!statement || statement.rows.length === 0) {
+  if (!envelope) {
     return (
       <div className="py-12 text-center text-gray-500 dark:text-gray-400">
         No data available for this structure.
@@ -263,32 +263,8 @@ const StatementPanel: FC<StatementPanelProps> = ({
     )
   }
 
-  // Facts view — project statement rows as flat fact rows
-  if (viewMode === 'facts') {
-    const facts: FactRow[] = []
-    for (const row of statement.rows) {
-      for (let i = 0; i < statement.periods.length; i++) {
-        const period = statement.periods[i]
-        const value = row.values[i]
-        if (value !== null && value !== undefined) {
-          facts.push({
-            elementName: row.elementName,
-            elementQname: row.elementQname,
-            periodStart: period.start || '',
-            periodEnd: period.end || null,
-            value,
-            unit: 'USD',
-          })
-        }
-      }
-    }
-    return <FactsTable facts={facts} />
-  }
-
-  // Rendered view
   return (
     <>
-      {/* Period preset bar */}
       {mappingId && (
         <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3 dark:border-gray-700">
           <span className="mr-1 text-xs font-medium text-gray-400">
@@ -320,49 +296,11 @@ const StatementPanel: FC<StatementPanelProps> = ({
           </span>
         </div>
       ) : (
-        <>
-          <StatementTable data={statement} entityName={entityName} />
-
-          {/* Validation */}
-          {statement.validation && (
-            <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
-              <div className="flex items-center gap-2 text-sm">
-                {statement.validation.passed ? (
-                  <Badge color="success" size="sm">
-                    <HiCheckCircle className="mr-1 inline h-3 w-3" />
-                    Validation Passed
-                  </Badge>
-                ) : (
-                  <Badge color="failure" size="sm">
-                    <HiExclamationCircle className="mr-1 inline h-3 w-3" />
-                    Validation Failed
-                  </Badge>
-                )}
-                {statement.validation.warnings.length > 0 && (
-                  <Badge color="warning" size="sm">
-                    {statement.validation.warnings.length} warning
-                    {statement.validation.warnings.length !== 1 ? 's' : ''}
-                  </Badge>
-                )}
-              </div>
-              {statement.validation.failures.length > 0 && (
-                <ul className="mt-2 text-sm text-red-400">
-                  {statement.validation.failures.map((f, i) => (
-                    <li key={i}>{f}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-
-          {/* Unmapped count */}
-          {statement.unmappedCount > 0 && (
-            <div className="mt-2 text-sm text-gray-500">
-              {statement.unmappedCount} unmapped CoA element
-              {statement.unmappedCount !== 1 ? 's' : ''} not included in report
-            </div>
-          )}
-        </>
+        <BlockView
+          envelope={envelope}
+          viewMode={viewMode}
+          entityName={entityName}
+        />
       )}
     </>
   )

@@ -1,48 +1,36 @@
 'use client'
 
-import { clients, customTheme } from '@/lib/core'
-import type { InformationBlockFact } from '@robosystems/client/clients'
-import {
-  Button,
-  Spinner,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
-} from 'flowbite-react'
+import { clients } from '@/lib/core'
+import { Spinner } from 'flowbite-react'
 import type { FC } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
-import { TbFileInvoice } from 'react-icons/tb'
-import { formatCurrencyDollars, formatMonth } from '../utils'
-import type { FactRow } from './FactsTable'
-import FactsTable from './FactsTable'
+import BlockView from './blockview/BlockView'
+import type { EnvelopeBlock } from './blockview/types'
 import type { ViewMode } from './ViewModeToggle'
-
-/** Fact with element name resolved from the envelope's elements[] list. */
-type ScheduleFactRow = InformationBlockFact & { elementName: string }
 
 interface SchedulePanelProps {
   graphId: string
   structureId: string
-  scheduleName: string
   viewMode: ViewMode
 }
 
+/**
+ * Thin orchestration shell around the schedule envelope. Owns the
+ * fetch + createClosingEntry mutation; delegates all rendering to
+ * `BlockView`, which dispatches to the schedule `Rendering` projection
+ * (or the uniform `FactTable` projection in facts mode).
+ */
 const SchedulePanel: FC<SchedulePanelProps> = ({
   graphId,
   structureId,
-  scheduleName,
   viewMode,
 }) => {
-  const [facts, setFacts] = useState<ScheduleFactRow[]>([])
+  const [envelope, setEnvelope] = useState<EnvelopeBlock | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [creatingEntry, setCreatingEntry] = useState<string | null>(null)
 
-  const loadFacts = useCallback(async () => {
+  const loadEnvelope = useCallback(async () => {
     try {
       setIsLoading(true)
       setError(null)
@@ -50,19 +38,9 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
         graphId,
         structureId
       )
-      if (!block) {
-        setFacts([])
-        return
-      }
-      const elementsById = new Map(block.elements.map((e) => [e.id, e]))
-      setFacts(
-        block.facts.map((f) => ({
-          ...f,
-          elementName: elementsById.get(f.elementId)?.name ?? '',
-        }))
-      )
+      setEnvelope(block ?? null)
     } catch (err) {
-      console.error('Error loading schedule facts:', err)
+      console.error('Error loading schedule envelope:', err)
       setError('Failed to load schedule facts.')
     } finally {
       setIsLoading(false)
@@ -70,39 +48,29 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
   }, [graphId, structureId])
 
   useEffect(() => {
-    loadFacts()
-  }, [loadFacts])
+    loadEnvelope()
+  }, [loadEnvelope])
 
-  // Group facts by period
-  const groupedFacts = useMemo(() => {
-    const groups: Record<string, ScheduleFactRow[]> = {}
-    for (const fact of facts) {
-      const key = `${fact.periodStart}_${fact.periodEnd}`
-      if (!groups[key]) groups[key] = []
-      groups[key].push(fact)
-    }
-    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
-  }, [facts])
-
-  const handleCreateEntry = async (periodEnd: string, periodStart: string) => {
-    const periodKey = `${periodStart}_${periodEnd}`
-    try {
-      setCreatingEntry(periodKey)
-      await clients.ledger.createClosingEntry(
-        graphId,
-        structureId,
-        periodEnd,
-        periodStart,
-        periodEnd
-      )
-      await loadFacts()
-    } catch (err) {
-      console.error('Error creating closing entry:', err)
-      setError('Failed to create closing entry.')
-    } finally {
-      setCreatingEntry(null)
-    }
-  }
+  const handleCreateEntry = useCallback(
+    async (periodEnd: string, periodStart: string): Promise<void> => {
+      try {
+        // SDK signature: (graphId, structureId, postingDate, periodStart, periodEnd, memo?)
+        // Closing entries post on the last day of the period they close.
+        await clients.ledger.createClosingEntry(
+          graphId,
+          structureId,
+          periodEnd,
+          periodStart,
+          periodEnd
+        )
+        await loadEnvelope()
+      } catch (err) {
+        console.error('Error creating closing entry:', err)
+        setError('Failed to create closing entry.')
+      }
+    },
+    [graphId, structureId, loadEnvelope]
+  )
 
   if (isLoading) {
     return (
@@ -121,7 +89,7 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
     )
   }
 
-  if (facts.length === 0) {
+  if (!envelope) {
     return (
       <div className="py-12 text-center text-gray-500 dark:text-gray-400">
         No facts found for this schedule.
@@ -129,91 +97,12 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
     )
   }
 
-  // Facts view
-  if (viewMode === 'facts') {
-    const factRows: FactRow[] = facts.map((f) => ({
-      elementName: f.elementName,
-      elementQname: f.elementId,
-      periodStart: f.periodStart,
-      periodEnd: f.periodEnd,
-      value: f.value,
-      unit: 'USD',
-    }))
-    return <FactsTable facts={factRows} />
-  }
-
-  // Rendered view — facts grouped by period
   return (
-    <div>
-      <div className="border-b border-gray-200 py-4 text-center dark:border-gray-700">
-        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-          {scheduleName}
-        </p>
-        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-          {groupedFacts.length} periods
-        </p>
-      </div>
-
-      <div className="overflow-x-auto">
-        <Table theme={customTheme.table}>
-          <TableHead>
-            <TableHeadCell>Period</TableHeadCell>
-            <TableHeadCell>Element</TableHeadCell>
-            <TableHeadCell className="text-right">Amount</TableHeadCell>
-            <TableHeadCell className="w-32" />
-          </TableHead>
-          <TableBody>
-            {groupedFacts.map(([key, periodFacts]) =>
-              periodFacts.map((fact, idx) => (
-                <TableRow key={`${key}-${fact.elementId}`}>
-                  {idx === 0 && (
-                    <TableCell
-                      rowSpan={periodFacts.length}
-                      className="align-top font-medium text-gray-900 dark:text-white"
-                    >
-                      {fact.periodStart ? formatMonth(fact.periodStart) : '—'}
-                    </TableCell>
-                  )}
-                  <TableCell className="text-gray-700 dark:text-gray-300">
-                    {fact.elementName}
-                  </TableCell>
-                  <TableCell className="text-right font-mono text-gray-900 dark:text-white">
-                    {formatCurrencyDollars(fact.value)}
-                  </TableCell>
-                  {idx === 0 && (
-                    <TableCell
-                      rowSpan={periodFacts.length}
-                      className="align-top"
-                    >
-                      <Button
-                        theme={customTheme.button}
-                        size="xs"
-                        color="primary"
-                        disabled={
-                          creatingEntry ===
-                          `${fact.periodStart}_${fact.periodEnd}`
-                        }
-                        onClick={() =>
-                          handleCreateEntry(fact.periodEnd, fact.periodStart)
-                        }
-                      >
-                        {creatingEntry ===
-                        `${fact.periodStart}_${fact.periodEnd}` ? (
-                          <Spinner size="sm" className="mr-1" />
-                        ) : (
-                          <TbFileInvoice className="mr-1 h-3.5 w-3.5" />
-                        )}
-                        Entry
-                      </Button>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+    <BlockView
+      envelope={envelope}
+      viewMode={viewMode}
+      onCreateEntry={handleCreateEntry}
+    />
   )
 }
 

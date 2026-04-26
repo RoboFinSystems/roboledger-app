@@ -67,13 +67,9 @@ vi.mock('../components/StructureSidebar', () => ({
     // `default` branch and masked any real item-selection breakage.
     switch (item.itemType) {
       case 'statement':
-        return {
-          type: 'statement',
-          reportId: item.reportId || '',
-          structureType: item.structureType || '',
-        }
+        return { type: 'statement', structureId: item.id }
       case 'schedule':
-        return { type: 'schedule', structureId: item.id, name: item.name }
+        return { type: 'schedule', structureId: item.id }
       case 'account_rollups':
         return {
           type: 'account_rollups',
@@ -89,14 +85,14 @@ vi.mock('../components/StructureSidebar', () => ({
 }))
 
 vi.mock('../components/StatementPanel', () => ({
-  default: ({ structureType }: any) => (
-    <div data-testid="statement-panel">{structureType}</div>
+  default: ({ structureId }: any) => (
+    <div data-testid="statement-panel">{structureId}</div>
   ),
 }))
 
 vi.mock('../components/SchedulePanel', () => ({
-  default: ({ scheduleName }: any) => (
-    <div data-testid="schedule-panel">{scheduleName}</div>
+  default: ({ structureId }: any) => (
+    <div data-testid="schedule-panel">{structureId}</div>
   ),
 }))
 
@@ -108,6 +104,10 @@ vi.mock('../components/AccountRollupsPanel', () => ({
 
 vi.mock('../components/PeriodClosePanel', () => ({
   default: () => <div data-testid="period-close-panel" />,
+}))
+
+vi.mock('../components/TrialBalancePanel', () => ({
+  default: () => <div data-testid="trial-balance-panel" />,
 }))
 
 vi.mock('../components/ViewModeToggle', () => ({

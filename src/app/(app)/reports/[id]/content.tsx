@@ -2,12 +2,7 @@
 
 import { PageHeader } from '@/components/PageHeader'
 import { clients, customTheme, PageLayout } from '@/lib/core'
-import type {
-  PublishList,
-  Report,
-  StatementData,
-  StatementRow,
-} from '@robosystems/client/clients'
+import type { PublishList, ReportPackage } from '@robosystems/client/clients'
 import {
   Alert,
   Badge,
@@ -19,40 +14,20 @@ import {
   ModalFooter,
   ModalHeader,
   Spinner,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
 } from 'flowbite-react'
 import Link from 'next/link'
 import { useParams, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  HiCheckCircle,
   HiChevronLeft,
   HiDocumentReport,
   HiExclamationCircle,
   HiShare,
 } from 'react-icons/hi'
-
-const STRUCTURE_LABELS: Record<string, string> = {
-  income_statement: 'Income Statement',
-  balance_sheet: 'Balance Sheet',
-  cash_flow_statement: 'Cash Flow',
-  equity_statement: 'Equity',
-}
-
-const formatCurrency = (value: number): string => {
-  const abs = Math.abs(value)
-  const formatted = abs.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-  return value < 0 ? `(${formatted})` : formatted
-}
+import BlockView from '../../ledger/close/components/blockview/BlockView'
+import type { ViewMode } from '../../ledger/close/components/ViewModeToggle'
+import ViewModeToggle from '../../ledger/close/components/ViewModeToggle'
 
 const formatDate = (dateString: string | null): string => {
   if (!dateString) return 'N/A'
@@ -64,89 +39,48 @@ const formatDate = (dateString: string | null): string => {
   })
 }
 
-const StatementTable: FC<{
-  data: StatementData
-  entityName?: string | null
-}> = ({ data, entityName }) => {
-  const periods = data.periods
-  return (
-    <div className="overflow-x-auto">
-      {entityName && (
-        <div className="border-b border-gray-200 bg-gray-50 py-3 text-center dark:border-gray-700 dark:bg-gray-800">
-          <p className="text-sm font-bold tracking-widest text-gray-900 uppercase dark:text-white">
-            {entityName}
-          </p>
-        </div>
-      )}
-      <Table theme={customTheme.table}>
-        <TableHead>
-          <TableHeadCell className="w-1/2">{data.structureName}</TableHeadCell>
-          {periods.map((period, i) => (
-            <TableHeadCell key={i} className="text-right">
-              {period.label ||
-                `${formatDate(period.start)} — ${formatDate(period.end)}`}
-            </TableHeadCell>
-          ))}
-        </TableHead>
-        <TableBody>
-          {data.rows.map((row: StatementRow, idx: number) => {
-            const indent = row.depth * 24
-            const isBold = row.isSubtotal
-            const primaryValue = row.values[0] ?? 0
-            const isZero = primaryValue === 0
-
-            return (
-              <TableRow
-                key={`${row.elementId}-${idx}`}
-                className={isBold ? 'bg-gray-50 dark:bg-gray-800/50' : ''}
-              >
-                <TableCell
-                  style={{ paddingLeft: `${indent + 16}px` }}
-                  className={`${
-                    isBold
-                      ? 'font-semibold text-gray-900 dark:text-white'
-                      : 'text-gray-700 dark:text-gray-300'
-                  } ${isZero && !isBold ? 'text-gray-400 dark:text-gray-500' : ''}`}
-                >
-                  {row.elementName}
-                </TableCell>
-                {row.values.map((value, i) => (
-                  <TableCell
-                    key={i}
-                    className={`text-right font-mono ${
-                      isBold
-                        ? 'font-semibold text-gray-900 dark:text-white'
-                        : 'text-gray-700 dark:text-gray-300'
-                    } ${
-                      (value ?? 0) === 0 && !isBold
-                        ? 'text-gray-400 dark:text-gray-500'
-                        : ''
-                    }`}
-                  >
-                    {value !== null ? formatCurrency(value) : '—'}
-                  </TableCell>
-                ))}
-              </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
-    </div>
-  )
+const PACKAGE_STATUS_BADGE: Record<
+  string,
+  { color: 'gray' | 'info' | 'success' | 'failure' | 'warning'; label: string }
+> = {
+  draft: { color: 'gray', label: 'Draft' },
+  under_review: { color: 'info', label: 'Under Review' },
+  filed: { color: 'success', label: 'Filed' },
+  archived: { color: 'failure', label: 'Archived' },
 }
 
+interface ShareReportResultEntry {
+  target_graph_id: string
+  status: string
+  error: string | null
+  fact_count?: number
+}
+
+interface ShareReportResult {
+  results?: ShareReportResultEntry[]
+}
+
+/**
+ * Saved-report viewer in package mode. Loads the Report's
+ * ``ReportPackage`` envelope (Report metadata + N pre-rehydrated
+ * `InformationBlock` envelopes — one per attached FactSet) and stacks
+ * a `BlockView` per item, grouped visually.
+ *
+ * Replaces the legacy per-tab `getStatement(reportId, structureType)`
+ * flow. Frozen FactSets pin each item to the snapshot the Report
+ * generated, so the viewer is the same whether the Report is currently
+ * generating or filed long ago.
+ */
 const ReportViewerContent: FC = function () {
   const params = useParams()
   const searchParams = useSearchParams()
   const reportId = params.id as string
   const graphId = searchParams.get('graph')
 
-  const [report, setReport] = useState<Report | null>(null)
-  const [activeStructure, setActiveStructure] = useState<string | null>(null)
-  const [statement, setStatement] = useState<StatementData | null>(null)
+  const [pkg, setPkg] = useState<ReportPackage | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isLoadingStatement, setIsLoadingStatement] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('rendered')
 
   // Share modal state
   const [showShareModal, setShowShareModal] = useState(false)
@@ -181,20 +115,8 @@ const ReportViewerContent: FC = function () {
         selectedListId
       )
 
-      // `shareReport` is a sync backend dispatch today — the envelope's `result`
-      // carries the backend's ShareReportResponse payload (a list of
-      // per-target outcomes). Shape: { report_id, results: [...] }.
       const shareResults =
-        (
-          ack.result as {
-            results?: Array<{
-              target_graph_id: string
-              status: string
-              error: string | null
-              fact_count?: number
-            }>
-          } | null
-        )?.results ?? []
+        (ack.result as ShareReportResult | null)?.results ?? []
       const succeeded = shareResults.filter((r) => r.status === 'shared').length
       const failed = shareResults.filter((r) => r.status === 'error')
       let msg = `Shared to ${succeeded} recipient${succeeded !== 1 ? 's' : ''} successfully.`
@@ -211,64 +133,37 @@ const ReportViewerContent: FC = function () {
     }
   }, [graphId, reportId, selectedListId])
 
-  // Load report metadata
+  // Load the package — Report metadata + rehydrated envelopes
   useEffect(() => {
-    const loadReport = async () => {
+    const loadPackage = async () => {
       if (!graphId || !reportId) {
         setIsLoading(false)
         setError('Report not found — missing graph context.')
         return
       }
-
       try {
         setIsLoading(true)
         setError(null)
-        const r = await clients.reports.getReport(graphId, reportId)
-        setReport(r)
-
-        // Auto-select first structure
-        if (r.structures.length > 0) {
-          setActiveStructure(r.structures[0].structureType)
-        }
+        const data = await clients.reports.getReportPackage(graphId, reportId)
+        setPkg(data)
       } catch (err) {
-        console.error('Error loading report:', err)
+        console.error('Error loading report package:', err)
         setError('Failed to load report.')
       } finally {
         setIsLoading(false)
       }
     }
-
-    loadReport()
+    loadPackage()
   }, [graphId, reportId])
 
-  // Load statement when structure tab changes
-  const loadStatement = useCallback(
-    async (structureType: string) => {
-      if (!graphId || !reportId) return
-
-      try {
-        setIsLoadingStatement(true)
-        const data = await clients.reports.getStatement(
-          graphId,
-          reportId,
-          structureType
-        )
-        setStatement(data)
-      } catch (err) {
-        console.error('Error loading statement:', err)
-        setStatement(null)
-      } finally {
-        setIsLoadingStatement(false)
-      }
-    },
-    [graphId, reportId]
-  )
-
-  useEffect(() => {
-    if (activeStructure) {
-      loadStatement(activeStructure)
+  const periodLabel = useMemo(() => {
+    if (!pkg) return ''
+    const entityPrefix = pkg.entityName ? `${pkg.entityName} — ` : ''
+    if (pkg.periodType === 'quarterly' || !pkg.periodStart) {
+      return `${entityPrefix}${pkg.name}`
     }
-  }, [activeStructure, loadStatement])
+    return `${entityPrefix}${formatDate(pkg.periodStart)} — ${formatDate(pkg.periodEnd)}`
+  }, [pkg])
 
   if (isLoading) {
     return (
@@ -280,7 +175,7 @@ const ReportViewerContent: FC = function () {
     )
   }
 
-  if (error || !report) {
+  if (error || !pkg) {
     return (
       <PageLayout>
         <Card theme={customTheme.card}>
@@ -301,31 +196,33 @@ const ReportViewerContent: FC = function () {
     )
   }
 
+  const filingBadge =
+    PACKAGE_STATUS_BADGE[pkg.filingStatus] ?? PACKAGE_STATUS_BADGE.draft
+
   return (
     <PageLayout>
       <PageHeader
         icon={HiDocumentReport}
-        title={report.name}
-        description={`${report.entityName ? `${report.entityName} — ` : ''}${report.periodType === 'quarterly' || !report.periodStart ? report.name : `${formatDate(report.periodStart)} — ${formatDate(report.periodEnd)}`}`}
+        title={pkg.name}
+        description={periodLabel}
         gradient="from-orange-500 to-red-600"
         actions={
           <>
-            {report.generationStatus === 'published' &&
-              !report.sourceGraphId && (
-                <Button
-                  theme={customTheme.button}
-                  color="purple"
-                  onClick={() => {
-                    setShareResult(null)
-                    setSelectedListId(null)
-                    loadPublishLists()
-                    setShowShareModal(true)
-                  }}
-                >
-                  <HiShare className="mr-2 h-5 w-5" />
-                  Share
-                </Button>
-              )}
+            {pkg.generationStatus === 'published' && !pkg.sourceGraphId && (
+              <Button
+                theme={customTheme.button}
+                color="purple"
+                onClick={() => {
+                  setShareResult(null)
+                  setSelectedListId(null)
+                  loadPublishLists()
+                  setShowShareModal(true)
+                }}
+              >
+                <HiShare className="mr-2 h-5 w-5" />
+                Share
+              </Button>
+            )}
             <Link href="/reports">
               <Button theme={customTheme.button} color="light">
                 <HiChevronLeft className="mr-2 h-5 w-5" />
@@ -336,101 +233,53 @@ const ReportViewerContent: FC = function () {
         }
       />
 
-      {/* Provenance banner for shared reports */}
-      {report.sourceGraphId && (
-        <Card theme={customTheme.card}>
-          <div className="flex items-center gap-2 text-sm text-blue-400">
-            <HiShare className="h-4 w-4" />
-            <span>
-              Shared report
-              {report.entityName ? ` from ${report.entityName}` : ''} — received{' '}
-              {report.sharedAt ? formatDate(report.sharedAt.split('T')[0]) : ''}
+      {/* Status banner — filing lifecycle + provenance */}
+      <Card theme={customTheme.card}>
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <Badge color={filingBadge.color} size="sm">
+            {filingBadge.label}
+          </Badge>
+          {pkg.filedAt && (
+            <span className="text-gray-500 dark:text-gray-400">
+              Filed {formatDate(pkg.filedAt.split('T')[0])}
+              {pkg.filedBy ? ` by ${pkg.filedBy}` : ''}
             </span>
+          )}
+          {pkg.sourceGraphId && (
+            <span className="flex items-center gap-1 text-blue-400">
+              <HiShare className="h-4 w-4" />
+              Shared report
+              {pkg.entityName ? ` from ${pkg.entityName}` : ''}
+              {pkg.sharedAt
+                ? ` — received ${formatDate(pkg.sharedAt.split('T')[0])}`
+                : ''}
+            </span>
+          )}
+          <div className="ml-auto">
+            <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+          </div>
+        </div>
+      </Card>
+
+      {/* Package items — stacked BlockViews, one per FactSet */}
+      {pkg.items.length === 0 ? (
+        <Card theme={customTheme.card}>
+          <div className="py-12 text-center text-gray-500 dark:text-gray-400">
+            No statements available for this report yet.
           </div>
         </Card>
+      ) : (
+        pkg.items.map((item) => (
+          <Card key={item.factSetId} theme={customTheme.card}>
+            <BlockView
+              envelope={item.block}
+              viewMode={viewMode}
+              entityName={pkg.entityName}
+            />
+          </Card>
+        ))
       )}
 
-      {/* Structure tabs */}
-      <Card theme={customTheme.card}>
-        <div className="flex gap-2 border-b border-gray-200 pb-3 dark:border-gray-700">
-          {report.structures.map((s) => (
-            <Button
-              key={s.id}
-              theme={customTheme.button}
-              color={activeStructure === s.structureType ? 'primary' : 'light'}
-              size="sm"
-              onClick={() => setActiveStructure(s.structureType)}
-            >
-              {STRUCTURE_LABELS[s.structureType] || s.name}
-            </Button>
-          ))}
-        </div>
-
-        {/* Statement content */}
-        {isLoadingStatement ? (
-          <div className="flex justify-center py-12">
-            <Spinner size="lg" />
-          </div>
-        ) : statement && statement.rows.length > 0 ? (
-          <>
-            <StatementTable data={statement} entityName={report.entityName} />
-
-            {/* Validation */}
-            {statement.validation && (
-              <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
-                <div className="flex items-center gap-2 text-sm">
-                  {statement.validation.passed ? (
-                    <Badge color="success" size="sm">
-                      <HiCheckCircle className="mr-1 inline h-3 w-3" />
-                      Validation Passed
-                    </Badge>
-                  ) : (
-                    <Badge color="failure" size="sm">
-                      <HiExclamationCircle className="mr-1 inline h-3 w-3" />
-                      Validation Failed
-                    </Badge>
-                  )}
-                  {statement.validation.warnings.length > 0 && (
-                    <Badge color="warning" size="sm">
-                      {statement.validation.warnings.length} warning
-                      {statement.validation.warnings.length !== 1 ? 's' : ''}
-                    </Badge>
-                  )}
-                </div>
-                {statement.validation.failures.length > 0 && (
-                  <ul className="mt-2 text-sm text-red-400">
-                    {statement.validation.failures.map((f, i) => (
-                      <li key={i}>{f}</li>
-                    ))}
-                  </ul>
-                )}
-                {statement.validation.warnings.length > 0 && (
-                  <ul className="mt-2 text-sm text-yellow-400">
-                    {statement.validation.warnings.map((w, i) => (
-                      <li key={i}>{w}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-
-            {/* Unmapped elements notice */}
-            {statement.unmappedCount > 0 && (
-              <div className="mt-2 text-sm text-gray-500">
-                {statement.unmappedCount} unmapped CoA element
-                {statement.unmappedCount !== 1 ? 's' : ''} not included in
-                report
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="py-12 text-center">
-            <p className="text-gray-500 dark:text-gray-400">
-              No data available for this structure.
-            </p>
-          </div>
-        )}
-      </Card>
       {/* Share modal */}
       <Modal
         show={showShareModal}
