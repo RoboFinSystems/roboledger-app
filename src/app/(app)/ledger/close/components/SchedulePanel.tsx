@@ -54,6 +54,8 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
   const handleCreateEntry = useCallback(
     async (periodEnd: string, periodStart: string): Promise<void> => {
       try {
+        // SDK signature: (graphId, structureId, postingDate, periodStart, periodEnd, memo?)
+        // Closing entries post on the last day of the period they close.
         await clients.ledger.createClosingEntry(
           graphId,
           structureId,

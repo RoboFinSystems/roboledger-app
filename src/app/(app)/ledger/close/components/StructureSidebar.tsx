@@ -45,6 +45,9 @@ function itemToSelected(item: ClosingBookItem): SelectedItem {
     case 'period_close':
       return { type: 'period_close' }
     default:
+      console.warn(
+        `StructureSidebar: unknown itemType "${item.itemType}" — falling back to period_close`
+      )
       return { type: 'period_close' }
   }
 }

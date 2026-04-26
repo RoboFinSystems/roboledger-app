@@ -205,7 +205,7 @@ const StatementPanel: FC<StatementPanelProps> = ({
 
   const handlePresetClick = useCallback(
     async (preset: PresetKey) => {
-      if (!mappingId) return
+      if (!mappingId || !envelope) return
 
       try {
         setIsRegenerating(true)
@@ -215,7 +215,7 @@ const StatementPanel: FC<StatementPanelProps> = ({
         const { periodStart, periodEnd, comparative, periods } =
           buildPeriods(preset)
 
-        const reportName = envelope?.displayName ?? envelope?.name ?? 'Report'
+        const reportName = envelope.displayName ?? envelope.name ?? 'Report'
         await clients.reports.createReport(graphId, {
           name: `${reportName} — ${preset.replace(/_/g, ' ')}`,
           mappingId,

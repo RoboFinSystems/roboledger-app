@@ -106,6 +106,10 @@ vi.mock('../components/PeriodClosePanel', () => ({
   default: () => <div data-testid="period-close-panel" />,
 }))
 
+vi.mock('../components/TrialBalancePanel', () => ({
+  default: () => <div data-testid="trial-balance-panel" />,
+}))
+
 vi.mock('../components/ViewModeToggle', () => ({
   default: () => <div data-testid="view-mode-toggle" />,
 }))

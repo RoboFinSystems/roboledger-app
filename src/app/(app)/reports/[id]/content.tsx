@@ -49,6 +49,17 @@ const PACKAGE_STATUS_BADGE: Record<
   archived: { color: 'failure', label: 'Archived' },
 }
 
+interface ShareReportResultEntry {
+  target_graph_id: string
+  status: string
+  error: string | null
+  fact_count?: number
+}
+
+interface ShareReportResult {
+  results?: ShareReportResultEntry[]
+}
+
 /**
  * Saved-report viewer in package mode. Loads the Report's
  * ``ReportPackage`` envelope (Report metadata + N pre-rehydrated
@@ -105,16 +116,7 @@ const ReportViewerContent: FC = function () {
       )
 
       const shareResults =
-        (
-          ack.result as {
-            results?: Array<{
-              target_graph_id: string
-              status: string
-              error: string | null
-              fact_count?: number
-            }>
-          } | null
-        )?.results ?? []
+        (ack.result as ShareReportResult | null)?.results ?? []
       const succeeded = shareResults.filter((r) => r.status === 'shared').length
       const failed = shareResults.filter((r) => r.status === 'error')
       let msg = `Shared to ${succeeded} recipient${succeeded !== 1 ? 's' : ''} successfully.`
