@@ -29,20 +29,31 @@ import ConnectionCard, {
 } from './components/ConnectionCard'
 import QuickBooksSetupForm from './components/QuickBooksSetupForm'
 import SecSetupForm from './components/SecSetupForm'
+import SyncOptionsModal, {
+  type SyncOptions,
+} from './components/SyncOptionsModal'
 
-interface TaskStatus {
-  task_id: string
-  status:
-    | 'pending'
-    | 'in_progress'
-    | 'completed'
-    | 'failed'
-    | 'retrying'
-    | 'cancelled'
-  message: string
-  progress?: number
-  step?: string
-  error?: string
+// How long to keep polling for a sync to complete before giving up.
+const SYNC_POLL_INTERVAL_MS = 3000
+const SYNC_POLL_TIMEOUT_MS = 90_000
+
+interface SyncWatch {
+  // ms-since-epoch when we started watching this connection. We treat the
+  // sync as complete when ``last_sync`` is non-null AND parses to a value
+  // newer than this. Avoids "completing" instantly because of a stale
+  // last_sync from a previous run.
+  startedAt: number
+}
+
+// The backend serializes ``last_sync`` as a tz-less ISO string
+// (``"2026-04-30T16:23:34.146326"``) but the value is always UTC.
+// ``Date.parse`` of a tz-less ISO string is interpreted as LOCAL time,
+// so for users in negative-offset zones (CDT, etc.) the parsed value
+// drifts hours into the future. Force-UTC by appending ``Z`` when no
+// tz designator is present.
+function parseUtcMs(iso: string): number {
+  const hasTz = /[Z+-]\d{0,2}:?\d{0,2}$/i.test(iso) || iso.endsWith('Z')
+  return Date.parse(hasTz ? iso : iso + 'Z')
 }
 
 interface ConnectionProviderInfo {
@@ -65,11 +76,17 @@ export default function ModernConnectionsContent() {
   const [connections, setConnections] = useState<ConnectionData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTasks, setActiveTasks] = useState<Map<string, TaskStatus>>(
+  // Connections we're actively watching for sync completion. The polling
+  // effect compares each connection's ``last_sync`` against ``startedAt``
+  // and removes the entry when it advances.
+  const [syncWatches, setSyncWatches] = useState<Map<string, SyncWatch>>(
     new Map()
   )
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [connectionToDelete, setConnectionToDelete] =
+    useState<ConnectionData | null>(null)
+  const [syncOptionsOpen, setSyncOptionsOpen] = useState(false)
+  const [connectionToSync, setConnectionToSync] =
     useState<ConnectionData | null>(null)
   const [marketplaceOpen, setMarketplaceOpen] = useState(false)
   const [availableProviders, setAvailableProviders] = useState<
@@ -83,6 +100,7 @@ export default function ModernConnectionsContent() {
   const { currentGraphId } = graphState
   const searchParams = useSearchParams()
   const shownSuccessRef = useRef(false)
+  const oauthWatchSeededRef = useRef(false)
 
   // Show success toast when redirected from OAuth callback
   useEffect(() => {
@@ -100,91 +118,116 @@ export default function ModernConnectionsContent() {
 
   // ── Load connections (all providers) ──
 
-  const loadConnections = useCallback(async () => {
-    try {
-      setLoading(true)
-      if (!currentGraphId) return
+  const loadConnections = useCallback(
+    async ({ background = false }: { background?: boolean } = {}) => {
+      try {
+        if (!background) setLoading(true)
+        if (!currentGraphId) return [] as ConnectionData[]
 
-      const response = await SDK.listConnections({
-        path: { graph_id: currentGraphId },
-      })
+        const response = await SDK.listConnections({
+          path: { graph_id: currentGraphId },
+        })
 
-      const list = Array.isArray(response.data) ? response.data : []
-      setConnections(list as ConnectionData[])
-      setError(null)
-    } catch (err) {
-      const errorMsg = 'Failed to load connections'
-      setError(errorMsg)
-      showError(errorMsg)
-      console.error('Error loading connections:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [currentGraphId, showError])
+        const list = (
+          Array.isArray(response.data) ? response.data : []
+        ) as ConnectionData[]
+        setConnections(list)
+        setError(null)
+        return list
+      } catch (err) {
+        const errorMsg = 'Failed to load connections'
+        if (!background) {
+          setError(errorMsg)
+          showError(errorMsg)
+        }
+        console.error('Error loading connections:', err)
+        return [] as ConnectionData[]
+      } finally {
+        if (!background) setLoading(false)
+      }
+    },
+    [currentGraphId, showError]
+  )
 
   useEffect(() => {
     if (!currentGraphId) return
-    // When arriving from OAuth callback, give the backend a moment to persist
-    const success = searchParams.get('success')
-    if (success) {
-      const timer = setTimeout(() => loadConnections(), 1500)
-      return () => clearTimeout(timer)
-    }
     loadConnections()
-  }, [loadConnections, currentGraphId, searchParams])
+  }, [loadConnections, currentGraphId])
 
-  // ── Poll active tasks ──
-
+  // After arriving from the OAuth callback, the backend has just kicked off
+  // an auto-sync. We can't poll the SSE operation surface (Dagster ops for
+  // QB aren't wired to emit OPERATION_COMPLETED), so we watch the
+  // connection's ``last_sync`` field instead — see the polling effect below.
   useEffect(() => {
-    if (activeTasks.size === 0) return
+    if (!currentGraphId) return
+    if (oauthWatchSeededRef.current) return
+    const success = searchParams.get('success')
+    if (!success) return
+    oauthWatchSeededRef.current = true
 
-    const interval = setInterval(async () => {
-      const updatedTasks = new Map(activeTasks)
-      let hasUpdates = false
-
-      for (const [taskId, taskStatus] of activeTasks) {
-        if (
-          taskStatus.status === 'pending' ||
-          taskStatus.status === 'in_progress' ||
-          taskStatus.status === 'retrying'
-        ) {
-          try {
-            const response = await SDK.getOperationStatus({
-              path: { operation_id: taskId },
-            })
-            if (response.data) {
-              const taskData: TaskStatus = {
-                task_id: (response.data as any).task_id || taskId,
-                status: (response.data as any).status as TaskStatus['status'],
-                message: (response.data as any).message || '',
-                progress: (response.data as any).progress || 0,
-                step: (response.data as any).step || '',
-                error: (response.data as any).error || null,
-              }
-              updatedTasks.set(taskId, taskData)
-              hasUpdates = true
-
-              if (response.data.status === 'completed') {
-                setTimeout(() => {
-                  loadConnections()
-                  updatedTasks.delete(taskId)
-                  setActiveTasks(new Map(updatedTasks))
-                }, 1000)
-              }
-            }
-          } catch (err) {
-            console.error(`Failed to get task status for ${taskId}:`, err)
+    let cancelled = false
+    const startedAt = Date.now()
+    ;(async () => {
+      // Give the backend a moment to register the connection record.
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      if (cancelled) return
+      const list = await loadConnections()
+      if (cancelled || list.length === 0) return
+      // Track every connection that hasn't synced yet — typically just the
+      // one from this OAuth flow.
+      setSyncWatches((prev) => {
+        const next = new Map(prev)
+        for (const c of list) {
+          if (!c.last_sync && !next.has(c.connection_id)) {
+            next.set(c.connection_id, { startedAt })
           }
         }
-      }
+        return next
+      })
+    })()
 
-      if (hasUpdates) {
-        setActiveTasks(updatedTasks)
-      }
-    }, 2000)
+    return () => {
+      cancelled = true
+    }
+  }, [searchParams, currentGraphId, loadConnections])
+
+  // ── Poll watched syncs by reloading the connections list ──
+
+  useEffect(() => {
+    if (syncWatches.size === 0) return
+
+    const interval = setInterval(async () => {
+      const list = await loadConnections({ background: true })
+      const now = Date.now()
+      setSyncWatches((prev) => {
+        const next = new Map(prev)
+        for (const [connectionId, watch] of prev) {
+          const conn = list.find((c) => c.connection_id === connectionId)
+          if (!conn) {
+            // Connection deleted while we were watching — stop tracking.
+            next.delete(connectionId)
+            continue
+          }
+          const completed =
+            conn.last_sync && parseUtcMs(conn.last_sync) >= watch.startedAt
+          if (completed) {
+            next.delete(connectionId)
+            showSuccess(
+              `${conn.provider.charAt(0).toUpperCase()}${conn.provider.slice(1)} sync complete`
+            )
+            continue
+          }
+          if (now - watch.startedAt > SYNC_POLL_TIMEOUT_MS) {
+            // Give up silently — the user can refresh manually if needed.
+            next.delete(connectionId)
+          }
+        }
+        return next
+      })
+    }, SYNC_POLL_INTERVAL_MS)
 
     return () => clearInterval(interval)
-  }, [activeTasks, loadConnections])
+  }, [syncWatches, loadConnections, showSuccess])
 
   // ── Marketplace ──
 
@@ -229,39 +272,49 @@ export default function ModernConnectionsContent() {
 
   // ── Sync ──
 
-  const handleSync = async (connectionId: string) => {
+  const openSyncOptions = (connection: ConnectionData) => {
+    setConnectionToSync(connection)
+    setSyncOptionsOpen(true)
+  }
+
+  const closeSyncOptions = () => {
+    setSyncOptionsOpen(false)
+    setConnectionToSync(null)
+  }
+
+  const handleSync = async (connectionId: string, options: SyncOptions) => {
     try {
       if (!currentGraphId) {
         showError('No graph selected')
         return
       }
 
-      const syncResponse = await SDK.syncConnection({
+      const startedAt = Date.now()
+      await SDK.syncConnection({
         path: {
           graph_id: currentGraphId,
           connection_id: connectionId,
         },
-        body: { full_sync: true },
+        body: options,
       })
 
-      const syncData = syncResponse.data as any
-      const operationId = syncData?.operationId
-      if (operationId) {
-        setActiveTasks((prev) =>
-          new Map(prev).set(operationId, {
-            task_id: operationId,
-            status: syncData.status || 'pending',
-            message: syncData.result?.message || 'Sync started...',
-          })
-        )
-        showSuccess('Sync started successfully')
-      } else {
-        showError('Failed to start sync')
-      }
+      // Watch the connection list for ``last_sync`` to advance past
+      // ``startedAt`` — the SSE operation surface isn't wired up for QB
+      // (Dagster ops don't emit OPERATION_COMPLETED), so we poll the
+      // connection record directly.
+      setSyncWatches((prev) => new Map(prev).set(connectionId, { startedAt }))
+      showSuccess('Sync started successfully')
     } catch (err) {
       showError('Failed to start sync')
       console.error('Error syncing:', err)
     }
+  }
+
+  const handleSyncOptionsSubmit = (options: SyncOptions) => {
+    if (!connectionToSync) return
+    const connectionId = connectionToSync.connection_id
+    closeSyncOptions()
+    void handleSync(connectionId, options)
   }
 
   // ── Delete ──
@@ -292,25 +345,17 @@ export default function ModernConnectionsContent() {
   const getConnectionStatus = (
     connection: ConnectionData
   ): ConnectionStatus => {
-    // Check if there's an active task for this connection
-    for (const task of activeTasks.values()) {
-      if (
-        task.message.toLowerCase().includes(connection.provider.toLowerCase())
-      ) {
-        return {
-          status: task.status === 'in_progress' ? 'syncing' : task.status,
-          message: task.message,
-          progress: task.progress,
-          step: task.step,
-          error: task.error,
-        }
+    if (syncWatches.has(connection.connection_id)) {
+      return {
+        status: 'syncing',
+        message: 'Syncing…',
       }
     }
 
     return {
       status: connection.status,
       message: connection.last_sync
-        ? `Last sync: ${new Date(connection.last_sync).toLocaleString()}`
+        ? `Last sync: ${new Date(parseUtcMs(connection.last_sync)).toLocaleString()}`
         : 'Never synced',
     }
   }
@@ -351,7 +396,7 @@ export default function ModernConnectionsContent() {
               key={connection.connection_id}
               connection={connection}
               status={getConnectionStatus(connection)}
-              onSync={() => handleSync(connection.connection_id)}
+              onSync={() => openSyncOptions(connection)}
               onDelete={() => {
                 setConnectionToDelete(connection)
                 setDeleteModalOpen(true)
@@ -433,6 +478,14 @@ export default function ModernConnectionsContent() {
             </ModalFooter>
           )}
         </Modal>
+
+        {/* ── Sync Options Modal ── */}
+        <SyncOptionsModal
+          isOpen={syncOptionsOpen}
+          onClose={closeSyncOptions}
+          onSubmit={handleSyncOptionsSubmit}
+          providerLabel={connectionToSync?.provider ?? 'connection'}
+        />
 
         {/* ── Delete Confirmation Modal ── */}
         <Modal
