@@ -173,20 +173,23 @@ const TrialBalanceContent: FC = function () {
             }
           }
 
-          // Preserve CoA order: primary sort by account code (natural/numeric
-          // when possible), secondary by QB AccountType if it's populated,
-          // fallback by name. Real CoAs assign codes in type-grouping ranges
-          // (1xxx assets, 2xxx liabilities, 3xxx equity, 4xxx revenue, 5xxx
-          // expenses) so account_code order and CoA display order match.
+          // Match CoA display order: primary sort by AccountType
+          // (Asset → Liability → Equity → Income → COGS → Expense),
+          // secondary by numeric account code (1xxx assets, 2xxx
+          // liabilities, ...) when set, then by name. Type-first ensures
+          // QB books without account numbering — where code === name —
+          // still cluster by financial category instead of degenerating
+          // to alphabetic-by-name. See `chart-of-accounts/content.tsx`
+          // `compareAccountNodes` for the matching logic.
           allRows.sort((a, b) => {
+            const ta = ACCOUNT_TYPE_ORDER[a.accountType || ''] ?? 99
+            const tb = ACCOUNT_TYPE_ORDER[b.accountType || ''] ?? 99
+            if (ta !== tb) return ta - tb
             const ca = a.accountCode ?? ''
             const cb = b.accountCode ?? ''
             if (ca !== cb) {
               return ca.localeCompare(cb, undefined, { numeric: true })
             }
-            const ta = ACCOUNT_TYPE_ORDER[a.accountType || ''] ?? 99
-            const tb = ACCOUNT_TYPE_ORDER[b.accountType || ''] ?? 99
-            if (ta !== tb) return ta - tb
             return a.accountName.localeCompare(b.accountName)
           })
         } else {

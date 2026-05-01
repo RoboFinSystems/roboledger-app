@@ -117,20 +117,21 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       setIsLoadingCalendar(true)
       setError(null)
       const cal = await clients.ledger.getFiscalCalendar(graphId)
+      // SDK returns null (not an error) when the ledger isn't
+      // initialized yet — surface as a first-class state so the UI
+      // shows the Initialize button instead of a red error banner.
       setCalendar(cal)
-      // Default to the first period in the catch-up sequence, or
-      // closed_through when nothing is pending.
-      const next = cal.catchUpSequence[0] ?? cal.closedThrough
-      setSelectedPeriod(next ?? null)
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err)
-      // 404 means the ledger isn't initialized yet — that's a first-class state
-      if (message.includes('404') || message.includes('not initialized')) {
-        setCalendar(null)
+      if (cal) {
+        // Default to the first period in the catch-up sequence, or
+        // closed_through when nothing is pending.
+        const next = cal.catchUpSequence[0] ?? cal.closedThrough
+        setSelectedPeriod(next ?? null)
       } else {
-        console.error('Error loading fiscal calendar:', err)
-        setError('Failed to load fiscal calendar.')
+        setSelectedPeriod(null)
       }
+    } catch (err: unknown) {
+      console.error('Error loading fiscal calendar:', err)
+      setError('Failed to load fiscal calendar.')
     } finally {
       setIsLoadingCalendar(false)
     }

@@ -17,7 +17,9 @@ import { useCallback, useEffect, useState } from 'react'
 // ── Types ──────────────────────────────────────────────────────────────
 
 interface TrialBalanceRow {
+  accountCode: string | null
   accountName: string
+  accountType: string | null
   classification: string
   totalDebits: number
   totalCredits: number
@@ -40,6 +42,43 @@ const CLASSIFICATION_LABELS: Record<string, string> = {
   equity: 'Equity',
   revenue: 'Revenue',
   expense: 'Expense',
+}
+
+// Match the CoA + main Trial Balance page sort: AccountType first
+// (Asset → Liability → Equity → Income → COGS → Expense), then numeric
+// account code, then name. See `chart-of-accounts/content.tsx`
+// `compareAccountNodes` for the canonical implementation.
+const ACCOUNT_TYPE_ORDER: Record<string, number> = {
+  Bank: 0,
+  'Accounts Receivable': 1,
+  'Other Current Asset': 2,
+  'Fixed Asset': 3,
+  'Other Asset': 4,
+  'Accounts Payable': 5,
+  'Credit Card': 6,
+  'Other Current Liability': 7,
+  'Long Term Liability': 8,
+  Equity: 9,
+  Income: 10,
+  'Cost of Goods Sold': 11,
+  Expense: 12,
+  'Other Income': 13,
+  'Other Expense': 14,
+}
+
+function compareTrialBalanceRows(
+  a: TrialBalanceRow,
+  b: TrialBalanceRow
+): number {
+  const ta = ACCOUNT_TYPE_ORDER[a.accountType || ''] ?? 99
+  const tb = ACCOUNT_TYPE_ORDER[b.accountType || ''] ?? 99
+  if (ta !== tb) return ta - tb
+  const ca = a.accountCode ?? ''
+  const cb = b.accountCode ?? ''
+  if (ca !== cb) {
+    return ca.localeCompare(cb, undefined, { numeric: true })
+  }
+  return a.accountName.localeCompare(b.accountName)
 }
 
 // Values returned by /trial-balance are already in dollars (the backend
@@ -72,15 +111,17 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
       const result = await clients.ledger.getTrialBalance(graphId)
 
       if (result) {
-        setRows(
-          (result.rows || []).map((row) => ({
-            accountName: row.accountName ?? '',
-            classification: row.trait ?? '',
-            totalDebits: row.totalDebits ?? 0,
-            totalCredits: row.totalCredits ?? 0,
-            netBalance: row.netBalance ?? 0,
-          }))
-        )
+        const mapped = (result.rows || []).map((row) => ({
+          accountCode: row.accountCode ?? null,
+          accountName: row.accountName ?? '',
+          accountType: row.accountType ?? null,
+          classification: row.trait ?? '',
+          totalDebits: row.totalDebits ?? 0,
+          totalCredits: row.totalCredits ?? 0,
+          netBalance: row.netBalance ?? 0,
+        }))
+        mapped.sort(compareTrialBalanceRows)
+        setRows(mapped)
       }
     } catch (err) {
       console.error('Error loading trial balance:', err)

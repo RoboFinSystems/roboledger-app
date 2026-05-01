@@ -81,7 +81,10 @@ interface TreeNode {
   id: string
   code?: string | null
   name: string
-  classification: string
+  // GraphQL returns the FASB elementsOfFinancialStatements identifier
+  // as `trait` ('asset' / 'liability' / ...). The UI surfaces it as
+  // `classification` to match the user-facing column header.
+  trait: string | null
   accountType?: string | null
   balanceType: string
   depth: number
@@ -129,18 +132,26 @@ const ACCOUNT_TYPE_ORDER: Record<string, number> = {
   'Other Expense': 14,
 }
 
-// Sort accounts by CoA code first (1xxx/2xxx/... ordering), falling back to
-// QB account_type order, then name. Applied at every tree level so child
-// accounts within a parent follow the same ordering as the roots.
+// Sort accounts by CoA account_type first (Asset → Liability → Equity →
+// Income → COGS → Expense, matching QB's native CoA grouping), then by
+// numeric code if the user has set up account numbering (1xxx/2xxx/...),
+// then by name as the final tiebreaker.
+//
+// Account-type comes before code because QB itself returns text codes
+// equal to the account name when account-numbering is disabled (the
+// default for new sandboxes). In that case sorting by code degenerates
+// to alphabetic-by-name and customers lose the asset-then-liability
+// grouping they expect from a CoA. With type-first, both numbered and
+// unnumbered books land on the same shape.
 function compareAccountNodes(a: TreeNode, b: TreeNode): number {
+  const ta = ACCOUNT_TYPE_ORDER[a.accountType || ''] ?? 99
+  const tb = ACCOUNT_TYPE_ORDER[b.accountType || ''] ?? 99
+  if (ta !== tb) return ta - tb
   const ca = a.code ?? ''
   const cb = b.code ?? ''
   if (ca !== cb) {
     return ca.localeCompare(cb, undefined, { numeric: true })
   }
-  const ta = ACCOUNT_TYPE_ORDER[a.accountType || ''] ?? 99
-  const tb = ACCOUNT_TYPE_ORDER[b.accountType || ''] ?? 99
-  if (ta !== tb) return ta - tb
   return a.name.localeCompare(b.name)
 }
 
@@ -155,7 +166,7 @@ function flattenTree(
       id: node.id,
       code: node.code ?? null,
       name: node.name,
-      classification: node.classification as ElementClassification,
+      classification: (node.trait ?? '') as ElementClassification,
       balance_type: node.balanceType,
       depth: node.depth,
       is_active: node.isActive,
@@ -332,6 +343,11 @@ const ChartOfAccountsContent: FC = function () {
   const [mappingCoverage, setMappingCoverage] =
     useState<LedgerMappingCoverage | null>(null)
   const [isAutoMapping, setIsAutoMapping] = useState(false)
+  // Mappings are an audit/curation concern, not an everyday browse one.
+  // Default the GAAP Mapping column to hidden so the CoA reads as a clean
+  // list of accounts; the user opens it via the toggle when they need to
+  // review or edit the FAC / rs-GAAP relationships.
+  const [showMappings, setShowMappings] = useState(false)
 
   // Inline editing state
   const [facElements, setFacElements] = useState<GaapElement[]>([])
@@ -719,25 +735,35 @@ const ChartOfAccountsContent: FC = function () {
                 </div>
               )}
             </div>
-            <Button
-              theme={customTheme.button}
-              color="purple"
-              size="xs"
-              onClick={handleAutoMap}
-              disabled={isAutoMapping}
-            >
-              {isAutoMapping ? (
-                <>
-                  <Spinner size="xs" className="mr-1" />
-                  Mapping...
-                </>
-              ) : (
-                <>
-                  <HiSparkles className="mr-1 h-3 w-3" />
-                  Auto-Map
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                theme={customTheme.button}
+                color="light"
+                size="xs"
+                onClick={() => setShowMappings((v) => !v)}
+              >
+                {showMappings ? 'Hide mappings' : 'Show mappings'}
+              </Button>
+              <Button
+                theme={customTheme.button}
+                color="purple"
+                size="xs"
+                onClick={handleAutoMap}
+                disabled={isAutoMapping}
+              >
+                {isAutoMapping ? (
+                  <>
+                    <Spinner size="xs" className="mr-1" />
+                    Mapping...
+                  </>
+                ) : (
+                  <>
+                    <HiSparkles className="mr-1 h-3 w-3" />
+                    Auto-Map
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </Card>
       )}
@@ -840,7 +866,9 @@ const ChartOfAccountsContent: FC = function () {
                 <TableHeadCell>Account Name</TableHeadCell>
                 <TableHeadCell>Classification</TableHeadCell>
                 <TableHeadCell>Normal Balance</TableHeadCell>
-                {hasMappings && <TableHeadCell>GAAP Mapping</TableHeadCell>}
+                {hasMappings && showMappings && (
+                  <TableHeadCell>GAAP Mapping</TableHeadCell>
+                )}
               </TableHead>
               <TableBody>
                 {filteredAccounts.map((account) => {
@@ -858,11 +886,12 @@ const ChartOfAccountsContent: FC = function () {
                           {account.depth > 0 && (
                             <span className="mr-1 text-gray-400">└</span>
                           )}
-                          {account.code && (
-                            <span className="mr-2 font-mono text-xs text-gray-500 dark:text-gray-400">
-                              {account.code}
-                            </span>
-                          )}
+                          {account.code &&
+                            account.code.split(':').pop() !== account.name && (
+                              <span className="mr-2 font-mono text-xs text-gray-500 dark:text-gray-400">
+                                {account.code}
+                              </span>
+                            )}
                           {account.name}
                         </span>
                       </TableCell>
@@ -891,7 +920,7 @@ const ChartOfAccountsContent: FC = function () {
                             : 'Credit'}
                         </span>
                       </TableCell>
-                      {hasMappings && (
+                      {hasMappings && showMappings && (
                         <TableCell className="relative">
                           {isSaving && isEditing ? (
                             <Spinner size="sm" />
