@@ -7,6 +7,7 @@ import {
   HiOutlineOfficeBuilding,
   HiSearch,
   HiTerminal,
+  HiUserGroup,
 } from 'react-icons/hi'
 import { MdOutlineAccountBalanceWallet } from 'react-icons/md'
 import { TbReportAnalytics } from 'react-icons/tb'
@@ -38,10 +39,16 @@ export const getNavigationItems = (
           ],
         },
         {
+          icon: HiUserGroup,
+          label: 'Agents',
+          href: '/agents',
+        },
+        {
           icon: MdOutlineAccountBalanceWallet,
           label: 'Ledger',
           items: [
             { href: '/ledger/chart-of-accounts', label: 'Chart of Accounts' },
+            { href: '/ledger/inbox', label: 'Inbox' },
             { href: '/ledger/transactions', label: 'Transactions' },
             { href: '/ledger/trial-balance', label: 'Trial Balance' },
             { href: '/ledger/close', label: 'Closing Book' },

@@ -124,6 +124,14 @@ const CloseContent: FC = function () {
     )
   }
 
+  // Rendered/Facts toggle only affects statement / schedule /
+  // account-rollups views. Hide it on Period Close + Trial Balance
+  // where it's dead UI.
+  const showViewToggle =
+    selectedItem?.type === 'statement' ||
+    selectedItem?.type === 'schedule' ||
+    selectedItem?.type === 'account_rollups'
+
   return (
     <PageLayout variant="full-width">
       <PageHeader
@@ -135,7 +143,11 @@ const CloseContent: FC = function () {
             : undefined
         }
         gradient="from-indigo-500 to-purple-600"
-        actions={<ViewModeToggle viewMode={viewMode} onChange={setViewMode} />}
+        actions={
+          showViewToggle ? (
+            <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+          ) : undefined
+        }
       />
 
       {error && (

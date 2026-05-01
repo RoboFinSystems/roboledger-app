@@ -268,7 +268,7 @@ describe('CloseContent', () => {
     })
   })
 
-  it('renders view mode toggle', async () => {
+  it('hides view mode toggle on period_close (toggle is only relevant to statement / schedule / account_rollups panels)', async () => {
     const graph = makeGraph('kg_test')
     mockUseGraphContext.mockReturnValue(makeGraphState([graph], 'kg_test'))
     mockGetClosingBookStructures.mockResolvedValue({
@@ -280,8 +280,12 @@ describe('CloseContent', () => {
     render(<CloseContent />)
 
     await waitFor(() => {
-      expect(screen.getByTestId('view-mode-toggle')).toBeInTheDocument()
+      // Default selection is period_close. The Rendered/Facts toggle is
+      // dead UI on the Period Close hub + Trial Balance views, so it
+      // shouldn't render there.
+      expect(screen.getByTestId('period-close-panel')).toBeInTheDocument()
     })
+    expect(screen.queryByTestId('view-mode-toggle')).not.toBeInTheDocument()
   })
 
   it('calls API with correct graph ID', async () => {
