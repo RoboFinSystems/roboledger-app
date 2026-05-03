@@ -10,9 +10,12 @@ export type {
   LibraryLabel,
   LibraryReference,
   LibrarySearchResult,
+  LibraryStructure,
+  LibraryStructureDetail,
   LibraryTaxonomy,
   LibraryTaxonomyDetail,
   ListLibraryElementsOptions,
+  ListLibraryStructuresOptions,
   ListLibraryTaxonomyArcsOptions,
   ListLibraryTaxonomyArcsResult,
   SearchLibraryElementsOptions,
@@ -21,4 +24,7 @@ export { arcTypeColor, classificationColor } from './colors'
 export { ClassificationPicker } from './components/ClassificationPicker'
 export { ElementBrowser } from './components/ElementBrowser'
 export { ElementDetail } from './components/ElementDetail'
+export { StructuresBrowser } from './components/StructuresBrowser'
+export { StructuresPane } from './components/StructuresPane'
+export { StructureTreeView } from './components/StructureTreeView'
 export { TaxonomySidebar } from './components/TaxonomySidebar'

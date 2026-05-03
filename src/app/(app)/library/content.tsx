@@ -5,18 +5,47 @@ import {
   ElementDetail,
   GraphFilters,
   LibraryClient,
+  StructuresPane,
   useGraphContext,
   type LibraryTaxonomy,
 } from '@/lib/core'
 import { getValidToken } from '@/lib/core/auth-core/token-storage'
-import { Alert, Spinner } from 'flowbite-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Alert, Button, Spinner } from 'flowbite-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiBookOpen, HiInformationCircle } from 'react-icons/hi'
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
+type ViewMode = 'elements' | 'structures'
+
+function isViewMode(value: string | null): value is ViewMode {
+  return value === 'elements' || value === 'structures'
+}
 
 export default function LibraryContent() {
   const { state: graphState } = useGraphContext()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const initialMode = searchParams.get('mode')
+  const [mode, setMode] = useState<ViewMode>(
+    isViewMode(initialMode) ? initialMode : 'elements'
+  )
+
+  const setModeAndUrl = useCallback(
+    (next: ViewMode) => {
+      setMode(next)
+      const params = new URLSearchParams(searchParams.toString())
+      if (next === 'elements') {
+        params.delete('mode')
+      } else {
+        params.set('mode', next)
+      }
+      const query = params.toString()
+      router.replace(query ? `?${query}` : '?', { scroll: false })
+    },
+    [router, searchParams]
+  )
 
   const currentGraph = useMemo(() => {
     const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
@@ -51,10 +80,15 @@ export default function LibraryContent() {
     null
   )
 
-  // Show reporting + CoA; exclude mapping and schedule taxonomies
+  // Elements mode: hide mapping/schedule (their value is in arcs, not concepts).
+  // Structures mode: include mapping taxonomies — that's where the
+  // presentation/calculation/equivalence hierarchies live.
   const sidebarTaxonomies = useMemo(() => {
     const order: Record<string, number> = { sfac6: 0, fac: 1, 'rs-gaap': 2 }
-    const hidden = new Set(['mapping', 'schedule'])
+    const hidden =
+      mode === 'structures'
+        ? new Set(['schedule'])
+        : new Set(['mapping', 'schedule'])
     return taxonomies
       .filter((t) => !hidden.has(t.taxonomyType ?? 'reporting'))
       .sort((a, b) => {
@@ -63,7 +97,7 @@ export default function LibraryContent() {
         if (ai !== bi) return ai - bi
         return (a.standard ?? '').localeCompare(b.standard ?? '')
       })
-  }, [taxonomies])
+  }, [taxonomies, mode])
 
   useEffect(() => {
     if (!graphId) return
@@ -125,6 +159,22 @@ export default function LibraryContent() {
             </p>
           </div>
         </div>
+        <div className="flex shrink-0 gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-800">
+          <Button
+            size="xs"
+            color={mode === 'elements' ? 'blue' : 'gray'}
+            onClick={() => setModeAndUrl('elements')}
+          >
+            Elements
+          </Button>
+          <Button
+            size="xs"
+            color={mode === 'structures' ? 'blue' : 'gray'}
+            onClick={() => setModeAndUrl('structures')}
+          >
+            Structures
+          </Button>
+        </div>
       </div>
 
       {taxonomiesState === 'loading' && (
@@ -144,24 +194,39 @@ export default function LibraryContent() {
           className="grid grid-cols-12 items-stretch gap-6"
           style={{ height: 'calc(100vh - 220px)', minHeight: '600px' }}
         >
-          <ElementBrowser
-            client={client}
-            graphId={graphId}
-            taxonomyId={selectedTaxonomyId}
-            taxonomies={sidebarTaxonomies}
-            onTaxonomyChange={(id) => {
-              setSelectedTaxonomyId(id)
-              setSelectedElementId(null)
-            }}
-            selectedElementId={selectedElementId}
-            onSelectElement={setSelectedElementId}
-          />
-          <ElementDetail
-            client={client}
-            graphId={graphId}
-            elementId={selectedElementId}
-            onSelectElement={setSelectedElementId}
-          />
+          {mode === 'elements' ? (
+            <>
+              <ElementBrowser
+                client={client}
+                graphId={graphId}
+                taxonomyId={selectedTaxonomyId}
+                taxonomies={sidebarTaxonomies}
+                onTaxonomyChange={(id) => {
+                  setSelectedTaxonomyId(id)
+                  setSelectedElementId(null)
+                }}
+                selectedElementId={selectedElementId}
+                onSelectElement={setSelectedElementId}
+              />
+              <ElementDetail
+                client={client}
+                graphId={graphId}
+                elementId={selectedElementId}
+                onSelectElement={setSelectedElementId}
+              />
+            </>
+          ) : (
+            <StructuresPane
+              client={client}
+              graphId={graphId}
+              taxonomyId={selectedTaxonomyId}
+              taxonomies={sidebarTaxonomies}
+              onTaxonomyChange={(id) => {
+                setSelectedTaxonomyId(id)
+                setSelectedElementId(null)
+              }}
+            />
+          )}
         </div>
       )}
     </div>

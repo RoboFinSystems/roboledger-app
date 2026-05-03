@@ -32,11 +32,15 @@ export function ElementDetail({
   graphId,
   elementId,
   onSelectElement,
+  colSpanClass = 'md:col-span-7',
 }: {
   client: LibraryClient
   graphId: string
   elementId: string | null
   onSelectElement: (id: string) => void
+  /** Tailwind ``md:col-span-N`` class. Defaults to 7 (Elements pane); the
+   * Structures pane passes ``md:col-span-3`` to fit the 3/6/3 layout. */
+  colSpanClass?: string
 }) {
   const [element, setElement] = useState<LibraryElementDetail | null>(null)
   const [arcs, setArcs] = useState<LibraryElementArc[]>([])
@@ -115,7 +119,7 @@ export function ElementDetail({
   }, [element])
 
   return (
-    <section className="col-span-12 min-h-0 md:col-span-7">
+    <section className={`col-span-12 min-h-0 ${colSpanClass}`}>
       <Card
         theme={customTheme.card}
         className="flex h-full flex-col overflow-hidden"

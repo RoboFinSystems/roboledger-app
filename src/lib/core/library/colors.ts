@@ -46,6 +46,14 @@ export function arcTypeColor(assocType: string): BadgeColor {
       return 'purple'
     case 'essence-alias':
       return 'indigo'
+    case 'presentation':
+      return 'success'
+    case 'calculation':
+      return 'warning'
+    case 'definition':
+      return 'pink'
+    case 'dimension':
+      return 'indigo'
     default:
       return 'gray'
   }
