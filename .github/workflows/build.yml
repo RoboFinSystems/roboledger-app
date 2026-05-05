@@ -249,7 +249,7 @@ jobs:
 
       - name: Build and push Docker image to ECR
         if: steps.resolve.outputs.needs_build == 'true'
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
@@ -479,7 +479,7 @@ jobs:
 
       - name: Build and push to Docker Hub
         if: steps.version.outputs.is_release == 'true'
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         env:
           VERSION_TAG: ${{ steps.version.outputs.version_tag }}
         with:
