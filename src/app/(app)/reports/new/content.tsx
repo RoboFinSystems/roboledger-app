@@ -388,9 +388,9 @@ const ReportBuilderContent: FC = function () {
         periods,
       })
 
-      // `createReport` runs synchronously today — the envelope's `result`
-      // carries the freshly-created report row (including its id).
-      const newReportId = ack.result?.id as string | undefined
+      // `createReport` runs synchronously — the envelope's `result` is
+      // the freshly-created `ReportResponse` (typed since SDK 0.3.20).
+      const newReportId = ack.result?.id
       if (!newReportId) {
         throw new Error('Report creation did not return an id.')
       }

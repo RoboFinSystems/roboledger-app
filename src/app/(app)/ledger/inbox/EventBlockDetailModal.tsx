@@ -3,6 +3,7 @@
 import { clients, customTheme } from '@/lib/core'
 import { Spinner } from '@/lib/core/ui-components'
 import { formatDateTime } from '@/lib/ledger/formatters'
+import type { PreviewEventBlockResponse } from '@robosystems/client'
 import type {
   LedgerAgent,
   LedgerEventBlockDetail,
@@ -42,22 +43,11 @@ interface LineItem {
   description?: string
 }
 
-interface PlannedTransactionRow {
-  entry_index?: number
-  debit_element_id?: string
-  credit_element_id?: string
-  amount_cents?: number
-  interpolated_debit_amount?: number
-  interpolated_credit_amount?: number
-}
-
-interface PreviewResult {
-  matched_handler?: { id?: string; name?: string } | null
-  planned_transactions?: PlannedTransactionRow[]
-  validation_errors?: string[]
-  would_succeed?: boolean
-  handler_metadata?: Record<string, unknown>
-}
+// `PreviewEventBlockResponse` is exported by the SDK since 0.3.20 — the
+// previous hand-rolled `PreviewResult` mistyped `interpolated_debit_amount`
+// and `interpolated_credit_amount` as `number` when the server returns the
+// interpolated *expression* as a `string`. Use the SDK type directly.
+type PreviewResult = PreviewEventBlockResponse
 
 interface FriendlyError {
   message: string
@@ -189,10 +179,10 @@ const EventBlockDetailModal: FC<Props> = function ({
     setError(null)
     setActionInFlight('preview')
     try {
-      const result = (await clients.ledger.previewEventBlock(
+      const result = await clients.ledger.previewEventBlock(
         graphId,
         buildPreviewBody(event)
-      )) as PreviewResult
+      )
       setPreview(result)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
