@@ -11,7 +11,6 @@ import {
   Tooltip,
 } from 'flowbite-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import React from 'react'
 import { HiMenuAlt1, HiUserCircle, HiX } from 'react-icons/hi'
 import { AppSwitcher } from '../../auth-components'
@@ -53,7 +52,6 @@ export function CoreNavbar({
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const { user } = useUser()
   const { logout } = useAuth()
-  const router = useRouter()
 
   const altText = logoAltText || `${appName} Logo`
 
@@ -68,17 +66,12 @@ export function CoreNavbar({
   const handleLogout = async () => {
     try {
       await logout()
-
-      // Brief delay to ensure backend processing completes
-      await new Promise((resolve) => setTimeout(resolve, 100))
-
-      // Redirect to homepage
-      window.location.replace('/')
     } catch (error) {
       console.error('Logout failed:', error)
-      // Even if logout fails, redirect to home
-      window.location.replace('/')
     }
+    // Hard-redirect immediately so AuthGuard doesn't render a blank screen
+    // after user state is cleared.
+    window.location.replace('/')
   }
 
   const renderThemeToggle = () => {
