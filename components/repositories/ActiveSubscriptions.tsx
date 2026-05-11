@@ -13,6 +13,7 @@ import {
   HiLightningBolt,
   HiSwitchHorizontal,
   HiTerminal,
+  HiXCircle,
 } from 'react-icons/hi'
 import { useGraphContext } from '../../contexts/graph-context'
 import { useOrg } from '../../contexts/org-context'
@@ -36,6 +37,12 @@ export interface ActiveSubscriptionsProps {
   onBilling?: () => void
   /** Called when user clicks "Browse Repositories" */
   onBrowse?: () => void
+  /**
+   * Called when user clicks "Cancel Subscription" for a repository.
+   * Receives the full subscription object so the parent can drive a
+   * cancel modal with both period-end and immediate modes.
+   */
+  onCancel?: (subscription: SubscriptionInfo) => void
   /** Fallback component to render when there are no active subscriptions */
   emptyState?: React.ReactNode
 }
@@ -47,6 +54,7 @@ export function ActiveSubscriptions({
   onBackups,
   onBilling,
   onBrowse,
+  onCancel,
   emptyState,
 }: ActiveSubscriptionsProps) {
   const [userSubscriptions, setUserSubscriptions] = useState<
@@ -102,9 +110,18 @@ export function ActiveSubscriptions({
     )
   }
 
-  const activeSubscriptions = userSubscriptions.filter(
-    (s) => s.status === 'active'
-  )
+  // Treat a period-end-canceled sub as "still active" until its access
+  // window actually closes. Otherwise the row would disappear from this
+  // view the moment the user clicks Cancel — even though the modal
+  // promises continued access through current_period_end.
+  const now = new Date()
+  const activeSubscriptions = userSubscriptions.filter((s) => {
+    if (s.status === 'active') return true
+    if (s.status === 'canceled' && s.current_period_end) {
+      return new Date(s.current_period_end) > now
+    }
+    return false
+  })
 
   if (activeSubscriptions.length === 0) {
     return <>{emptyState}</>
@@ -279,6 +296,18 @@ export function ActiveSubscriptions({
                     >
                       <HiCreditCard className="mr-2 h-4 w-4" />
                       Billing Details
+                    </Button>
+                  )}
+
+                  {onCancel && (
+                    <Button
+                      color="failure"
+                      outline
+                      onClick={() => onCancel(subscription)}
+                      className="justify-start"
+                    >
+                      <HiXCircle className="mr-2 h-4 w-4" />
+                      Cancel Subscription
                     </Button>
                   )}
                 </div>
