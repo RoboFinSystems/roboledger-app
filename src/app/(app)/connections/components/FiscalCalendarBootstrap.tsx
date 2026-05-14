@@ -10,19 +10,8 @@ interface FiscalCalendarBootstrapProps {
   graphId: string
 }
 
-/**
- * §3.0 — Calendar bootstrap on the QB connection card.
- *
- * The QB first-sync handler auto-initializes the fiscal calendar when
- * it can derive a fiscal-year start from QB company info. When the
- * derivation isn't possible (partial-history sync, no fiscal-year-end
- * configured in QB, etc.), this surface gives the operator a
- * one-click manual bootstrap path instead of blocking the entire
- * close-flow UX on a sidecar tool call.
- *
- * When the calendar is initialized, this collapses to a compact
- * status row showing closed_through / close_target.
- */
+// §3.0 — Calendar bootstrap fallback for the QB connection card when
+// the first-sync auto-init couldn't derive a fiscal-year start.
 export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
   graphId,
 }) => {

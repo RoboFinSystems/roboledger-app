@@ -24,15 +24,23 @@ interface MaterializeTaskResult {
   errors?: unknown[]
 }
 
-/**
- * Card surfacing the graph materialize op (§3.4).
- *
- * Materialization refreshes the LadybugDB representation of the
- * extensions OLTP data so analytical-view operations (fact-grid,
- * financial-statement-analysis, Cypher queries) return current state.
- * It's a periodic admin action — typically after a close, after a
- * large batch import, or whenever derived views feel stale.
- */
+// `payload.errors[0]` is `unknown` — `String()` on an object yields
+// "[object Object]". Surface Error.message when available, fall back to
+// a JSON-serialized form, then to String() as a last resort.
+const formatTaskError = (err: unknown): string => {
+  if (err instanceof Error) return err.message
+  if (typeof err === 'string') return err
+  if (err && typeof err === 'object') {
+    try {
+      return JSON.stringify(err)
+    } catch {
+      return String(err)
+    }
+  }
+  return String(err)
+}
+
+// §3.4 — Manual trigger for the graph materialize op (OLTP → LadybugDB).
 export const MaterializeGraphCard: FC<MaterializeGraphCardProps> = ({
   graphId,
 }) => {
@@ -86,7 +94,7 @@ export const MaterializeGraphCard: FC<MaterializeGraphCardProps> = ({
         })
       }
       if (payload.status === 'error' && payload.errors?.length) {
-        setSubmitError(String(payload.errors[0]))
+        setSubmitError(formatTaskError(payload.errors[0]))
       }
     } catch (err) {
       setSubmitError(
@@ -159,13 +167,13 @@ export const MaterializeGraphCard: FC<MaterializeGraphCardProps> = ({
           </Alert>
         )}
 
-        {status === 'completed' && resultSummary && (
+        {status === 'completed' && (
           <div className="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800/40 dark:bg-green-900/20">
             <div className="flex flex-wrap items-center gap-3">
               <Badge color="success" size="sm">
                 Refreshed
               </Badge>
-              {typeof resultSummary.tables === 'number' && (
+              {typeof resultSummary?.tables === 'number' && (
                 <span className="text-sm text-gray-700 dark:text-gray-200">
                   <span className="font-semibold">
                     {resultSummary.tables.toLocaleString()}
@@ -173,7 +181,7 @@ export const MaterializeGraphCard: FC<MaterializeGraphCardProps> = ({
                   tables
                 </span>
               )}
-              {typeof resultSummary.rows === 'number' && (
+              {typeof resultSummary?.rows === 'number' && (
                 <span className="text-sm text-gray-700 dark:text-gray-200">
                   <span className="font-semibold">
                     {resultSummary.rows.toLocaleString()}
@@ -181,7 +189,7 @@ export const MaterializeGraphCard: FC<MaterializeGraphCardProps> = ({
                   rows
                 </span>
               )}
-              {typeof resultSummary.duration_ms === 'number' && (
+              {typeof resultSummary?.duration_ms === 'number' && (
                 <span className="text-sm text-gray-500 dark:text-gray-400">
                   in {(resultSummary.duration_ms / 1000).toFixed(1)}s
                 </span>

@@ -22,6 +22,10 @@ interface AccountOption {
 }
 
 interface LineItemDraft {
+  // Stable per-row id so React reconciles correctly when a middle row
+  // is removed. Index keys would swap DR/CR amounts between rows on
+  // delete; the `_id` decouples row identity from list position.
+  _id: string
   elementId: string
   debit: string
   credit: string
@@ -35,16 +39,27 @@ interface NewJournalEntryModalProps {
   onCreated?: () => void
 }
 
-const EMPTY_LINE: LineItemDraft = {
+const newLine = (): LineItemDraft => ({
+  _id:
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `line_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
   elementId: '',
   debit: '',
   credit: '',
   description: '',
-}
+})
 
 const parseMoney = (raw: string): number => {
   const n = Number(raw)
   return Number.isFinite(n) ? Math.round(n * 100) : 0
+}
+
+// Local-timezone YYYY-MM-DD. `toISOString().slice(0, 10)` returns UTC,
+// which rolls forward to tomorrow for evening users in US zones.
+const todayLocal = (): string => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 const formatBalance = (cents: number): string =>
@@ -52,32 +67,22 @@ const formatBalance = (cents: number): string =>
     cents / 100
   )
 
-/**
- * §3.10 — Manual journal entry creation.
- *
- * Form on top of the SDK's `createJournalEntry` which routes through
- * `create-event-block` with `event_type='journal_entry_recorded'`. The
- * form enforces a running DR/CR balance check before enabling submit
- * and surfaces backend validation errors (unbalanced lines, closed
- * period, missing element) cleanly.
- */
+// §3.10 — Manual journal entry creation modal with running DR/CR balance check.
 export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
   graphId,
   open,
   onClose,
   onCreated,
 }) => {
-  const [postingDate, setPostingDate] = useState<string>(() =>
-    new Date().toISOString().slice(0, 10)
-  )
+  const [postingDate, setPostingDate] = useState<string>(() => todayLocal())
   const [memo, setMemo] = useState('')
   const [entryType, setEntryType] = useState<
     'standard' | 'adjusting' | 'closing' | 'reversing'
   >('standard')
   const [status, setStatus] = useState<'draft' | 'posted'>('draft')
   const [lineItems, setLineItems] = useState<LineItemDraft[]>([
-    { ...EMPTY_LINE },
-    { ...EMPTY_LINE },
+    newLine(),
+    newLine(),
   ])
   const [accounts, setAccounts] = useState<AccountOption[]>([])
   const [accountsLoading, setAccountsLoading] = useState(false)
@@ -101,6 +106,16 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
           code: a.code ?? null,
           name: a.name ?? a.id,
         }))
+        // The CoA cap above is generous for the typical tenant. If
+        // the entity has >500 accounts we silently truncate — log so
+        // operators notice. A typed search param on `listAccounts`
+        // would let the picker narrow without a full re-fetch; tracked
+        // as a follow-up.
+        if (rows.length === 500) {
+          console.warn(
+            'NewJournalEntryModal: account list hit the 500-row cap — picker may not show every account.'
+          )
+        }
         setAccounts(rows)
       } catch (err) {
         console.error('Failed to load accounts for JE modal:', err)
@@ -119,9 +134,9 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
     setMemo('')
     setEntryType('standard')
     setStatus('draft')
-    setLineItems([{ ...EMPTY_LINE }, { ...EMPTY_LINE }])
+    setLineItems([newLine(), newLine()])
     setSubmitError(null)
-    setPostingDate(new Date().toISOString().slice(0, 10))
+    setPostingDate(todayLocal())
   }, [open])
 
   const updateLine = (idx: number, patch: Partial<LineItemDraft>) => {
@@ -130,7 +145,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
     )
   }
 
-  const addLine = () => setLineItems((prev) => [...prev, { ...EMPTY_LINE }])
+  const addLine = () => setLineItems((prev) => [...prev, newLine()])
 
   const removeLine = (idx: number) =>
     setLineItems((prev) =>
@@ -290,7 +305,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
             <div className="space-y-2">
               {lineItems.map((line, idx) => (
                 <div
-                  key={idx}
+                  key={line._id}
                   className="grid grid-cols-12 items-end gap-2 rounded border border-gray-200 p-2 dark:border-gray-700"
                 >
                   <div className="col-span-12 sm:col-span-4">

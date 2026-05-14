@@ -334,7 +334,7 @@ export default function ModernConnectionsContent() {
         },
       })
       showSuccess('Connection deleted successfully')
-      loadConnections()
+      void loadConnections()
     } catch (err) {
       console.error('Delete connection error:', err)
       showError('Failed to delete connection')
