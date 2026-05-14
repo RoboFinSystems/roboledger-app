@@ -16,6 +16,14 @@ interface MaterializeResultSummary {
   duration_ms?: number
 }
 
+interface MaterializeTaskResult {
+  status?: string
+  tables_materialized?: string[]
+  total_rows?: number
+  duration_ms?: number
+  errors?: unknown[]
+}
+
 /**
  * Card surfacing the graph materialize op (§3.4).
  *
@@ -59,14 +67,26 @@ export const MaterializeGraphCard: FC<MaterializeGraphCardProps> = ({
         return
       }
       const final = await startMonitoring(operationId)
-      const result = (final as { result?: MaterializeResultSummary } | null)
-        ?.result
-      if (result) {
+      // `useOperationMonitoring.startMonitoring` returns `result.result ||
+      // result`. The task's payload is documented in
+      // `operations/graph/tasks/extensions_materialize.py`: status +
+      // tables_materialized (list[str]) + total_rows (int) + duration_ms.
+      const task = (final ?? {}) as MaterializeTaskResult & {
+        result?: MaterializeTaskResult
+      }
+      const payload: MaterializeTaskResult = task.result ?? task
+      if (
+        payload.duration_ms !== undefined ||
+        payload.total_rows !== undefined
+      ) {
         setResultSummary({
-          tables: result.tables,
-          rows: result.rows,
-          duration_ms: result.duration_ms,
+          tables: payload.tables_materialized?.length,
+          rows: payload.total_rows,
+          duration_ms: payload.duration_ms,
         })
+      }
+      if (payload.status === 'error' && payload.errors?.length) {
+        setSubmitError(String(payload.errors[0]))
       }
     } catch (err) {
       setSubmitError(
