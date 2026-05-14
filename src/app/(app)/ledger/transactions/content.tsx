@@ -11,6 +11,7 @@ import {
 import {
   Alert,
   Badge,
+  Button,
   Card,
   Select,
   Spinner,
@@ -34,9 +35,11 @@ import {
   HiChevronDown,
   HiChevronRight,
   HiExclamationCircle,
+  HiPlus,
   HiSearch,
 } from 'react-icons/hi'
 import { TbReceipt } from 'react-icons/tb'
+import { NewJournalEntryModal } from './NewJournalEntryModal'
 
 const TRANSACTION_TYPE_COLORS: Record<string, string> = {
   Revenue: 'success',
@@ -101,6 +104,8 @@ const TransactionsContent: FC = function () {
   const [loadingLineItems, setLoadingLineItems] = useState<Set<string>>(
     new Set()
   )
+  const [newEntryOpen, setNewEntryOpen] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
   const [startDate, setStartDate] = useState<string | null>(null)
   const [endDate, setEndDate] = useState<string | null>(null)
 
@@ -182,7 +187,13 @@ const TransactionsContent: FC = function () {
     }
 
     loadTransactions()
-  }, [graphState.graphs, graphState.currentGraphId, startDate, endDate])
+  }, [
+    graphState.graphs,
+    graphState.currentGraphId,
+    startDate,
+    endDate,
+    refreshKey,
+  ])
 
   // Load line items for a transaction via detail endpoint
   const loadLineItems = useCallback(
@@ -281,6 +292,28 @@ const TransactionsContent: FC = function () {
         description="View transaction journal with line item details"
         gradient="from-green-500 to-teal-600"
       />
+
+      {/* §3.10 — New manual journal entry */}
+      {graphState.currentGraphId && (
+        <div className="mb-4 flex justify-end">
+          <Button
+            color="primary"
+            theme={customTheme.button}
+            onClick={() => setNewEntryOpen(true)}
+          >
+            <HiPlus className="mr-2 h-4 w-4" />
+            New Entry
+          </Button>
+        </div>
+      )}
+      {graphState.currentGraphId && (
+        <NewJournalEntryModal
+          graphId={graphState.currentGraphId}
+          open={newEntryOpen}
+          onClose={() => setNewEntryOpen(false)}
+          onCreated={() => setRefreshKey((k) => k + 1)}
+        />
+      )}
 
       {/* Filters */}
       <Card theme={customTheme.card}>

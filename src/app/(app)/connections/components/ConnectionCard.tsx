@@ -11,6 +11,8 @@ import {
   HiRefresh,
 } from 'react-icons/hi'
 
+import { FiscalCalendarBootstrap } from './FiscalCalendarBootstrap'
+
 const PROVIDER_IMAGES: Record<string, { src: string; alt: string }> = {
   quickbooks: { src: '/images/qb_connect.png', alt: 'QuickBooks' },
   sec: { src: '/images/sec_connect.png', alt: 'SEC EDGAR' },
@@ -45,6 +47,11 @@ interface ConnectionCardProps {
   status: ConnectionStatus
   onSync: () => void
   onDelete: () => void
+  /**
+   * Current graph id, so QB connections can surface the fiscal-calendar
+   * bootstrap state (§3.0). Optional because non-QB providers ignore it.
+   */
+  graphId?: string | null
 }
 
 function getStatusColor(status: string) {
@@ -91,6 +98,7 @@ export default function ConnectionCard({
   status,
   onSync,
   onDelete,
+  graphId,
 }: ConnectionCardProps) {
   const provider = connection.provider.toLowerCase()
   const image = PROVIDER_IMAGES[provider]
@@ -175,6 +183,13 @@ export default function ConnectionCard({
               <Alert color="failure" className="mt-3">
                 {status.error}
               </Alert>
+            )}
+
+            {/* §3.0 — QB fiscal-calendar bootstrap state */}
+            {provider === 'quickbooks' && graphId && (
+              <div className="mt-3">
+                <FiscalCalendarBootstrap graphId={graphId} />
+              </div>
             )}
           </div>
         </div>

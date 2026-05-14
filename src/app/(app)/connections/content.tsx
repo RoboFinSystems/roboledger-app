@@ -356,11 +356,47 @@ export default function ModernConnectionsContent() {
       }
     }
 
-    return {
-      status: connection.status,
-      message: connection.last_sync
-        ? `Last sync: ${new Date(parseUtcMs(connection.last_sync)).toLocaleString()}`
-        : 'Never synced',
+    // §3.9 — disambiguate "no last_sync timestamp" by the underlying
+    // connection status. The literal "Never synced" was misleading: a
+    // freshly-OAuth'd connection in `connected` state hasn't necessarily
+    // had a chance to sync yet, and the user reads "Never synced" as a
+    // bug rather than a step-in-progress.
+    if (connection.last_sync) {
+      return {
+        status: connection.status,
+        message: `Last sync: ${new Date(parseUtcMs(connection.last_sync)).toLocaleString()}`,
+      }
+    }
+    switch (connection.status) {
+      case 'pending_oauth':
+        return {
+          status: connection.status,
+          message: 'Awaiting OAuth completion',
+        }
+      case 'pending':
+      case 'in_progress':
+      case 'syncing':
+        return {
+          status: connection.status,
+          message: 'Initial sync in progress',
+        }
+      case 'error':
+      case 'failed':
+        return {
+          status: connection.status,
+          message: 'Connection failed — try syncing again',
+        }
+      case 'connected':
+      case 'completed':
+        return {
+          status: connection.status,
+          message: 'Connected — first sync hasn’t run yet',
+        }
+      default:
+        return {
+          status: connection.status,
+          message: 'No sync history',
+        }
     }
   }
 
@@ -405,6 +441,7 @@ export default function ModernConnectionsContent() {
                 setConnectionToDelete(connection)
                 setDeleteModalOpen(true)
               }}
+              graphId={currentGraphId}
             />
           ))}
 
