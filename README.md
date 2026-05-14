@@ -16,17 +16,24 @@ RoboLedger App is the web interface for AI-native accounting, building semantic 
 
 - **Dashboard**: Financial overview with quick actions
 - **Ledger**: Chart of accounts, journal entries, trial balance, and account mappings
-- **QuickBooks Sync**: Connect and synchronize with QuickBooks data
+- **Period Close**: Fiscal calendar bootstrap, close workflow with gate checks, and rule-based pre-close evaluation
+- **Schedules**: Recurring journal entry templates with auto-evaluation on close
+- **Inbox**: Event block review for rule violations and pending obligations
+- **Reports**: Custom report builder with fact grids, templates, publish lists, and multi-format export
+- **Connections**: QuickBooks OAuth sync, Plaid bank feeds, and SEC XBRL filings
+- **Entity Detail**: Per-entity dashboard with materialize-to-graph workflow
+- **Agents**: AI agent management with conversation history and tool access
 - **AI Console**: Natural language and Cypher query terminal with streaming results and MCP integration
+- **Document Search**: Full-text and semantic search across uploaded documents and connected sources
+- **Library**: Browse canonical taxonomies, elements, and reference data
 - **Entities**: Multi-entity management across all graphs
 - **API Keys**: Secure programmatic access with `rlap_` bearer tokens
 - **Settings**: User profile and password management
 
 ### In Development
 
-- **Reports**: Custom report builder with fact grids, templates, and multi-format export
-- **Plaid Connections**: Direct bank feeds for transaction synchronization
-- **SEC XBRL**: Process SEC filings with US-GAAP taxonomy data
+- **Mapping Workbench**: Interactive CoA → us-gaap mapping with AI suggestions
+- **Disclosure Renderer**: Automated financial statement rendering from XBRL hypercube
 
 ## Quick Start
 
