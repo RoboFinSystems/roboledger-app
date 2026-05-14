@@ -21,6 +21,7 @@ import {
 } from 'flowbite-react'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { HiOfficeBuilding, HiPencil, HiSave, HiX } from 'react-icons/hi'
+import { MaterializeGraphCard } from './MaterializeGraphCard'
 
 const EntityInfoPageContent: FC = function () {
   const { state: graphState } = useGraphContext()
@@ -534,6 +535,9 @@ const EntityInfoPageContent: FC = function () {
                 )}
               </dl>
             </Card>
+
+            {/* §3.4 — Graph index admin */}
+            {graphId && <MaterializeGraphCard graphId={graphId} />}
           </>
         )}
       </div>
