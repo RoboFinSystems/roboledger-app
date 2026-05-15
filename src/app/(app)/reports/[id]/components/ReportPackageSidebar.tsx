@@ -79,14 +79,18 @@ const ReportPackageSidebar: FC<ReportPackageSidebarProps> = ({
   // would be ideal, but the page chrome's `overflow-y: auto` wrapper
   // isn't the actual scrolling context (html is), so sticky fails to
   // pin. Matches the close-page sidebar pattern (also non-sticky).
+  // On narrow viewports the sidebar stacks above the content; the
+  // parent flex container handles the column → row flip at the `lg`
+  // breakpoint.
   if (collapsed) {
     return (
-      <div className="flex shrink-0 flex-col items-center self-start rounded-lg border border-gray-200 bg-white py-2 dark:border-gray-700 dark:bg-gray-800">
+      <div className="flex w-full shrink-0 flex-col items-center self-start rounded-lg border border-gray-200 bg-white py-2 lg:w-auto dark:border-gray-700 dark:bg-gray-800">
         <Button
           size="xs"
           color="light"
           onClick={() => setCollapsed(false)}
           className="border-0 bg-transparent p-1"
+          aria-label="Expand sidebar"
         >
           <HiChevronRight className="h-4 w-4" />
         </Button>
@@ -95,7 +99,7 @@ const ReportPackageSidebar: FC<ReportPackageSidebarProps> = ({
   }
 
   return (
-    <div className="w-64 shrink-0 self-start rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <div className="w-full shrink-0 self-start rounded-lg border border-gray-200 bg-white lg:w-64 dark:border-gray-700 dark:bg-gray-800">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
         <span className="text-xs font-semibold tracking-wide text-gray-400 uppercase">
@@ -106,6 +110,7 @@ const ReportPackageSidebar: FC<ReportPackageSidebarProps> = ({
           color="light"
           onClick={() => setCollapsed(true)}
           className="border-0 bg-transparent p-1"
+          aria-label="Collapse sidebar"
         >
           <HiChevronLeft className="h-4 w-4" />
         </Button>
@@ -130,6 +135,7 @@ const ReportPackageSidebar: FC<ReportPackageSidebarProps> = ({
                   <button
                     key={item.factSetId}
                     onClick={() => onSelect(item.factSetId)}
+                    aria-current={active ? 'true' : undefined}
                     className={`flex w-full items-center gap-2 px-4 py-1.5 text-left text-sm transition-colors ${
                       active
                         ? 'border-l-2 border-blue-500 bg-blue-50 font-medium text-blue-700 dark:border-blue-400 dark:bg-blue-900/20 dark:text-blue-300'

@@ -151,19 +151,23 @@ const ReportViewerContent: FC = function () {
     loadPackage()
   }, [graphId, reportId])
 
+  // Reset the active highlight every time the loaded package changes
+  // — the IntersectionObserver in the next effect will overwrite this
+  // shortly, but during the gap (e.g., navigating between two reports
+  // that both have items) we'd otherwise carry the previous report's
+  // factSetId into the new sidebar. Kept as a separate effect so the
+  // observer setup below doesn't need to depend on `activeFactSetId`.
+  useEffect(() => {
+    setActiveFactSetId(pkg?.items[0]?.factSetId ?? null)
+  }, [pkg])
+
   // Scroll-spy: highlight the sidebar entry for whichever block is
   // closest to the top of the viewport. Re-runs when the items list
   // changes (e.g., after re-generation). Top-of-viewport observation
   // window is `-20% / -70%` so a block lights up just before its
   // header crosses the fold.
   useEffect(() => {
-    if (!pkg || pkg.items.length === 0) {
-      setActiveFactSetId(null)
-      return
-    }
-    if (activeFactSetId === null) {
-      setActiveFactSetId(pkg.items[0].factSetId)
-    }
+    if (!pkg || pkg.items.length === 0) return
     const observer = new IntersectionObserver(
       (entries) => {
         // Multiple entries can fire on the same tick; pick the one
@@ -180,9 +184,6 @@ const ReportViewerContent: FC = function () {
     )
     itemRefs.current.forEach((el) => observer.observe(el))
     return () => observer.disconnect()
-    // activeFactSetId is intentionally excluded — re-creating the
-    // observer on every active-id change would thrash highlighting.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pkg])
 
   const scrollToItem = useCallback((factSetId: string) => {
@@ -306,7 +307,7 @@ const ReportViewerContent: FC = function () {
           </div>
         </Card>
       ) : (
-        <div className="flex gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row">
           <ReportPackageSidebar
             items={pkg.items}
             activeFactSetId={activeFactSetId}
