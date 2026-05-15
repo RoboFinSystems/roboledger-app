@@ -2,6 +2,7 @@
 
 import type { FC } from 'react'
 import type { ViewMode } from '../ViewModeToggle'
+import BusinessRulesProjection from './projections/BusinessRules'
 import FactTableProjection from './projections/FactTable'
 import ReportElementsProjection from './projections/ReportElements'
 import ScheduleRenderingProjection from './projections/ScheduleRendering'
@@ -60,6 +61,10 @@ const BlockView: FC<BlockViewProps> = ({
 
   if (viewMode === 'validation') {
     return <VerificationResultsProjection envelope={envelope} />
+  }
+
+  if (viewMode === 'rules') {
+    return <BusinessRulesProjection envelope={envelope} />
   }
 
   // viewMode === 'rendered' — dispatch by block_type

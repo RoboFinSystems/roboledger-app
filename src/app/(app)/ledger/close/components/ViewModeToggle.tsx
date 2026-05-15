@@ -3,6 +3,7 @@
 import { Dropdown, DropdownItem } from 'flowbite-react'
 import type { FC } from 'react'
 import {
+  HiBookOpen,
   HiChevronDown,
   HiClipboardList,
   HiEye,
@@ -12,11 +13,17 @@ import {
 
 /**
  * The six `type-of View` arms in Charlie's Seattle Method ontology
- * (financial-viewer.md §4.3). Four ship today (`rendered`, `facts`,
- * `elements`, `validation`); the remaining two (`associations`,
- * `rules`) land when their backend support fills in.
+ * (financial-viewer.md §4.3). Five ship today (`rendered`, `facts`,
+ * `elements`, `validation`, `rules`); the remaining one
+ * (`associations` / Model Structure) lands when the depth-spec design
+ * decision settles.
  */
-export type ViewMode = 'rendered' | 'facts' | 'elements' | 'validation'
+export type ViewMode =
+  | 'rendered'
+  | 'facts'
+  | 'elements'
+  | 'validation'
+  | 'rules'
 
 interface ViewModeToggleProps {
   viewMode: ViewMode
@@ -34,6 +41,7 @@ const MODES: readonly ModeOption[] = [
   { value: 'facts', label: 'Facts', icon: HiTable },
   { value: 'elements', label: 'Elements', icon: HiClipboardList },
   { value: 'validation', label: 'Validation', icon: HiShieldCheck },
+  { value: 'rules', label: 'Rules', icon: HiBookOpen },
 ] as const
 
 /**

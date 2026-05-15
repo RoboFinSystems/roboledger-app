@@ -24,6 +24,7 @@ vi.mock('flowbite-react', () => ({
 }))
 
 vi.mock('react-icons/hi', () => ({
+  HiBookOpen: () => <span data-testid="book" />,
   HiChevronDown: () => <span data-testid="chevron-down" />,
   HiClipboardList: () => <span data-testid="clipboard" />,
   HiEye: () => <span data-testid="eye" />,
@@ -34,13 +35,14 @@ vi.mock('react-icons/hi', () => ({
 import ViewModeToggle from '../components/ViewModeToggle'
 
 describe('ViewModeToggle', () => {
-  it('renders all four mode options', () => {
+  it('renders all five mode options', () => {
     render(<ViewModeToggle viewMode="rendered" onChange={vi.fn()} />)
     // Trigger shows the current mode plus each option is in the menu.
     expect(screen.getAllByText('Rendered').length).toBeGreaterThan(0)
     expect(screen.getByText('Facts')).toBeInTheDocument()
     expect(screen.getByText('Elements')).toBeInTheDocument()
     expect(screen.getByText('Validation')).toBeInTheDocument()
+    expect(screen.getByText('Rules')).toBeInTheDocument()
   })
 
   it('trigger label reflects current mode (rendered)', () => {
@@ -69,6 +71,24 @@ describe('ViewModeToggle', () => {
     expect(screen.getByTestId('dropdown-trigger').textContent).toContain(
       'Validation'
     )
+  })
+
+  it('trigger label reflects current mode (rules)', () => {
+    render(<ViewModeToggle viewMode="rules" onChange={vi.fn()} />)
+    expect(screen.getByTestId('dropdown-trigger').textContent).toContain(
+      'Rules'
+    )
+  })
+
+  it('calls onChange with "rules" when clicking the Rules item', () => {
+    const onChange = vi.fn()
+    render(<ViewModeToggle viewMode="rendered" onChange={onChange} />)
+    const rulesItem = screen
+      .getAllByRole('menuitem')
+      .find((li) => li.textContent === 'Rules')
+    expect(rulesItem).toBeDefined()
+    fireEvent.click(rulesItem!.querySelector('button')!)
+    expect(onChange).toHaveBeenCalledWith('rules')
   })
 
   it('calls onChange with "validation" when clicking the Validation item', () => {
