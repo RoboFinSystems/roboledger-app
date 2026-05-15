@@ -18,7 +18,7 @@ import {
 import Link from 'next/link'
 import { useParams, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   HiChevronLeft,
   HiDocumentReport,
@@ -28,6 +28,7 @@ import {
 import BlockView from '../../ledger/close/components/blockview/BlockView'
 import type { ViewMode } from '../../ledger/close/components/ViewModeToggle'
 import ViewModeToggle from '../../ledger/close/components/ViewModeToggle'
+import ReportPackageSidebar from './components/ReportPackageSidebar'
 
 const formatDate = (dateString: string | null): string => {
   if (!dateString) return 'N/A'
@@ -74,6 +75,8 @@ const ReportViewerContent: FC = function () {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('rendered')
+  const [activeFactSetId, setActiveFactSetId] = useState<string | null>(null)
+  const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
   // Share modal state
   const [showShareModal, setShowShareModal] = useState(false)
@@ -147,6 +150,48 @@ const ReportViewerContent: FC = function () {
     }
     loadPackage()
   }, [graphId, reportId])
+
+  // Scroll-spy: highlight the sidebar entry for whichever block is
+  // closest to the top of the viewport. Re-runs when the items list
+  // changes (e.g., after re-generation). Top-of-viewport observation
+  // window is `-20% / -70%` so a block lights up just before its
+  // header crosses the fold.
+  useEffect(() => {
+    if (!pkg || pkg.items.length === 0) {
+      setActiveFactSetId(null)
+      return
+    }
+    if (activeFactSetId === null) {
+      setActiveFactSetId(pkg.items[0].factSetId)
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Multiple entries can fire on the same tick; pick the one
+        // highest in the viewport (smallest top, but still visible).
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+        if (visible.length > 0) {
+          const id = visible[0].target.getAttribute('data-fact-set-id')
+          if (id) setActiveFactSetId(id)
+        }
+      },
+      { rootMargin: '-20% 0px -70% 0px' }
+    )
+    itemRefs.current.forEach((el) => observer.observe(el))
+    return () => observer.disconnect()
+    // activeFactSetId is intentionally excluded — re-creating the
+    // observer on every active-id change would thrash highlighting.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pkg])
+
+  const scrollToItem = useCallback((factSetId: string) => {
+    const el = itemRefs.current.get(factSetId)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setActiveFactSetId(factSetId)
+    }
+  }, [])
 
   const periodLabel = useMemo(() => {
     if (!pkg) return ''
@@ -253,7 +298,7 @@ const ReportViewerContent: FC = function () {
         </div>
       </Card>
 
-      {/* Package items — stacked BlockViews, one per FactSet */}
+      {/* Package items — sidebar + stacked BlockViews, one per FactSet */}
       {pkg.items.length === 0 ? (
         <Card theme={customTheme.card}>
           <div className="py-12 text-center text-gray-500 dark:text-gray-400">
@@ -261,15 +306,39 @@ const ReportViewerContent: FC = function () {
           </div>
         </Card>
       ) : (
-        pkg.items.map((item) => (
-          <Card key={item.factSetId} theme={customTheme.card}>
-            <BlockView
-              envelope={item.block}
-              viewMode={viewMode}
-              entityName={pkg.entityName}
-            />
-          </Card>
-        ))
+        <div className="flex gap-4">
+          <ReportPackageSidebar
+            items={pkg.items}
+            activeFactSetId={activeFactSetId}
+            onSelect={scrollToItem}
+          />
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            {pkg.items.map((item) => (
+              <div
+                key={item.factSetId}
+                data-fact-set-id={item.factSetId}
+                ref={(el) => {
+                  if (el) {
+                    itemRefs.current.set(item.factSetId, el)
+                  } else {
+                    itemRefs.current.delete(item.factSetId)
+                  }
+                }}
+                // scroll-margin-top keeps the anchored block clear of the
+                // sticky page header when sidebar clicks scroll-to-anchor.
+                className="scroll-mt-4"
+              >
+                <Card theme={customTheme.card}>
+                  <BlockView
+                    envelope={item.block}
+                    viewMode={viewMode}
+                    entityName={pkg.entityName}
+                  />
+                </Card>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Share modal */}
