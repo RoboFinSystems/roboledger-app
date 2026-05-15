@@ -3,6 +3,7 @@
 import type { FC } from 'react'
 import type { ViewMode } from '../ViewModeToggle'
 import FactTableProjection from './projections/FactTable'
+import ReportElementsProjection from './projections/ReportElements'
 import ScheduleRenderingProjection from './projections/ScheduleRendering'
 import StatementRenderingProjection from './projections/StatementRendering'
 import type { EnvelopeBlock } from './types'
@@ -50,6 +51,10 @@ const BlockView: FC<BlockViewProps> = ({
 }) => {
   if (viewMode === 'facts') {
     return <FactTableProjection envelope={envelope} />
+  }
+
+  if (viewMode === 'elements') {
+    return <ReportElementsProjection envelope={envelope} />
   }
 
   // viewMode === 'rendered' — dispatch by block_type
