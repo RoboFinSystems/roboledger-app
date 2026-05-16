@@ -51,9 +51,12 @@ function normalizeSeverity(s: string): Severity {
  * first. Each rule row shows:
  *
  * - `ruleMessage` (or falls back to `ruleExpression`) as the title
- * - `rulePattern` as a code chip (one of the 10 cm:BusinessRulePattern
- *   mechanisms — SumEquals, RollUp, RollForward, EqualTo, etc.)
- * - `ruleCategory` as a secondary chip (one of the 8 cm:VerificationRule
+ * - `rulePattern` OR `ruleCheckKind` as a code chip — arithmetic patterns
+ *   (one of 11 cm:BusinessRulePattern mechanisms — SumEquals, RollUp,
+ *   RollForward, EqualTo, etc.) populate `rulePattern`; structural
+ *   check kinds (NoCycles, LeafHasClassification, etc.) populate
+ *   `ruleCheckKind` instead. Exactly one is non-null per rule (XOR).
+ * - `ruleCategory` as a secondary chip (one of the 9 cm:VerificationRule
  *   subclasses — FAC, peer consistency, prior-period consistency, etc.)
  * - `ruleOrigin` (forked / native) so operators can tell library-seeded
  *   rules from tenant-authored ones at a glance
@@ -178,9 +181,11 @@ const RuleRow: FC<RuleRowProps> = ({ rule, severity }) => {
             <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
               {title}
             </span>
-            <code className="rounded bg-gray-200 px-1.5 py-0.5 font-mono text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-              {rule.rulePattern}
-            </code>
+            {(rule.rulePattern || rule.ruleCheckKind) && (
+              <code className="rounded bg-gray-200 px-1.5 py-0.5 font-mono text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                {rule.rulePattern ?? rule.ruleCheckKind}
+              </code>
+            )}
             <span className="text-xs text-gray-400">{rule.ruleOrigin}</span>
             {rule.ruleTarget && (
               <span className="text-xs text-gray-400">

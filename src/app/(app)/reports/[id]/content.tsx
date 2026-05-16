@@ -60,7 +60,7 @@ const PACKAGE_STATUS_BADGE: Record<
  * `InformationBlock` envelopes — one per attached FactSet) and stacks
  * a `BlockView` per item, grouped visually.
  *
- * Replaces the legacy per-tab `getStatement(reportId, structureType)`
+ * Replaces the legacy per-tab `getStatement(reportId, blockType)`
  * flow. Frozen FactSets pin each item to the snapshot the Report
  * generated, so the viewer is the same whether the Report is currently
  * generating or filed long ago.
