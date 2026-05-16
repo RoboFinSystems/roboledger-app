@@ -103,7 +103,7 @@ export const makeEnvelope = (
     },
     artifact: {
       topic: null,
-      parentheticalNote: null,
+      rendererNote: null,
       template: null,
       mechanics: { kind: 'statement_renderer' },
     },

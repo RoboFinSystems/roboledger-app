@@ -29,7 +29,7 @@ const makeStatement = (overrides?: Partial<StatementData>): StatementData => ({
   reportId: 'rpt_01',
   structureId: 'struct_01',
   structureName: 'Income Statement',
-  structureType: 'income_statement',
+  blockType: 'income_statement',
   periods: [{ start: '2026-01-01', end: '2026-03-31', label: 'Q1 2026' }],
   rows: [
     {

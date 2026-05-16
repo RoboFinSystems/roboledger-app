@@ -196,7 +196,7 @@ const ReportsContent: FC = function () {
                       <div className="flex gap-1">
                         {report.structures.map((s) => (
                           <Badge key={s.id} color="gray" size="sm">
-                            {s.structureType
+                            {s.blockType
                               .replace(/_/g, ' ')
                               .replace(/\b\w/g, (c) => c.toUpperCase())
                               .replace(' Statement', '')}

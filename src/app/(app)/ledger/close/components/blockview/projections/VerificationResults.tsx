@@ -219,9 +219,9 @@ const ResultRow: FC<ResultRowProps> = ({ result, rule, status }) => {
           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
             {title}
           </span>
-          {rule?.rulePattern && (
+          {(rule?.rulePattern || rule?.ruleCheckKind) && (
             <code className="rounded bg-gray-200 px-1.5 py-0.5 font-mono text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-              {rule.rulePattern}
+              {rule.rulePattern ?? rule.ruleCheckKind}
             </code>
           )}
           {rule?.ruleSeverity && rule.ruleSeverity !== 'error' && (
