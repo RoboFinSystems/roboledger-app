@@ -19,6 +19,7 @@
     "start": "next start",
     "dev": "PORT=3001 next dev",
     "dev:webpack": "PORT=3001 next dev --webpack",
+    "tunnel:ngrok": "./bin/tunnel-ngrok.sh",
     "build": "next build",
     "format": "prettier . --write",
     "format:check": "prettier . --check",

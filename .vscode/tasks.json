@@ -8,6 +8,12 @@
       "problemMatcher": []
     },
     {
+      "label": "ngrok Tunnel",
+      "type": "shell",
+      "command": "npm run tunnel:ngrok -- ${input:portRL}",
+      "problemMatcher": []
+    },
+    {
       "label": "Install Dependencies",
       "type": "shell",
       "command": "npm install",
