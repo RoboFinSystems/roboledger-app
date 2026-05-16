@@ -181,9 +181,11 @@ const RuleRow: FC<RuleRowProps> = ({ rule, severity }) => {
             <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
               {title}
             </span>
-            <code className="rounded bg-gray-200 px-1.5 py-0.5 font-mono text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-              {rule.rulePattern ?? rule.ruleCheckKind}
-            </code>
+            {(rule.rulePattern || rule.ruleCheckKind) && (
+              <code className="rounded bg-gray-200 px-1.5 py-0.5 font-mono text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                {rule.rulePattern ?? rule.ruleCheckKind}
+              </code>
+            )}
             <span className="text-xs text-gray-400">{rule.ruleOrigin}</span>
             {rule.ruleTarget && (
               <span className="text-xs text-gray-400">
