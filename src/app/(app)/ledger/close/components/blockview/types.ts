@@ -16,6 +16,9 @@ export type EnvelopeBlock = InformationBlock
 export type EnvelopeFact = InformationBlock['facts'][number]
 export type EnvelopeElement = InformationBlock['elements'][number]
 export type EnvelopeConnection = InformationBlock['connections'][number]
+export type EnvelopeRule = InformationBlock['rules'][number]
+export type EnvelopeVerificationResult =
+  InformationBlock['verificationResults'][number]
 export type EnvelopeView = InformationBlock['view']
 export type EnvelopeRendering = NonNullable<EnvelopeView['rendering']>
 export type EnvelopeRenderingRow = EnvelopeRendering['rows'][number]
