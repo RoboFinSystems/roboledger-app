@@ -44,9 +44,21 @@ if [ -z "${NGROK_DOMAIN:-}" ]; then
   exit 1
 fi
 
+# Strip any accidental scheme prefix (a developer pasting the dashboard URL
+# verbatim would otherwise end up with https://https://...).
+NGROK_DOMAIN="${NGROK_DOMAIN#https://}"
+NGROK_DOMAIN="${NGROK_DOMAIN#http://}"
+
 if ! command -v ngrok >/dev/null 2>&1; then
-  echo "Error: ngrok not installed. Install with: brew install ngrok"
+  echo "Error: ngrok not installed. See https://ngrok.com/download (macOS: brew install ngrok)"
   exit 1
+fi
+
+# Warn if nothing is listening on the target port. Non-fatal — the dev
+# server may start after the tunnel — but most "tunnel up, nothing
+# serving" confusion lands here.
+if command -v nc >/dev/null 2>&1 && ! nc -z localhost "$PORT" 2>/dev/null; then
+  echo "Warning: nothing listening on port $PORT. Start the dev server first (e.g., 'npm run dev:webpack')."
 fi
 
 exec ngrok http --url="https://${NGROK_DOMAIN}" "$PORT"
