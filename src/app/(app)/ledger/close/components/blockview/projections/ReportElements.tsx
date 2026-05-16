@@ -18,6 +18,7 @@ interface ReportElementsProjectionProps {
 }
 
 type Row = {
+  id: string
   qname: string
   label: string
   elementType: string
@@ -27,7 +28,9 @@ type Row = {
   factCount: number
 }
 
-type SortKey = keyof Row
+// `id` is excluded from the sortable column set — it's only used as
+// React's stable key per row.
+type SortKey = Exclude<keyof Row, 'id'>
 type SortDir = 'asc' | 'desc'
 
 function elementLabel(el: EnvelopeElement): string {
@@ -36,6 +39,7 @@ function elementLabel(el: EnvelopeElement): string {
 
 function toRow(el: EnvelopeElement, factCount: number): Row {
   return {
+    id: el.id,
     qname: el.qname ?? '',
     label: elementLabel(el),
     elementType: el.elementType,
@@ -83,7 +87,9 @@ const ReportElementsProjection: FC<ReportElementsProjectionProps> = ({
     copy.sort((a, b) => {
       const av = a[sortKey]
       const bv = b[sortKey]
-      // Booleans: true sorts after false in asc.
+      // Booleans: true sorts after false in asc — abstract elements
+      // appear at the bottom by design so concrete (fact-bearing)
+      // elements are surfaced first.
       if (typeof av === 'boolean' && typeof bv === 'boolean') {
         return av === bv ? 0 : av ? 1 : -1
       }
@@ -164,9 +170,9 @@ const ReportElementsProjection: FC<ReportElementsProjectionProps> = ({
           />
         </TableHead>
         <TableBody>
-          {sorted.map((row, i) => (
+          {sorted.map((row) => (
             <TableRow
-              key={`${row.qname}-${row.label}-${i}`}
+              key={row.id}
               className={
                 row.isAbstract
                   ? 'bg-gray-50 italic dark:bg-gray-800/50'

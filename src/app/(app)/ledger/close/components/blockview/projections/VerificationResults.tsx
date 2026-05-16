@@ -46,6 +46,16 @@ function normalizeStatus(s: string): Status {
   if (s === 'pass' || s === 'fail' || s === 'error' || s === 'skipped') {
     return s
   }
+  // Unknown status — likely backend schema drift. Surface in dev so it
+  // shows up during development; silently fall through to 'skipped' in
+  // production (the four enum values are CHECK-constrained backend-side,
+  // so this branch only fires when someone widens the enum without
+  // regenerating the SDK).
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      `[VerificationResults] unexpected status: ${s} — falling back to 'skipped'`
+    )
+  }
   return 'skipped'
 }
 
