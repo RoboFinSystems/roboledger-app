@@ -35,7 +35,7 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
   >(null)
 
   const [apiVersion, setApiVersion] = useState<string | null>(null)
-  const [agentProgress, setAgentProgress] = useState<{
+  const [operatorProgress, setOperatorProgress] = useState<{
     isRunning: boolean
     message: string
     percentage?: number
@@ -44,7 +44,7 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
   // Track if we've initialized and the previous graph ID
   const hasInitialized = useRef(false)
   const previousGraphId = useRef<string | null>(null)
-  const agentProgressMessageId = useRef<string | null>(null)
+  const operatorProgressMessageId = useRef<string | null>(null)
 
   // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -260,35 +260,38 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
 
   // Monitor agent progress
   useEffect(() => {
-    if (agentProgress.isRunning && agentProgress.message) {
-      if (agentProgressMessageId.current) {
+    if (operatorProgress.isRunning && operatorProgress.message) {
+      if (operatorProgressMessageId.current) {
         setTerminalMessages((prev) =>
           prev.map((msg) =>
-            msg.id === agentProgressMessageId.current
+            msg.id === operatorProgressMessageId.current
               ? {
                   ...msg,
-                  content: `${agentProgress.message}${agentProgress.percentage !== undefined ? ` (${agentProgress.percentage}%)` : ''}`,
+                  content: `${operatorProgress.message}${operatorProgress.percentage !== undefined ? ` (${operatorProgress.percentage}%)` : ''}`,
                 }
               : msg
           )
         )
       } else {
         const id = generateMessageId()
-        agentProgressMessageId.current = id
+        operatorProgressMessageId.current = id
         setTerminalMessages((prev) => [
           ...prev,
           {
             id,
             type: 'system',
-            content: `${agentProgress.message}${agentProgress.percentage !== undefined ? ` (${agentProgress.percentage}%)` : ''}`,
+            content: `${operatorProgress.message}${operatorProgress.percentage !== undefined ? ` (${operatorProgress.percentage}%)` : ''}`,
             timestamp: new Date(),
           },
         ])
       }
-    } else if (!agentProgress.isRunning && agentProgressMessageId.current) {
-      agentProgressMessageId.current = null
+    } else if (
+      !operatorProgress.isRunning &&
+      operatorProgressMessageId.current
+    ) {
+      operatorProgressMessageId.current = null
     }
-  }, [agentProgress])
+  }, [operatorProgress])
 
   // ── Command handling ────────────────────────────────────────────────
 
@@ -311,7 +314,7 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
     }
   }
 
-  const executeAgentQuery = async (userQuery: string) => {
+  const executeOperatorQuery = async (userQuery: string) => {
     if (!graphId) {
       addErrorMessage(config.noSelectionError)
       return
@@ -322,7 +325,7 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
     try {
       const { clients } = await import('@robosystems/client/clients')
 
-      const result = await clients.agent.executeQuery(
+      const result = await clients.operator.executeQuery(
         graphId,
         {
           message: userQuery,
@@ -331,7 +334,7 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
         {
           mode: 'auto',
           onProgress: (message: string, percentage?: number) => {
-            setAgentProgress({
+            setOperatorProgress({
               isRunning: true,
               message,
               percentage,
@@ -340,7 +343,7 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
         }
       )
 
-      setAgentProgress({ isRunning: false, message: '' })
+      setOperatorProgress({ isRunning: false, message: '' })
 
       const duration = Date.now() - startTime
       const metadata = result.metadata || {}
@@ -394,7 +397,7 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
 
       addResultMessage(outputMessage, tableData)
     } catch (error: any) {
-      setAgentProgress({ isRunning: false, message: '' })
+      setOperatorProgress({ isRunning: false, message: '' })
 
       const errorMessage =
         error.message ||
@@ -410,7 +413,7 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
           `Rate limit exceeded.\n\nPlease wait a moment before trying again.`
         )
       } else {
-        addErrorMessage(`Agent error: ${errorMessage}`)
+        addErrorMessage(`Operator error: ${errorMessage}`)
       }
     }
   }
@@ -592,7 +595,7 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
     }
 
     // Default: treat as natural language query
-    await executeAgentQuery(command)
+    await executeOperatorQuery(command)
   }
 
   const cancelQuery = () => {
@@ -622,14 +625,14 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
             </p>
           </div>
         </div>
-        {(streamingQuery.isStreaming || agentProgress.isRunning) && (
+        {(streamingQuery.isStreaming || operatorProgress.isRunning) && (
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-green-500"></span>
-            {agentProgress.isRunning && agentProgress.message
-              ? agentProgress.message
+            {operatorProgress.isRunning && operatorProgress.message
+              ? operatorProgress.message
               : 'Processing...'}
-            {agentProgress.percentage !== undefined &&
-              ` (${agentProgress.percentage}%)`}
+            {operatorProgress.percentage !== undefined &&
+              ` (${operatorProgress.percentage}%)`}
           </div>
         )}
       </div>

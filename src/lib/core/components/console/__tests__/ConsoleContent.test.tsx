@@ -19,7 +19,7 @@ vi.mock('../../../theme', () => ({
 
 vi.mock('@robosystems/client/clients', () => ({
   clients: {
-    agent: {
+    operator: {
       executeQuery: vi.fn(),
     },
   },
@@ -33,7 +33,7 @@ import { ConsoleContent } from '../ConsoleContent'
 
 const mockUseGraphContext = vi.mocked(useGraphContext)
 const mockUseStreamingQuery = vi.mocked(useStreamingQuery)
-const mockAgentExecuteQuery = vi.mocked(clients.agent.executeQuery)
+const mockOperatorExecuteQuery = vi.mocked(clients.operator.executeQuery)
 
 const TEST_CONFIG: ConsoleConfig = {
   header: {
@@ -153,7 +153,7 @@ describe('ConsoleContent', () => {
     mockStreamingQuery.executeQuery.mockReset()
     mockStreamingQuery.cancelQuery.mockReset()
     mockStreamingQuery.reset.mockReset()
-    mockAgentExecuteQuery.mockReset()
+    mockOperatorExecuteQuery.mockReset()
 
     graphContext = createGraphContext()
     mockUseStreamingQuery.mockReturnValue(mockStreamingQuery)
@@ -426,8 +426,8 @@ describe('ConsoleContent', () => {
   })
 
   describe('Query Execution', () => {
-    it('should execute natural language queries via agent', async () => {
-      mockAgentExecuteQuery.mockResolvedValue({
+    it('should execute natural language queries via operator', async () => {
+      mockOperatorExecuteQuery.mockResolvedValue({
         query: 'MATCH (n) RETURN n',
         result: [],
       })
@@ -441,7 +441,7 @@ describe('ConsoleContent', () => {
       fireEvent.keyDown(input, { key: 'Enter' })
 
       await waitFor(() => {
-        expect(mockAgentExecuteQuery).toHaveBeenCalledWith(
+        expect(mockOperatorExecuteQuery).toHaveBeenCalledWith(
           'test-graph-id',
           {
             message: 'Show me all nodes',
@@ -475,7 +475,7 @@ describe('ConsoleContent', () => {
       })
     })
 
-    it('should show config-driven error when no graph is selected for agent query', async () => {
+    it('should show config-driven error when no graph is selected for operator query', async () => {
       graphContext = createGraphContext({
         state: { currentGraphId: null, graphs: [] },
       })
