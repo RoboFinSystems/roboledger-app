@@ -12,9 +12,8 @@
 #      (get a token at https://dashboard.ngrok.com/get-started/your-authtoken)
 #   3. Reserve a static domain (free tier includes one):
 #      https://dashboard.ngrok.com/domains
-#   4. Set NGROK_DOMAIN in .env to that domain
+#   4. Set NGROK_DOMAIN in .env to that domain (allowedDevOrigins auto-derives)
 #   5. In robosystems/.env, set EXTRA_CORS_ORIGINS=https://<your-domain>
-#   6. Add the same hostname to NEXT_ALLOWED_DEV_ORIGINS in this repo's .env
 #
 # USAGE:
 #   npm run tunnel:ngrok                  # forwards to port 3001 (default)
