@@ -51,6 +51,18 @@ if [ -z "${CLOUDFLARED_TUNNEL_NAME:-}" ]; then
   exit 1
 fi
 
+# next.config.js reads PUBLIC_TUNNEL_DOMAIN to wire the dev-server API proxy
+# and rewrite NEXT_PUBLIC_ROBOSYSTEMS_API_URL. Without it the tunnel will
+# carry traffic but the frontend will still call http://localhost:8000 from
+# the browser and trip Chrome's Private Network Access guard.
+if [ -z "${PUBLIC_TUNNEL_DOMAIN:-}" ]; then
+  echo "Error: PUBLIC_TUNNEL_DOMAIN not set."
+  echo ""
+  echo "Set it in $REPO_ROOT/.env to the hostname routed to this tunnel"
+  echo "(the same hostname you passed to 'cloudflared tunnel route dns')."
+  exit 1
+fi
+
 if ! command -v cloudflared >/dev/null 2>&1; then
   echo "Error: cloudflared not installed. See https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/ (macOS: brew install cloudflared)"
   exit 1

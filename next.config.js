@@ -16,10 +16,10 @@ const tunnelDomain = process.env.PUBLIC_TUNNEL_DOMAIN?.replace(
   ''
 ).replace(/\/$/, '')
 
-// .env files are loaded before next.config.js, so a `NEXT_PUBLIC_ROBOSYSTEMS_API_URL`
-// already set there would shadow the `env` field below (.env wins, the bundle bakes
-// the original value). Force-override here so the client SDK actually hits the
-// tunnel origin when a tunnel is active.
+// .env files are loaded before next.config.js, so a NEXT_PUBLIC_ROBOSYSTEMS_API_URL
+// already set there would normally end up baked into the client bundle as-is.
+// Mutate process.env here (before Next compiles the bundle) so the client SDK
+// targets the tunnel origin when a tunnel is active.
 if (tunnelDomain) {
   process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL = `https://${tunnelDomain}`
 }
@@ -39,9 +39,6 @@ const allowedDevOrigins = process.env.NEXT_ALLOWED_DEV_ORIGINS
 const nextConfig = {
   reactStrictMode: true,
   allowedDevOrigins,
-  env: tunnelDomain
-    ? { NEXT_PUBLIC_ROBOSYSTEMS_API_URL: `https://${tunnelDomain}` }
-    : {},
   async rewrites() {
     if (!tunnelDomain) return []
     return [
