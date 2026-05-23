@@ -94,4 +94,55 @@ describe('VerificationResults projection (§7.12 category grouping)', () => {
     fireEvent.click(screen.getByText('Consistency'))
     expect(screen.getByText('Consistency check')).toBeInTheDocument()
   })
+
+  it('falls back to an in-memory tally when verificationSummary is absent', () => {
+    // Older envelopes (pre-summary SDK) carry results but no summary; the
+    // overall tally must roll up from the grouped results instead.
+    const env = makeEnvelope({
+      rules: [rule('r1', 'Consistency', 'BS balances')],
+      verificationResults: [
+        result('vr1', 'r1', 'pass'),
+        result('vr2', 'r1', 'fail'),
+      ],
+      verificationSummary: null,
+    } as never)
+    render(<VerificationResults envelope={env} />)
+    expect(screen.getByText('1 Pass')).toBeInTheDocument()
+    expect(screen.getByText('1 Fail')).toBeInTheDocument()
+  })
+
+  it('renders error and skipped statuses with their tallies', () => {
+    const env = makeEnvelope({
+      rules: [
+        rule('r1', 'Consistency', 'errored rule'),
+        rule('r2', 'Consistency', 'skipped rule'),
+      ],
+      verificationResults: [
+        result('vr1', 'r1', 'error'),
+        result('vr2', 'r2', 'skipped'),
+      ],
+      verificationSummary: {
+        total: 2,
+        passed: 0,
+        failed: 0,
+        errored: 1,
+        skipped: 1,
+        byCategory: [
+          {
+            category: 'Consistency',
+            total: 2,
+            passed: 0,
+            failed: 0,
+            errored: 1,
+            skipped: 1,
+          },
+        ],
+      },
+    } as never)
+    render(<VerificationResults envelope={env} />)
+    expect(screen.getByText('1 Error')).toBeInTheDocument()
+    expect(screen.getByText('1 Skipped')).toBeInTheDocument()
+    // An error makes the category problematic → expanded → its row visible.
+    expect(screen.getByText('errored rule')).toBeInTheDocument()
+  })
 })

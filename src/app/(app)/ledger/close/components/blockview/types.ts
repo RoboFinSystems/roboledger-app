@@ -22,8 +22,6 @@ export type EnvelopeVerificationResult =
 export type EnvelopeVerificationSummary = NonNullable<
   InformationBlock['verificationSummary']
 >
-export type EnvelopeVerificationCategory =
-  EnvelopeVerificationSummary['byCategory'][number]
 export type EnvelopeView = InformationBlock['view']
 export type EnvelopeRendering = NonNullable<EnvelopeView['rendering']>
 export type EnvelopeRenderingRow = EnvelopeRendering['rows'][number]

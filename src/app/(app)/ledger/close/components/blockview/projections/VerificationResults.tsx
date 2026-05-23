@@ -114,7 +114,12 @@ const VerificationResultsProjection: FC<VerificationResultsProjectionProps> = ({
   )
 
   // Group results by rule_category (joined from rules by ruleId), then sort
-  // by category name to match the backend's by_category ordering.
+  // by category name to match the backend's by_category ordering. We group
+  // in-memory rather than reading `verificationSummary.byCategory`: the panel
+  // needs the result rows grouped anyway, and deriving the per-category counts
+  // from those same groups guarantees the accordion headers can't drift from
+  // the rows shown. (byCategory + the top-level summary stay useful for
+  // lighter consumers — e.g. list badges — that don't fetch the full rows.)
   const groups = useMemo<CategoryGroup[]>(() => {
     const byCategory = new Map<string, EnvelopeVerificationResult[]>()
     for (const result of envelope.verificationResults) {
@@ -226,9 +231,13 @@ const CategorySection: FC<CategorySectionProps> = ({ group, rulesById }) => {
   // "9 of 10 passed, 1 failed" — failures/errors/skips appended when present.
   const summaryParts: string[] = [`${counts.pass} of ${total} passed`]
   if (counts.fail > 0) summaryParts.push(`${counts.fail} failed`)
-  if (counts.error > 0) summaryParts.push(`${counts.error} error`)
+  if (counts.error > 0) {
+    summaryParts.push(`${counts.error} error${counts.error === 1 ? '' : 's'}`)
+  }
   if (counts.skipped > 0) summaryParts.push(`${counts.skipped} skipped`)
   const Chevron = open ? HiChevronDown : HiChevronRight
+  // Stable id linking the toggle button to the panel it controls (a11y).
+  const panelId = `verification-category-${group.category}`
 
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
@@ -236,6 +245,7 @@ const CategorySection: FC<CategorySectionProps> = ({ group, rulesById }) => {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-controls={panelId}
         className="flex w-full items-center gap-2 bg-gray-50 px-3 py-2 text-left hover:bg-gray-100 dark:bg-gray-800/60 dark:hover:bg-gray-800"
       >
         <Chevron className="h-4 w-4 shrink-0 text-gray-400" />
@@ -248,7 +258,7 @@ const CategorySection: FC<CategorySectionProps> = ({ group, rulesById }) => {
         </span>
       </button>
       {open && (
-        <ul className="space-y-2 p-3">
+        <ul id={panelId} className="space-y-2 p-3">
           {STATUS_ORDER.flatMap((status) =>
             group.results
               .filter((r) => normalizeStatus(r.status) === status)

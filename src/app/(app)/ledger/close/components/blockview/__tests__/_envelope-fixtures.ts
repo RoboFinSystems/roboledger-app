@@ -113,6 +113,7 @@ export const makeEnvelope = (
     rules: [],
     factSet: null,
     verificationResults: [],
+    verificationSummary: null,
     view: { rendering: makeRendering() },
     ...overrides,
   }) as EnvelopeBlock
