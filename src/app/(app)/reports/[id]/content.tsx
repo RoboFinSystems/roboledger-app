@@ -331,7 +331,11 @@ const ReportViewerContent: FC = function () {
               >
                 <Card theme={customTheme.card}>
                   <BlockView
-                    envelope={item.block}
+                    // The reportPackage query's member-block shape doesn't
+                    // select `verificationSummary` (only getInformationBlock
+                    // does), so shim null — the Verification Results panel
+                    // falls back to an in-memory roll-up of verificationResults.
+                    envelope={{ ...item.block, verificationSummary: null }}
                     viewMode={viewMode}
                     entityName={pkg.entityName}
                   />

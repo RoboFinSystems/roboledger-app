@@ -19,6 +19,11 @@ export type EnvelopeConnection = InformationBlock['connections'][number]
 export type EnvelopeRule = InformationBlock['rules'][number]
 export type EnvelopeVerificationResult =
   InformationBlock['verificationResults'][number]
+export type EnvelopeVerificationSummary = NonNullable<
+  InformationBlock['verificationSummary']
+>
+export type EnvelopeVerificationCategory =
+  EnvelopeVerificationSummary['byCategory'][number]
 export type EnvelopeView = InformationBlock['view']
 export type EnvelopeRendering = NonNullable<EnvelopeView['rendering']>
 export type EnvelopeRenderingRow = EnvelopeRendering['rows'][number]
