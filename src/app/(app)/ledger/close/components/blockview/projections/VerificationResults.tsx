@@ -2,9 +2,11 @@
 
 import { Badge } from 'flowbite-react'
 import type { FC } from 'react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   HiCheckCircle,
+  HiChevronDown,
+  HiChevronRight,
   HiExclamation,
   HiExclamationCircle,
   HiMinusCircle,
@@ -67,19 +69,41 @@ function formatPeriod(row: EnvelopeVerificationResult): string {
   return `${row.periodStart} → ${row.periodEnd}`
 }
 
+// `rule_category` values are PascalCase ontology terms
+// (e.g. `FundamentalAccountingConceptRelation`); space them for display.
+function humanizeCategory(category: string): string {
+  if (!category) return 'Uncategorized'
+  return category
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+}
+
+interface CategoryGroup {
+  category: string
+  results: EnvelopeVerificationResult[]
+  counts: Record<Status, number>
+  total: number
+}
+
 /**
- * Charlie's `VerificationResults` View projection (financial-viewer.md §4.3).
+ * Charlie's `VerificationResults` View projection (financial-viewer.md §4.3,
+ * §7.12 restructure).
  *
  * Uniform across every block type — surfaces the outcome of every rule
- * evaluation tied to this block's `(structure, fact_set)` pair, grouped
- * by status with failures first. The rule's metadata (pattern, severity,
- * message) is joined in-memory from `envelope.rules[]` by `ruleId`; the
- * verification row itself carries only the foreign key + outcome.
+ * evaluation tied to this block's `(structure, fact_set)` pair. Rules are
+ * grouped into per-`rule_category` accordions (the §7.12 two-level layout):
+ * categories with failures or errors expand by default; clean categories
+ * collapse so the eye lands on what needs attention. Each rule's metadata
+ * (category, pattern, severity, message) is joined in-memory from
+ * `envelope.rules[]` by `ruleId`; the verification row carries only the
+ * foreign key + outcome.
  *
- * The backend's rule engine auto-runs on every saved-report and
- * period-close mutation (roadmap §3.8), so this projection reflects the
- * current state of the block's invariants without needing a manual
- * `POST /evaluate-rules` call.
+ * The overall tally is driven by the server-computed `verificationSummary`
+ * arm when present (it pre-joins category + aggregates), falling back to an
+ * in-memory roll-up of `verificationResults` for older envelopes. The rule
+ * engine auto-runs on saved-report and period-close mutations (roadmap §3.8),
+ * so this reflects the block's current invariants without a manual
+ * `POST /evaluate-rules`.
  */
 const VerificationResultsProjection: FC<VerificationResultsProjectionProps> = ({
   envelope,
@@ -89,26 +113,59 @@ const VerificationResultsProjection: FC<VerificationResultsProjectionProps> = ({
     [envelope.rules]
   )
 
-  const grouped = useMemo<Map<Status, EnvelopeVerificationResult[]>>(() => {
-    const groups = new Map<Status, EnvelopeVerificationResult[]>()
+  // Group results by rule_category (joined from rules by ruleId), then sort
+  // by category name to match the backend's by_category ordering. We group
+  // in-memory rather than reading `verificationSummary.byCategory`: the panel
+  // needs the result rows grouped anyway, and deriving the per-category counts
+  // from those same groups guarantees the accordion headers can't drift from
+  // the rows shown. (byCategory + the top-level summary stay useful for
+  // lighter consumers — e.g. list badges — that don't fetch the full rows.)
+  const groups = useMemo<CategoryGroup[]>(() => {
+    const byCategory = new Map<string, EnvelopeVerificationResult[]>()
     for (const result of envelope.verificationResults) {
-      const status = normalizeStatus(result.status)
-      const arr = groups.get(status) ?? []
+      const category =
+        rulesById.get(result.ruleId)?.ruleCategory ?? 'Uncategorized'
+      const arr = byCategory.get(category) ?? []
       arr.push(result)
-      groups.set(status, arr)
+      byCategory.set(category, arr)
     }
-    return groups
-  }, [envelope.verificationResults])
+    return Array.from(byCategory.entries())
+      .map(([category, results]) => {
+        const counts: Record<Status, number> = {
+          pass: 0,
+          fail: 0,
+          error: 0,
+          skipped: 0,
+        }
+        for (const r of results) counts[normalizeStatus(r.status)] += 1
+        return { category, results, counts, total: results.length }
+      })
+      .sort((a, b) => a.category.localeCompare(b.category))
+  }, [envelope.verificationResults, rulesById])
 
-  const totals = useMemo(() => {
+  // Overall tally — prefer the server-computed summary; fall back to an
+  // in-memory roll-up for envelopes from SDKs before the summary arm.
+  const totals = useMemo<Record<Status, number>>(() => {
+    const summary = envelope.verificationSummary
+    if (summary) {
+      return {
+        pass: summary.passed,
+        fail: summary.failed,
+        error: summary.errored,
+        skipped: summary.skipped,
+      }
+    }
     const counts: Record<Status, number> = {
-      pass: grouped.get('pass')?.length ?? 0,
-      fail: grouped.get('fail')?.length ?? 0,
-      error: grouped.get('error')?.length ?? 0,
-      skipped: grouped.get('skipped')?.length ?? 0,
+      pass: 0,
+      fail: 0,
+      error: 0,
+      skipped: 0,
+    }
+    for (const group of groups) {
+      for (const status of STATUS_ORDER) counts[status] += group.counts[status]
     }
     return counts
-  }, [grouped])
+  }, [envelope.verificationSummary, groups])
 
   if (envelope.verificationResults.length === 0) {
     return (
@@ -120,8 +177,8 @@ const VerificationResultsProjection: FC<VerificationResultsProjectionProps> = ({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Status tally header */}
+    <div className="space-y-3">
+      {/* Overall status tally */}
       <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3 dark:border-gray-700">
         {STATUS_ORDER.filter((s) => totals[s] > 0).map((status) => {
           const badge = STATUS_BADGE[status]
@@ -133,52 +190,89 @@ const VerificationResultsProjection: FC<VerificationResultsProjectionProps> = ({
         })}
       </div>
 
-      {/* Per-status sections */}
-      {STATUS_ORDER.map((status) => {
-        const results = grouped.get(status)
-        if (!results || results.length === 0) return null
-        return (
-          <StatusSection
-            key={status}
-            status={status}
-            results={results}
-            rulesById={rulesById}
-          />
-        )
-      })}
+      {/* Per-category accordions */}
+      {groups.map((group) => (
+        <CategorySection
+          key={group.category}
+          group={group}
+          rulesById={rulesById}
+        />
+      ))}
     </div>
   )
 }
 
-interface StatusSectionProps {
-  status: Status
-  results: EnvelopeVerificationResult[]
+interface CategorySectionProps {
+  group: CategoryGroup
   rulesById: Map<string, EnvelopeRule>
 }
 
-const StatusSection: FC<StatusSectionProps> = ({
-  status,
-  results,
-  rulesById,
-}) => {
-  const StatusIconComp = STATUS_ICON[status]
-  const badge = STATUS_BADGE[status]
+const CategorySection: FC<CategorySectionProps> = ({ group, rulesById }) => {
+  const { counts, total } = group
+  const hasProblems = counts.fail > 0 || counts.error > 0
+  const [open, setOpen] = useState(hasProblems)
+
+  // Header status icon: failures/errors → alert; skips-only → muted; else ✓.
+  const HeaderIcon = hasProblems
+    ? counts.fail > 0
+      ? HiExclamationCircle
+      : HiExclamation
+    : counts.skipped > 0 && counts.pass === 0
+      ? HiMinusCircle
+      : HiCheckCircle
+  const headerIconTone = hasProblems
+    ? counts.fail > 0
+      ? 'text-red-500 dark:text-red-400'
+      : 'text-amber-500 dark:text-amber-400'
+    : counts.skipped > 0 && counts.pass === 0
+      ? 'text-gray-400'
+      : 'text-emerald-500 dark:text-emerald-400'
+
+  // "9 of 10 passed, 1 failed" — failures/errors/skips appended when present.
+  const summaryParts: string[] = [`${counts.pass} of ${total} passed`]
+  if (counts.fail > 0) summaryParts.push(`${counts.fail} failed`)
+  if (counts.error > 0) {
+    summaryParts.push(`${counts.error} error${counts.error === 1 ? '' : 's'}`)
+  }
+  if (counts.skipped > 0) summaryParts.push(`${counts.skipped} skipped`)
+  const Chevron = open ? HiChevronDown : HiChevronRight
+  // Stable id linking the toggle button to the panel it controls (a11y).
+  const panelId = `verification-category-${group.category}`
+
   return (
-    <div>
-      <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wide text-gray-400 uppercase">
-        <StatusIconComp className="h-4 w-4" />
-        {badge.label} ({results.length})
-      </div>
-      <ul className="space-y-2">
-        {results.map((result) => (
-          <ResultRow
-            key={result.id}
-            result={result}
-            rule={rulesById.get(result.ruleId)}
-            status={status}
-          />
-        ))}
-      </ul>
+    <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={panelId}
+        className="flex w-full items-center gap-2 bg-gray-50 px-3 py-2 text-left hover:bg-gray-100 dark:bg-gray-800/60 dark:hover:bg-gray-800"
+      >
+        <Chevron className="h-4 w-4 shrink-0 text-gray-400" />
+        <HeaderIcon className={`h-4 w-4 shrink-0 ${headerIconTone}`} />
+        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          {humanizeCategory(group.category)}
+        </span>
+        <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">
+          {summaryParts.join(', ')}
+        </span>
+      </button>
+      {open && (
+        <ul id={panelId} className="space-y-2 p-3">
+          {STATUS_ORDER.flatMap((status) =>
+            group.results
+              .filter((r) => normalizeStatus(r.status) === status)
+              .map((result) => (
+                <ResultRow
+                  key={result.id}
+                  result={result}
+                  rule={rulesById.get(result.ruleId)}
+                  status={status}
+                />
+              ))
+          )}
+        </ul>
+      )}
     </div>
   )
 }
