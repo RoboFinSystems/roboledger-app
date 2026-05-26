@@ -17,6 +17,36 @@ export interface SignInFormProps {
   currentApp?: string
 }
 
+/**
+ * Map a login failure to a user-facing message. A connectivity failure (the
+ * request never reached the server — `fetch` throws a `TypeError`) must NOT be
+ * reported as bad credentials: that sends users to reset a password that is
+ * actually correct. Reached-server auth rejection (401/403, or an empty/invalid
+ * auth body) stays "Invalid email or password"; 5xx gets its own message.
+ */
+export function loginErrorMessage(error: unknown): string {
+  const err = error as {
+    status?: number
+    response?: { status?: number }
+    message?: string
+  }
+  const status = err?.status ?? err?.response?.status
+  const message = String(err?.message ?? '')
+
+  if (
+    error instanceof TypeError ||
+    /failed to fetch|networkerror|load failed|fetch failed|err_(connection|network|name_not_resolved)/i.test(
+      message
+    )
+  ) {
+    return 'Unable to reach the server. Check your connection and try again.'
+  }
+  if (typeof status === 'number' && status >= 500) {
+    return 'The server ran into a problem. Please try again in a moment.'
+  }
+  return 'Invalid email or password'
+}
+
 export function SignInForm({
   onSuccess,
   onRedirect,
@@ -124,8 +154,8 @@ export function SignInForm({
 
       // Use window.location.href for reliable redirect
       window.location.href = redirectTo
-    } catch (error: any) {
-      setError('Invalid email or password')
+    } catch (error: unknown) {
+      setError(loginErrorMessage(error))
       setLoading(false)
     }
   }

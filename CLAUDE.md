@@ -59,8 +59,7 @@ npm run format:check # Check code formatting
 | `/ledger/chart-of-accounts`               | getAccountTree, autoMapElements, mapping ops                        | shipped (auto-map UI live; CoA → US-GAAP mapping pending OLTP migration) |
 | `/ledger/transactions`                    | listTransactions, getTransaction, createJournalEntry (modal)        | shipped (NewJournalEntryModal 2026-05-14)                                |
 | `/ledger/trial-balance`                   | getTrialBalance, getMappedTrialBalance                              | shipped                                                                  |
-| `/ledger/close`                           | getPeriodCloseStatus, closePeriod, reopenPeriod, listPeriodDrafts   | shipped                                                                  |
-| `/ledger/schedules`                       | listInformationBlocks (filtered)                                    | shipped                                                                  |
+| `/ledger/close`                           | getPeriodCloseStatus, closePeriod, reopenPeriod, listPeriodDrafts   | shipped (also renders schedule/statement/rules blocks via BlockView)     |
 | `/ledger/inbox`                           | listEventBlocks, getEventBlock, previewEventBlock, updateEventBlock | shipped 2026-05-01                                                       |
 | `/agents`                                 | listAgents, getAgent                                                | shipped 2026-05-01                                                       |
 | `/reports` `/reports/new` `/reports/[id]` | listReports, createReport, getReportPackage                         | shipped                                                                  |

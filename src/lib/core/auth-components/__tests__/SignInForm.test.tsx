@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { RoboSystemsAuthClient } from '../../auth-core/client'
 import { useSSO } from '../../auth-core/sso'
 import type { AuthUser } from '../../auth-core/types'
-import { SignInForm } from '../SignInForm'
+import { SignInForm, loginErrorMessage } from '../SignInForm'
 
 vi.mock('next/image', () => ({
   __esModule: true,
@@ -460,6 +460,33 @@ describe('SignInForm', () => {
       })
     })
 
+    it('shows a connectivity message, not bad credentials, when the request never reaches the server', async () => {
+      mockAuthClient.login.mockRejectedValue(new TypeError('Failed to fetch'))
+
+      render(<SignInForm {...defaultProps} />)
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('spinner')).not.toBeInTheDocument()
+      })
+
+      fireEvent.change(screen.getByLabelText(/email/i), {
+        target: { value: 'test@example.com' },
+      })
+      fireEvent.change(screen.getByLabelText(/password/i), {
+        target: { value: 'password123' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/unable to reach the server/i)
+        ).toBeInTheDocument()
+      })
+      expect(
+        screen.queryByText(/invalid email or password/i)
+      ).not.toBeInTheDocument()
+    })
+
     it('should clear error on successful retry', async () => {
       mockAuthClient.login
         .mockRejectedValueOnce(new Error('First error'))
@@ -500,5 +527,30 @@ describe('SignInForm', () => {
         ).not.toBeInTheDocument()
       })
     })
+  })
+})
+
+describe('loginErrorMessage', () => {
+  it('treats a fetch TypeError as a connectivity failure', () => {
+    expect(loginErrorMessage(new TypeError('Failed to fetch'))).toMatch(
+      /reach the server/i
+    )
+  })
+
+  it('treats a 5xx as a server problem', () => {
+    expect(loginErrorMessage({ status: 503 })).toMatch(
+      /server ran into a problem/i
+    )
+    expect(loginErrorMessage({ response: { status: 500 } })).toMatch(
+      /server ran into a problem/i
+    )
+  })
+
+  it('defaults a reached-server auth failure to invalid credentials', () => {
+    // 401 with empty body surfaces as the validate-throw (no status).
+    expect(
+      loginErrorMessage(new Error('Invalid SDK response: expected object'))
+    ).toBe('Invalid email or password')
+    expect(loginErrorMessage({ status: 401 })).toBe('Invalid email or password')
   })
 })
