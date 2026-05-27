@@ -102,7 +102,6 @@ interface GaapMapping {
 }
 
 interface AccountMappings {
-  fac: GaapMapping | null
   rsGaap: GaapMapping | null
 }
 
@@ -437,6 +436,9 @@ const ChartOfAccountsContent: FC = function () {
           // suggest_mapping_candidates, minus subtotals). One call per trait,
           // combined into the flat list the dropdown groups client-side.
           // Mapping outside this set would land a fact on an unreachable branch.
+          // The trait set must match the backend MappingOperator's (it groups
+          // CoA elements by their EFS trait); gain/loss are valid CoA traits
+          // with their own rs-gaap concepts, so they're fetched too.
           rsGaapElements.length === 0
             ? Promise.all(
                 (
@@ -446,6 +448,8 @@ const ChartOfAccountsContent: FC = function () {
                     'equity',
                     'revenue',
                     'expense',
+                    'gain',
+                    'loss',
                   ] as const
                 ).map((cls) =>
                   clients.ledger
@@ -485,7 +489,8 @@ const ChartOfAccountsContent: FC = function () {
   }, [currentGraph, selectedMappingId])
 
   // Build GAAP lookup from mapping associations, keyed by from_element_id.
-  // Each account can have both a FAC mapping (fac:*) and an rs-gaap mapping (rs-gaap:*).
+  // Mapping is CoA → rs-gaap only. Legacy fac:* associations are skipped so
+  // they don't show in the rs-gaap slot; the FAC level is inferred, not edited.
   const gaapByElementId = useMemo(() => {
     const map = new Map<string, AccountMappings>()
     if (!mappingDetail?.associations) return map
@@ -493,7 +498,8 @@ const ChartOfAccountsContent: FC = function () {
     for (const assoc of mappingDetail.associations) {
       const fromId = assoc.fromElementId
       if (!fromId) continue
-      const existing = map.get(fromId) ?? { fac: null, rsGaap: null }
+      if (assoc.toElementQname?.startsWith('fac:')) continue
+      const existing = map.get(fromId) ?? { rsGaap: null }
       const mapping: GaapMapping = {
         gaapName: assoc.toElementName ?? '',
         gaapQname: assoc.toElementQname ?? '',
@@ -502,11 +508,7 @@ const ChartOfAccountsContent: FC = function () {
         fromElementId: fromId,
         toElementId: assoc.toElementId,
       }
-      if (assoc.toElementQname?.startsWith('fac:')) {
-        map.set(fromId, { ...existing, fac: mapping })
-      } else {
-        map.set(fromId, { ...existing, rsGaap: mapping })
-      }
+      map.set(fromId, { ...existing, rsGaap: mapping })
     }
     return map
   }, [mappingDetail])
