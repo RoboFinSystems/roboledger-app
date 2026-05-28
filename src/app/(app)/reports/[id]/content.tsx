@@ -21,6 +21,7 @@ import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   HiChevronLeft,
+  HiDocumentDownload,
   HiDocumentReport,
   HiExclamationCircle,
   HiShare,
@@ -86,6 +87,12 @@ const ReportViewerContent: FC = function () {
   const [isSharing, setIsSharing] = useState(false)
   const [shareResult, setShareResult] = useState<string | null>(null)
 
+  // Bundle-download state — feedback-only; the actual download happens
+  // by navigating to a presigned URL, so the spinner is just the
+  // round-trip to fetch the URL.
+  const [isDownloadingBundle, setIsDownloadingBundle] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
+
   const loadPublishLists = useCallback(async () => {
     if (!graphId) return
     try {
@@ -98,6 +105,36 @@ const ReportViewerContent: FC = function () {
       setIsLoadingLists(false)
     }
   }, [graphId])
+
+  // Trigger a browser download of the Report's stamped JSON-LD bundle.
+  // The backend returns a presigned URL with Content-Disposition:
+  // attachment set, so navigating to it forces the file to download
+  // rather than rendering inline. ``window.location.href`` is used over
+  // a hidden ``<a download>`` so we don't have to manage DOM lifetime
+  // and the browser handles cross-origin attachment headers cleanly.
+  const handleDownloadBundle = useCallback(async () => {
+    if (!graphId || !reportId) return
+    try {
+      setIsDownloadingBundle(true)
+      setDownloadError(null)
+      const resp = await clients.reports.getReportBundleDownloadUrl(
+        graphId,
+        reportId
+      )
+      window.location.href = resp.downloadUrl
+    } catch (err) {
+      console.error('Bundle download failed:', err)
+      // 404 message from the backend ("no stamped bundle — regenerate to
+      // produce one") is the most actionable failure mode for users
+      // viewing a pre-feature Report, so surface the server detail when
+      // available rather than a generic string.
+      const message =
+        err instanceof Error ? err.message : 'Failed to start download.'
+      setDownloadError(message)
+    } finally {
+      setIsDownloadingBundle(false)
+    }
+  }, [graphId, reportId])
 
   const handleShare = useCallback(async () => {
     if (!graphId || !reportId || !selectedListId) return
@@ -246,6 +283,22 @@ const ReportViewerContent: FC = function () {
         gradient="from-orange-500 to-red-600"
         actions={
           <>
+            {pkg.generationStatus === 'published' && (
+              <Button
+                theme={customTheme.button}
+                color="light"
+                onClick={handleDownloadBundle}
+                disabled={isDownloadingBundle}
+                title="Download the stamped JSON-LD bundle for this report"
+              >
+                {isDownloadingBundle ? (
+                  <Spinner size="sm" className="mr-2" />
+                ) : (
+                  <HiDocumentDownload className="mr-2 h-5 w-5" />
+                )}
+                Download JSON-LD
+              </Button>
+            )}
             {pkg.generationStatus === 'published' && !pkg.sourceGraphId && (
               <Button
                 theme={customTheme.button}
@@ -270,6 +323,16 @@ const ReportViewerContent: FC = function () {
           </>
         }
       />
+
+      {downloadError && (
+        <Alert
+          color="failure"
+          icon={HiExclamationCircle}
+          onDismiss={() => setDownloadError(null)}
+        >
+          {downloadError}
+        </Alert>
+      )}
 
       {/* Status banner — filing lifecycle + provenance */}
       <Card theme={customTheme.card}>
