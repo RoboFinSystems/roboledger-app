@@ -8,6 +8,8 @@ import {
   Badge,
   Button,
   Card,
+  Dropdown,
+  DropdownItem,
   Label,
   Modal,
   ModalBody,
@@ -20,6 +22,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  HiChevronDown,
   HiChevronLeft,
   HiDocumentDownload,
   HiDocumentReport,
@@ -88,9 +91,11 @@ const ReportViewerContent: FC = function () {
   const [shareResult, setShareResult] = useState<string | null>(null)
 
   // Bundle-download state — feedback-only; the actual download happens
-  // by navigating to a presigned URL, so the spinner is just the
-  // round-trip to fetch the URL.
+  // by navigating to a presigned URL (JSON-LD) or by saving a streamed
+  // blob (XBRL), so the spinner is just the round-trip to fetch the
+  // artifact.
   const [isDownloadingBundle, setIsDownloadingBundle] = useState(false)
+  const [isDownloadingXbrl, setIsDownloadingXbrl] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
 
   const loadPublishLists = useCallback(async () => {
@@ -133,6 +138,40 @@ const ReportViewerContent: FC = function () {
       setDownloadError(message)
     } finally {
       setIsDownloadingBundle(false)
+    }
+  }, [graphId, reportId])
+
+  // Trigger a browser download of the XBRL 2.1 zip. The backend
+  // streams the zip bytes directly (no presigned URL); the SDK
+  // returns a Blob + a server-suggested filename. We create a
+  // temporary object URL, anchor-click it, and clean up — same
+  // pattern as backup downloads in the rest of the app.
+  const handleDownloadXbrl = useCallback(async () => {
+    if (!graphId || !reportId) return
+    try {
+      setIsDownloadingXbrl(true)
+      setDownloadError(null)
+      const { blob, filename } = await clients.reports.getReportBundleXbrlZip(
+        graphId,
+        reportId
+      )
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = filename
+      document.body.appendChild(anchor)
+      anchor.click()
+      document.body.removeChild(anchor)
+      // Release the object URL after the browser starts the download —
+      // some browsers cancel an in-flight save if we revoke immediately.
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+    } catch (err) {
+      console.error('XBRL download failed:', err)
+      const message =
+        err instanceof Error ? err.message : 'Failed to download XBRL bundle.'
+      setDownloadError(message)
+    } finally {
+      setIsDownloadingXbrl(false)
     }
   }, [graphId, reportId])
 
@@ -284,20 +323,35 @@ const ReportViewerContent: FC = function () {
         actions={
           <>
             {pkg.generationStatus === 'published' && (
-              <Button
-                theme={customTheme.button}
+              <Dropdown
                 color="light"
-                onClick={handleDownloadBundle}
-                disabled={isDownloadingBundle}
-                title="Download the stamped JSON-LD bundle for this report"
+                arrowIcon={false}
+                disabled={isDownloadingBundle || isDownloadingXbrl}
+                label={
+                  <span className="inline-flex items-center">
+                    {isDownloadingBundle || isDownloadingXbrl ? (
+                      <Spinner size="sm" className="mr-2" />
+                    ) : (
+                      <HiDocumentDownload className="mr-2 h-5 w-5" />
+                    )}
+                    Download
+                    <HiChevronDown className="ml-2 h-4 w-4" />
+                  </span>
+                }
               >
-                {isDownloadingBundle ? (
-                  <Spinner size="sm" className="mr-2" />
-                ) : (
-                  <HiDocumentDownload className="mr-2 h-5 w-5" />
-                )}
-                Download JSON-LD
-              </Button>
+                <DropdownItem
+                  onClick={handleDownloadBundle}
+                  disabled={isDownloadingBundle}
+                >
+                  JSON-LD bundle
+                </DropdownItem>
+                <DropdownItem
+                  onClick={handleDownloadXbrl}
+                  disabled={isDownloadingXbrl}
+                >
+                  XBRL 2.1 package
+                </DropdownItem>
+              </Dropdown>
             )}
             {pkg.generationStatus === 'published' && !pkg.sourceGraphId && (
               <Button
