@@ -90,10 +90,6 @@ const ReportViewerContent: FC = function () {
   const [isSharing, setIsSharing] = useState(false)
   const [shareResult, setShareResult] = useState<string | null>(null)
 
-  // Bundle-download state — feedback-only; the actual download happens
-  // by navigating to a presigned URL (JSON-LD) or by saving a streamed
-  // blob (XBRL), so the spinner is just the round-trip to fetch the
-  // artifact.
   const [isDownloadingBundle, setIsDownloadingBundle] = useState(false)
   const [isDownloadingXbrl, setIsDownloadingXbrl] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
@@ -111,12 +107,9 @@ const ReportViewerContent: FC = function () {
     }
   }, [graphId])
 
-  // Trigger a browser download of the Report's stamped JSON-LD bundle.
-  // The backend returns a presigned URL with Content-Disposition:
-  // attachment set, so navigating to it forces the file to download
-  // rather than rendering inline. ``window.location.href`` is used over
-  // a hidden ``<a download>`` so we don't have to manage DOM lifetime
-  // and the browser handles cross-origin attachment headers cleanly.
+  // window.location.href (not <a download>) because the presigned URL is
+  // cross-origin — the download attribute is ignored cross-origin, but the
+  // backend sets Content-Disposition: attachment so the file still saves.
   const handleDownloadBundle = useCallback(async () => {
     if (!graphId || !reportId) return
     try {
@@ -141,11 +134,8 @@ const ReportViewerContent: FC = function () {
     }
   }, [graphId, reportId])
 
-  // Trigger a browser download of the XBRL 2.1 zip. The backend
-  // streams the zip bytes directly (no presigned URL); the SDK
-  // returns a Blob + a server-suggested filename. We create a
-  // temporary object URL, anchor-click it, and clean up — same
-  // pattern as backup downloads in the rest of the app.
+  // XBRL is streamed as a blob (no presigned URL), so it saves via the
+  // object-URL + temporary-anchor pattern used for backup downloads.
   const handleDownloadXbrl = useCallback(async () => {
     if (!graphId || !reportId) return
     try {
@@ -339,16 +329,10 @@ const ReportViewerContent: FC = function () {
                   </span>
                 }
               >
-                <DropdownItem
-                  onClick={handleDownloadBundle}
-                  disabled={isDownloadingBundle}
-                >
+                <DropdownItem onClick={handleDownloadBundle}>
                   JSON-LD bundle
                 </DropdownItem>
-                <DropdownItem
-                  onClick={handleDownloadXbrl}
-                  disabled={isDownloadingXbrl}
-                >
+                <DropdownItem onClick={handleDownloadXbrl}>
                   XBRL 2.1 package
                 </DropdownItem>
               </Dropdown>
