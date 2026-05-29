@@ -8,6 +8,8 @@ import {
   Badge,
   Button,
   Card,
+  Dropdown,
+  DropdownItem,
   Label,
   Modal,
   ModalBody,
@@ -20,7 +22,9 @@ import { useParams, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  HiChevronDown,
   HiChevronLeft,
+  HiDocumentDownload,
   HiDocumentReport,
   HiExclamationCircle,
   HiShare,
@@ -86,6 +90,10 @@ const ReportViewerContent: FC = function () {
   const [isSharing, setIsSharing] = useState(false)
   const [shareResult, setShareResult] = useState<string | null>(null)
 
+  const [isDownloadingBundle, setIsDownloadingBundle] = useState(false)
+  const [isDownloadingXbrl, setIsDownloadingXbrl] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
+
   const loadPublishLists = useCallback(async () => {
     if (!graphId) return
     try {
@@ -98,6 +106,64 @@ const ReportViewerContent: FC = function () {
       setIsLoadingLists(false)
     }
   }, [graphId])
+
+  // window.location.href (not <a download>) because the presigned URL is
+  // cross-origin — the download attribute is ignored cross-origin, but the
+  // backend sets Content-Disposition: attachment so the file still saves.
+  const handleDownloadBundle = useCallback(async () => {
+    if (!graphId || !reportId) return
+    try {
+      setIsDownloadingBundle(true)
+      setDownloadError(null)
+      const resp = await clients.reports.getReportBundleDownloadUrl(
+        graphId,
+        reportId
+      )
+      window.location.href = resp.downloadUrl
+    } catch (err) {
+      console.error('Bundle download failed:', err)
+      // 404 message from the backend ("no stamped bundle — regenerate to
+      // produce one") is the most actionable failure mode for users
+      // viewing a pre-feature Report, so surface the server detail when
+      // available rather than a generic string.
+      const message =
+        err instanceof Error ? err.message : 'Failed to start download.'
+      setDownloadError(message)
+    } finally {
+      setIsDownloadingBundle(false)
+    }
+  }, [graphId, reportId])
+
+  // XBRL is streamed as a blob (no presigned URL), so it saves via the
+  // object-URL + temporary-anchor pattern used for backup downloads.
+  const handleDownloadXbrl = useCallback(async () => {
+    if (!graphId || !reportId) return
+    try {
+      setIsDownloadingXbrl(true)
+      setDownloadError(null)
+      const { blob, filename } = await clients.reports.getReportBundleXbrlZip(
+        graphId,
+        reportId
+      )
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = filename
+      document.body.appendChild(anchor)
+      anchor.click()
+      document.body.removeChild(anchor)
+      // Release the object URL after the browser starts the download —
+      // some browsers cancel an in-flight save if we revoke immediately.
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+    } catch (err) {
+      console.error('XBRL download failed:', err)
+      const message =
+        err instanceof Error ? err.message : 'Failed to download XBRL bundle.'
+      setDownloadError(message)
+    } finally {
+      setIsDownloadingXbrl(false)
+    }
+  }, [graphId, reportId])
 
   const handleShare = useCallback(async () => {
     if (!graphId || !reportId || !selectedListId) return
@@ -246,6 +312,31 @@ const ReportViewerContent: FC = function () {
         gradient="from-orange-500 to-red-600"
         actions={
           <>
+            {pkg.generationStatus === 'published' && (
+              <Dropdown
+                color="light"
+                arrowIcon={false}
+                disabled={isDownloadingBundle || isDownloadingXbrl}
+                label={
+                  <span className="inline-flex items-center">
+                    {isDownloadingBundle || isDownloadingXbrl ? (
+                      <Spinner size="sm" className="mr-2" />
+                    ) : (
+                      <HiDocumentDownload className="mr-2 h-5 w-5" />
+                    )}
+                    Download
+                    <HiChevronDown className="ml-2 h-4 w-4" />
+                  </span>
+                }
+              >
+                <DropdownItem onClick={handleDownloadBundle}>
+                  JSON-LD bundle
+                </DropdownItem>
+                <DropdownItem onClick={handleDownloadXbrl}>
+                  XBRL 2.1 package
+                </DropdownItem>
+              </Dropdown>
+            )}
             {pkg.generationStatus === 'published' && !pkg.sourceGraphId && (
               <Button
                 theme={customTheme.button}
@@ -270,6 +361,16 @@ const ReportViewerContent: FC = function () {
           </>
         }
       />
+
+      {downloadError && (
+        <Alert
+          color="failure"
+          icon={HiExclamationCircle}
+          onDismiss={() => setDownloadError(null)}
+        >
+          {downloadError}
+        </Alert>
+      )}
 
       {/* Status banner — filing lifecycle + provenance */}
       <Card theme={customTheme.card}>
