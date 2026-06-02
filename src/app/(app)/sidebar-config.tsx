@@ -51,6 +51,7 @@ export const getNavigationItems = (
             { href: '/ledger/inbox', label: 'Inbox' },
             { href: '/ledger/transactions', label: 'Transactions' },
             { href: '/ledger/trial-balance', label: 'Trial Balance' },
+            { href: '/ledger/statements', label: 'Statements' },
             { href: '/ledger/close', label: 'Closing Book' },
           ],
         },
