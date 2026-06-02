@@ -344,6 +344,26 @@ export default function ModernConnectionsContent() {
     }
   }
 
+  // ── Write-back policy ──
+
+  const handleSetWritePolicy = async (
+    connectionId: string,
+    writePolicy: 'native' | 'qb_authoritative'
+  ) => {
+    if (!currentGraphId) return
+    try {
+      await SDK.setConnectionWritePolicy({
+        path: { graph_id: currentGraphId, connection_id: connectionId },
+        body: { write_policy: writePolicy },
+      })
+      showSuccess(`Write-back policy set to ${writePolicy}`)
+      void loadConnections()
+    } catch (err) {
+      console.error('Set write policy error:', err)
+      showError('Failed to update write-back policy')
+    }
+  }
+
   // ── Status helper ──
 
   const getConnectionStatus = (
@@ -441,6 +461,9 @@ export default function ModernConnectionsContent() {
                 setConnectionToDelete(connection)
                 setDeleteModalOpen(true)
               }}
+              onSetWritePolicy={(wp) =>
+                handleSetWritePolicy(connection.connection_id, wp)
+              }
               graphId={currentGraphId}
             />
           ))}
