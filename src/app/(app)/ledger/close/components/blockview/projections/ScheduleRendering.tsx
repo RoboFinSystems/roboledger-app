@@ -2,8 +2,6 @@
 
 import { customTheme } from '@/lib/core'
 import {
-  Button,
-  Spinner,
   Table,
   TableBody,
   TableCell,
@@ -12,19 +10,12 @@ import {
   TableRow,
 } from 'flowbite-react'
 import type { FC } from 'react'
-import { useMemo, useState } from 'react'
-import { TbFileInvoice } from 'react-icons/tb'
+import { useMemo } from 'react'
 import { formatCurrencyDollars, formatMonth } from '../../../utils'
 import type { EnvelopeBlock, EnvelopeFact } from '../types'
 
 interface ScheduleRenderingProjectionProps {
   envelope: EnvelopeBlock
-  /**
-   * Optional handler for the per-period "Create Entry" action. When
-   * omitted the action button is hidden — useful for the read-only
-   * package-mode (Plan C) where Report Block items are immutable.
-   */
-  onCreateEntry?: (periodEnd: string, periodStart: string) => Promise<void>
 }
 
 type PeriodFactRow = EnvelopeFact & { elementName: string }
@@ -38,17 +29,14 @@ type PeriodFactRow = EnvelopeFact & { elementName: string }
  * old SchedulePanel produced. Element name lookup uses
  * `envelope.elements` (single in-memory join).
  *
- * The "Create Entry" action is delegated to the parent via
- * `onCreateEntry` so this projection stays presentation-only — the
- * parent still owns the createClosingEntry mutation and the
- * post-create envelope refetch.
+ * Read-only: closing entries are created on the period-close page
+ * (Current Period Status), which is sequence-aware and guards against
+ * already-closed / not-yet-due periods. The schedule rollforward is
+ * presentation-only.
  */
 const ScheduleRenderingProjection: FC<ScheduleRenderingProjectionProps> = ({
   envelope,
-  onCreateEntry,
 }) => {
-  const [creatingPeriod, setCreatingPeriod] = useState<string | null>(null)
-
   const factsByPeriod = useMemo(() => {
     const elementsById = new Map(envelope.elements.map((e) => [e.id, e]))
     const groups: Record<string, PeriodFactRow[]> = {}
@@ -60,20 +48,6 @@ const ScheduleRenderingProjection: FC<ScheduleRenderingProjectionProps> = ({
     }
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
   }, [envelope.elements, envelope.facts])
-
-  const handleCreateEntry = async (
-    periodEnd: string,
-    periodStart: string
-  ): Promise<void> => {
-    if (!onCreateEntry) return
-    const periodKey = `${periodStart}_${periodEnd}`
-    try {
-      setCreatingPeriod(periodKey)
-      await onCreateEntry(periodEnd, periodStart)
-    } finally {
-      setCreatingPeriod(null)
-    }
-  }
 
   if (envelope.facts.length === 0) {
     return (
@@ -100,59 +74,29 @@ const ScheduleRenderingProjection: FC<ScheduleRenderingProjectionProps> = ({
             <TableHeadCell>Period</TableHeadCell>
             <TableHeadCell>Element</TableHeadCell>
             <TableHeadCell className="text-right">Amount</TableHeadCell>
-            {onCreateEntry && <TableHeadCell className="w-32" />}
           </TableHead>
           <TableBody>
             {factsByPeriod.map(([key, periodFacts]) =>
-              periodFacts.map((fact, idx) => {
-                const periodKey = `${fact.periodStart ?? fact.periodEnd}_${fact.periodEnd}`
-                return (
-                  <TableRow key={`${key}-${fact.elementId}`}>
-                    {idx === 0 && (
-                      <TableCell
-                        rowSpan={periodFacts.length}
-                        className="align-top font-medium text-gray-900 dark:text-white"
-                      >
-                        {fact.periodStart
-                          ? formatMonth(fact.periodStart)
-                          : formatMonth(fact.periodEnd)}
-                      </TableCell>
-                    )}
-                    <TableCell className="text-gray-700 dark:text-gray-300">
-                      {fact.elementName}
+              periodFacts.map((fact, idx) => (
+                <TableRow key={`${key}-${fact.elementId}`}>
+                  {idx === 0 && (
+                    <TableCell
+                      rowSpan={periodFacts.length}
+                      className="align-top font-medium text-gray-900 dark:text-white"
+                    >
+                      {fact.periodStart
+                        ? formatMonth(fact.periodStart)
+                        : formatMonth(fact.periodEnd)}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-gray-900 dark:text-white">
-                      {formatCurrencyDollars(fact.value)}
-                    </TableCell>
-                    {onCreateEntry && idx === 0 && (
-                      <TableCell
-                        rowSpan={periodFacts.length}
-                        className="align-top"
-                      >
-                        <Button
-                          theme={customTheme.button}
-                          size="xs"
-                          color="primary"
-                          disabled={creatingPeriod === periodKey}
-                          onClick={() =>
-                            handleCreateEntry(
-                              fact.periodEnd,
-                              fact.periodStart ?? fact.periodEnd
-                            )
-                          }
-                        >
-                          {creatingPeriod === periodKey ? (
-                            <Spinner size="sm" className="mr-1" />
-                          ) : (
-                            <TbFileInvoice className="mr-1 h-3.5 w-3.5" />
-                          )}
-                          Entry
-                        </Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                )
-              })
+                  )}
+                  <TableCell className="text-gray-700 dark:text-gray-300">
+                    {fact.elementName}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-gray-900 dark:text-white">
+                    {formatCurrencyDollars(fact.value)}
+                  </TableCell>
+                </TableRow>
+              ))
             )}
           </TableBody>
         </Table>

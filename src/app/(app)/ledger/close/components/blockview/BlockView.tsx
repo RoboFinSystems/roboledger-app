@@ -20,12 +20,6 @@ interface BlockViewProps {
    * closing-book mode reads it from the parent panel state.
    */
   entityName?: string | null
-  /**
-   * Schedule-only handler for the per-period "Create Entry" action.
-   * Routed through to `ScheduleRenderingProjection`; ignored for
-   * non-schedule block types.
-   */
-  onCreateEntry?: (periodEnd: string, periodStart: string) => Promise<void>
 }
 
 /**
@@ -45,12 +39,7 @@ interface BlockViewProps {
  * See `local/docs/specs/financial-viewer.md` §"BlockView and View
  * Projections" for the full mapping.
  */
-const BlockView: FC<BlockViewProps> = ({
-  envelope,
-  viewMode,
-  entityName,
-  onCreateEntry,
-}) => {
+const BlockView: FC<BlockViewProps> = ({ envelope, viewMode, entityName }) => {
   if (viewMode === 'facts') {
     return <FactTableProjection envelope={envelope} />
   }
@@ -78,12 +67,7 @@ const BlockView: FC<BlockViewProps> = ({
   }
 
   if (envelope.blockType === 'schedule') {
-    return (
-      <ScheduleRenderingProjection
-        envelope={envelope}
-        onCreateEntry={onCreateEntry}
-      />
-    )
+    return <ScheduleRenderingProjection envelope={envelope} />
   }
 
   return (

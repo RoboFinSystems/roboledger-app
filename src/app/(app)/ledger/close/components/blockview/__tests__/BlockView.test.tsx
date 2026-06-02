@@ -15,10 +15,8 @@ vi.mock('../projections/StatementRendering', () => ({
   ),
 }))
 vi.mock('../projections/ScheduleRendering', () => ({
-  default: ({ envelope, onCreateEntry }: any) => (
-    <div data-testid="schedule-rendering">
-      {envelope.id} {onCreateEntry ? 'with-callback' : 'no-callback'}
-    </div>
+  default: ({ envelope }: any) => (
+    <div data-testid="schedule-rendering">{envelope.id}</div>
   ),
 }))
 
@@ -59,20 +57,6 @@ describe('BlockView dispatcher', () => {
   })
 
   it('routes schedule block_type to ScheduleRendering in rendered mode', () => {
-    const onCreateEntry = vi.fn(async () => {})
-    render(
-      <BlockView
-        envelope={makeEnvelope({ id: 'struct_dep', blockType: 'schedule' })}
-        viewMode="rendered"
-        onCreateEntry={onCreateEntry}
-      />
-    )
-    expect(screen.getByTestId('schedule-rendering')).toHaveTextContent(
-      'struct_dep with-callback'
-    )
-  })
-
-  it('renders the schedule projection without a callback when none supplied', () => {
     render(
       <BlockView
         envelope={makeEnvelope({ id: 'struct_dep', blockType: 'schedule' })}
@@ -80,7 +64,7 @@ describe('BlockView dispatcher', () => {
       />
     )
     expect(screen.getByTestId('schedule-rendering')).toHaveTextContent(
-      'struct_dep no-callback'
+      'struct_dep'
     )
   })
 
