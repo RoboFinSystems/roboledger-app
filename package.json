@@ -50,7 +50,7 @@
     "flowbite-react": "^0.12.5",
     "intuit-oauth": "^4.1.0",
     "lru-cache": "^11.2.6",
-    "next": "^16.1.6",
+    "next": "^16.2.7",
     "plaid": "^36",
     "react": "^19",
     "react-dom": "^19",
