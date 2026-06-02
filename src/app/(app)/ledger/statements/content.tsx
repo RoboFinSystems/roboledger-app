@@ -62,11 +62,13 @@ type StatementType =
   | 'balance_sheet'
   | 'income_statement'
   | 'cash_flow_statement'
+  | 'equity_statement'
 
 const STATEMENT_TYPES: { key: StatementType; label: string }[] = [
   { key: 'balance_sheet', label: 'Balance Sheet' },
   { key: 'income_statement', label: 'Income Statement' },
   { key: 'cash_flow_statement', label: 'Cash Flow' },
+  { key: 'equity_statement', label: 'Statement of Equity' },
 ]
 
 type PresetKey = 'this_month' | 'this_quarter' | 'ytd' | 'last_fy' | 'custom'
