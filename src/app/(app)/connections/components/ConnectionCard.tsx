@@ -3,6 +3,7 @@
 import { customTheme } from '@/lib/core'
 import { Alert, Badge, Button, Card, Progress, Select } from 'flowbite-react'
 import Image from 'next/image'
+import { useState } from 'react'
 import { FaTrash } from 'react-icons/fa'
 import {
   HiCheckCircle,
@@ -57,7 +58,9 @@ interface ConnectionCardProps {
    * Set the QB write-back policy for this connection. Optional — only
    * QuickBooks connections render the control.
    */
-  onSetWritePolicy?: (writePolicy: 'native' | 'qb_authoritative') => void
+  onSetWritePolicy?: (
+    writePolicy: 'native' | 'qb_authoritative'
+  ) => void | Promise<void>
   /**
    * Current graph id, so QB connections can surface the fiscal-calendar
    * bootstrap state (§3.0). Optional because non-QB providers ignore it.
@@ -112,6 +115,15 @@ export default function ConnectionCard({
   onSetWritePolicy,
   graphId,
 }: ConnectionCardProps) {
+  // Optimistic write-policy value: reflects the user's pick immediately
+  // (no revert-flicker while the mutation is in flight), reverts on
+  // failure, and otherwise reconciles to the prop after the reload.
+  const [pendingPolicy, setPendingPolicy] = useState<
+    'native' | 'qb_authoritative' | null
+  >(null)
+  const [savingPolicy, setSavingPolicy] = useState(false)
+  const writePolicyValue = pendingPolicy ?? connection.write_policy ?? 'native'
+
   const provider = connection.provider.toLowerCase()
   const image = PROVIDER_IMAGES[provider]
   const label = PROVIDER_LABELS[provider] || connection.provider
@@ -218,13 +230,21 @@ export default function ConnectionCard({
                   id={`write-policy-${connection.connection_id}`}
                   sizing="sm"
                   theme={customTheme.select}
-                  value={connection.write_policy ?? 'native'}
-                  disabled={!onSetWritePolicy}
-                  onChange={(e) =>
-                    onSetWritePolicy?.(
-                      e.target.value as 'native' | 'qb_authoritative'
-                    )
-                  }
+                  value={writePolicyValue}
+                  disabled={!onSetWritePolicy || savingPolicy}
+                  onChange={async (e) => {
+                    const next = e.target.value as 'native' | 'qb_authoritative'
+                    setPendingPolicy(next)
+                    setSavingPolicy(true)
+                    try {
+                      await onSetWritePolicy?.(next)
+                    } catch {
+                      // Mutation failed — revert to the unchanged prop value.
+                      setPendingPolicy(null)
+                    } finally {
+                      setSavingPolicy(false)
+                    }
+                  }}
                 >
                   <option value="qb_authoritative">
                     QuickBooks authoritative — write back on close
@@ -234,7 +254,7 @@ export default function ConnectionCard({
                   </option>
                 </Select>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {(connection.write_policy ?? 'native') === 'qb_authoritative'
+                  {writePolicyValue === 'qb_authoritative'
                     ? 'RoboLedger-originated entries (schedules, manual JEs) publish to QuickBooks when a period is closed.'
                     : 'RoboLedger is the system of record — closing posts entries locally only; nothing is written back to QuickBooks.'}
                 </p>

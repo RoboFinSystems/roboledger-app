@@ -675,15 +675,14 @@ const DraftReviewPanel: FC<DraftReviewPanelProps> = ({ drafts, isLoading }) => {
             <span className="font-medium">{drafts.qbPublishCount}</span> of{' '}
             {drafts.draftCount} draft{drafts.draftCount === 1 ? '' : 's'} will
             post to <span className="font-medium">QuickBooks</span> when this
-            period is closed
-            {drafts.qbWritePolicy ? ` (${drafts.qbWritePolicy})` : ''}.
+            period is closed.
             {drafts.localOnlyCount > 0 &&
               ` The remaining ${drafts.localOnlyCount} post locally only.`}
           </div>
         ) : (
           <div className="mb-3 rounded border border-gray-200 bg-gray-50 p-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-            These drafts post locally only — no QuickBooks write-back connection
-            is active for this graph.
+            These drafts post locally only — nothing will be written back to
+            QuickBooks when this period is closed.
           </div>
         ))}
       <div className="space-y-3">
