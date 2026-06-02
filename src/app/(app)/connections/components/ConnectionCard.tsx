@@ -1,8 +1,9 @@
 'use client'
 
 import { customTheme } from '@/lib/core'
-import { Alert, Badge, Button, Card, Progress } from 'flowbite-react'
+import { Alert, Badge, Button, Card, Progress, Select } from 'flowbite-react'
 import Image from 'next/image'
+import { useState } from 'react'
 import { FaTrash } from 'react-icons/fa'
 import {
   HiCheckCircle,
@@ -39,6 +40,12 @@ export interface ConnectionData {
   created_at: string
   updated_at?: string | null
   last_sync?: string | null
+  /**
+   * Source-of-truth write policy (outbound write-back only):
+   * 'qb_authoritative' (RL-originated entries publish to QuickBooks on
+   * close) or 'native' (RoboLedger is authoritative — no write-back).
+   */
+  write_policy?: string | null
   metadata: Record<string, any>
 }
 
@@ -47,6 +54,13 @@ interface ConnectionCardProps {
   status: ConnectionStatus
   onSync: () => void
   onDelete: () => void
+  /**
+   * Set the QB write-back policy for this connection. Optional — only
+   * QuickBooks connections render the control.
+   */
+  onSetWritePolicy?: (
+    writePolicy: 'native' | 'qb_authoritative'
+  ) => void | Promise<void>
   /**
    * Current graph id, so QB connections can surface the fiscal-calendar
    * bootstrap state (§3.0). Optional because non-QB providers ignore it.
@@ -98,8 +112,18 @@ export default function ConnectionCard({
   status,
   onSync,
   onDelete,
+  onSetWritePolicy,
   graphId,
 }: ConnectionCardProps) {
+  // Optimistic write-policy value: reflects the user's pick immediately
+  // (no revert-flicker while the mutation is in flight), reverts on
+  // failure, and otherwise reconciles to the prop after the reload.
+  const [pendingPolicy, setPendingPolicy] = useState<
+    'native' | 'qb_authoritative' | null
+  >(null)
+  const [savingPolicy, setSavingPolicy] = useState(false)
+  const writePolicyValue = pendingPolicy ?? connection.write_policy ?? 'native'
+
   const provider = connection.provider.toLowerCase()
   const image = PROVIDER_IMAGES[provider]
   const label = PROVIDER_LABELS[provider] || connection.provider
@@ -189,6 +213,51 @@ export default function ConnectionCard({
             {provider === 'quickbooks' && graphId && (
               <div className="mt-3">
                 <FiscalCalendarBootstrap graphId={graphId} />
+              </div>
+            )}
+
+            {/* Write-back policy — outbound only; governs whether
+                close-period publishes RL-originated entries to QuickBooks. */}
+            {provider === 'quickbooks' && (
+              <div className="mt-3 border-t border-gray-100 pt-3 dark:border-gray-700">
+                <label
+                  htmlFor={`write-policy-${connection.connection_id}`}
+                  className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Write-back policy
+                </label>
+                <Select
+                  id={`write-policy-${connection.connection_id}`}
+                  sizing="sm"
+                  theme={customTheme.select}
+                  value={writePolicyValue}
+                  disabled={!onSetWritePolicy || savingPolicy}
+                  onChange={async (e) => {
+                    const next = e.target.value as 'native' | 'qb_authoritative'
+                    setPendingPolicy(next)
+                    setSavingPolicy(true)
+                    try {
+                      await onSetWritePolicy?.(next)
+                    } catch {
+                      // Mutation failed — revert to the unchanged prop value.
+                      setPendingPolicy(null)
+                    } finally {
+                      setSavingPolicy(false)
+                    }
+                  }}
+                >
+                  <option value="qb_authoritative">
+                    QuickBooks authoritative — write back on close
+                  </option>
+                  <option value="native">
+                    Native — RoboLedger only, no write-back
+                  </option>
+                </Select>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {writePolicyValue === 'qb_authoritative'
+                    ? 'RoboLedger-originated entries (schedules, manual JEs) publish to QuickBooks when a period is closed.'
+                    : 'RoboLedger is the system of record — closing posts entries locally only; nothing is written back to QuickBooks.'}
+                </p>
               </div>
             )}
           </div>

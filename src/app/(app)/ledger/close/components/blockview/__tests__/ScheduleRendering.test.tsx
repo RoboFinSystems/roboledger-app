@@ -1,25 +1,15 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/lib/core', () => ({ customTheme: { table: {}, button: {} } }))
+vi.mock('@/lib/core', () => ({ customTheme: { table: {} } }))
 
 vi.mock('flowbite-react', () => ({
-  Button: ({ children, onClick, disabled }: any) => (
-    <button onClick={onClick} disabled={disabled}>
-      {children}
-    </button>
-  ),
-  Spinner: () => <span data-testid="spinner" />,
   Table: ({ children }: any) => <table>{children}</table>,
   TableBody: ({ children }: any) => <tbody>{children}</tbody>,
   TableCell: ({ children }: any) => <td>{children}</td>,
   TableHead: ({ children }: any) => <thead>{children}</thead>,
   TableHeadCell: ({ children }: any) => <th>{children}</th>,
   TableRow: ({ children }: any) => <tr>{children}</tr>,
-}))
-
-vi.mock('react-icons/tb', () => ({
-  TbFileInvoice: () => <span data-testid="icon-entry" />,
 }))
 
 import ScheduleRenderingProjection from '../projections/ScheduleRendering'
@@ -83,33 +73,8 @@ describe('ScheduleRenderingProjection', () => {
     expect(depCells.length).toBe(2) // one row per period
   })
 
-  it('renders the Create Entry button only when onCreateEntry is provided', () => {
-    const { rerender } = render(
-      <ScheduleRenderingProjection envelope={scheduleEnvelope} />
-    )
+  it('is read-only — renders no per-period Entry action', () => {
+    render(<ScheduleRenderingProjection envelope={scheduleEnvelope} />)
     expect(screen.queryByText(/Entry$/)).toBeNull()
-
-    rerender(
-      <ScheduleRenderingProjection
-        envelope={scheduleEnvelope}
-        onCreateEntry={vi.fn(async () => {})}
-      />
-    )
-    expect(screen.getAllByText(/Entry$/).length).toBe(2)
-  })
-
-  it('calls onCreateEntry with (periodEnd, periodStart) on click', async () => {
-    const onCreateEntry = vi.fn(async () => {})
-    render(
-      <ScheduleRenderingProjection
-        envelope={scheduleEnvelope}
-        onCreateEntry={onCreateEntry}
-      />
-    )
-    const buttons = screen.getAllByText(/Entry$/)
-    fireEvent.click(buttons[0])
-    // The callback resolves async; flush microtask then assert.
-    await Promise.resolve()
-    expect(onCreateEntry).toHaveBeenCalledWith('2026-01-31', '2026-01-01')
   })
 })

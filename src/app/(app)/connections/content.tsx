@@ -344,6 +344,35 @@ export default function ModernConnectionsContent() {
     }
   }
 
+  // ── Write-back policy ──
+
+  const WRITE_POLICY_LABELS: Record<string, string> = {
+    qb_authoritative: 'QuickBooks authoritative',
+    native: 'Native (local only)',
+  }
+
+  const handleSetWritePolicy = async (
+    connectionId: string,
+    writePolicy: 'native' | 'qb_authoritative'
+  ) => {
+    if (!currentGraphId) return
+    try {
+      await SDK.setConnectionWritePolicy({
+        path: { graph_id: currentGraphId, connection_id: connectionId },
+        body: { write_policy: writePolicy },
+      })
+      showSuccess(
+        `Write-back policy set to ${WRITE_POLICY_LABELS[writePolicy] ?? writePolicy}`
+      )
+      void loadConnections()
+    } catch (err) {
+      // Re-throw so the card can revert its optimistic Select value.
+      console.error('Set write policy error:', err)
+      showError('Failed to update write-back policy')
+      throw err
+    }
+  }
+
   // ── Status helper ──
 
   const getConnectionStatus = (
@@ -441,6 +470,9 @@ export default function ModernConnectionsContent() {
                 setConnectionToDelete(connection)
                 setDeleteModalOpen(true)
               }}
+              onSetWritePolicy={(wp) =>
+                handleSetWritePolicy(connection.connection_id, wp)
+              }
               graphId={currentGraphId}
             />
           ))}

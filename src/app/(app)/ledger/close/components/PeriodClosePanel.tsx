@@ -669,6 +669,22 @@ const DraftReviewPanel: FC<DraftReviewPanelProps> = ({ drafts, isLoading }) => {
           )}
         </div>
       </div>
+      {drafts.draftCount > 0 &&
+        (drafts.qbPublishCount > 0 ? (
+          <div className="mb-3 rounded border border-blue-200 bg-blue-50 p-2 text-xs text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200">
+            <span className="font-medium">{drafts.qbPublishCount}</span> of{' '}
+            {drafts.draftCount} draft{drafts.draftCount === 1 ? '' : 's'} will
+            post to <span className="font-medium">QuickBooks</span> when this
+            period is closed.
+            {drafts.localOnlyCount > 0 &&
+              ` The remaining ${drafts.localOnlyCount} post locally only.`}
+          </div>
+        ) : (
+          <div className="mb-3 rounded border border-gray-200 bg-gray-50 p-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+            These drafts post locally only — nothing will be written back to
+            QuickBooks when this period is closed.
+          </div>
+        ))}
       <div className="space-y-3">
         {drafts.drafts.map((d) => (
           <div
@@ -686,6 +702,11 @@ const DraftReviewPanel: FC<DraftReviewPanelProps> = ({ drafts, isLoading }) => {
                 {d.provenance && (
                   <Badge color="gray" size="sm" className="ml-2 inline-flex">
                     {d.provenance}
+                  </Badge>
+                )}
+                {d.willPublishToQb && (
+                  <Badge color="info" size="sm" className="ml-2 inline-flex">
+                    → QuickBooks
                   </Badge>
                 )}
               </div>

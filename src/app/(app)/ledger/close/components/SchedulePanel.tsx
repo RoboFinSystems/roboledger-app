@@ -17,9 +17,11 @@ interface SchedulePanelProps {
 
 /**
  * Thin orchestration shell around the schedule envelope. Owns the
- * fetch + createClosingEntry mutation; delegates all rendering to
- * `BlockView`, which dispatches to the schedule `Rendering` projection
- * (or the uniform `FactTable` projection in facts mode).
+ * envelope fetch and delegates all rendering to `BlockView`, which
+ * dispatches to the schedule `Rendering` projection (or the uniform
+ * `FactTable` projection in facts mode). Read-only — closing entries
+ * are created on the period-close page (Current Period Status), not the
+ * schedule view.
  */
 const SchedulePanel: FC<SchedulePanelProps> = ({
   graphId,
@@ -51,27 +53,6 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
     loadEnvelope()
   }, [loadEnvelope])
 
-  const handleCreateEntry = useCallback(
-    async (periodEnd: string, periodStart: string): Promise<void> => {
-      try {
-        // SDK signature: (graphId, structureId, postingDate, periodStart, periodEnd, memo?)
-        // Closing entries post on the last day of the period they close.
-        await clients.ledger.createClosingEntry(
-          graphId,
-          structureId,
-          periodEnd,
-          periodStart,
-          periodEnd
-        )
-        await loadEnvelope()
-      } catch (err) {
-        console.error('Error creating closing entry:', err)
-        setError('Failed to create closing entry.')
-      }
-    },
-    [graphId, structureId, loadEnvelope]
-  )
-
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -97,13 +78,12 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
     )
   }
 
-  return (
-    <BlockView
-      envelope={envelope}
-      viewMode={viewMode}
-      onCreateEntry={handleCreateEntry}
-    />
-  )
+  // Read-only rollforward. Closing entries are created on the period-close
+  // page (Current Period Status), which is sequence-aware and guards against
+  // already-closed / not-yet-due periods — the schedule view has no such
+  // guard (every one of its periods rendered an Entry button, 422-ing on
+  // closed months), so entry creation is funneled there.
+  return <BlockView envelope={envelope} viewMode={viewMode} />
 }
 
 export default SchedulePanel
