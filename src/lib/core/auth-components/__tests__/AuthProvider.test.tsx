@@ -106,9 +106,9 @@ describe('AuthProvider - Simplified Tests', () => {
 
     mockAuthClient = createMockAuthClient()
 
-    MockRoboSystemsAuthClient.mockImplementation(
-      () => mockAuthClient as unknown as RoboSystemsAuthClient
-    )
+    MockRoboSystemsAuthClient.mockImplementation(function () {
+      return mockAuthClient as unknown as RoboSystemsAuthClient
+    })
     mockSessionStorage.getItem.mockReturnValue(null)
   })
 
@@ -291,9 +291,9 @@ describe('AuthProvider - Force Refresh Tests', () => {
 
     mockAuthClient = createMockAuthClient()
 
-    MockRoboSystemsAuthClient.mockImplementation(
-      () => mockAuthClient as unknown as RoboSystemsAuthClient
-    )
+    MockRoboSystemsAuthClient.mockImplementation(function () {
+      return mockAuthClient as unknown as RoboSystemsAuthClient
+    })
     mockSessionStorage.getItem.mockReturnValue(null)
   })
 

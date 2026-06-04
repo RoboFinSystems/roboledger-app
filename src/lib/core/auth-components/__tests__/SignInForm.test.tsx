@@ -21,7 +21,9 @@ const mockAuthClient = vi.hoisted(() => ({
 }))
 
 vi.mock('../../auth-core/client', () => ({
-  RoboSystemsAuthClient: vi.fn(() => mockAuthClient),
+  RoboSystemsAuthClient: vi.fn(function () {
+    return mockAuthClient
+  }),
 }))
 
 const mockUseSSOInstance = vi.hoisted(() => ({
@@ -90,7 +92,9 @@ describe('SignInForm', () => {
     mockUseSSOInstance.generateSSOToken.mockReset()
     mockUseSSOInstance.getSSORedirectUrl.mockReset()
 
-    mockRoboSystemsAuthClient.mockImplementation(() => mockAuthClient as any)
+    mockRoboSystemsAuthClient.mockImplementation(function () {
+      return mockAuthClient as any
+    })
     mockUseSSOHook.mockReturnValue(mockUseSSOInstance as any)
   })
 
