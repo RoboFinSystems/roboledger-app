@@ -7,11 +7,6 @@ vi.mock('@robosystems/client/clients', () => ({
   streamQuery: mockStreamQuery,
 }))
 
-global.AbortController = vi.fn().mockImplementation(() => ({
-  abort: vi.fn(),
-  signal: {},
-}))
-
 import { useStreamingQuery } from '../use-streaming-query'
 
 function createAsyncIterator(items: any[]): AsyncIterableIterator<any> {

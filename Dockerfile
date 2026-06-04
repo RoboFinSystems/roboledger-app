@@ -7,6 +7,10 @@ WORKDIR /app
 # Install git for private repository access
 RUN apk add --no-cache git
 
+# Upgrade the bundled npm CLI to clear CVEs in npm's vendored deps
+# (picomatch, brace-expansion, tar, minimatch) — build-time only
+RUN npm install -g npm@latest
+
 # Install dependencies
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -29,6 +33,10 @@ ENV NODE_ENV=production
 
 # Install git and upgrade system packages for security patches
 RUN apk upgrade --no-cache && apk add --no-cache git
+
+# Upgrade the bundled npm CLI to clear CVEs in npm's vendored deps
+# (picomatch, brace-expansion, tar, minimatch) — this is the stage the prod image scan inspects
+RUN npm install -g npm@latest
 
 # Create non-root user before copying files (enables --chown)
 RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup

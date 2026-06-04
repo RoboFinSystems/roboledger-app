@@ -39,13 +39,17 @@ describe('OperationMonitor', () => {
       removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
     }
-    ;(globalThis as any).EventSource = vi.fn(() => mockEventSource)
+    ;(globalThis as any).EventSource = vi.fn(function () {
+      return mockEventSource
+    })
 
     mockOperationClientInstance = {
       monitorOperation: vi.fn(),
       closeAll: vi.fn(),
     }
-    MockOperationClient.mockImplementation(() => mockOperationClientInstance)
+    MockOperationClient.mockImplementation(function () {
+      return mockOperationClientInstance
+    })
 
     mockClient.getConfig.mockReturnValue({
       baseUrl: 'http://localhost:8000',

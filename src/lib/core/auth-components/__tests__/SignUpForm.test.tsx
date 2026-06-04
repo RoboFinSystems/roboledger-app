@@ -20,7 +20,9 @@ const mockAuthClient = vi.hoisted(() => ({
 }))
 
 vi.mock('../../auth-core/client', () => ({
-  RoboSystemsAuthClient: vi.fn(() => mockAuthClient),
+  RoboSystemsAuthClient: vi.fn(function () {
+    return mockAuthClient
+  }),
 }))
 
 vi.mock('../../auth-core/sso', () => ({
@@ -74,7 +76,9 @@ describe('SignUpForm', () => {
     mockAuthClient.login.mockReset()
     mockAuthClient.register.mockReset()
 
-    mockRoboSystemsAuthClient.mockImplementation(() => mockAuthClient as any)
+    mockRoboSystemsAuthClient.mockImplementation(function () {
+      return mockAuthClient as any
+    })
   })
 
   describe('Initial Render', () => {
