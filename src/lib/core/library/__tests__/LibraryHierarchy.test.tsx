@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { LibraryHierarchy } from '../components/LibraryHierarchy'
 
@@ -97,5 +97,45 @@ describe('LibraryHierarchy', () => {
     render(<LibraryHierarchy {...baseProps} client={client as any} />)
 
     await waitFor(() => expect(screen.getByText('boom')).toBeInTheDocument())
+  })
+
+  it('dedupes a blended arc that recurs across structures', async () => {
+    // Same parent->child arc contributed by two structures (the "All
+    // structures" blend) must collapse to a single child node.
+    const dup = [
+      arc({ id: 'a1', structureId: 's1' }),
+      arc({ id: 'a2', structureId: 's2' }),
+    ]
+    const client = makeClient({
+      listLibraryTaxonomyArcs: vi
+        .fn()
+        .mockResolvedValue({ arcs: dup, count: 2 }),
+    })
+
+    render(<LibraryHierarchy {...baseProps} client={client as any} />)
+
+    await waitFor(() => expect(screen.getByText('Assets')).toBeInTheDocument())
+    expect(screen.getAllByText('Cash')).toHaveLength(1)
+  })
+
+  it('collapses and expands children when the chevron is clicked', async () => {
+    const client = makeClient({
+      listLibraryTaxonomyArcs: vi
+        .fn()
+        .mockResolvedValue({ arcs: [arc()], count: 1 }),
+    })
+
+    render(<LibraryHierarchy {...baseProps} client={client as any} />)
+
+    // Root + its single child render expanded by default (depth < 2).
+    await waitFor(() => expect(screen.getByText('Cash')).toBeInTheDocument())
+
+    // Collapse the root → child disappears.
+    fireEvent.click(screen.getByLabelText('Collapse'))
+    expect(screen.queryByText('Cash')).not.toBeInTheDocument()
+
+    // Expand again → child returns.
+    fireEvent.click(screen.getByLabelText('Expand'))
+    expect(screen.getByText('Cash')).toBeInTheDocument()
   })
 })

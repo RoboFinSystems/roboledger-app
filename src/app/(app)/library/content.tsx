@@ -130,11 +130,16 @@ export default function LibraryContent() {
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+        <div
+          className="flex shrink-0 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+          role="group"
+          aria-label="View mode"
+        >
           {(['browse', 'hierarchy'] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
+              aria-pressed={viewMode === mode}
               className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${
                 viewMode === mode
                   ? 'bg-blue-600 text-white'
@@ -159,6 +164,7 @@ export default function LibraryContent() {
         </Alert>
       )}
 
+      {/* Grid height = viewport minus ~220px of app header + page heading + padding above it. */}
       {taxonomiesState === 'ready' && (
         <div
           className="grid grid-cols-12 items-stretch gap-6"

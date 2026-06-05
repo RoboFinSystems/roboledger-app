@@ -217,8 +217,13 @@ export function LibraryHierarchy({
       .then((rows) => {
         if (!cancelled) setStructures(rows)
       })
-      .catch(() => {
-        if (!cancelled) setStructures([])
+      .catch((err) => {
+        // Non-fatal: the tree still loads with "All structures"; the picker
+        // just won't appear. Log so the absence is diagnosable.
+        if (!cancelled) {
+          console.error('[LibraryHierarchy] failed to load structures', err)
+          setStructures([])
+        }
       })
     return () => {
       cancelled = true
@@ -281,11 +286,16 @@ export function LibraryHierarchy({
             Hierarchy
           </h2>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+            <div
+              className="flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+              role="group"
+              aria-label="Arc type"
+            >
               {ARC_TYPES.map((t) => (
                 <button
                   key={t.value}
                   onClick={() => setArcType(t.value)}
+                  aria-pressed={arcType === t.value}
                   className={`px-3 py-1 text-xs font-medium transition-colors ${
                     arcType === t.value
                       ? 'bg-blue-600 text-white'
@@ -339,10 +349,15 @@ export function LibraryHierarchy({
         )}
 
         {state === 'ready' && forest.length > 0 && (
-          <div className="min-h-0 flex-1 overflow-auto pr-1 font-mono text-sm">
-            {forest.map((root, i) => (
+          <div
+            role="tree"
+            aria-label="Taxonomy hierarchy"
+            className="min-h-0 flex-1 overflow-auto pr-1 font-mono text-sm"
+          >
+            {forest.map((root) => (
               <HierarchyRow
-                key={`${root.id}#${i}`}
+                key={root.id}
+                path={root.id}
                 node={root}
                 depth={0}
                 showWeights={showWeights}
@@ -361,6 +376,7 @@ export function LibraryHierarchy({
 
 function HierarchyRow({
   node,
+  path,
   depth,
   showWeights,
   collapsed,
@@ -369,6 +385,9 @@ function HierarchyRow({
   onSelectElement,
 }: {
   node: TreeNode
+  /** Unique root-to-node path — stable React key in a DAG where an element
+   * can appear under multiple parents. */
+  path: string
   depth: number
   showWeights: boolean
   collapsed: Set<string>
@@ -382,7 +401,12 @@ function HierarchyRow({
   const label = node.name ?? node.qname ?? node.id
 
   return (
-    <div>
+    <div
+      role="treeitem"
+      aria-level={depth + 1}
+      aria-selected={isSelected}
+      aria-expanded={hasChildren ? !isCollapsed : undefined}
+    >
       <div
         className={`flex items-center gap-1 rounded px-1 py-0.5 ${
           isSelected
@@ -450,20 +474,23 @@ function HierarchyRow({
         </button>
       </div>
 
-      {hasChildren &&
-        !isCollapsed &&
-        node.children.map((c, i) => (
-          <HierarchyRow
-            key={`${c.id}#${i}`}
-            node={c}
-            depth={depth + 1}
-            showWeights={showWeights}
-            collapsed={collapsed}
-            onToggle={onToggle}
-            selectedElementId={selectedElementId}
-            onSelectElement={onSelectElement}
-          />
-        ))}
+      {hasChildren && !isCollapsed && (
+        <div role="group">
+          {node.children.map((c) => (
+            <HierarchyRow
+              key={`${path}/${c.id}`}
+              path={`${path}/${c.id}`}
+              node={c}
+              depth={depth + 1}
+              showWeights={showWeights}
+              collapsed={collapsed}
+              onToggle={onToggle}
+              selectedElementId={selectedElementId}
+              onSelectElement={onSelectElement}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
