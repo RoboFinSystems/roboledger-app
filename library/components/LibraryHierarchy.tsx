@@ -111,12 +111,17 @@ function buildForest(arcs: LibraryArc[]): TreeNode[] {
     froms.add(a.fromElementId)
     tos.add(a.toElementId)
     const edges = childEdges.get(a.fromElementId) ?? []
-    edges.push({
-      childId: a.toElementId,
-      weight: a.weight,
-      order: a.orderValue,
-    })
-    childEdges.set(a.fromElementId, edges)
+    // Dedupe by target — the same parent→child arc recurs across structures
+    // (the "All structures" blend), which would otherwise render duplicate
+    // sibling nodes (and collide on React keys).
+    if (!edges.some((e) => e.childId === a.toElementId)) {
+      edges.push({
+        childId: a.toElementId,
+        weight: a.weight,
+        order: a.orderValue,
+      })
+      childEdges.set(a.fromElementId, edges)
+    }
   }
 
   const node = (
@@ -182,7 +187,7 @@ export function LibraryHierarchy({
   selectedElementId: string | null
   onSelectElement: (id: string) => void
 }) {
-  const [arcType, setArcType] = useState<ArcType>('calculation')
+  const [arcType, setArcType] = useState<ArcType>('presentation')
   const [structures, setStructures] = useState<LibraryStructure[]>([])
   const [structureId, setStructureId] = useState<string | null>(null)
   const [arcs, setArcs] = useState<LibraryArc[]>([])
@@ -335,9 +340,9 @@ export function LibraryHierarchy({
 
         {state === 'ready' && forest.length > 0 && (
           <div className="min-h-0 flex-1 overflow-auto pr-1 font-mono text-sm">
-            {forest.map((root) => (
+            {forest.map((root, i) => (
               <HierarchyRow
-                key={root.id}
+                key={`${root.id}#${i}`}
                 node={root}
                 depth={0}
                 showWeights={showWeights}
@@ -447,9 +452,9 @@ function HierarchyRow({
 
       {hasChildren &&
         !isCollapsed &&
-        node.children.map((c) => (
+        node.children.map((c, i) => (
           <HierarchyRow
-            key={c.id}
+            key={`${c.id}#${i}`}
             node={c}
             depth={depth + 1}
             showWeights={showWeights}
