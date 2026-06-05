@@ -16,20 +16,20 @@ import {
 import { customTheme } from '../../theme'
 import { classificationColor } from '../colors'
 
-type ArcType = 'calculation' | 'presentation' | 'general-special'
+type ArcType = 'calculation' | 'presentation'
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
 /**
- * Arc types the hierarchy view can walk, with the taxonomy-standard
- * suffix that owns each. The calc DAG lives in ``{base}-calculations``,
- * presentation networks in ``{base}-presentation``, the general-special
- * (type/subtype) lattice in ``{base}-type-subtype`` — the arcs are NOT on
- * the base reporting taxonomy, so we resolve the owning taxonomy by name.
+ * Arc types the hierarchy view can walk, with the taxonomy-standard suffix
+ * that owns each. The calc DAG lives in ``{base}-calculations`` and the
+ * presentation networks in ``{base}-presentation`` — the arcs are NOT on the
+ * base reporting taxonomy, so we resolve the owning taxonomy by name. The
+ * general-special / type-subtype lattice is intentionally not exposed here:
+ * it's substrate (render fallback + classification), not a curated browse.
  */
 const ARC_TYPES: { value: ArcType; label: string; suffix: string }[] = [
   { value: 'presentation', label: 'Presentation', suffix: 'presentation' },
   { value: 'calculation', label: 'Calculation', suffix: 'calculations' },
-  { value: 'general-special', label: 'Type–subtype', suffix: 'type-subtype' },
 ]
 
 /**
@@ -39,8 +39,7 @@ const ARC_TYPES: { value: ArcType; label: string; suffix: string }[] = [
  *  • the auto-derived base networks — the type-subtype lattice projected as
  *    presentation (role '…-pres-bs|is|cf'), an exhaustive, unordered substrate
  *    the curated styles are carved from, not a statement layout.
- * Both are substrate, not something to scope a view to. (The lattice itself
- * stays reachable via the Type–subtype arc type.)
+ * Both are substrate, not something to scope a view to.
  */
 function isReportingStyle(s: LibraryStructure): boolean {
   if (s.blockType === 'custom') return false
@@ -70,9 +69,8 @@ function byStatementOrder(a: LibraryStructure, b: LibraryStructure): number {
  * The structure to land on for a given arc type. Presentation opens on a
  * coherent statement — the balance sheet — rather than "All structures",
  * whose union blends every statement (and the base networks) into an
- * incoherent multi-root tree. Calculation and type-subtype default to
- * "All structures" (null): for them the union IS the single coherent calc
- * DAG / classification lattice.
+ * incoherent multi-root tree. Calculation defaults to "All structures"
+ * (null): there the union IS the single coherent calc DAG.
  */
 function defaultStructureId(
   arcType: ArcType,
