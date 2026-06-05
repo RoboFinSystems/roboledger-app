@@ -489,7 +489,7 @@ function HierarchyRow({
           <button
             onClick={() => onToggle(node.id)}
             className="shrink-0 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+            aria-label={isCollapsed ? `Expand ${label}` : `Collapse ${label}`}
           >
             {isCollapsed ? (
               <HiChevronRight className="h-4 w-4" />
