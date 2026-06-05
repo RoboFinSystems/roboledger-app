@@ -62,7 +62,7 @@ export default function LibraryContent() {
 
   // Show reporting + CoA; exclude mapping and schedule taxonomies
   const sidebarTaxonomies = useMemo(() => {
-    const order: Record<string, number> = { sfac6: 0, fac: 1, 'rs-gaap': 2 }
+    const order: Record<string, number> = { 'rs-gaap': 0, sfac6: 1, fac: 2 }
     const hidden = new Set(['mapping', 'schedule'])
     return taxonomies
       .filter((t) => !hidden.has(t.taxonomyType ?? 'reporting'))
@@ -85,15 +85,11 @@ export default function LibraryContent() {
         setTaxonomies(rows)
         setTaxonomiesState('ready')
         if (rows.length > 0) {
-          const reporting = rows.filter(
-            (r) => (r.taxonomyType ?? 'reporting') === 'reporting'
-          )
-          const sfac6 = reporting.find((r) => r.standard === 'sfac6')
-          const fac = reporting.find((r) => r.standard === 'fac')
-          const rsGaap = reporting.find((r) => r.standard === 'rs-gaap')
-          setSelectedTaxonomyId(
-            sfac6?.id ?? fac?.id ?? rsGaap?.id ?? reporting[0]?.id ?? rows[0].id
-          )
+          // Default to rs-gaap — the active framework (fac has no tenant
+          // calc/presentation hierarchies); fall back to fac, then any row.
+          const rsGaap = rows.find((r) => r.standard === 'rs-gaap')
+          const fac = rows.find((r) => r.standard === 'fac')
+          setSelectedTaxonomyId(rsGaap?.id ?? fac?.id ?? rows[0].id)
         }
       })
       .catch((err: Error) => {

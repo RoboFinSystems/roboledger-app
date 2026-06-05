@@ -15,6 +15,7 @@ const makeClient = (overrides: Partial<MockClient> = {}): MockClient => ({
 
 const taxonomies = [
   { id: 'tax-rsgaap', standard: 'rs-gaap' },
+  { id: 'tax-pres', standard: 'rs-gaap-presentation' },
   { id: 'tax-calc', standard: 'rs-gaap-calculations' },
 ] as any
 
@@ -29,7 +30,7 @@ const baseProps = {
 const arc = (over: Record<string, unknown> = {}) => ({
   id: 'a1',
   structureId: 's1',
-  structureName: 'calc',
+  structureName: 'BS Classified',
   fromElementId: 'e_assets',
   fromElementQname: 'rs-gaap:Assets',
   fromElementName: 'Assets',
@@ -40,15 +41,15 @@ const arc = (over: Record<string, unknown> = {}) => ({
   toElementName: 'Cash',
   toElementTrait: 'asset',
   toElementIsAbstract: false,
-  associationType: 'calculation',
+  associationType: 'presentation',
   arcrole: null,
   orderValue: 1,
-  weight: 1,
+  weight: null,
   ...over,
 })
 
 describe('LibraryHierarchy', () => {
-  it('shows the no-hierarchy notice when no arc-owning taxonomy exists', async () => {
+  it('defaults to presentation; shows the notice when no arc-owning taxonomy exists', async () => {
     const client = makeClient()
 
     render(
@@ -62,14 +63,14 @@ describe('LibraryHierarchy', () => {
 
     await waitFor(() =>
       expect(
-        screen.getByText(/no calculation hierarchy is published/i)
+        screen.getByText(/no presentation hierarchy is published/i)
       ).toBeInTheDocument()
     )
     // No owning taxonomy → never tries to load arcs.
     expect(client.listLibraryTaxonomyArcs).not.toHaveBeenCalled()
   })
 
-  it('resolves the calc taxonomy and renders a rollup tree from arcs', async () => {
+  it('resolves the presentation taxonomy and renders a tree from arcs', async () => {
     const client = makeClient({
       listLibraryTaxonomyArcs: vi
         .fn()
@@ -80,11 +81,11 @@ describe('LibraryHierarchy', () => {
 
     await waitFor(() => expect(screen.getByText('Assets')).toBeInTheDocument())
     expect(screen.getByText('Cash')).toBeInTheDocument()
-    // Default arc type is calculation → resolves the {base}-calculations taxonomy.
+    // Default arc type is presentation → resolves the {base}-presentation taxonomy.
     expect(client.listLibraryTaxonomyArcs).toHaveBeenCalledWith(
       'library',
-      'tax-calc',
-      expect.objectContaining({ associationType: 'calculation' })
+      'tax-pres',
+      expect.objectContaining({ associationType: 'presentation' })
     )
   })
 
