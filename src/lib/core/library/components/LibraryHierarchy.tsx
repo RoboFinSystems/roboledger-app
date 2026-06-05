@@ -16,21 +16,69 @@ import {
 import { customTheme } from '../../theme'
 import { classificationColor } from '../colors'
 
-type ArcType = 'calculation' | 'presentation' | 'general-special'
+type ArcType = 'calculation' | 'presentation'
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
 /**
- * Arc types the hierarchy view can walk, with the taxonomy-standard
- * suffix that owns each. The calc DAG lives in ``{base}-calculations``,
- * presentation networks in ``{base}-presentation``, the general-special
- * (type/subtype) lattice in ``{base}-type-subtype`` — the arcs are NOT on
- * the base reporting taxonomy, so we resolve the owning taxonomy by name.
+ * Arc types the hierarchy view can walk, with the taxonomy-standard suffix
+ * that owns each. The calc DAG lives in ``{base}-calculations`` and the
+ * presentation networks in ``{base}-presentation`` — the arcs are NOT on the
+ * base reporting taxonomy, so we resolve the owning taxonomy by name. The
+ * general-special / type-subtype lattice is intentionally not exposed here:
+ * it's substrate (render fallback + classification), not a curated browse.
  */
 const ARC_TYPES: { value: ArcType; label: string; suffix: string }[] = [
-  { value: 'calculation', label: 'Calculation', suffix: 'calculations' },
   { value: 'presentation', label: 'Presentation', suffix: 'presentation' },
-  { value: 'general-special', label: 'Type–subtype', suffix: 'type-subtype' },
+  { value: 'calculation', label: 'Calculation', suffix: 'calculations' },
 ]
+
+/**
+ * Keep only genuine reporting styles in the structure picker. The arc-owning
+ * taxonomy also carries two kinds of structure that aren't styles:
+ *  • the empty seed-time catch-all (blockType 'custom', 0 arcs); and
+ *  • the auto-derived base networks — the type-subtype lattice projected as
+ *    presentation (role '…-pres-bs|is|cf'), an exhaustive, unordered substrate
+ *    the curated styles are carved from, not a statement layout.
+ * Both are substrate, not something to scope a view to.
+ */
+function isReportingStyle(s: LibraryStructure): boolean {
+  if (s.blockType === 'custom') return false
+  return !/-pres-(bs|is|cf)$/i.test(s.roleUri ?? '')
+}
+
+/**
+ * Order reporting styles by financial-statement sequence (BS → IS → SE → CF)
+ * instead of the backend's name order. ``block_type`` encodes the statement;
+ * the sort is stable, so styles within one statement keep their seed order and
+ * non-statement structures (calc rules, disclosure tables) keep theirs.
+ */
+const STATEMENT_ORDER: Record<string, number> = {
+  balance_sheet: 0,
+  income_statement: 1,
+  equity_statement: 2,
+  cash_flow_statement: 3,
+}
+
+function byStatementOrder(a: LibraryStructure, b: LibraryStructure): number {
+  return (
+    (STATEMENT_ORDER[a.blockType] ?? 99) - (STATEMENT_ORDER[b.blockType] ?? 99)
+  )
+}
+
+/**
+ * The structure to land on for a given arc type. Presentation opens on a
+ * coherent statement — the balance sheet — rather than "All structures",
+ * whose union blends every statement (and the base networks) into an
+ * incoherent multi-root tree. Calculation defaults to "All structures"
+ * (null): there the union IS the single coherent calc DAG.
+ */
+function defaultStructureId(
+  arcType: ArcType,
+  structures: LibraryStructure[]
+): string | null {
+  if (arcType !== 'presentation') return null
+  return structures.find((s) => s.blockType === 'balance_sheet')?.id ?? null
+}
 
 const INITIAL_EXPAND_DEPTH = 2
 const FETCH_PAGE = 1000
@@ -194,6 +242,13 @@ export function LibraryHierarchy({
   const [state, setState] = useState<LoadState>('idle')
   const [error, setError] = useState<string | null>(null)
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  // The taxonomy id the current `structures` + `structureId` belong to. Gates
+  // arc-loading until the structure list (and its default selection) catches up
+  // with a new arc type, so we never fetch the "All structures" union as an
+  // intermediate state when entering Presentation.
+  const [structuresTaxonomyId, setStructuresTaxonomyId] = useState<
+    string | null
+  >(null)
 
   // Resolve the taxonomy that owns this arc type for the chosen base standard.
   const arcTaxonomy = useMemo(() => {
@@ -204,18 +259,24 @@ export function LibraryHierarchy({
     )
   }, [taxonomies, baseStandard, arcType])
 
-  // Load the structure list for the picker whenever the owning taxonomy changes.
+  // Load the structure list for the picker whenever the owning taxonomy
+  // changes, then select the per-arc-type default structure.
   useEffect(() => {
-    setStructureId(null)
     if (!arcTaxonomy) {
       setStructures([])
+      setStructureId(null)
+      setStructuresTaxonomyId(null)
       return
     }
     let cancelled = false
     client
       .listLibraryStructures(graphId, { taxonomyId: arcTaxonomy.id })
       .then((rows) => {
-        if (!cancelled) setStructures(rows)
+        if (cancelled) return
+        const filtered = rows.filter(isReportingStyle).sort(byStatementOrder)
+        setStructures(filtered)
+        setStructureId(defaultStructureId(arcType, filtered))
+        setStructuresTaxonomyId(arcTaxonomy.id)
       })
       .catch((err) => {
         // Non-fatal: the tree still loads with "All structures"; the picker
@@ -223,18 +284,27 @@ export function LibraryHierarchy({
         if (!cancelled) {
           console.error('[LibraryHierarchy] failed to load structures', err)
           setStructures([])
+          setStructureId(null)
+          setStructuresTaxonomyId(arcTaxonomy.id)
         }
       })
     return () => {
       cancelled = true
     }
-  }, [client, graphId, arcTaxonomy])
+  }, [client, graphId, arcTaxonomy, arcType])
 
   // Load arcs for the selected taxonomy + arc type (+ optional structure scope).
   useEffect(() => {
     if (!arcTaxonomy) {
       setArcs([])
       setState('ready')
+      return
+    }
+    // Wait until the structure list (and its default selection) matches this
+    // taxonomy — otherwise switching arc types would briefly fetch with a
+    // stale / "All structures" scope before the default lands.
+    if (structuresTaxonomyId !== arcTaxonomy.id) {
+      setState('loading')
       return
     }
     let cancelled = false
@@ -256,7 +326,7 @@ export function LibraryHierarchy({
     return () => {
       cancelled = true
     }
-  }, [client, graphId, arcTaxonomy, arcType, structureId])
+  }, [client, graphId, arcTaxonomy, arcType, structureId, structuresTaxonomyId])
 
   const forest = useMemo(() => buildForest(arcs), [arcs])
 
@@ -419,7 +489,7 @@ function HierarchyRow({
           <button
             onClick={() => onToggle(node.id)}
             className="shrink-0 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+            aria-label={isCollapsed ? `Expand ${label}` : `Collapse ${label}`}
           >
             {isCollapsed ? (
               <HiChevronRight className="h-4 w-4" />

@@ -10,7 +10,7 @@ import {
   type LibraryTaxonomy,
 } from '@/lib/core'
 import { getValidToken } from '@/lib/core/auth-core/token-storage'
-import { Alert, Spinner } from 'flowbite-react'
+import { Alert, Select, Spinner } from 'flowbite-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { HiBookOpen, HiInformationCircle } from 'react-icons/hi'
 
@@ -60,12 +60,15 @@ export default function LibraryContent() {
     [taxonomies, selectedTaxonomyId]
   )
 
-  // Show reporting + CoA; exclude mapping and schedule taxonomies
+  // Browse is an element browser, so show only frameworks with browsable
+  // concepts: reporting standards (rs-gaap, fac) + the chart of accounts.
+  // Supporting linkbases (rules, traits, mappings, disclosures, reporting
+  // styles) carry no elements of their own.
   const sidebarTaxonomies = useMemo(() => {
     const order: Record<string, number> = { 'rs-gaap': 0, sfac6: 1, fac: 2 }
-    const hidden = new Set(['mapping', 'schedule'])
+    const allowed = new Set(['reporting_standard', 'chart_of_accounts'])
     return taxonomies
-      .filter((t) => !hidden.has(t.taxonomyType ?? 'reporting'))
+      .filter((t) => allowed.has(t.taxonomyType ?? ''))
       .sort((a, b) => {
         const ai = order[a.standard ?? ''] ?? 99
         const bi = order[b.standard ?? ''] ?? 99
@@ -130,26 +133,6 @@ export default function LibraryContent() {
             </p>
           </div>
         </div>
-        <div
-          className="flex shrink-0 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
-          role="group"
-          aria-label="View mode"
-        >
-          {(['browse', 'hierarchy'] as const).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              aria-pressed={viewMode === mode}
-              className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${
-                viewMode === mode
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-              }`}
-            >
-              {mode}
-            </button>
-          ))}
-        </div>
       </div>
 
       {taxonomiesState === 'loading' && (
@@ -164,42 +147,84 @@ export default function LibraryContent() {
         </Alert>
       )}
 
-      {/* Grid height = viewport minus ~220px of app header + page heading + padding above it. */}
       {taxonomiesState === 'ready' && (
-        <div
-          className="grid grid-cols-12 items-stretch gap-6"
-          style={{ height: 'calc(100vh - 220px)', minHeight: '600px' }}
-        >
-          {viewMode === 'browse' ? (
-            <ElementBrowser
-              client={client}
-              graphId={graphId}
-              taxonomyId={selectedTaxonomyId}
-              taxonomies={sidebarTaxonomies}
-              onTaxonomyChange={(id) => {
-                setSelectedTaxonomyId(id)
+        <>
+          {/* Shared toolbar above both panes: taxonomy scope + view toggle. */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Select
+              sizing="sm"
+              aria-label="Taxonomy"
+              value={selectedTaxonomyId ?? ''}
+              onChange={(e) => {
+                setSelectedTaxonomyId(e.target.value)
                 setSelectedElementId(null)
               }}
-              selectedElementId={selectedElementId}
-              onSelectElement={setSelectedElementId}
-            />
-          ) : (
-            <LibraryHierarchy
+              className="shrink-0"
+            >
+              {sidebarTaxonomies.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.standard ?? t.name}
+                  {t.version ? ` ${t.version}` : ''}
+                  {typeof t.elementCount === 'number'
+                    ? ` (${t.elementCount.toLocaleString()})`
+                    : ''}
+                </option>
+              ))}
+            </Select>
+            <div
+              className="flex shrink-0 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+              role="group"
+              aria-label="View mode"
+            >
+              {(['browse', 'hierarchy'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  aria-pressed={viewMode === mode}
+                  className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${
+                    viewMode === mode
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Grid height = viewport minus ~280px of header + toolbar + padding. */}
+          <div
+            className="grid grid-cols-12 items-stretch gap-6"
+            style={{ height: 'calc(100vh - 280px)', minHeight: '560px' }}
+          >
+            {viewMode === 'browse' ? (
+              <ElementBrowser
+                key={selectedTaxonomyId ?? 'none'}
+                client={client}
+                graphId={graphId}
+                taxonomyId={selectedTaxonomyId}
+                selectedElementId={selectedElementId}
+                onSelectElement={setSelectedElementId}
+              />
+            ) : (
+              <LibraryHierarchy
+                client={client}
+                graphId={graphId}
+                taxonomies={taxonomies}
+                baseStandard={baseStandard}
+                selectedElementId={selectedElementId}
+                onSelectElement={setSelectedElementId}
+              />
+            )}
+            <ElementDetail
               client={client}
               graphId={graphId}
-              taxonomies={taxonomies}
-              baseStandard={baseStandard}
-              selectedElementId={selectedElementId}
+              elementId={selectedElementId}
               onSelectElement={setSelectedElementId}
             />
-          )}
-          <ElementDetail
-            client={client}
-            graphId={graphId}
-            elementId={selectedElementId}
-            onSelectElement={setSelectedElementId}
-          />
-        </div>
+          </div>
+        </>
       )}
     </div>
   )
