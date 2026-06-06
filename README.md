@@ -76,7 +76,6 @@ npm run typecheck        # TypeScript type checking
 
 ```bash
 npm run feature:create   # Create a feature branch
-npm run pr:create        # Create pull request
 npm run release:create   # Create GitHub release
 npm run deploy:staging   # Deploy to staging environment
 npm run deploy:prod      # Deploy to production

@@ -11,7 +11,6 @@
     "bootstrap": "./bin/bootstrap.sh",
     "create-feature": "./bin/create-feature.sh",
     "create-release": "./bin/create-release.sh",
-    "create-pr": "./bin/create-pr.sh",
     "sync-subtree": "./bin/sync-subtree.sh",
     "gha-setup": "./bin/gha-setup.sh"
   },
@@ -39,7 +38,6 @@
     "deploy:prod": "./bin/deploy.sh prod",
     "feature:create": "./bin/create-feature.sh",
     "release:create": "./bin/create-release.sh",
-    "pr:create": "./bin/create-pr.sh",
     "setup:gha": "./bin/gha-setup.sh",
     "setup:bootstrap": "./bin/bootstrap.sh"
   },
