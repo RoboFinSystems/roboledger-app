@@ -3,10 +3,10 @@
 import type {
   LibraryArc,
   LibraryClient,
-  LibraryElement,
   LibraryStructure,
   LibraryTaxonomy,
 } from '@robosystems/client/clients'
+import { clients } from '@robosystems/client/clients'
 import { Alert, Badge, Card, Select, Spinner } from 'flowbite-react'
 import { useEffect, useMemo, useState } from 'react'
 import {
@@ -208,69 +208,72 @@ function buildForest(arcs: LibraryArc[]): TreeNode[] {
   return roots.map((id) => node(id, null, null, new Set()))
 }
 
-/** Fetch every (active) element of a taxonomy, paging past the cap. */
-async function fetchAllElements(
-  client: LibraryClient,
-  graphId: string,
-  taxonomyId: string
-): Promise<LibraryElement[]> {
-  const all: LibraryElement[] = []
-  let offset = 0
-  for (let page = 0; page < 50; page++) {
-    const rows = await client.listLibraryElements(graphId, {
-      taxonomyId,
-      limit: FETCH_PAGE,
-      offset,
-    })
-    all.push(...rows)
-    if (rows.length < FETCH_PAGE) break
-    offset += FETCH_PAGE
-  }
-  return all
+/**
+ * A Chart of Accounts has no presentation/calc arcs — its hierarchy is the
+ * account parent/sub-account tree. The backend's ``getAccountTree`` returns it
+ * fully built and filtered to active accounts, so we map its nodes onto the
+ * shared ``TreeNode`` shape and order them the same way the Chart of Accounts
+ * page does. (Typed loosely because the GraphQL codegen caps the recursive
+ * ``children`` type at a fixed depth, which a recursive map can't satisfy.)
+ */
+interface AccountTreeNodeLike {
+  id: string
+  code?: string | null
+  name?: string | null
+  trait?: string | null
+  accountType?: string | null
+  children?: AccountTreeNodeLike[] | null
 }
 
-/**
- * Assemble a forest from a Chart of Accounts element list. A CoA has no
- * presentation/calc arcs (those are an rs-gaap/fac construct) — its tree is the
- * account parent/sub-account structure carried on ``parentId``. Roots are
- * elements with no parent (or whose parent isn't in the set).
- */
-function buildCoaForest(elements: LibraryElement[]): TreeNode[] {
-  const byId = new Map(elements.map((e) => [e.id, e]))
-  const childrenOf = new Map<string, LibraryElement[]>()
-  const roots: LibraryElement[] = []
-  for (const e of elements) {
-    const pid = e.parentId
-    if (pid && byId.has(pid)) {
-      const kids = childrenOf.get(pid) ?? []
-      kids.push(e)
-      childrenOf.set(pid, kids)
-    } else {
-      roots.push(e)
-    }
+// QB's standard CoA ordering by AccountType — kept in lockstep with the Chart
+// of Accounts page (ledger/chart-of-accounts). Type-first (not code-first)
+// because QB returns code == account name when account-numbering is off (the
+// sandbox default), which would otherwise degrade to alphabetic-by-name and
+// lose the asset → liability → equity → income → expense grouping.
+const ACCOUNT_TYPE_ORDER: Record<string, number> = {
+  Bank: 0,
+  'Accounts Receivable': 1,
+  'Other Current Asset': 2,
+  'Fixed Asset': 3,
+  'Other Asset': 4,
+  'Accounts Payable': 5,
+  'Credit Card': 6,
+  'Other Current Liability': 7,
+  'Long Term Liability': 8,
+  Equity: 9,
+  Income: 10,
+  'Cost of Goods Sold': 11,
+  Expense: 12,
+  'Other Income': 13,
+  'Other Expense': 14,
+}
+
+function compareAccountNodes(
+  a: AccountTreeNodeLike,
+  b: AccountTreeNodeLike
+): number {
+  const ta = ACCOUNT_TYPE_ORDER[a.accountType || ''] ?? 99
+  const tb = ACCOUNT_TYPE_ORDER[b.accountType || ''] ?? 99
+  if (ta !== tb) return ta - tb
+  const ca = a.code ?? ''
+  const cb = b.code ?? ''
+  if (ca !== cb) return ca.localeCompare(cb, undefined, { numeric: true })
+  return (a.name ?? '').localeCompare(b.name ?? '')
+}
+
+function mapAccountNode(n: AccountTreeNodeLike): TreeNode {
+  return {
+    id: n.id,
+    qname: n.code ?? null,
+    name: n.name ?? null,
+    trait: n.trait ?? null,
+    isAbstract: false,
+    weight: null,
+    order: null,
+    children: [...(n.children ?? [])]
+      .sort(compareAccountNodes)
+      .map(mapAccountNode),
   }
-  const byName = (a: LibraryElement, b: LibraryElement) =>
-    (a.name ?? a.qname ?? '').localeCompare(b.name ?? b.qname ?? '')
-  const node = (e: LibraryElement, seen: Set<string>): TreeNode => {
-    const self: TreeNode = {
-      id: e.id,
-      qname: e.qname ?? null,
-      name: e.name ?? null,
-      trait: e.trait ?? null,
-      isAbstract: e.isAbstract ?? false,
-      weight: null,
-      order: null,
-      children: [],
-    }
-    if (seen.has(e.id)) return self // cycle guard
-    const next = new Set(seen)
-    next.add(e.id)
-    self.children = (childrenOf.get(e.id) ?? [])
-      .sort(byName)
-      .map((c) => node(c, next))
-    return self
-  }
-  return roots.sort(byName).map((r) => node(r, new Set()))
 }
 
 /** Node ids deeper than INITIAL_EXPAND_DEPTH — collapsed on first render. */
@@ -318,7 +321,7 @@ export function LibraryHierarchy({
   const [structuresTaxonomyId, setStructuresTaxonomyId] = useState<
     string | null
   >(null)
-  const [coaElements, setCoaElements] = useState<LibraryElement[]>([])
+  const [coaForest, setCoaForest] = useState<TreeNode[]>([])
 
   // A Chart of Accounts has no presentation/calc arcs — its hierarchy is the
   // account parent/sub-account tree carried on each element's parentId. Detect
@@ -417,19 +420,24 @@ export function LibraryHierarchy({
     isCoa,
   ])
 
-  // Load Chart-of-Accounts elements and build the parentId tree.
+  // Load the Chart of Accounts tree — the backend returns it built and
+  // active-only (same source as the Chart of Accounts page); we re-order it by
+  // AccountType so the layout matches that page rather than the backend's code
+  // order (which degrades to alphabetic-by-name when account numbering is off).
   useEffect(() => {
-    if (!isCoa || !selectedTaxonomyId) {
-      setCoaElements([])
+    if (!isCoa) {
+      setCoaForest([])
       return
     }
     let cancelled = false
     setState('loading')
     setError(null)
-    fetchAllElements(client, graphId, selectedTaxonomyId)
-      .then((rows) => {
+    clients.ledger
+      .getAccountTree(graphId)
+      .then((tree) => {
         if (cancelled) return
-        setCoaElements(rows)
+        const roots = (tree?.roots ?? []) as AccountTreeNodeLike[]
+        setCoaForest([...roots].sort(compareAccountNodes).map(mapAccountNode))
         setState('ready')
       })
       .catch((err) => {
@@ -440,11 +448,11 @@ export function LibraryHierarchy({
     return () => {
       cancelled = true
     }
-  }, [client, graphId, isCoa, selectedTaxonomyId])
+  }, [isCoa, graphId])
 
   const forest = useMemo(
-    () => (isCoa ? buildCoaForest(coaElements) : buildForest(arcs)),
-    [isCoa, coaElements, arcs]
+    () => (isCoa ? coaForest : buildForest(arcs)),
+    [isCoa, coaForest, arcs]
   )
 
   // Reset the collapse state to the default expand depth on each new forest.
