@@ -21,3 +21,11 @@ export const client = {
   put: vi.fn(),
   delete: vi.fn(),
 }
+
+// Lazy client singleton used by feature components (e.g. clients.ledger).
+// Each per-domain client exposes vi.fn() methods so tests can spy/override.
+export const clients = {
+  ledger: {
+    getAccountTree: vi.fn().mockResolvedValue({ roots: [], totalAccounts: 0 }),
+  },
+}

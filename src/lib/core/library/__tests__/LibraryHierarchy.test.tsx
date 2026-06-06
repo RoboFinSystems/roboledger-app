@@ -1,3 +1,4 @@
+import { clients } from '@robosystems/client/clients'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { LibraryHierarchy } from '../components/LibraryHierarchy'
@@ -5,13 +6,11 @@ import { LibraryHierarchy } from '../components/LibraryHierarchy'
 type MockClient = {
   listLibraryStructures: ReturnType<typeof vi.fn>
   listLibraryTaxonomyArcs: ReturnType<typeof vi.fn>
-  listLibraryElements: ReturnType<typeof vi.fn>
 }
 
 const makeClient = (overrides: Partial<MockClient> = {}): MockClient => ({
   listLibraryStructures: vi.fn().mockResolvedValue([]),
   listLibraryTaxonomyArcs: vi.fn().mockResolvedValue({ arcs: [], count: 0 }),
-  listLibraryElements: vi.fn().mockResolvedValue([]),
   ...overrides,
 })
 
@@ -91,28 +90,29 @@ describe('LibraryHierarchy', () => {
     expect(client.listLibraryTaxonomyArcs).not.toHaveBeenCalled()
   })
 
-  it('builds the tree from parentId for a chart of accounts', async () => {
-    const client = makeClient({
-      listLibraryElements: vi.fn().mockResolvedValue([
+  it('renders the backend account tree for a chart of accounts', async () => {
+    const spy = vi.spyOn(clients.ledger, 'getAccountTree').mockResolvedValue({
+      roots: [
         {
           id: 'p',
-          qname: 'native:Assets',
+          code: '1000',
           name: 'Assets',
           trait: 'asset',
-          isAbstract: false,
-          parentId: null,
+          children: [
+            {
+              id: 'c',
+              code: '1010',
+              name: 'Cash',
+              trait: 'asset',
+              children: [],
+            },
+          ],
         },
-        {
-          id: 'c',
-          qname: 'native:Cash',
-          name: 'Cash',
-          trait: 'asset',
-          isAbstract: false,
-          parentId: 'p',
-        },
-      ]),
-    })
+      ],
+      totalAccounts: 2,
+    } as never)
 
+    const client = makeClient()
     render(
       <LibraryHierarchy
         {...baseProps}
@@ -127,9 +127,10 @@ describe('LibraryHierarchy', () => {
 
     await waitFor(() => expect(screen.getByText('Assets')).toBeInTheDocument())
     expect(screen.getByText('Cash')).toBeInTheDocument()
-    // CoA walks parentId via listLibraryElements, never presentation arcs.
-    expect(client.listLibraryElements).toHaveBeenCalled()
+    // CoA uses the backend account tree (code-ordered, active-only), not arcs.
+    expect(spy).toHaveBeenCalled()
     expect(client.listLibraryTaxonomyArcs).not.toHaveBeenCalled()
+    spy.mockRestore()
   })
 
   it('resolves the presentation taxonomy and renders a tree from arcs', async () => {
