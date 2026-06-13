@@ -11,43 +11,51 @@ const steps = [
   },
   {
     number: '02',
-    title: 'Map to US-GAAP',
+    title: 'Triage the Inbox',
     description:
-      'AI auto-maps your chart of accounts to US-GAAP taxonomy elements with confidence scores. Review coverage, override mappings inline, and track progress toward full compliance.',
-    tags: ['AI Auto-Map', 'GAAP Taxonomy', 'Confidence Scores'],
+      'Every transaction arrives as a typed business event, pre-classified by Claude. Approve in one click, reclassify, or let trusted sources commit automatically on autopilot.',
+    tags: ['Event Inbox', 'AI Classify', 'Autopilot'],
     color: 'purple',
   },
   {
     number: '03',
-    title: 'Review Your Ledger',
+    title: 'Map to US-GAAP',
     description:
-      'Explore transactions with rich filters, drill into journal entry line items, and validate your trial balance. Full debit/credit detail at every level.',
-    tags: ['Transactions', 'Journal Entries', 'Trial Balance'],
+      'AI auto-maps your chart of accounts to US-GAAP taxonomy elements with confidence scores. Review coverage, override mappings inline, and track progress toward full compliance.',
+    tags: ['AI Auto-Map', 'GAAP Taxonomy', 'Confidence Scores'],
     color: 'fuchsia',
   },
   {
     number: '04',
-    title: 'Close the Books',
+    title: 'Review Your Ledger',
     description:
-      'Step through a guided period close: manage your fiscal calendar, generate Balance Sheet, Income Statement, and Cash Flow statements, and verify XBRL compliance before locking.',
-    tags: ['Fiscal Calendar', 'Financial Statements', 'XBRL Compliance'],
+      'Explore transactions with rich filters, drill into journal entry line items, validate the trial balance, and watch live Balance Sheet, Income Statement, Cash Flow & Equity update.',
+    tags: ['Transactions', 'Trial Balance', 'Live Statements'],
     color: 'pink',
   },
   {
     number: '05',
-    title: 'Generate Reports',
+    title: 'Close the Period',
     description:
-      'Build reports with the visual Report Creator using pre-built templates or custom configurations. Export to Excel or formatted statements, then publish to stakeholder lists.',
-    tags: ['Report Builder', 'Excel Export', 'Publish Lists'],
+      'Step through a guided close: manage your fiscal calendar, post depreciation & prepaid schedules, run rule-engine validation over every entry, then lock the period.',
+    tags: ['Schedules', 'Rule Engine', 'Period Close'],
     color: 'green',
   },
   {
     number: '06',
+    title: 'Generate & File Reports',
+    description:
+      'Build statements with the Report Creator, then export XBRL 2.1 and JSON-LD bundles or publish to stakeholder lists. Reports carry a generate → review → file lifecycle.',
+    tags: ['Report Creator', 'XBRL 2.1', 'Publish Lists'],
+    color: 'orange',
+  },
+  {
+    number: '07',
     title: 'Query with AI',
     description:
-      'Open the AI Console and ask Claude anything about your financials. "Show me the trial balance", "What accounts have the most activity this quarter?" — instant answers from your actual data.',
-    tags: ['Claude AI', 'Natural Language', 'MCP Integration'],
-    color: 'orange',
+      'Open the AI Console or connect Claude Desktop over MCP. Ask anything about your books — "show me the trial balance", "what changed this quarter?" — or drive the whole close from your agent.',
+    tags: ['AI Console', 'MCP', 'Claude Desktop'],
+    color: 'violet',
   },
 ]
 
@@ -116,7 +124,7 @@ export default function WorkflowSection() {
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
             RoboLedger covers the complete accounting close cycle — connect your
-            sources, map to GAAP standards, close the books, and publish
+            sources, triage events, map to GAAP, close the period, and publish
             statements, all in one place.
           </p>
         </div>

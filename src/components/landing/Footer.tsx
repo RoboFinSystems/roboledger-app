@@ -26,9 +26,9 @@ export default function Footer() {
               </span>
             </div>
             <p className="mb-4 max-w-md text-sm text-gray-400">
-              AI-native financial reporting powered by the RoboSystems knowledge
-              graph platform. Transform natural language into validated
-              financial statements.
+              AI-native accounting and financial close powered by the
+              RoboSystems knowledge graph platform. From business events to
+              validated, XBRL-ready statements.
             </p>
             <div className="flex gap-4">
               <Link
@@ -87,6 +87,14 @@ export default function Footer() {
                   className="text-gray-400 transition-colors hover:text-white"
                 >
                   Features
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="#workflow"
+                  className="text-gray-400 transition-colors hover:text-white"
+                >
+                  Workflow
                 </Link>
               </li>
               <li>

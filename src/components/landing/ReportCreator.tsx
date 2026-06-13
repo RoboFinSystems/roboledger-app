@@ -202,10 +202,11 @@ export default function ReportCreator() {
               </svg>
             </div>
             <h4 className="mb-2 font-semibold text-white">
-              Drag & Drop Builder
+              Guided Report Builder
             </h4>
             <p className="text-sm text-gray-400">
-              Visual interface for report design and fact selection
+              Pick a mapping and period, then generate — coverage and validation
+              checked as you go
             </p>
           </div>
 
@@ -272,10 +273,11 @@ export default function ReportCreator() {
               </svg>
             </div>
             <h4 className="mb-2 font-semibold text-white">
-              Multi-Format Export
+              Standards-Based Export
             </h4>
             <p className="text-sm text-gray-400">
-              Export to Excel, PDF, XBRL, or interactive dashboards
+              Export XBRL 2.1 and JSON-LD bundles, or share to stakeholder
+              publish lists
             </p>
           </div>
         </div>

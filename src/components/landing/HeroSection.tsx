@@ -19,19 +19,20 @@ export default function HeroSection() {
         <div className="text-center">
           <h1 className="font-heading mb-6 text-4xl leading-tight font-extrabold sm:text-5xl md:mb-8 md:text-7xl lg:text-8xl">
             <span className="animate-pulsate-gradient-subtle block text-transparent">
-              AI-Native
+              AI-Native Accounting
             </span>
             <span className="mt-2 block bg-linear-to-r from-violet-400 via-purple-400 to-fuchsia-400 bg-clip-text pb-2 text-transparent">
-              Financial Reporting
+              &amp; Financial Close
             </span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-gray-300 sm:text-lg md:mt-8 md:text-2xl">
-            Transform natural language requests into complete, validated
-            financial statements. RoboLedger combines{' '}
-            <strong className="text-violet-400">Claude AI</strong> with
-            RoboSystems' knowledge graph platform to deliver autonomous report
-            generation with intelligent guard rails.
+            RoboLedger turns your business events into a clean general ledger.
+            Connect your books, let{' '}
+            <strong className="text-violet-400">Claude AI</strong> triage every
+            transaction, close the period with built-in guard rails, and publish
+            validated, XBRL-ready statements — all on RoboSystems' knowledge
+            graph platform.
           </p>
 
           <div className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-4 sm:gap-6 md:mt-16 md:grid-cols-3">
@@ -54,10 +55,11 @@ export default function HeroSection() {
                   </svg>
                 </div>
                 <h3 className="mb-2 text-center text-lg font-semibold text-white">
-                  Natural Language
+                  AI Event Triage
                 </h3>
                 <p className="text-center text-sm text-gray-400">
-                  "Create Q4 balance sheet" generates complete validated reports
+                  Every invoice, payment, and bill lands in an inbox,
+                  pre-classified by AI for one-click approval
                 </p>
               </div>
             </div>
@@ -81,11 +83,11 @@ export default function HeroSection() {
                   </svg>
                 </div>
                 <h3 className="mb-2 text-center text-lg font-semibold text-white">
-                  Multi-Layer Validation
+                  Guided Close
                 </h3>
                 <p className="text-center text-sm text-gray-400">
-                  Structural, semantic, and learning-based guard rails ensure
-                  accuracy
+                  Schedules, a rule engine, and validation guard rails close
+                  each period cleanly
                 </p>
               </div>
             </div>
@@ -109,11 +111,11 @@ export default function HeroSection() {
                   </svg>
                 </div>
                 <h3 className="mb-2 text-center text-lg font-semibold text-white">
-                  AI Console
+                  AI Console &amp; MCP
                 </h3>
                 <p className="text-center text-sm text-gray-400">
-                  Ask Claude AI questions about your books — query transactions,
-                  explore trends, and get instant financial insights
+                  Ask Claude about your books in-app, or run the entire
+                  month-end close from Claude Desktop
                 </p>
               </div>
             </div>

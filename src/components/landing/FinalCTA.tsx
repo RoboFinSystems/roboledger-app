@@ -8,10 +8,11 @@ export default function FinalCTA() {
       <FloatingElementsVariant variant="final" />
       <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
         <h2 className="font-heading mb-6 text-4xl font-bold text-white md:text-5xl">
-          Ready for AI-Native Financial Reporting?
+          Ready to Close Your Books with AI?
         </h2>
         <p className="mb-12 text-xl text-gray-300">
-          Experience autonomous report generation powered by Claude AI and
+          Connect your books, triage every transaction with Claude, and publish
+          validated, XBRL-ready statements — powered by Claude AI and
           RoboSystems.
         </p>
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
