@@ -157,8 +157,9 @@ export default function HeroSection() {
             <div className="flex items-center gap-2">
               <AnimatedLogo
                 app="robosystems"
+                brand
                 animate="loop"
-                className="text-primary-400 h-5 w-5"
+                className="h-5 w-5"
               />
               <span>Built on RoboSystems</span>
             </div>

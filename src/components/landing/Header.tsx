@@ -1,6 +1,6 @@
 'use client'
 
-import { AnimatedLogo } from '@/lib/core/ui-components/Logo'
+import { LogoBadge } from '@/lib/core/ui-components/Logo'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
@@ -48,7 +48,7 @@ export default function Header() {
             href="/"
             className="flex items-center transition-opacity hover:opacity-80"
           >
-            <AnimatedLogo animate="once" className="h-10 w-10 text-white" />
+            <LogoBadge className="h-10 w-10" />
             <span className="font-heading ml-2 text-xl font-semibold text-white sm:text-2xl">
               RoboLedger
             </span>
