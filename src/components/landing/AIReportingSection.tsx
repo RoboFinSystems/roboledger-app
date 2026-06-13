@@ -3,11 +3,11 @@ import FloatingElementsVariant from './FloatingElementsVariant'
 export default function AIReportingSection() {
   return (
     <section id="ai-reporting" className="relative bg-black py-20">
-      <div className="absolute inset-0 bg-linear-to-br from-violet-900/30 via-purple-900/20 to-black"></div>
+      <div className="from-primary-900/30 via-secondary-900/20 absolute inset-0 bg-linear-to-br to-black"></div>
       <FloatingElementsVariant variant="ai-reporting" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-16 text-center">
-          <div className="mb-4 inline-block rounded-full bg-violet-500/20 px-4 py-1 text-sm font-semibold text-violet-400">
+          <div className="bg-primary-500/20 text-primary-400 mb-4 inline-block rounded-full px-4 py-1 text-sm font-semibold">
             Intelligent Automation
           </div>
           <h2 className="font-heading mb-6 text-4xl font-bold text-white md:text-5xl">
@@ -21,14 +21,14 @@ export default function AIReportingSection() {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2">
-          <div className="rounded-xl border border-purple-500/30 bg-purple-900/20 p-8">
+          <div className="border-secondary-500/30 bg-secondary-900/20 rounded-xl border p-8">
             <h3 className="mb-6 text-2xl font-bold text-white">
               AI On Both Sides of the Ledger
             </h3>
             <div className="space-y-4 text-gray-300">
               <div className="space-y-2">
                 <div className="rounded-lg bg-black/30 p-3">
-                  <div className="mb-1 text-xs text-purple-300">
+                  <div className="text-secondary-300 mb-1 text-xs">
                     Event Inbox
                   </div>
                   <p className="text-sm italic">
@@ -36,9 +36,7 @@ export default function AIReportingSection() {
                   </p>
                 </div>
                 <div className="rounded-lg bg-black/30 p-3">
-                  <div className="mb-1 text-xs text-fuchsia-300">
-                    AI Console
-                  </div>
+                  <div className="text-accent-300 mb-1 text-xs">AI Console</div>
                   <p className="text-sm italic">
                     "Which accounts had the most activity this quarter?"
                   </p>
@@ -46,7 +44,7 @@ export default function AIReportingSection() {
               </div>
               <div className="flex justify-center">
                 <svg
-                  className="h-8 w-8 text-violet-400"
+                  className="text-primary-400 h-8 w-8"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -74,9 +72,9 @@ export default function AIReportingSection() {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-lg border border-purple-500/30 bg-purple-900/20 p-6">
+            <div className="border-secondary-500/30 bg-secondary-900/20 rounded-lg border p-6">
               <h4 className="mb-3 flex items-center text-lg font-semibold text-white">
-                <span className="mr-3 flex h-8 w-8 items-center justify-center rounded-full bg-purple-500 text-sm">
+                <span className="bg-secondary-500 mr-3 flex h-8 w-8 items-center justify-center rounded-full text-sm">
                   1
                 </span>
                 AI Event Triage
@@ -100,9 +98,9 @@ export default function AIReportingSection() {
               </p>
             </div>
 
-            <div className="rounded-lg border border-purple-500/30 bg-purple-900/20 p-6">
+            <div className="border-secondary-500/30 bg-secondary-900/20 rounded-lg border p-6">
               <h4 className="mb-3 flex items-center text-lg font-semibold text-white">
-                <span className="mr-3 flex h-8 w-8 items-center justify-center rounded-full bg-purple-500 text-sm">
+                <span className="bg-secondary-500 mr-3 flex h-8 w-8 items-center justify-center rounded-full text-sm">
                   3
                 </span>
                 Close Guard Rails
@@ -114,9 +112,9 @@ export default function AIReportingSection() {
               </p>
             </div>
 
-            <div className="rounded-lg border border-violet-500/30 bg-violet-900/20 p-6">
+            <div className="border-primary-500/30 bg-primary-900/20 rounded-lg border p-6">
               <h4 className="mb-3 flex items-center text-lg font-semibold text-white">
-                <span className="mr-3 flex h-8 w-8 items-center justify-center rounded-full bg-violet-500 text-sm">
+                <span className="bg-primary-500 mr-3 flex h-8 w-8 items-center justify-center rounded-full text-sm">
                   4
                 </span>
                 AI Console &amp; MCP
@@ -133,20 +131,21 @@ export default function AIReportingSection() {
         <div className="mt-12 text-center">
           <p className="mb-4 text-gray-300">
             Powered by{' '}
-            <span className="font-semibold text-violet-400">Claude AI</span> and{' '}
+            <span className="text-primary-400 font-semibold">Claude AI</span>{' '}
+            and{' '}
             <a
               href="https://robosystems.ai/"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-violet-400 hover:text-violet-300"
+              className="text-primary-400 hover:text-primary-300 font-semibold"
             >
               RoboSystems'
             </a>{' '}
             knowledge graph platform
           </p>
-          <div className="inline-flex items-center gap-2 rounded-full bg-violet-900/40 px-6 py-3 text-sm text-gray-300">
+          <div className="bg-primary-900/40 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm text-gray-300">
             <svg
-              className="h-5 w-5 text-purple-400"
+              className="text-secondary-400 h-5 w-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

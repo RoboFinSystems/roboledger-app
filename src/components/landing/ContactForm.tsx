@@ -217,7 +217,7 @@ export default function ContactForm({
         <Button
           type="submit"
           disabled={isSubmitting || !isTurnstileValid(captchaToken)}
-          className="flex-1 bg-violet-600 hover:bg-violet-700"
+          className="bg-primary-600 hover:bg-primary-700 flex-1"
         >
           {isSubmitting ? 'Sending...' : 'Send Message'}
         </Button>

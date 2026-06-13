@@ -132,16 +132,16 @@ export default function FeaturesSection() {
 
   const colorClasses = {
     violet:
-      'from-violet-500/20 to-purple-500/20 border-violet-500/30 hover:border-violet-500/50 text-violet-400',
+      'from-primary-500/20 to-secondary-500/20 border-primary-500/30 hover:border-primary-500/50 text-primary-400',
     purple:
-      'from-purple-500/20 to-fuchsia-500/20 border-purple-500/30 hover:border-purple-500/50 text-purple-400',
+      'from-secondary-500/20 to-accent-500/20 border-secondary-500/30 hover:border-secondary-500/50 text-secondary-400',
     fuchsia:
-      'from-fuchsia-500/20 to-pink-500/20 border-fuchsia-500/30 hover:border-fuchsia-500/50 text-fuchsia-400',
+      'from-accent-500/20 to-pink-500/20 border-accent-500/30 hover:border-accent-500/50 text-accent-400',
     green:
       'from-green-500/20 to-emerald-500/20 border-green-500/30 hover:border-green-500/50 text-green-400',
     orange:
       'from-orange-500/20 to-red-500/20 border-orange-500/30 hover:border-orange-500/50 text-orange-400',
-    pink: 'from-pink-500/20 to-purple-500/20 border-pink-500/30 hover:border-pink-500/50 text-pink-400',
+    pink: 'from-pink-500/20 to-secondary-500/20 border-pink-500/30 hover:border-pink-500/50 text-pink-400',
   }
 
   return (

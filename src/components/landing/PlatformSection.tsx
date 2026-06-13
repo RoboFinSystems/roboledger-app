@@ -24,7 +24,7 @@ export default function PlatformSection() {
                 Data Sources
               </h3>
               <div className="space-y-4">
-                <div className="rounded-lg border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-purple-500/10 p-4">
+                <div className="border-primary-500/30 from-primary-500/10 to-secondary-500/10 rounded-lg border bg-gradient-to-br p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-600">
                       <span className="text-xs font-bold text-white">QB</span>
@@ -41,9 +41,9 @@ export default function PlatformSection() {
                   </ul>
                 </div>
 
-                <div className="rounded-lg border border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-pink-500/10 p-4">
+                <div className="border-secondary-500/30 from-secondary-500/10 rounded-lg border bg-gradient-to-br to-pink-500/10 p-4">
                   <div className="mb-2 flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600">
+                    <div className="bg-secondary-600 flex h-8 w-8 items-center justify-center rounded-lg">
                       <span className="text-xs font-bold text-white">SEC</span>
                     </div>
                     <div>
@@ -60,7 +60,7 @@ export default function PlatformSection() {
 
                 <div className="rounded-lg border border-green-500/30 bg-gradient-to-br from-green-500/10 to-emerald-500/10 p-4">
                   <div className="mb-2 flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600">
+                    <div className="bg-primary-600 flex h-8 w-8 items-center justify-center rounded-lg">
                       <span className="text-xs font-bold text-white">$</span>
                     </div>
                     <div>
@@ -100,9 +100,9 @@ export default function PlatformSection() {
               </div>
 
               <div className="mt-8 space-y-3">
-                <div className="rounded-lg border border-purple-500/30 bg-purple-950/20 p-3">
+                <div className="border-secondary-500/30 bg-secondary-950/20 rounded-lg border p-3">
                   <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold text-purple-300">
+                    <span className="text-secondary-300 font-semibold">
                       Taxonomy Block
                     </span>
                   </div>
@@ -113,7 +113,7 @@ export default function PlatformSection() {
                     {['Element', 'Structure', 'Rule'].map((comp, cidx) => (
                       <span
                         key={cidx}
-                        className="rounded bg-purple-900/50 px-2 py-0.5 text-xs text-purple-300"
+                        className="bg-secondary-900/50 text-secondary-300 rounded px-2 py-0.5 text-xs"
                       >
                         {comp}
                       </span>
@@ -142,9 +142,9 @@ export default function PlatformSection() {
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-violet-500/30 bg-violet-950/20 p-3">
+                <div className="border-primary-500/30 bg-primary-950/20 rounded-lg border p-3">
                   <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold text-violet-300">
+                    <span className="text-primary-300 font-semibold">
                       Information Block
                     </span>
                   </div>
@@ -155,7 +155,7 @@ export default function PlatformSection() {
                     {['Fact', 'Statement', 'Report'].map((comp, cidx) => (
                       <span
                         key={cidx}
-                        className="rounded bg-violet-900/50 px-2 py-0.5 text-xs text-violet-300"
+                        className="bg-primary-900/50 text-primary-300 rounded px-2 py-0.5 text-xs"
                       >
                         {comp}
                       </span>
@@ -170,9 +170,9 @@ export default function PlatformSection() {
                 Applications
               </h3>
               <div className="space-y-4">
-                <div className="rounded-lg border border-gray-800 bg-gradient-to-br from-zinc-900 to-violet-950/20 p-4">
+                <div className="to-primary-950/20 rounded-lg border border-gray-800 bg-gradient-to-br from-zinc-900 p-4">
                   <div className="mb-2 flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600">
+                    <div className="bg-primary-600 flex h-8 w-8 items-center justify-center rounded-lg">
                       <svg
                         className="h-4 w-4 text-white"
                         fill="none"
@@ -196,9 +196,9 @@ export default function PlatformSection() {
                   </p>
                 </div>
 
-                <div className="rounded-lg border border-gray-800 bg-gradient-to-br from-zinc-900 to-purple-950/20 p-4">
+                <div className="to-secondary-950/20 rounded-lg border border-gray-800 bg-gradient-to-br from-zinc-900 p-4">
                   <div className="mb-2 flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600">
+                    <div className="bg-secondary-600 flex h-8 w-8 items-center justify-center rounded-lg">
                       <svg
                         className="h-4 w-4 text-white"
                         fill="none"
@@ -220,9 +220,9 @@ export default function PlatformSection() {
                   </p>
                 </div>
 
-                <div className="rounded-lg border border-gray-800 bg-gradient-to-br from-zinc-900 to-fuchsia-950/20 p-4">
+                <div className="to-accent-950/20 rounded-lg border border-gray-800 bg-gradient-to-br from-zinc-900 p-4">
                   <div className="mb-2 flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-fuchsia-600">
+                    <div className="bg-accent-600 flex h-8 w-8 items-center justify-center rounded-lg">
                       <svg
                         className="h-4 w-4 text-white"
                         fill="none"
@@ -249,8 +249,8 @@ export default function PlatformSection() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
-          <div className="group rounded-xl border border-gray-800 bg-gradient-to-br from-violet-500/10 to-zinc-900 p-6 transition-all hover:border-violet-500/50">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-purple-500">
+          <div className="group from-primary-500/10 hover:border-primary-500/50 rounded-xl border border-gray-800 bg-gradient-to-br to-zinc-900 p-6 transition-all">
+            <div className="from-primary-500 to-secondary-500 mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br">
               <svg
                 className="h-6 w-6 text-white"
                 fill="none"
@@ -273,8 +273,8 @@ export default function PlatformSection() {
             </p>
           </div>
 
-          <div className="group rounded-xl border border-gray-800 bg-gradient-to-br from-purple-500/10 to-zinc-900 p-6 transition-all hover:border-purple-500/50">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
+          <div className="group from-secondary-500/10 hover:border-secondary-500/50 rounded-xl border border-gray-800 bg-gradient-to-br to-zinc-900 p-6 transition-all">
+            <div className="from-secondary-500 mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br to-pink-500">
               <svg
                 className="h-6 w-6 text-white"
                 fill="none"
