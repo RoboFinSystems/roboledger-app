@@ -1,6 +1,6 @@
 'use client'
 import { useAuth } from '@/lib/core/auth-components'
-import { Spinner } from '@/lib/core/ui-components/Spinner'
+import { BrandSpinner } from '@/lib/core/ui-components/Spinner'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import LandingPageContent from './content'
@@ -33,7 +33,7 @@ export default function LandingPage() {
 
   // Show loading state while checking authentication or redirecting
   if (isLoading || isRedirecting) {
-    return <Spinner fullScreen size="lg" />
+    return <BrandSpinner fullScreen size="lg" />
   }
 
   // Only show landing page if user is not authenticated
