@@ -6,7 +6,7 @@ import { useSSO } from '../auth-core/sso'
 import type { AppConfig, AppName } from '../auth-core/types'
 import { useToast } from '../hooks/use-toast'
 import { customTheme } from '../theme'
-import { AnimatedLogo } from '../ui-components/Logo'
+import { LogoBadge } from '../ui-components/Logo'
 
 export interface AppSwitcherProps {
   apiUrl: string
@@ -68,10 +68,10 @@ export function AppSwitcher({
               onClick={() => handleAppClick(app)}
               className="flex w-full items-center space-x-3 p-3"
             >
-              <AnimatedLogo
+              <LogoBadge
                 app={app.name as AppName}
                 animate="once"
-                className="h-8 w-8 text-black dark:text-white"
+                className="h-8 w-8"
               />
               <div className="min-w-0 flex-1">
                 <p className="text-left text-sm font-medium text-gray-900 dark:text-white">

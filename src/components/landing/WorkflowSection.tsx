@@ -64,25 +64,25 @@ const colorClasses: Record<
   { border: string; bg: string; number: string; tag: string; dot: string }
 > = {
   violet: {
-    border: 'border-violet-500/30',
-    bg: 'from-violet-500/10',
-    number: 'text-violet-400',
-    tag: 'bg-violet-950/50 text-violet-300',
-    dot: 'bg-violet-500',
+    border: 'border-primary-500/30',
+    bg: 'from-primary-500/10',
+    number: 'text-primary-400',
+    tag: 'bg-primary-950/50 text-primary-300',
+    dot: 'bg-primary-500',
   },
   purple: {
-    border: 'border-purple-500/30',
-    bg: 'from-purple-500/10',
-    number: 'text-purple-400',
-    tag: 'bg-purple-950/50 text-purple-300',
-    dot: 'bg-purple-500',
+    border: 'border-secondary-500/30',
+    bg: 'from-secondary-500/10',
+    number: 'text-secondary-400',
+    tag: 'bg-secondary-950/50 text-secondary-300',
+    dot: 'bg-secondary-500',
   },
   fuchsia: {
-    border: 'border-fuchsia-500/30',
-    bg: 'from-fuchsia-500/10',
-    number: 'text-fuchsia-400',
-    tag: 'bg-fuchsia-950/50 text-fuchsia-300',
-    dot: 'bg-fuchsia-500',
+    border: 'border-accent-500/30',
+    bg: 'from-accent-500/10',
+    number: 'text-accent-400',
+    tag: 'bg-accent-950/50 text-accent-300',
+    dot: 'bg-accent-500',
   },
   pink: {
     border: 'border-pink-500/30',
@@ -116,7 +116,7 @@ export default function WorkflowSection() {
       <FloatingElementsVariant variant="features" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-16 text-center">
-          <div className="mb-4 inline-block rounded-full bg-violet-500/20 px-4 py-1 text-sm font-semibold text-violet-400">
+          <div className="bg-primary-500/20 text-primary-400 mb-4 inline-block rounded-full px-4 py-1 text-sm font-semibold">
             End-to-End Workflow
           </div>
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
@@ -131,7 +131,7 @@ export default function WorkflowSection() {
 
         <div className="relative">
           {/* Vertical connector line (desktop) */}
-          <div className="absolute top-0 bottom-0 left-1/2 hidden w-px -translate-x-1/2 bg-linear-to-b from-violet-500/30 via-purple-500/20 to-transparent lg:block"></div>
+          <div className="from-primary-500/30 via-secondary-500/20 absolute top-0 bottom-0 left-1/2 hidden w-px -translate-x-1/2 bg-linear-to-b to-transparent lg:block"></div>
 
           <div className="space-y-6">
             {steps.map((step, idx) => {

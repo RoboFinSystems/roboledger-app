@@ -138,14 +138,14 @@ const ReportPackageSidebar: FC<ReportPackageSidebarProps> = ({
                     aria-current={active ? 'true' : undefined}
                     className={`flex w-full items-center gap-2 px-4 py-1.5 text-left text-sm transition-colors ${
                       active
-                        ? 'border-l-2 border-blue-500 bg-blue-50 font-medium text-blue-700 dark:border-blue-400 dark:bg-blue-900/20 dark:text-blue-300'
+                        ? 'border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/20 dark:text-primary-300 border-l-2 font-medium'
                         : 'border-l-2 border-transparent text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700/50'
                     }`}
                   >
                     <span
                       className={`h-1.5 w-1.5 shrink-0 rounded-full ${
                         active
-                          ? 'bg-blue-500 dark:bg-blue-400'
+                          ? 'bg-primary-500 dark:bg-primary-400'
                           : 'bg-gray-300 dark:bg-gray-600'
                       }`}
                     />

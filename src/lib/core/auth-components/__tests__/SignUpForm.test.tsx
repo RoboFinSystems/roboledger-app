@@ -42,6 +42,13 @@ vi.mock('../../ui-components', () => ({
       className={className}
     />
   ),
+  LogoBadge: ({ animate, className }: any) => (
+    <div
+      data-testid="logo-badge"
+      data-animate={animate}
+      className={className}
+    />
+  ),
 }))
 
 const mockUseRouter = vi.mocked(useRouter)

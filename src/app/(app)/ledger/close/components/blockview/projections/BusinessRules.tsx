@@ -164,13 +164,13 @@ const RuleRow: FC<RuleRowProps> = ({ rule, severity }) => {
       ? 'border-red-200 bg-red-50/40 dark:border-red-900/50 dark:bg-red-900/10'
       : severity === 'warning'
         ? 'border-amber-200 bg-amber-50/40 dark:border-amber-900/50 dark:bg-amber-900/10'
-        : 'border-blue-200 bg-blue-50/40 dark:border-blue-900/50 dark:bg-blue-900/10'
+        : 'border-primary-200 bg-primary-50/40 dark:border-primary-900/50 dark:bg-primary-900/10'
   const iconTone =
     severity === 'error'
       ? 'text-red-500 dark:text-red-400'
       : severity === 'warning'
         ? 'text-amber-500 dark:text-amber-400'
-        : 'text-blue-500 dark:text-blue-400'
+        : 'text-primary-500 dark:text-primary-400'
 
   return (
     <li className={`rounded-lg border p-3 ${tone}`}>

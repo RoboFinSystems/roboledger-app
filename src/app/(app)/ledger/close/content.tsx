@@ -1,10 +1,10 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
@@ -103,11 +103,7 @@ const CloseContent: FC = function () {
   if (!currentGraph && !graphState.isLoading) {
     return (
       <PageLayout>
-        <PageHeader
-          icon={TbBook2}
-          title="Closing Book"
-          gradient="from-indigo-500 to-purple-600"
-        />
+        <PageHeader icon={TbBook2} title="Closing Book" />
         <Card theme={customTheme.card}>
           <div className="py-12 text-center">
             <TbBook2 className="mx-auto mb-4 h-12 w-12 text-gray-400" />
@@ -137,12 +133,11 @@ const CloseContent: FC = function () {
       <PageHeader
         icon={TbBook2}
         title="Closing Book"
-        description={
+        subtitle={
           currentGraph
             ? 'Financial statements, schedules, and period close'
             : undefined
         }
-        gradient="from-indigo-500 to-purple-600"
         actions={
           showViewToggle ? (
             <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />

@@ -1,10 +1,10 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
@@ -205,8 +205,7 @@ const LiveStatementsContent: FC = function () {
       <PageHeader
         icon={TbReportMoney}
         title="Live Statements"
-        description="Render BS / IS / CF from the current ledger — no close required"
-        gradient="from-purple-500 to-pink-600"
+        subtitle="Render BS / IS / CF from the current ledger — no close required"
       />
 
       {/* Live, ephemeral render — make it unmistakable this is not a filing. */}

@@ -1,8 +1,8 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   customTheme,
+  PageHeader,
   PageLayout,
   SDK,
   useGraphContext,
@@ -442,8 +442,7 @@ export default function ModernConnectionsContent() {
         <PageHeader
           icon={HiLink}
           title="Data Connections"
-          description="Connect external data sources to automatically import transactions and financial data"
-          gradient="from-cyan-500 to-blue-600"
+          subtitle="Connect external data sources to automatically import transactions and financial data"
           actions={
             <Button
               size="sm"

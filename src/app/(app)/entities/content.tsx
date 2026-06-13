@@ -1,11 +1,11 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import type { Entity } from '@/lib/core'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useEntity,
   useGraphContext,
@@ -110,8 +110,7 @@ const EntitiesListPageContent: FC = function () {
       <PageHeader
         icon={HiOfficeBuilding}
         title={`All Entities (${entities.length})`}
-        description="View all entities across your roboledger graphs"
-        gradient="from-indigo-500 to-purple-600"
+        subtitle="View all entities across your roboledger graphs"
       />
 
       {/* Search */}

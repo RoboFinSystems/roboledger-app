@@ -21,7 +21,7 @@ export default function OutputFormats() {
       title: 'Formatted Statement',
       description:
         'Traditional financial statement layout with proper formatting',
-      color: 'from-violet-500 to-purple-500',
+      color: 'from-primary-500 to-secondary-500',
       badge: 'Current',
     },
     {
@@ -43,7 +43,7 @@ export default function OutputFormats() {
       title: 'Interactive Dashboard',
       description:
         'Visual charts, graphs, and KPI widgets for executive review',
-      color: 'from-purple-500 to-pink-500',
+      color: 'from-secondary-500 to-pink-500',
       badge: 'Coming Soon',
     },
     {
@@ -107,7 +107,7 @@ export default function OutputFormats() {
       ),
       title: 'AI Narrative',
       description: 'Executive summary with natural language explanations',
-      color: 'from-purple-500 to-violet-500',
+      color: 'from-secondary-500 to-primary-500',
       badge: 'Coming Soon',
     },
     {
@@ -128,7 +128,7 @@ export default function OutputFormats() {
       ),
       title: 'XBRL 2.1 Package',
       description: 'SEC-ready instance with Arelle-validated taxonomy tagging',
-      color: 'from-indigo-500 to-purple-500',
+      color: 'from-indigo-500 to-secondary-500',
       badge: 'Current',
     },
   ]
@@ -150,9 +150,9 @@ export default function OutputFormats() {
 
         {/* Central Fact Grid */}
         <div className="relative mb-16">
-          <div className="mx-auto max-w-2xl rounded-2xl border-2 border-violet-500/50 bg-gradient-to-br from-violet-900/30 to-purple-900/30 p-8">
+          <div className="border-primary-500/50 from-primary-900/30 to-secondary-900/30 mx-auto max-w-2xl rounded-2xl border-2 bg-gradient-to-br p-8">
             <div className="mb-4 text-center">
-              <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/20 px-4 py-1 text-sm font-semibold text-violet-300">
+              <div className="bg-primary-500/20 text-primary-300 inline-flex items-center gap-2 rounded-full px-4 py-1 text-sm font-semibold">
                 <svg
                   className="h-4 w-4"
                   fill="none"
@@ -177,19 +177,19 @@ export default function OutputFormats() {
                 <span className="text-sm text-gray-300">
                   127 Financial Facts
                 </span>
-                <span className="font-mono text-xs text-violet-400">
+                <span className="text-primary-400 font-mono text-xs">
                   validated
                 </span>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-black/30 px-4 py-3">
                 <span className="text-sm text-gray-300">4 Dimensions</span>
-                <span className="font-mono text-xs text-violet-400">
+                <span className="text-primary-400 font-mono text-xs">
                   configured
                 </span>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-black/30 px-4 py-3">
                 <span className="text-sm text-gray-300">XBRL US-GAAP</span>
-                <span className="font-mono text-xs text-violet-400">
+                <span className="text-primary-400 font-mono text-xs">
                   compliant
                 </span>
               </div>
@@ -197,7 +197,7 @@ export default function OutputFormats() {
           </div>
 
           {/* Connecting Lines */}
-          <div className="absolute top-full left-1/2 h-12 w-0.5 -translate-x-1/2 bg-gradient-to-b from-violet-500/50 to-transparent"></div>
+          <div className="from-primary-500/50 absolute top-full left-1/2 h-12 w-0.5 -translate-x-1/2 bg-gradient-to-b to-transparent"></div>
         </div>
 
         {/* Output Formats Grid */}
@@ -234,7 +234,7 @@ export default function OutputFormats() {
         <div className="mt-12 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-zinc-900 px-6 py-3 text-sm text-gray-300">
             <svg
-              className="h-5 w-5 text-violet-400"
+              className="text-primary-400 h-5 w-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

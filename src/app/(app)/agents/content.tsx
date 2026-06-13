@@ -1,10 +1,10 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
@@ -130,8 +130,7 @@ const AgentsContent: FC = function () {
       <PageHeader
         icon={HiUserGroup}
         title="Agents"
-        description="Counterparties — customers, vendors, employees"
-        gradient="from-purple-500 to-pink-600"
+        subtitle="Counterparties — customers, vendors, employees"
       />
 
       <Card theme={customTheme.card}>

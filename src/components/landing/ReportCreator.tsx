@@ -5,7 +5,7 @@ export default function ReportCreator() {
     <section className="relative overflow-hidden bg-black py-16 sm:py-24">
       {/* Animated background */}
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-linear-to-br from-violet-900/20 via-purple-900/20 to-pink-900/20"></div>
+        <div className="from-primary-900/20 via-secondary-900/20 absolute inset-0 bg-linear-to-br to-pink-900/20"></div>
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10"></div>
       </div>
 
@@ -24,7 +24,7 @@ export default function ReportCreator() {
 
         <div className="mb-12 grid gap-8 lg:grid-cols-2">
           {/* Fact Grid Visualization */}
-          <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-900/20 to-zinc-900 p-8">
+          <div className="border-primary-500/30 from-primary-900/20 rounded-2xl border bg-gradient-to-br to-zinc-900 p-8">
             <h3 className="mb-6 text-xl font-bold text-white">
               Fact Grid: Your Data Foundation
             </h3>
@@ -37,10 +37,10 @@ export default function ReportCreator() {
                   <span className="text-xs text-gray-500">Multi-axis view</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded bg-violet-950/50 px-3 py-2 text-sm text-violet-300">
+                  <div className="bg-primary-950/50 text-primary-300 rounded px-3 py-2 text-sm">
                     Time Period
                   </div>
-                  <div className="rounded bg-purple-950/50 px-3 py-2 text-sm text-purple-300">
+                  <div className="bg-secondary-950/50 text-secondary-300 rounded px-3 py-2 text-sm">
                     Account
                   </div>
                   <div className="rounded bg-green-950/50 px-3 py-2 text-sm text-green-300">
@@ -113,7 +113,7 @@ export default function ReportCreator() {
           </div>
 
           {/* Report Builder Interface */}
-          <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900/20 to-zinc-900 p-8">
+          <div className="border-secondary-500/30 from-secondary-900/20 rounded-2xl border bg-gradient-to-br to-zinc-900 p-8">
             <h3 className="mb-6 text-xl font-bold text-white">
               Visual Report Builder
             </h3>
@@ -123,8 +123,8 @@ export default function ReportCreator() {
                   SELECT TEMPLATE
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="cursor-pointer rounded border-2 border-purple-500 bg-purple-950/30 p-3 text-center">
-                    <div className="text-xs font-semibold text-purple-300">
+                  <div className="border-secondary-500 bg-secondary-950/30 cursor-pointer rounded border-2 p-3 text-center">
+                    <div className="text-secondary-300 text-xs font-semibold">
                       Balance Sheet
                     </div>
                   </div>
@@ -151,8 +151,8 @@ export default function ReportCreator() {
                   CONFIGURE PERIODS
                 </div>
                 <div className="flex gap-2">
-                  <div className="flex-1 rounded border border-violet-500/50 bg-violet-950/30 px-3 py-2 text-center">
-                    <div className="text-xs text-violet-300">Q4 2024</div>
+                  <div className="border-primary-500/50 bg-primary-950/30 flex-1 rounded border px-3 py-2 text-center">
+                    <div className="text-primary-300 text-xs">Q4 2024</div>
                   </div>
                   <div className="flex-1 rounded border border-gray-600 bg-gray-800/30 px-3 py-2 text-center">
                     <div className="text-xs text-gray-400">Q3 2024</div>
@@ -176,7 +176,7 @@ export default function ReportCreator() {
                 </div>
               </div>
 
-              <button className="w-full rounded-lg bg-linear-to-r from-purple-500 to-pink-500 px-4 py-3 text-sm font-semibold text-white transition-all hover:from-purple-600 hover:to-pink-600">
+              <button className="from-secondary-500 hover:from-secondary-600 w-full rounded-lg bg-linear-to-r to-pink-500 px-4 py-3 text-sm font-semibold text-white transition-all hover:to-pink-600">
                 Generate Report →
               </button>
             </div>
@@ -186,9 +186,9 @@ export default function ReportCreator() {
         {/* Features Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-gray-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-6">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-violet-500/20">
+            <div className="bg-primary-500/20 mb-4 flex h-12 w-12 items-center justify-center rounded-lg">
               <svg
-                className="h-6 w-6 text-violet-400"
+                className="text-primary-400 h-6 w-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -211,9 +211,9 @@ export default function ReportCreator() {
           </div>
 
           <div className="rounded-xl border border-gray-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-6">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-purple-500/20">
+            <div className="bg-secondary-500/20 mb-4 flex h-12 w-12 items-center justify-center rounded-lg">
               <svg
-                className="h-6 w-6 text-purple-400"
+                className="text-secondary-400 h-6 w-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

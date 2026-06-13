@@ -1,10 +1,10 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
@@ -265,7 +265,7 @@ function GaapDropdown({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search GAAP concepts..."
-          className="w-full rounded border-0 bg-gray-50 px-3 py-1.5 text-sm focus:ring-1 focus:ring-purple-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+          className="focus:ring-secondary-500 w-full rounded border-0 bg-gray-50 px-3 py-1.5 text-sm focus:ring-1 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
         />
       </div>
 
@@ -279,7 +279,7 @@ function GaapDropdown({
                 group.classification.charAt(0).toUpperCase() +
                   group.classification.slice(1)}
               {group.classification === accountClassification && (
-                <span className="ml-1 text-purple-500"> — Best Match</span>
+                <span className="text-secondary-500 ml-1"> — Best Match</span>
               )}
             </div>
             {group.elements.map((el) => (
@@ -287,7 +287,7 @@ function GaapDropdown({
                 key={el.id}
                 type="button"
                 onClick={() => onSelect(el)}
-                className="w-full px-3 py-2 text-left transition-colors hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                className="hover:bg-secondary-50 dark:hover:bg-secondary-900/20 w-full px-3 py-2 text-left transition-colors"
               >
                 <span className="block text-sm font-medium text-gray-900 dark:text-white">
                   {el.name}
@@ -666,8 +666,7 @@ const ChartOfAccountsContent: FC = function () {
       <PageHeader
         icon={HiCollection}
         title="Chart of Accounts"
-        description="View accounts and GAAP mappings for the selected entity"
-        gradient="from-blue-500 to-cyan-600"
+        subtitle="View accounts and GAAP mappings for the selected entity"
       />
 
       {/* Mapping header bar */}
@@ -895,7 +894,7 @@ const ChartOfAccountsContent: FC = function () {
                         <span
                           className={`text-sm font-medium ${
                             account.balance_type === 'debit'
-                              ? 'text-blue-600 dark:text-blue-400'
+                              ? 'text-primary-600 dark:text-primary-400'
                               : 'text-green-600 dark:text-green-400'
                           }`}
                         >
@@ -931,7 +930,7 @@ const ChartOfAccountsContent: FC = function () {
                                 {accountMappings?.rsGaap ? (
                                   <>
                                     <span
-                                      className="truncate text-sm font-medium text-purple-500 dark:text-purple-400"
+                                      className="text-secondary-500 dark:text-secondary-400 truncate text-sm font-medium"
                                       title={accountMappings.rsGaap.gaapName}
                                     >
                                       {accountMappings.rsGaap.gaapName}
@@ -949,7 +948,7 @@ const ChartOfAccountsContent: FC = function () {
                                   </span>
                                 )}
                               </div>
-                              <HiPencil className="ml-1 h-3 w-3 shrink-0 text-gray-300 transition-colors group-hover:text-purple-400 dark:text-gray-600 dark:group-hover:text-purple-400" />
+                              <HiPencil className="group-hover:text-secondary-400 dark:group-hover:text-secondary-400 ml-1 h-3 w-3 shrink-0 text-gray-300 transition-colors dark:text-gray-600" />
                             </button>
                           )}
                         </TableCell>

@@ -1,10 +1,10 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
@@ -421,8 +421,7 @@ const ReportBuilderContent: FC = function () {
       <PageHeader
         icon={TbReportAnalytics}
         title="Create Report"
-        description="Generate financial statements from your mapped trial balance"
-        gradient="from-orange-500 to-red-600"
+        subtitle="Generate financial statements from your mapped trial balance"
         actions={
           <Button
             theme={customTheme.button}

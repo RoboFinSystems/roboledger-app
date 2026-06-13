@@ -132,7 +132,7 @@ describe('StructureSidebar', () => {
       />
     )
     const isButton = screen.getByText('Income Statement').closest('button')
-    expect(isButton?.className).toContain('border-blue-500')
+    expect(isButton?.className).toContain('border-primary-500')
     // Balance Sheet should NOT be highlighted
     const bsButton = screen.getByText('Balance Sheet').closest('button')
     expect(bsButton?.className).toContain('border-transparent')
@@ -154,7 +154,7 @@ describe('StructureSidebar', () => {
     const btn = screen
       .getByText('Office Furniture Depreciation')
       .closest('button')
-    expect(btn?.className).toContain('border-blue-500')
+    expect(btn?.className).toContain('border-primary-500')
   })
 
   it('highlights active account rollups item', () => {
@@ -172,7 +172,7 @@ describe('StructureSidebar', () => {
       />
     )
     const btn = screen.getByText('GAAP Mapping').closest('button')
-    expect(btn?.className).toContain('border-blue-500')
+    expect(btn?.className).toContain('border-primary-500')
   })
 
   it('calls onSelect with correct SelectedItem when clicking a statement', () => {

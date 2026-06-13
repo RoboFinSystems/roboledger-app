@@ -23,9 +23,6 @@ vi.mock('@/lib/core', () => ({
       getEntity: (graphId: string) => mockGetEntity(graphId),
     },
   },
-}))
-
-vi.mock('@/components/PageHeader', () => ({
   PageHeader: () => <div data-testid="page-header" />,
 }))
 

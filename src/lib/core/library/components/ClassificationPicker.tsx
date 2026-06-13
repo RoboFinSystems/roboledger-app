@@ -66,13 +66,13 @@ export function ClassificationPicker({
   const chipClass = (value: string) =>
     `rounded px-2 py-1 text-xs ${
       selected === value
-        ? 'bg-blue-600 text-white'
+        ? 'bg-primary-600 text-white'
         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200'
     } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`
 
   const allClass = `rounded px-2 py-1 text-xs ${
     selected === null
-      ? 'bg-blue-600 text-white'
+      ? 'bg-primary-600 text-white'
       : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200'
   } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`
 
@@ -140,7 +140,7 @@ export function ClassificationPicker({
         title="Abstract grouping concepts (hypercubes, RollUps, LineItems)."
         className={`rounded px-2 py-1 text-xs ${
           selected === 'abstract'
-            ? 'bg-purple-600 text-white'
+            ? 'bg-secondary-600 text-white'
             : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200'
         } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
       >

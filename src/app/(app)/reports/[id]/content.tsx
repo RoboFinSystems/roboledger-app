@@ -1,7 +1,6 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
-import { clients, customTheme, PageLayout } from '@/lib/core'
+import { clients, customTheme, PageHeader, PageLayout } from '@/lib/core'
 import type { PublishList, ReportPackage } from '@robosystems/client/clients'
 import {
   Alert,
@@ -308,8 +307,7 @@ const ReportViewerContent: FC = function () {
       <PageHeader
         icon={HiDocumentReport}
         title={pkg.name}
-        description={periodLabel}
-        gradient="from-orange-500 to-red-600"
+        subtitle={periodLabel}
         actions={
           <>
             {pkg.generationStatus === 'published' && (
@@ -385,7 +383,7 @@ const ReportViewerContent: FC = function () {
             </span>
           )}
           {pkg.sourceGraphId && (
-            <span className="flex items-center gap-1 text-blue-400">
+            <span className="text-primary-400 flex items-center gap-1">
               <HiShare className="h-4 w-4" />
               Shared report
               {pkg.entityName ? ` from ${pkg.entityName}` : ''}
@@ -494,7 +492,7 @@ const ReportViewerContent: FC = function () {
                     onClick={() => setSelectedListId(list.id)}
                     className={`w-full rounded-lg border p-3 text-left transition-colors ${
                       selectedListId === list.id
-                        ? 'border-purple-500 bg-purple-50 dark:border-purple-400 dark:bg-purple-900/20'
+                        ? 'border-secondary-500 bg-secondary-50 dark:border-secondary-400 dark:bg-secondary-900/20'
                         : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800'
                     }`}
                   >

@@ -10,9 +10,9 @@ export const customTheme = createTheme({
       failure:
         'border-red-400 bg-red-50 text-red-800 dark:border-red-600 dark:bg-red-900/20 dark:text-red-300',
       success:
-        'border-secondary-400 bg-secondary-50 text-secondary-800 dark:border-secondary-600 dark:bg-secondary-900/20 dark:text-secondary-300',
+        'border-green-400 bg-green-50 text-green-800 dark:border-green-600 dark:bg-green-900/20 dark:text-green-300',
       warning:
-        'border-accent-400 bg-accent-50 text-accent-800 dark:border-accent-600 dark:bg-accent-900/20 dark:text-accent-300',
+        'border-amber-400 bg-amber-50 text-amber-800 dark:border-amber-600 dark:bg-amber-900/20 dark:text-amber-300',
       info: 'border-primary-400 bg-primary-50 text-primary-800 dark:border-primary-600 dark:bg-primary-900/20 dark:text-primary-300',
     },
     icon: 'mr-3 inline h-5 w-5 shrink-0',
@@ -31,8 +31,8 @@ export const customTheme = createTheme({
         info: 'ring-primary-400 dark:ring-primary-600',
         light: 'ring-gray-300 dark:ring-gray-500',
         purple: 'ring-purple-500 dark:ring-purple-600',
-        success: 'ring-secondary-500 dark:ring-secondary-600',
-        warning: 'ring-accent-400 dark:ring-accent-600',
+        success: 'ring-green-500 dark:ring-green-600',
+        warning: 'ring-amber-400 dark:ring-amber-600',
         pink: 'ring-pink-500 dark:ring-pink-800',
       },
       img: {
@@ -62,11 +62,11 @@ export const customTheme = createTheme({
         'center-left': '-left-1',
       },
       status: {
-        away: 'bg-accent-400',
+        away: 'bg-amber-400',
         base: 'absolute h-3.5 w-3.5 rounded-full border-2 border-white dark:border-gray-900',
         busy: 'bg-red-400',
         offline: 'bg-zinc-400',
-        online: 'bg-secondary-400',
+        online: 'bg-green-400',
       },
       initials: {
         text: 'text-primary-700 dark:text-primary-300 font-medium',
@@ -92,9 +92,9 @@ export const customTheme = createTheme({
           'bg-accent-100 text-accent-800 dark:bg-accent-900/30 dark:text-accent-300',
         failure: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
         success:
-          'bg-secondary-100 text-secondary-800 dark:bg-secondary-900/30 dark:text-secondary-300',
+          'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
         warning:
-          'bg-accent-100 text-accent-800 dark:bg-accent-900/30 dark:text-accent-300',
+          'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
         info: 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300',
       },
       href: 'group',
@@ -146,7 +146,7 @@ export const customTheme = createTheme({
       success:
         'bg-green-700 text-white hover:bg-green-800 focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800',
       warning:
-        'bg-yellow-700 text-white hover:bg-yellow-800 focus:ring-yellow-300 dark:bg-yellow-600 dark:hover:bg-yellow-700 dark:focus:ring-yellow-800',
+        'bg-amber-700 text-white hover:bg-amber-800 focus:ring-amber-300 dark:bg-amber-600 dark:hover:bg-amber-700 dark:focus:ring-amber-800',
     },
     gradientDuoTone: {
       cyanToBlue:
@@ -182,7 +182,7 @@ export const customTheme = createTheme({
         success:
           'border-green-500 text-green-500 hover:bg-green-500 hover:text-white focus:ring-green-300 dark:border-green-500 dark:text-green-500 dark:hover:bg-green-500 dark:hover:text-white dark:focus:ring-green-800',
         warning:
-          'border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-white focus:ring-yellow-300 dark:border-yellow-500 dark:text-yellow-500 dark:hover:bg-yellow-500 dark:hover:text-white dark:focus:ring-yellow-800',
+          'border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white focus:ring-amber-300 dark:border-amber-500 dark:text-amber-500 dark:hover:bg-amber-500 dark:hover:text-white dark:focus:ring-amber-800',
       },
     },
     pill: 'rounded-full',
@@ -219,7 +219,7 @@ export const customTheme = createTheme({
       light: 'text-gray-600',
       purple: 'text-purple-600',
       success: 'text-green-600',
-      warning: 'text-yellow-600',
+      warning: 'text-amber-600',
       blue: 'text-blue-600',
       cyan: 'text-cyan-600',
       green: 'text-green-600',
@@ -314,8 +314,8 @@ export const customTheme = createTheme({
         default: 'text-gray-900 dark:text-white',
         info: 'text-primary-500 dark:text-primary-400',
         failure: 'text-red-700 dark:text-red-500',
-        warning: 'text-accent-500 dark:text-accent-400',
-        success: 'text-secondary-600 dark:text-secondary-400',
+        warning: 'text-amber-500 dark:text-amber-400',
+        success: 'text-green-600 dark:text-green-400',
       },
     },
   },
@@ -427,8 +427,8 @@ export const customTheme = createTheme({
       dark: 'bg-zinc-600 dark:bg-zinc-300',
       blue: 'bg-primary-600',
       red: 'bg-red-600 dark:bg-red-500',
-      green: 'bg-secondary-600 dark:bg-secondary-500',
-      yellow: 'bg-accent-400 dark:bg-accent-500',
+      green: 'bg-green-600 dark:bg-green-500',
+      yellow: 'bg-amber-400 dark:bg-amber-500',
       indigo: 'bg-indigo-600 dark:bg-indigo-500',
       purple: 'bg-purple-600 dark:bg-purple-500',
       cyan: 'bg-cyan-600',
@@ -479,9 +479,9 @@ export const customTheme = createTheme({
           failure:
             'border-red-500 bg-red-50 text-red-900 placeholder-red-700 focus:border-red-500 focus:ring-red-500 dark:border-red-400 dark:bg-red-100 dark:focus:border-red-500 dark:focus:ring-red-500',
           warning:
-            'border-accent-500 bg-accent-50 text-accent-900 placeholder-accent-700 focus:border-accent-500 focus:ring-accent-500 dark:border-accent-400 dark:bg-accent-100 dark:focus:border-accent-500 dark:focus:ring-accent-500',
+            'border-amber-500 bg-amber-50 text-amber-900 placeholder-amber-700 focus:border-amber-500 focus:ring-amber-500 dark:border-amber-400 dark:bg-amber-100 dark:focus:border-amber-500 dark:focus:ring-amber-500',
           success:
-            'border-secondary-500 bg-secondary-50 text-secondary-900 placeholder-secondary-700 focus:border-secondary-500 focus:ring-secondary-500 dark:border-secondary-400 dark:bg-secondary-100 dark:focus:border-secondary-500 dark:focus:ring-secondary-500',
+            'border-green-500 bg-green-50 text-green-900 placeholder-green-700 focus:border-green-500 focus:ring-green-500 dark:border-green-400 dark:bg-green-100 dark:focus:border-green-500 dark:focus:ring-green-500',
         },
       },
     },
@@ -535,7 +535,7 @@ export const customTheme = createTheme({
         purple: 'bg-purple-50 dark:bg-purple-900/20',
         success: 'bg-green-50 dark:bg-green-900/20',
         yellow: 'bg-yellow-50 dark:bg-yellow-900/20',
-        warning: 'bg-yellow-50 dark:bg-yellow-900/20',
+        warning: 'bg-amber-50 dark:bg-amber-900/20',
       },
     },
     item: {
@@ -591,7 +591,7 @@ export const customTheme = createTheme({
       pink: 'fill-pink-600 dark:fill-pink-500',
       purple: 'fill-purple-600 dark:fill-purple-500',
       success: 'fill-green-500 dark:fill-green-400',
-      warning: 'fill-yellow-400 dark:fill-yellow-300',
+      warning: 'fill-amber-400 dark:fill-amber-300',
     },
     light: {
       off: {
@@ -615,7 +615,7 @@ export const customTheme = createTheme({
           pink: 'text-pink-600 dark:text-pink-500',
           purple: 'text-purple-600 dark:text-purple-500',
           success: 'text-green-600 dark:text-green-500',
-          warning: 'text-yellow-600 dark:text-yellow-500',
+          warning: 'text-amber-600 dark:text-amber-500',
         },
       },
     },
@@ -723,9 +723,9 @@ export const customTheme = createTheme({
       failure:
         'border-red-500 bg-red-50 text-red-900 placeholder-red-700 focus:border-red-500 focus:ring-red-500 dark:border-red-400 dark:bg-red-100 dark:focus:border-red-500 dark:focus:ring-red-500',
       warning:
-        'border-accent-500 bg-accent-50 text-accent-900 placeholder-accent-700 focus:border-accent-500 focus:ring-accent-500 dark:border-accent-400 dark:bg-accent-100 dark:focus:border-accent-500 dark:focus:ring-accent-500',
+        'border-amber-500 bg-amber-50 text-amber-900 placeholder-amber-700 focus:border-amber-500 focus:ring-amber-500 dark:border-amber-400 dark:bg-amber-100 dark:focus:border-amber-500 dark:focus:ring-amber-500',
       success:
-        'border-secondary-500 bg-secondary-50 text-secondary-900 placeholder-secondary-700 focus:border-secondary-500 focus:ring-secondary-500 dark:border-secondary-400 dark:bg-secondary-100 dark:focus:border-secondary-500 dark:focus:ring-secondary-500',
+        'border-green-500 bg-green-50 text-green-900 placeholder-green-700 focus:border-green-500 focus:ring-green-500 dark:border-green-400 dark:bg-green-100 dark:focus:border-green-500 dark:focus:ring-green-500',
     },
     withShadow: {
       on: 'shadow-xs',
@@ -761,9 +761,9 @@ export const customTheme = createTheme({
           failure:
             'border-red-500 bg-red-50 text-red-900 placeholder-red-700 focus:border-red-500 focus:ring-red-500 dark:border-red-400 dark:bg-red-100 dark:focus:border-red-500 dark:focus:ring-red-500',
           warning:
-            'border-accent-500 bg-accent-50 text-accent-900 placeholder-accent-700 focus:border-accent-500 focus:ring-accent-500 dark:border-accent-400 dark:bg-accent-100 dark:focus:border-accent-500 dark:focus:ring-accent-500',
+            'border-amber-500 bg-amber-50 text-amber-900 placeholder-amber-700 focus:border-amber-500 focus:ring-amber-500 dark:border-amber-400 dark:bg-amber-100 dark:focus:border-amber-500 dark:focus:ring-amber-500',
           success:
-            'border-secondary-500 bg-secondary-50 text-secondary-900 placeholder-secondary-700 focus:border-secondary-500 focus:ring-secondary-500 dark:border-secondary-400 dark:bg-secondary-100 dark:focus:border-secondary-500 dark:focus:ring-secondary-500',
+            'border-green-500 bg-green-50 text-green-900 placeholder-green-700 focus:border-green-500 focus:ring-green-500 dark:border-green-400 dark:bg-green-100 dark:focus:border-green-500 dark:focus:ring-green-500',
         },
         withRightIcon: {
           on: 'pr-10',
@@ -803,13 +803,13 @@ export const customTheme = createTheme({
           dark: 'border-gray-900 bg-zinc-800',
           failure: 'border-red-700 bg-red-700',
           gray: 'border-gray-500 bg-zinc-500',
-          green: 'border-secondary-600 bg-secondary-600',
+          green: 'border-green-600 bg-green-600',
           light: 'border-gray-200 bg-zinc-100',
           red: 'border-red-700 bg-red-700',
           purple: 'border-purple-700 bg-purple-700',
-          success: 'border-secondary-500 bg-secondary-500',
-          yellow: 'border-accent-400 bg-accent-400',
-          warning: 'border-accent-600 bg-accent-600',
+          success: 'border-green-500 bg-green-500',
+          yellow: 'border-amber-400 bg-amber-400',
+          warning: 'border-amber-600 bg-amber-600',
           cyan: 'border-cyan-500 bg-cyan-500',
           lime: 'border-lime-500 bg-lime-500',
           indigo: 'border-indigo-500 bg-indigo-500',

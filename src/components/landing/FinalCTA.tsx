@@ -4,7 +4,7 @@ import FloatingElementsVariant from './FloatingElementsVariant'
 export default function FinalCTA() {
   return (
     <section className="relative overflow-hidden bg-black py-24">
-      <div className="absolute inset-0 bg-linear-to-br from-violet-900/20 via-purple-900/20 to-fuchsia-900/20"></div>
+      <div className="from-primary-900/20 via-secondary-900/20 to-accent-900/20 absolute inset-0 bg-linear-to-br"></div>
       <FloatingElementsVariant variant="final" />
       <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
         <h2 className="font-heading mb-6 text-4xl font-bold text-white md:text-5xl">
@@ -18,7 +18,7 @@ export default function FinalCTA() {
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
           <Link
             href="/register"
-            className="group relative overflow-hidden rounded-lg bg-linear-to-r from-violet-500 to-purple-500 px-8 py-4 text-lg font-medium text-white shadow-2xl shadow-violet-500/25 transition-all duration-300 hover:shadow-violet-500/40"
+            className="group from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 relative overflow-hidden rounded-lg bg-linear-to-r px-8 py-4 text-lg font-medium text-white shadow-2xl transition-all duration-300"
           >
             <span className="relative z-10">Get Started</span>
             <div className="absolute inset-0 -translate-y-full bg-white/20 transition-transform duration-500 group-hover:translate-y-0"></div>
@@ -37,7 +37,10 @@ export default function FinalCTA() {
         </div>
         <p className="mt-6 text-gray-400">
           Already have an account?{' '}
-          <Link href="/login" className="text-violet-400 hover:text-violet-300">
+          <Link
+            href="/login"
+            className="text-primary-400 hover:text-primary-300"
+          >
             Login
           </Link>
         </p>

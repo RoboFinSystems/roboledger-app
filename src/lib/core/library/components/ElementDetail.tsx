@@ -247,7 +247,7 @@ export function ElementDetail({
                           href={ref.uri}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="ml-2 inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"
+                          className="text-primary-600 dark:text-primary-400 ml-2 inline-flex items-center gap-1 hover:underline"
                         >
                           <HiExternalLink className="h-3 w-3" />
                         </a>
@@ -298,7 +298,7 @@ export function ElementDetail({
                                   >
                                     {arc.direction === 'outgoing' ? '→' : '←'}
                                   </span>
-                                  <span className="truncate font-mono text-xs text-blue-700 dark:text-blue-300">
+                                  <span className="text-primary-700 dark:text-primary-300 truncate font-mono text-xs">
                                     {arc.peer.qname}
                                   </span>
                                   <Badge

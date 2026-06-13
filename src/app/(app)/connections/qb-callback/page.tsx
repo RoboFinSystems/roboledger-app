@@ -136,7 +136,7 @@ export default function QuickBooksCallbackPage() {
         <p className="mt-2 text-gray-600 dark:text-gray-300">{error}</p>
         <button
           onClick={() => router.push('/connections')}
-          className="mt-4 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          className="bg-primary-600 hover:bg-primary-700 mt-4 rounded-md px-4 py-2 text-white"
         >
           Back to Connections
         </button>

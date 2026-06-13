@@ -1,10 +1,10 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
@@ -234,8 +234,7 @@ const InboxContent: FC = function () {
       <PageHeader
         icon={HiInbox}
         title="Inbox"
-        description="Review and approve captured events before they post to the GL"
-        gradient="from-blue-500 to-indigo-600"
+        subtitle="Review and approve captured events before they post to the GL"
       />
 
       {/* Filters */}

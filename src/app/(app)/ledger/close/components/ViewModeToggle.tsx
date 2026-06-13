@@ -82,7 +82,7 @@ const ViewModeToggle: FC<ViewModeToggleProps> = ({ viewMode, onChange }) => {
             key={mode.value}
             onClick={() => onChange(mode.value)}
             icon={Icon}
-            className={active ? 'font-semibold text-blue-600' : ''}
+            className={active ? 'text-primary-600 font-semibold' : ''}
           >
             {mode.label}
           </DropdownItem>

@@ -1,10 +1,10 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
@@ -289,8 +289,7 @@ const TransactionsContent: FC = function () {
       <PageHeader
         icon={TbReceipt}
         title="Transactions"
-        description="View transaction journal with line item details"
-        gradient="from-green-500 to-teal-600"
+        subtitle="View transaction journal with line item details"
       />
 
       {/* §3.10 — New manual journal entry */}
@@ -542,7 +541,7 @@ const TransactionsContent: FC = function () {
                                         <td className="py-2 text-gray-600 dark:text-gray-400">
                                           {li.description || '-'}
                                         </td>
-                                        <td className="py-2 text-right font-mono text-blue-600 dark:text-blue-400">
+                                        <td className="text-primary-600 dark:text-primary-400 py-2 text-right font-mono">
                                           {li.debit_amount
                                             ? formatCurrency(li.debit_amount)
                                             : '-'}
@@ -562,7 +561,7 @@ const TransactionsContent: FC = function () {
                                       >
                                         Total
                                       </td>
-                                      <td className="py-2 text-right font-mono text-blue-600 dark:text-blue-400">
+                                      <td className="text-primary-600 dark:text-primary-400 py-2 text-right font-mono">
                                         {formatCurrency(
                                           lineItems.reduce(
                                             (sum, li) =>

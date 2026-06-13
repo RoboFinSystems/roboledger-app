@@ -1,9 +1,9 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
+  PageHeader,
   PageLayout,
   useEntity,
   useGraphContext,
@@ -174,12 +174,11 @@ const EntityInfoPageContent: FC = function () {
       <PageHeader
         icon={HiOfficeBuilding}
         title="Entity Details"
-        description={
+        subtitle={
           entity?.name ||
           currentEntity?.name ||
           'View entity information and settings'
         }
-        gradient="from-indigo-500 to-purple-600"
       />
 
       <div className="space-y-6">

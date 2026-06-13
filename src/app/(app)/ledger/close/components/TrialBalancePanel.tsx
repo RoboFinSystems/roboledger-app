@@ -194,7 +194,7 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
               <div className="mt-1.5 space-y-0.5 text-xs">
                 <div className="flex justify-between">
                   <span className="text-gray-500 dark:text-gray-400">Dr:</span>
-                  <span className="font-mono text-blue-600 dark:text-blue-400">
+                  <span className="text-primary-600 dark:text-primary-400 font-mono">
                     {formatCurrency(summary[cls]?.debits ?? 0)}
                   </span>
                 </div>
@@ -236,7 +236,7 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right font-mono">
-                  <span className="text-blue-600 dark:text-blue-400">
+                  <span className="text-primary-600 dark:text-primary-400">
                     {row.totalDebits > 0
                       ? formatCurrency(row.totalDebits)
                       : '–'}
@@ -268,7 +268,7 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
                 Total
               </TableCell>
               <TableCell />
-              <TableCell className="text-right font-mono text-blue-600 dark:text-blue-400">
+              <TableCell className="text-primary-600 dark:text-primary-400 text-right font-mono">
                 {formatCurrency(totalDebits)}
               </TableCell>
               <TableCell className="text-right font-mono text-green-600 dark:text-green-400">

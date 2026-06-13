@@ -103,11 +103,11 @@ export default function SecSetupForm({
           </p>
         </div>
 
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
-          <h4 className="mb-1 text-sm font-medium text-blue-900 dark:text-blue-100">
+        <div className="border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-900/20 rounded-lg border p-3">
+          <h4 className="text-primary-900 dark:text-primary-100 mb-1 text-sm font-medium">
             How to find a CIK
           </h4>
-          <p className="text-xs text-blue-800 dark:text-blue-200">
+          <p className="text-primary-800 dark:text-primary-200 text-xs">
             Search for any company on{' '}
             <a
               href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany"

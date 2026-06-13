@@ -18,9 +18,9 @@ export default function OpenSourceSection() {
 
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Local Development */}
-          <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-900/20 to-purple-900/20 p-6 md:p-8">
+          <div className="border-primary-500/30 from-primary-900/20 to-secondary-900/20 rounded-2xl border bg-gradient-to-br p-6 md:p-8">
             <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-purple-600">
+              <div className="from-primary-600 to-secondary-600 flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br">
                 <svg
                   className="h-6 w-6 text-white"
                   fill="none"
@@ -47,7 +47,7 @@ export default function OpenSourceSection() {
 
             <div className="space-y-4">
               <div className="rounded-lg bg-zinc-900 p-4">
-                <h4 className="mb-3 text-sm font-semibold text-violet-300">
+                <h4 className="text-primary-300 mb-3 text-sm font-semibold">
                   Quick Start
                 </h4>
                 <pre className="overflow-x-auto text-xs text-gray-300">
@@ -96,7 +96,7 @@ npm run dev
                   href="https://github.com/RoboFinSystems/roboledger-app"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-violet-700"
+                  className="bg-primary-600 hover:bg-primary-700 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-all"
                 >
                   <svg
                     className="h-4 w-4"
@@ -115,7 +115,7 @@ npm run dev
                   href="https://hub.docker.com/r/robofinsystems/roboledger-app"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg border border-violet-600 px-4 py-2 text-sm font-medium text-violet-400 transition-all hover:bg-violet-600/10"
+                  className="border-primary-600 text-primary-400 hover:bg-primary-600/10 inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-all"
                 >
                   <svg
                     className="h-4 w-4"
@@ -232,7 +232,7 @@ npm run dev
         </div>
 
         {/* Development Info */}
-        <div className="mt-8 rounded-2xl border border-gray-800 bg-gradient-to-r from-zinc-900 to-purple-950/20 p-6 md:p-8">
+        <div className="to-secondary-950/20 mt-8 rounded-2xl border border-gray-800 bg-gradient-to-r from-zinc-900 p-6 md:p-8">
           <div className="mx-auto max-w-4xl">
             <h3 className="font-heading mb-4 text-center text-xl font-semibold text-white sm:text-2xl">
               Built with Modern Web Technologies
@@ -244,19 +244,19 @@ npm run dev
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-lg border border-gray-800 bg-zinc-900 p-4 text-center">
-                <div className="text-2xl font-bold text-violet-400">
+                <div className="text-primary-400 text-2xl font-bold">
                   Next.js
                 </div>
                 <div className="text-sm text-gray-400">React Framework</div>
               </div>
               <div className="rounded-lg border border-gray-800 bg-zinc-900 p-4 text-center">
-                <div className="text-2xl font-bold text-purple-400">
+                <div className="text-secondary-400 text-2xl font-bold">
                   TypeScript
                 </div>
                 <div className="text-sm text-gray-400">Type Safety</div>
               </div>
               <div className="rounded-lg border border-gray-800 bg-zinc-900 p-4 text-center">
-                <div className="text-2xl font-bold text-purple-400">
+                <div className="text-secondary-400 text-2xl font-bold">
                   Tailwind
                 </div>
                 <div className="text-sm text-gray-400">Styling</div>

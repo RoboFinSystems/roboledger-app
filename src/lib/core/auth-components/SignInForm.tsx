@@ -5,7 +5,7 @@ import { RoboSystemsAuthClient } from '../auth-core/client'
 import { getAppConfig } from '../auth-core/config'
 import { useSSO } from '../auth-core/sso'
 import type { AuthUser } from '../auth-core/types'
-import { AnimatedLogo, Spinner } from '../ui-components'
+import { LogoBadge, Spinner } from '../ui-components'
 
 export interface SignInFormProps {
   onSuccess?: (user: AuthUser) => void
@@ -173,13 +173,10 @@ export function SignInForm({
 
   if (ssoChecking || redirecting) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-black via-gray-900 to-zinc-800 p-6">
+      <div className="via-primary-950 flex min-h-screen items-center justify-center bg-linear-to-br from-black to-zinc-900 p-6">
         <div className="w-full max-w-md">
           <div className="text-center">
-            <AnimatedLogo
-              animate="loop"
-              className="mx-auto h-16 w-16 text-white"
-            />
+            <LogoBadge animate="loop" className="mx-auto h-16 w-16" />
             <h1 className="font-heading mt-4 text-center text-2xl font-semibold tracking-tight text-white">
               {appName}
             </h1>
@@ -190,13 +187,10 @@ export function SignInForm({
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-black via-gray-900 to-zinc-800 px-4 py-12 sm:px-6 lg:px-8">
+    <div className="via-primary-950 flex min-h-screen items-center justify-center bg-linear-to-br from-black to-zinc-900 px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-lg space-y-8">
         <div className="text-center">
-          <AnimatedLogo
-            animate="once"
-            className="mx-auto h-14 w-14 text-white"
-          />
+          <LogoBadge animate="once" className="mx-auto h-14 w-14" />
           <h1 className="font-heading mt-4 text-center text-2xl font-semibold tracking-tight text-white">
             {appName}
           </h1>
@@ -227,7 +221,7 @@ export function SignInForm({
                 required
                 value={formData.email}
                 onChange={handleInputChange}
-                className="relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset"
+                className="focus:ring-primary-500 relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset"
                 placeholder="Email address"
                 disabled={loading || redirecting}
               />
@@ -244,7 +238,7 @@ export function SignInForm({
                 required
                 value={formData.password}
                 onChange={handleInputChange}
-                className="relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset"
+                className="focus:ring-primary-500 relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset"
                 placeholder="Password"
                 disabled={loading || redirecting}
               />
@@ -255,9 +249,9 @@ export function SignInForm({
             <button
               type="submit"
               disabled={loading || redirecting}
-              className="group relative flex w-full justify-center rounded-md bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white focus-visible:outline-solid disabled:cursor-not-allowed disabled:opacity-50"
+              className="group bg-primary-600 hover:bg-primary-700 focus-visible:outline-primary-500 relative flex w-full justify-center rounded-md px-4 py-3 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading && <Spinner size="sm" className="mr-2 border-black" />}
+              {loading && <Spinner size="sm" className="mr-2 border-white" />}
               {redirecting
                 ? 'Redirecting...'
                 : loading
@@ -269,14 +263,14 @@ export function SignInForm({
           <div className="flex flex-col items-center gap-2">
             <a
               href="/auth/forgot-password"
-              className="text-sm text-gray-300 hover:text-white"
+              className="hover:text-primary-400 text-sm text-gray-300"
             >
               Forgot password?
             </a>
             <button
               type="button"
               onClick={handleSignUpClick}
-              className="text-sm font-medium text-gray-300 hover:text-white"
+              className="hover:text-primary-400 text-sm font-medium text-gray-300"
             >
               Don't have an account? Sign up
             </button>

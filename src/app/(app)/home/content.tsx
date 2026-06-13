@@ -1,10 +1,10 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
@@ -39,8 +39,8 @@ const quickActions = [
     description: 'Account structure',
     icon: HiCollection,
     href: '/ledger/chart-of-accounts',
-    iconBg: 'bg-blue-100 dark:bg-blue-900',
-    iconColor: 'text-blue-600 dark:text-blue-400',
+    iconBg: 'bg-primary-100 dark:bg-primary-900',
+    iconColor: 'text-primary-600 dark:text-primary-400',
   },
   {
     title: 'Reports',
@@ -275,7 +275,7 @@ const HomePageContent: FC = function () {
             ? `Welcome back to ${currentGraph.graphName}`
             : 'Welcome to RoboLedger'
         }
-        description="Your AI-powered financial reporting platform"
+        subtitle="Your AI-powered financial reporting platform"
       />
 
       {hasQualifyingGraph ? (
@@ -507,8 +507,8 @@ const HomePageContent: FC = function () {
           >
             <div className="space-y-4 p-6">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-blue-100 p-3 dark:bg-blue-900">
-                  <HiLink className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div className="bg-primary-100 dark:bg-primary-900 rounded-lg p-3">
+                  <HiLink className="text-primary-600 dark:text-primary-400 h-6 w-6" />
                 </div>
                 <h3 className="font-heading text-xl font-bold text-gray-900 dark:text-white">
                   Connect QuickBooks to Get Started

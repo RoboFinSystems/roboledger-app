@@ -9,7 +9,7 @@ export default function HeroSection() {
   return (
     <section className="relative min-h-screen overflow-hidden bg-black">
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-linear-to-br from-violet-900/20 via-purple-900/20 to-fuchsia-900/20"></div>
+        <div className="from-primary-900/20 via-secondary-900/20 to-accent-900/20 absolute inset-0 bg-linear-to-br"></div>
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-20"></div>
       </div>
 
@@ -21,7 +21,7 @@ export default function HeroSection() {
             <span className="animate-pulsate-gradient-subtle block text-transparent">
               AI-Native Accounting
             </span>
-            <span className="mt-2 block bg-linear-to-r from-violet-400 via-purple-400 to-fuchsia-400 bg-clip-text pb-2 text-transparent">
+            <span className="from-primary-400 via-secondary-400 to-accent-400 mt-2 block bg-linear-to-r bg-clip-text pb-2 text-transparent">
               &amp; Financial Close
             </span>
           </h1>
@@ -29,19 +29,19 @@ export default function HeroSection() {
           <p className="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-gray-300 sm:text-lg md:mt-8 md:text-2xl">
             RoboLedger turns your business events into a clean general ledger.
             Connect your books, let{' '}
-            <strong className="text-violet-400">Claude AI</strong> triage every
+            <strong className="text-primary-400">Claude AI</strong> triage every
             transaction, close the period with built-in guard rails, and publish
             validated, XBRL-ready statements — all on RoboSystems' knowledge
             graph platform.
           </p>
 
           <div className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-4 sm:gap-6 md:mt-16 md:grid-cols-3">
-            <div className="group relative overflow-hidden rounded-2xl border border-violet-500/20 bg-violet-950/20 p-4 backdrop-blur-sm transition-all duration-300 hover:border-violet-500/50 hover:bg-violet-950/30 sm:p-6">
-              <div className="absolute inset-0 bg-linear-to-br from-violet-500/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+            <div className="group border-primary-500/20 bg-primary-950/20 hover:border-primary-500/50 hover:bg-primary-950/30 relative overflow-hidden rounded-2xl border p-4 backdrop-blur-sm transition-all duration-300 sm:p-6">
+              <div className="from-primary-500/10 absolute inset-0 bg-linear-to-br to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
               <div className="relative">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-violet-500/20">
+                <div className="bg-primary-500/20 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg">
                   <svg
-                    className="h-6 w-6 text-violet-400"
+                    className="text-primary-400 h-6 w-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -64,12 +64,12 @@ export default function HeroSection() {
               </div>
             </div>
 
-            <div className="group relative overflow-hidden rounded-2xl border border-purple-500/20 bg-purple-950/20 p-4 backdrop-blur-sm transition-all duration-300 hover:border-purple-500/50 hover:bg-purple-950/30 sm:p-6">
-              <div className="absolute inset-0 bg-linear-to-br from-purple-500/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+            <div className="group border-secondary-500/20 bg-secondary-950/20 hover:border-secondary-500/50 hover:bg-secondary-950/30 relative overflow-hidden rounded-2xl border p-4 backdrop-blur-sm transition-all duration-300 sm:p-6">
+              <div className="from-secondary-500/10 absolute inset-0 bg-linear-to-br to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
               <div className="relative">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-purple-500/20">
+                <div className="bg-secondary-500/20 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg">
                   <svg
-                    className="h-6 w-6 text-purple-400"
+                    className="text-secondary-400 h-6 w-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -92,12 +92,12 @@ export default function HeroSection() {
               </div>
             </div>
 
-            <div className="group relative overflow-hidden rounded-2xl border border-fuchsia-500/20 bg-fuchsia-950/20 p-4 backdrop-blur-sm transition-all duration-300 hover:border-fuchsia-500/50 hover:bg-fuchsia-950/30 sm:p-6">
-              <div className="absolute inset-0 bg-linear-to-br from-fuchsia-500/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+            <div className="group border-accent-500/20 bg-accent-950/20 hover:border-accent-500/50 hover:bg-accent-950/30 relative overflow-hidden rounded-2xl border p-4 backdrop-blur-sm transition-all duration-300 sm:p-6">
+              <div className="from-accent-500/10 absolute inset-0 bg-linear-to-br to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
               <div className="relative">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-fuchsia-500/20">
+                <div className="bg-accent-500/20 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg">
                   <svg
-                    className="h-6 w-6 text-fuchsia-400"
+                    className="text-accent-400 h-6 w-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -125,7 +125,7 @@ export default function HeroSection() {
           <div className="mx-auto mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center md:mt-16">
             <Link
               href="/register"
-              className="group relative overflow-hidden rounded-lg bg-linear-to-r from-violet-500 to-purple-500 px-6 py-3 text-base font-medium text-white shadow-2xl shadow-violet-500/25 transition-all duration-300 hover:shadow-violet-500/40 sm:px-8 sm:py-4 sm:text-lg"
+              className="group from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 relative overflow-hidden rounded-lg bg-linear-to-r px-6 py-3 text-base font-medium text-white shadow-2xl transition-all duration-300 sm:px-8 sm:py-4 sm:text-lg"
             >
               <span className="relative z-10">Get Started</span>
               <div className="absolute inset-0 -translate-y-full bg-white/20 transition-transform duration-500 group-hover:translate-y-0"></div>
@@ -157,8 +157,9 @@ export default function HeroSection() {
             <div className="flex items-center gap-2">
               <AnimatedLogo
                 app="robosystems"
+                brand
                 animate="loop"
-                className="h-5 w-5 text-violet-400"
+                className="h-5 w-5"
               />
               <span>Built on RoboSystems</span>
             </div>

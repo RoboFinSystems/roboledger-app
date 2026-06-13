@@ -671,7 +671,7 @@ const DraftReviewPanel: FC<DraftReviewPanelProps> = ({ drafts, isLoading }) => {
       </div>
       {drafts.draftCount > 0 &&
         (drafts.qbPublishCount > 0 ? (
-          <div className="mb-3 rounded border border-blue-200 bg-blue-50 p-2 text-xs text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200">
+          <div className="border-primary-200 bg-primary-50 text-primary-800 dark:border-primary-900 dark:bg-primary-950 dark:text-primary-200 mb-3 rounded border p-2 text-xs">
             <span className="font-medium">{drafts.qbPublishCount}</span> of{' '}
             {drafts.draftCount} draft{drafts.draftCount === 1 ? '' : 's'} will
             post to <span className="font-medium">QuickBooks</span> when this
