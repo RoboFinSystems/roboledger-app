@@ -20,8 +20,8 @@ export interface PageHeaderProps {
 /**
  * The standard page header used across the authenticated app: a white icon on
  * the app's brand-gradient chip, a title, an optional subtitle, and optional
- * right-aligned actions. The gradient is driven by the `primary`/`secondary`
- * Tailwind tokens, so it reskins to each app's brand automatically.
+ * right-aligned actions. The gradient spans the brand `primary` → `secondary`
+ * → `accent` tokens, so it reskins to each app automatically.
  */
 export function PageHeader({
   icon: Icon,
@@ -35,7 +35,7 @@ export function PageHeader({
       className={twMerge('flex items-start justify-between gap-4', className)}
     >
       <div className="flex items-center gap-4">
-        <div className="from-primary-500 to-secondary-600 shrink-0 rounded-lg bg-gradient-to-br p-3">
+        <div className="from-primary-500 via-secondary-500 to-accent-500 shrink-0 rounded-lg bg-gradient-to-br p-3">
           <Icon className="h-8 w-8 text-white" />
         </div>
         <div>
@@ -43,9 +43,9 @@ export function PageHeader({
             {title}
           </h1>
           {subtitle && (
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               {subtitle}
-            </p>
+            </div>
           )}
         </div>
       </div>
