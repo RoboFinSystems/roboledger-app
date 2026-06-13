@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { BRAND_COLORS, BRAND_GRADIENTS, CURRENT_APP } from '../auth-core/config'
 import type { AppName } from '../auth-core/types'
@@ -192,6 +193,9 @@ function LedgerBook({ animate }: { animate: 'once' | 'loop' }) {
 /* RoboSystems: infinity S with segment tracing the figure-8 */
 function SystemsBook({ animate }: { animate: 'once' | 'loop' }) {
   const isOnce = animate === 'once'
+  // Unique per instance so two RoboSystems logos on one page don't share a
+  // global mask id (which would break the second logo's trace animation).
+  const maskId = `rs-trace-${useId().replace(/:/g, '')}`
   const motionPath =
     'M 16,16 C 22,8 32,10 30,16 C 28,22 22,24 16,16 C 10,8 0,10 2,16 C 4,22 10,24 16,16'
   const infinityPath =
@@ -230,7 +234,7 @@ function SystemsBook({ animate }: { animate: 'once' | 'loop' }) {
         {/* Bright segment revealed by mask */}
         <defs>
           <mask
-            id={isOnce ? 'rs-trace-once' : 'rs-trace-loop'}
+            id={maskId}
             maskUnits="userSpaceOnUse"
             x="-2"
             y="5"
@@ -248,11 +252,7 @@ function SystemsBook({ animate }: { animate: 'once' | 'loop' }) {
             </circle>
           </mask>
         </defs>
-        <path
-          d={infinityPath}
-          mask={`url(#${isOnce ? 'rs-trace-once' : 'rs-trace-loop'})`}
-          fillRule="nonzero"
-        />
+        <path d={infinityPath} mask={`url(#${maskId})`} fillRule="nonzero" />
       </g>
     </>
   )

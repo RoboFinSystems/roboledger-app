@@ -146,7 +146,7 @@ export const customTheme = createTheme({
       success:
         'bg-green-700 text-white hover:bg-green-800 focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800',
       warning:
-        'bg-yellow-700 text-white hover:bg-yellow-800 focus:ring-yellow-300 dark:bg-yellow-600 dark:hover:bg-yellow-700 dark:focus:ring-yellow-800',
+        'bg-amber-700 text-white hover:bg-amber-800 focus:ring-amber-300 dark:bg-amber-600 dark:hover:bg-amber-700 dark:focus:ring-amber-800',
     },
     gradientDuoTone: {
       cyanToBlue:
@@ -182,7 +182,7 @@ export const customTheme = createTheme({
         success:
           'border-green-500 text-green-500 hover:bg-green-500 hover:text-white focus:ring-green-300 dark:border-green-500 dark:text-green-500 dark:hover:bg-green-500 dark:hover:text-white dark:focus:ring-green-800',
         warning:
-          'border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-white focus:ring-yellow-300 dark:border-yellow-500 dark:text-yellow-500 dark:hover:bg-yellow-500 dark:hover:text-white dark:focus:ring-yellow-800',
+          'border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white focus:ring-amber-300 dark:border-amber-500 dark:text-amber-500 dark:hover:bg-amber-500 dark:hover:text-white dark:focus:ring-amber-800',
       },
     },
     pill: 'rounded-full',
@@ -219,7 +219,7 @@ export const customTheme = createTheme({
       light: 'text-gray-600',
       purple: 'text-purple-600',
       success: 'text-green-600',
-      warning: 'text-yellow-600',
+      warning: 'text-amber-600',
       blue: 'text-blue-600',
       cyan: 'text-cyan-600',
       green: 'text-green-600',
@@ -535,7 +535,7 @@ export const customTheme = createTheme({
         purple: 'bg-purple-50 dark:bg-purple-900/20',
         success: 'bg-green-50 dark:bg-green-900/20',
         yellow: 'bg-yellow-50 dark:bg-yellow-900/20',
-        warning: 'bg-yellow-50 dark:bg-yellow-900/20',
+        warning: 'bg-amber-50 dark:bg-amber-900/20',
       },
     },
     item: {
@@ -591,7 +591,7 @@ export const customTheme = createTheme({
       pink: 'fill-pink-600 dark:fill-pink-500',
       purple: 'fill-purple-600 dark:fill-purple-500',
       success: 'fill-green-500 dark:fill-green-400',
-      warning: 'fill-yellow-400 dark:fill-yellow-300',
+      warning: 'fill-amber-400 dark:fill-amber-300',
     },
     light: {
       off: {
@@ -615,7 +615,7 @@ export const customTheme = createTheme({
           pink: 'text-pink-600 dark:text-pink-500',
           purple: 'text-purple-600 dark:text-purple-500',
           success: 'text-green-600 dark:text-green-500',
-          warning: 'text-yellow-600 dark:text-yellow-500',
+          warning: 'text-amber-600 dark:text-amber-500',
         },
       },
     },
