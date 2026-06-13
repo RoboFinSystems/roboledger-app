@@ -1,11 +1,11 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import type { User } from '@/lib/core'
 import {
   ApiKeysCard,
   customTheme,
   GeneralInformationCard,
+  PageHeader,
   PageLayout,
   PasswordInformationCard,
 } from '@/lib/core'
@@ -55,8 +55,7 @@ const UserSettingsPageContent: FC<UserProps> = function ({ user, onRefresh }) {
       <PageHeader
         icon={HiCog}
         title="User Settings"
-        description="Manage your account settings and preferences"
-        gradient="from-gray-500 to-gray-700"
+        subtitle="Manage your account settings and preferences"
       />
 
       <div className="space-y-6">

@@ -1,10 +1,10 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
@@ -296,8 +296,7 @@ const TrialBalanceContent: FC = function () {
       <PageHeader
         icon={HiScale}
         title="Trial Balance"
-        description="View account balances with debits and credits verification"
-        gradient="from-secondary-500 to-pink-600"
+        subtitle="View account balances with debits and credits verification"
       />
 
       {/* Filters */}

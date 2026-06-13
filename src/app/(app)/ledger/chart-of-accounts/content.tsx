@@ -1,10 +1,10 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
@@ -666,8 +666,7 @@ const ChartOfAccountsContent: FC = function () {
       <PageHeader
         icon={HiCollection}
         title="Chart of Accounts"
-        description="View accounts and GAAP mappings for the selected entity"
-        gradient="from-primary-500 to-cyan-600"
+        subtitle="View accounts and GAAP mappings for the selected entity"
       />
 
       {/* Mapping header bar */}

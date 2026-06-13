@@ -1,10 +1,10 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
@@ -275,7 +275,7 @@ const HomePageContent: FC = function () {
             ? `Welcome back to ${currentGraph.graphName}`
             : 'Welcome to RoboLedger'
         }
-        description="Your AI-powered financial reporting platform"
+        subtitle="Your AI-powered financial reporting platform"
       />
 
       {hasQualifyingGraph ? (

@@ -1,10 +1,10 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
@@ -112,8 +112,7 @@ const ReportsContent: FC = function () {
       <PageHeader
         icon={HiDocumentReport}
         title="Reports"
-        description="View and manage financial reports"
-        gradient="from-orange-500 to-red-600"
+        subtitle="View and manage financial reports"
         actions={
           <div className="flex gap-2">
             <Link href="/reports/publish-lists">

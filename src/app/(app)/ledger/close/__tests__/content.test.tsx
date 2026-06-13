@@ -23,9 +23,6 @@ vi.mock('@/lib/core', () => ({
     <div>{children}</div>
   ),
   useGraphContext: () => mockUseGraphContext(),
-}))
-
-vi.mock('@/components/PageHeader', () => ({
   PageHeader: ({ title, actions }: any) => (
     <div data-testid="page-header">
       {title}

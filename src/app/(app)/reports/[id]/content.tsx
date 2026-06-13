@@ -1,7 +1,6 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
-import { clients, customTheme, PageLayout } from '@/lib/core'
+import { clients, customTheme, PageHeader, PageLayout } from '@/lib/core'
 import type { PublishList, ReportPackage } from '@robosystems/client/clients'
 import {
   Alert,
@@ -308,8 +307,7 @@ const ReportViewerContent: FC = function () {
       <PageHeader
         icon={HiDocumentReport}
         title={pkg.name}
-        description={periodLabel}
-        gradient="from-orange-500 to-red-600"
+        subtitle={periodLabel}
         actions={
           <>
             {pkg.generationStatus === 'published' && (

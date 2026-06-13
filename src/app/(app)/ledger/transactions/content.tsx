@@ -1,10 +1,10 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
@@ -289,8 +289,7 @@ const TransactionsContent: FC = function () {
       <PageHeader
         icon={TbReceipt}
         title="Transactions"
-        description="View transaction journal with line item details"
-        gradient="from-green-500 to-teal-600"
+        subtitle="View transaction journal with line item details"
       />
 
       {/* §3.10 — New manual journal entry */}

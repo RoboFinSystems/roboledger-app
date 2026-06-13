@@ -1,10 +1,10 @@
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
 import {
   clients,
   customTheme,
   GraphFilters,
+  PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
@@ -200,8 +200,7 @@ const PublishListsContent: FC = function () {
       <PageHeader
         icon={HiShare}
         title="Publish Lists"
-        description="Manage report distribution lists"
-        gradient="from-orange-500 to-red-600"
+        subtitle="Manage report distribution lists"
         actions={
           <div className="flex gap-2">
             <Link href="/reports">

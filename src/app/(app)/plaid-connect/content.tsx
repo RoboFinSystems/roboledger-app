@@ -1,8 +1,13 @@
 // @ts-nocheck - connections functionality removed from SDK, pending overhaul
 'use client'
 
-import { PageHeader } from '@/components/PageHeader'
-import { customTheme, PageLayout, SDK, useGraphContext } from '@/lib/core'
+import {
+  customTheme,
+  PageHeader,
+  PageLayout,
+  SDK,
+  useGraphContext,
+} from '@/lib/core'
 import { Button, Card, Spinner } from 'flowbite-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
@@ -136,8 +141,7 @@ export default function PlaidConnectContent() {
       <PageHeader
         icon={HiCreditCard}
         title="Connect Bank Accounts"
-        description="Securely link your bank accounts with Plaid"
-        gradient="from-green-500 to-teal-600"
+        subtitle="Securely link your bank accounts with Plaid"
       />
 
       <Card theme={customTheme.card} className="max-w-2xl">
