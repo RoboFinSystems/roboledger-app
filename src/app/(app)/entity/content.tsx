@@ -179,7 +179,7 @@ const EntityInfoPageContent: FC = function () {
           currentEntity?.name ||
           'View entity information and settings'
         }
-        gradient="from-indigo-500 to-purple-600"
+        gradient="from-indigo-500 to-secondary-600"
       />
 
       <div className="space-y-6">

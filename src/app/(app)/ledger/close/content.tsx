@@ -106,7 +106,7 @@ const CloseContent: FC = function () {
         <PageHeader
           icon={TbBook2}
           title="Closing Book"
-          gradient="from-indigo-500 to-purple-600"
+          gradient="from-indigo-500 to-secondary-600"
         />
         <Card theme={customTheme.card}>
           <div className="py-12 text-center">
@@ -142,7 +142,7 @@ const CloseContent: FC = function () {
             ? 'Financial statements, schedules, and period close'
             : undefined
         }
-        gradient="from-indigo-500 to-purple-600"
+        gradient="from-indigo-500 to-secondary-600"
         actions={
           showViewToggle ? (
             <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />

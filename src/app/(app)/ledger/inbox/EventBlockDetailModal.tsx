@@ -303,7 +303,7 @@ const EventBlockDetailModal: FC<Props> = function ({
                 {agent ? (
                   <Link
                     href={`/agents?id=${encodeURIComponent(agent.id)}`}
-                    className="inline-flex items-center gap-1 font-medium text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-primary-600 dark:text-primary-400 inline-flex items-center gap-1 font-medium hover:underline"
                   >
                     {agent.name}
                     <HiArrowRight className="h-3 w-3" />
@@ -385,7 +385,7 @@ const EventBlockDetailModal: FC<Props> = function ({
                               <td className="py-1 text-gray-600 dark:text-gray-400">
                                 {li.description || '—'}
                               </td>
-                              <td className="py-1 text-right font-mono text-blue-600 dark:text-blue-400">
+                              <td className="text-primary-600 dark:text-primary-400 py-1 text-right font-mono">
                                 {li.debit_amount
                                   ? formatCurrency(
                                       li.debit_amount,
@@ -407,7 +407,7 @@ const EventBlockDetailModal: FC<Props> = function ({
                             <td colSpan={2} className="py-1">
                               Total
                             </td>
-                            <td className="py-1 text-right font-mono text-blue-600 dark:text-blue-400">
+                            <td className="text-primary-600 dark:text-primary-400 py-1 text-right font-mono">
                               {formatCurrency(totalDebit, event.currency)}
                             </td>
                             <td className="py-1 text-right font-mono text-green-600 dark:text-green-400">
@@ -428,8 +428,8 @@ const EventBlockDetailModal: FC<Props> = function ({
 
             {/* Preview output */}
             {preview && (
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm dark:border-blue-900 dark:bg-blue-950">
-                <h4 className="font-heading mb-2 text-sm font-bold text-blue-900 dark:text-blue-200">
+              <div className="border-primary-200 bg-primary-50 dark:border-primary-900 dark:bg-primary-950 rounded-lg border p-3 text-sm">
+                <h4 className="font-heading text-primary-900 dark:text-primary-200 mb-2 text-sm font-bold">
                   Preview — what would post
                 </h4>
                 {preview.would_succeed === false && (
@@ -438,7 +438,7 @@ const EventBlockDetailModal: FC<Props> = function ({
                   </p>
                 )}
                 {preview.matched_handler && (
-                  <p className="mb-2 text-xs text-blue-800 dark:text-blue-300">
+                  <p className="text-primary-800 dark:text-primary-300 mb-2 text-xs">
                     Handler:{' '}
                     <span className="font-mono">
                       {preview.matched_handler.name ||
@@ -450,7 +450,7 @@ const EventBlockDetailModal: FC<Props> = function ({
                   preview.planned_transactions.length > 0 && (
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="text-left text-blue-700 dark:text-blue-300">
+                        <tr className="text-primary-700 dark:text-primary-300 text-left">
                           <th className="py-1">Entry</th>
                           <th className="py-1">Debit elem</th>
                           <th className="py-1">Credit elem</th>
@@ -502,7 +502,7 @@ const EventBlockDetailModal: FC<Props> = function ({
                 {error.link && (
                   <Link
                     href={error.link.href}
-                    className="ml-2 font-medium text-blue-700 hover:underline dark:text-blue-300"
+                    className="text-primary-700 dark:text-primary-300 ml-2 font-medium hover:underline"
                   >
                     {error.link.label} →
                   </Link>

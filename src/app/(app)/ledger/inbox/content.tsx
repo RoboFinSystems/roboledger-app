@@ -235,7 +235,7 @@ const InboxContent: FC = function () {
         icon={HiInbox}
         title="Inbox"
         description="Review and approve captured events before they post to the GL"
-        gradient="from-blue-500 to-indigo-600"
+        gradient="from-primary-500 to-indigo-600"
       />
 
       {/* Filters */}

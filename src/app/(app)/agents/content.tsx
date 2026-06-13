@@ -131,7 +131,7 @@ const AgentsContent: FC = function () {
         icon={HiUserGroup}
         title="Agents"
         description="Counterparties — customers, vendors, employees"
-        gradient="from-purple-500 to-pink-600"
+        gradient="from-secondary-500 to-pink-600"
       />
 
       <Card theme={customTheme.card}>

@@ -255,7 +255,7 @@ const PublishListsContent: FC = function () {
                   onClick={() => loadListDetail(list.id)}
                   className={`w-full rounded-lg border p-3 text-left transition-colors ${
                     selectedList?.id === list.id
-                      ? 'border-purple-500 bg-purple-50 dark:border-purple-400 dark:bg-purple-900/20'
+                      ? 'border-secondary-500 bg-secondary-50 dark:border-secondary-400 dark:bg-secondary-900/20'
                       : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800'
                   }`}
                 >

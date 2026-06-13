@@ -184,7 +184,7 @@ export default function ConnectionCard({
             </p>
 
             {status.step && (
-              <p className="mt-1 text-sm text-blue-600 dark:text-blue-400">
+              <p className="text-primary-600 dark:text-primary-400 mt-1 text-sm">
                 Current step: {status.step}
               </p>
             )}

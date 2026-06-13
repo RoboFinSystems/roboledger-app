@@ -542,7 +542,7 @@ const TransactionsContent: FC = function () {
                                         <td className="py-2 text-gray-600 dark:text-gray-400">
                                           {li.description || '-'}
                                         </td>
-                                        <td className="py-2 text-right font-mono text-blue-600 dark:text-blue-400">
+                                        <td className="text-primary-600 dark:text-primary-400 py-2 text-right font-mono">
                                           {li.debit_amount
                                             ? formatCurrency(li.debit_amount)
                                             : '-'}
@@ -562,7 +562,7 @@ const TransactionsContent: FC = function () {
                                       >
                                         Total
                                       </td>
-                                      <td className="py-2 text-right font-mono text-blue-600 dark:text-blue-400">
+                                      <td className="text-primary-600 dark:text-primary-400 py-2 text-right font-mono">
                                         {formatCurrency(
                                           lineItems.reduce(
                                             (sum, li) =>

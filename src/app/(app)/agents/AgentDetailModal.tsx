@@ -252,7 +252,7 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
         {agent && (
           <Link
             href={`/ledger/inbox?agentId=${encodeURIComponent(agent.id)}`}
-            className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+            className="text-primary-600 dark:text-primary-400 text-sm font-medium hover:underline"
           >
             View all events in inbox →
           </Link>

@@ -173,7 +173,7 @@ const ReportsContent: FC = function () {
                       <div className="flex flex-col">
                         <span className="font-semibold">{report.name}</span>
                         {report.sourceGraphId && (
-                          <span className="flex items-center gap-1 text-xs text-blue-400">
+                          <span className="text-primary-400 flex items-center gap-1 text-xs">
                             <HiShare className="h-3 w-3" />
                             Shared report
                           </span>

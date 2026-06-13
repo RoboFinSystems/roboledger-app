@@ -297,7 +297,7 @@ const TrialBalanceContent: FC = function () {
         icon={HiScale}
         title="Trial Balance"
         description="View account balances with debits and credits verification"
-        gradient="from-purple-500 to-pink-600"
+        gradient="from-secondary-500 to-pink-600"
       />
 
       {/* Filters */}
@@ -382,7 +382,7 @@ const TrialBalanceContent: FC = function () {
               <div className="mt-2 space-y-1 text-xs">
                 <div className="flex justify-between">
                   <span className="text-gray-500 dark:text-gray-400">Dr:</span>
-                  <span className="font-mono text-blue-600 dark:text-blue-400">
+                  <span className="text-primary-600 dark:text-primary-400 font-mono">
                     {formatCurrency(
                       classificationSummary[classification].debits
                     )}
@@ -462,7 +462,7 @@ const TrialBalanceContent: FC = function () {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono">
-                      <span className="text-blue-600 dark:text-blue-400">
+                      <span className="text-primary-600 dark:text-primary-400">
                         {row.totalDebits > 0
                           ? formatCurrency(row.totalDebits)
                           : '-'}
@@ -498,7 +498,7 @@ const TrialBalanceContent: FC = function () {
                     TOTALS
                   </TableCell>
                   <TableCell className="text-right font-mono">
-                    <span className="text-blue-600 dark:text-blue-400">
+                    <span className="text-primary-600 dark:text-primary-400">
                       {formatCurrency(totals.totalDebits)}
                     </span>
                   </TableCell>

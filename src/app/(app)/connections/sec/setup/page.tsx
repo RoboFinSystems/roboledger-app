@@ -242,8 +242,8 @@ export default function SECSetupPage() {
 
                 {/* CIK Validation Feedback */}
                 {validating && (
-                  <div className="mt-2 flex items-center text-sm text-blue-600">
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+                  <div className="text-primary-600 mt-2 flex items-center text-sm">
+                    <div className="border-primary-600 mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
                     Validating CIK...
                   </div>
                 )}
@@ -277,11 +277,11 @@ export default function SECSetupPage() {
                 )}
               </div>
 
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-                <h4 className="mb-2 font-medium text-blue-900 dark:text-blue-100">
+              <div className="border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-900/20 rounded-lg border p-4">
+                <h4 className="text-primary-900 dark:text-primary-100 mb-2 font-medium">
                   How to find your CIK:
                 </h4>
-                <ol className="list-inside list-decimal space-y-1 text-sm text-blue-800 dark:text-blue-200">
+                <ol className="text-primary-800 dark:text-primary-200 list-inside list-decimal space-y-1 text-sm">
                   <li>Visit the SEC EDGAR website</li>
                   <li>Search for your company name</li>
                   <li>Your CIK will be displayed in the search results</li>

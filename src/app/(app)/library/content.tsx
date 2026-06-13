@@ -116,7 +116,7 @@ export default function LibraryContent() {
     <div className="mx-auto max-w-[1600px] space-y-6 p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 p-3">
+          <div className="from-primary-500 to-secondary-600 rounded-lg bg-gradient-to-br p-3">
             <HiBookOpen className="h-8 w-8 text-white" />
           </div>
           <div>
@@ -183,7 +183,7 @@ export default function LibraryContent() {
                   aria-pressed={viewMode === mode}
                   className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${
                     viewMode === mode
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-primary-600 text-white'
                       : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
                   }`}
                 >

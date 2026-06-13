@@ -6,7 +6,7 @@ const ROBOLEDGER_CONSOLE_CONFIG: ConsoleConfig = {
   header: {
     title: 'RoboLedger Console',
     subtitle: 'Interactive financial data analysis',
-    gradientFrom: 'from-purple-500',
+    gradientFrom: 'from-secondary-500',
     gradientTo: 'to-indigo-600',
   },
   welcome: {

@@ -111,7 +111,7 @@ const EntitiesListPageContent: FC = function () {
         icon={HiOfficeBuilding}
         title={`All Entities (${entities.length})`}
         description="View all entities across your roboledger graphs"
-        gradient="from-indigo-500 to-purple-600"
+        gradient="from-indigo-500 to-secondary-600"
       />
 
       {/* Search */}

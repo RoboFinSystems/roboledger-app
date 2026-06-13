@@ -233,7 +233,7 @@ const SortHeader: FC<SortHeaderProps> = ({
         onClick={() => onSort(sortKey)}
         className={`inline-flex items-center gap-1 ${
           align === 'right' ? 'flex-row-reverse' : ''
-        } ${active ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}
+        } ${active ? 'text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300'}`}
       >
         <Icon className="h-3 w-3" />
         {label}

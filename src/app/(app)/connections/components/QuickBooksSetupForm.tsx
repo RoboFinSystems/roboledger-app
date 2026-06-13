@@ -94,7 +94,7 @@ export default function QuickBooksSetupForm({
           You will be redirected to Intuit to authorize access to your
           QuickBooks data. Admin permissions in QuickBooks are required.
         </p>
-        <div className="mx-auto mb-4 max-w-md rounded-md border border-blue-200 bg-blue-50 p-3 text-left text-xs text-blue-900 dark:border-blue-700/40 dark:bg-blue-900/20 dark:text-blue-100">
+        <div className="border-primary-200 bg-primary-50 text-primary-900 dark:border-primary-700/40 dark:bg-primary-900/20 dark:text-primary-100 mx-auto mb-4 max-w-md rounded-md border p-3 text-left text-xs">
           After connecting, an initial sync runs automatically. To restrict the
           date range (e.g. last 60 days for sandbox, or a specific start date),
           use <span className="font-medium">Sync Now</span> on the connection

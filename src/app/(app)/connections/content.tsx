@@ -443,7 +443,7 @@ export default function ModernConnectionsContent() {
           icon={HiLink}
           title="Data Connections"
           description="Connect external data sources to automatically import transactions and financial data"
-          gradient="from-cyan-500 to-blue-600"
+          gradient="from-cyan-500 to-primary-600"
           actions={
             <Button
               size="sm"

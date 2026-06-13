@@ -206,7 +206,7 @@ const LiveStatementsContent: FC = function () {
         icon={TbReportMoney}
         title="Live Statements"
         description="Render BS / IS / CF from the current ledger — no close required"
-        gradient="from-purple-500 to-pink-600"
+        gradient="from-secondary-500 to-pink-600"
       />
 
       {/* Live, ephemeral render — make it unmistakable this is not a filing. */}
