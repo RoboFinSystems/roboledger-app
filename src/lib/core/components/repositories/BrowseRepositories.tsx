@@ -253,7 +253,7 @@ export function BrowseRepositories({
       {showHeader && (
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 p-3">
+            <div className="from-primary-500 to-secondary-600 rounded-lg bg-gradient-to-br p-3">
               <HiGlobeAlt className="h-8 w-8 text-white" />
             </div>
             <div>
@@ -277,8 +277,8 @@ export function BrowseRepositories({
       {showInfoCard && (
         <Card theme={customTheme.card}>
           <div className="flex items-start gap-4">
-            <div className="rounded-lg bg-blue-100 p-3 dark:bg-blue-900/30">
-              <HiInformationCircle className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <div className="bg-primary-100 dark:bg-primary-900/30 rounded-lg p-3">
+              <HiInformationCircle className="text-primary-600 dark:text-primary-400 h-6 w-6" />
             </div>
             <div className="flex-1">
               <h3 className="font-heading mb-3 text-lg font-semibold text-zinc-900 dark:text-white">
@@ -286,27 +286,27 @@ export function BrowseRepositories({
               </h3>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="flex items-start gap-2">
-                  <div className="mt-1 h-2 w-2 rounded-full bg-blue-500"></div>
+                  <div className="bg-primary-500 mt-1 h-2 w-2 rounded-full"></div>
                   <span className="text-sm text-zinc-600 dark:text-zinc-400">
                     Subscribe to gain read-only access to curated graph
                     databases
                   </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <div className="mt-1 h-2 w-2 rounded-full bg-blue-500"></div>
+                  <div className="bg-primary-500 mt-1 h-2 w-2 rounded-full"></div>
                   <span className="text-sm text-zinc-600 dark:text-zinc-400">
                     Credits are used for AI agent calls - queries are unlimited
                   </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <div className="mt-1 h-2 w-2 rounded-full bg-blue-500"></div>
+                  <div className="bg-primary-500 mt-1 h-2 w-2 rounded-full"></div>
                   <span className="text-sm text-zinc-600 dark:text-zinc-400">
                     Generate API keys to access repositories via MCP tools in AI
                     apps
                   </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <div className="mt-1 h-2 w-2 rounded-full bg-blue-500"></div>
+                  <div className="bg-primary-500 mt-1 h-2 w-2 rounded-full"></div>
                   <span className="text-sm text-zinc-600 dark:text-zinc-400">
                     Different tiers offer varying credit limits and features
                   </span>
@@ -338,7 +338,7 @@ export function BrowseRepositories({
                   {/* Repository Header */}
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4">
-                      <div className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 p-3">
+                      <div className="from-primary-500 to-secondary-600 rounded-lg bg-gradient-to-br p-3">
                         <GoRepo className="h-8 w-8 text-white" />
                       </div>
                       <div>
@@ -392,9 +392,9 @@ export function BrowseRepositories({
                           key={plan.plan}
                           className={`relative flex flex-col rounded-xl border-2 p-6 transition-all hover:shadow-lg ${
                             isCurrentPlan
-                              ? 'border-blue-500 bg-blue-50 shadow-lg dark:bg-blue-900/20'
+                              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 shadow-lg'
                               : isPopular
-                                ? 'border-purple-500 bg-gradient-to-b from-purple-50 to-white shadow-md dark:from-purple-900/20 dark:to-zinc-800'
+                                ? 'border-secondary-500 from-secondary-50 dark:from-secondary-900/20 bg-gradient-to-b to-white shadow-md dark:to-zinc-800'
                                 : 'border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800'
                           }`}
                         >
@@ -543,14 +543,14 @@ export function BrowseRepositories({
                 <div
                   className={`rounded-full p-3 ${
                     planChangeModal.isUpgrade
-                      ? 'bg-purple-100 dark:bg-purple-900/30'
-                      : 'bg-blue-100 dark:bg-blue-900/30'
+                      ? 'bg-secondary-100 dark:bg-secondary-900/30'
+                      : 'bg-primary-100 dark:bg-primary-900/30'
                   }`}
                 >
                   {planChangeModal.isUpgrade ? (
-                    <HiArrowUp className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    <HiArrowUp className="text-secondary-600 dark:text-secondary-400 h-6 w-6" />
                   ) : (
-                    <HiArrowDown className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    <HiArrowDown className="text-primary-600 dark:text-primary-400 h-6 w-6" />
                   )}
                 </div>
                 <div className="flex-1">
