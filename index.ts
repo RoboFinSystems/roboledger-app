@@ -175,6 +175,7 @@ export {
   generateMessageId,
   getErrorMessage,
   PageContainer,
+  PageHeader,
   PasswordInformationCard,
   PasswordRequirements,
   SecureApiKeyField,
@@ -192,6 +193,7 @@ export {
 export type {
   AgentType,
   Message,
+  PageHeaderProps,
   SidebarItemData,
   SupportMetadata,
 } from './ui-components'

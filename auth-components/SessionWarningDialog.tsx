@@ -70,7 +70,7 @@ export function SessionWarningDialog() {
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex-1 rounded-lg bg-blue-700 px-4 py-2 text-white hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 focus:outline-none disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+            className="bg-primary-700 hover:bg-primary-800 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 flex-1 rounded-lg px-4 py-2 text-white focus:ring-4 focus:outline-none disabled:opacity-50"
           >
             {isRefreshing ? 'Refreshing...' : 'Stay Logged In'}
           </button>

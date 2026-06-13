@@ -73,7 +73,7 @@ export function TaxonomySidebar({
                         onClick={() => onSelect(t.id)}
                         className={`w-full rounded px-3 py-2 text-left text-sm transition-colors ${
                           isSelected
-                            ? 'bg-blue-100 text-blue-900 dark:bg-blue-900/50 dark:text-blue-100'
+                            ? 'bg-primary-100 text-primary-900 dark:bg-primary-900/50 dark:text-primary-100'
                             : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'
                         }`}
                       >

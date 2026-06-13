@@ -140,8 +140,8 @@ export const CreateApiKeyModal: React.FC<CreateApiKeyModalProps> = ({
               Give your API key a memorable name to identify it later
             </p>
 
-            <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-900/30">
-              <p className="text-sm text-blue-800 dark:text-blue-300">
+            <div className="bg-primary-50 dark:bg-primary-900/30 rounded-lg p-3">
+              <p className="text-primary-800 dark:text-primary-300 text-sm">
                 <strong>Note:</strong> API keys do not expire by date. Keys that
                 haven't been used for 90 days will be automatically deactivated
                 for security.
