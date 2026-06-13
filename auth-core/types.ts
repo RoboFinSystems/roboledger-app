@@ -60,7 +60,14 @@ export interface AppConfig {
   url: string
   description: string
   initials: string
+  /**
+   * Literal Tailwind palette class for the app's brand (e.g. `bg-violet-600`).
+   * Uses literal palette colors — NOT `primary`/`secondary` tokens — so it
+   * renders the correct brand for any app even from inside another app.
+   */
   colorClass: string
+  /** The app's fixed brand hex — cross-app safe; drives the colored AnimatedLogo. */
+  brandColor: string
 }
 
 export interface AuthContextType {

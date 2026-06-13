@@ -50,6 +50,13 @@ vi.mock('../../ui-components', () => ({
       className={className}
     />
   ),
+  LogoBadge: ({ animate, className }: any) => (
+    <div
+      data-testid="logo-badge"
+      data-animate={animate}
+      className={className}
+    />
+  ),
 }))
 
 const mockUseRouter = vi.mocked(useRouter)
@@ -116,7 +123,7 @@ describe('SignInForm', () => {
     it('should show SSO checking state initially when SSO is enabled', () => {
       render(<SignInForm {...defaultProps} />)
 
-      const logo = screen.getByTestId('animated-logo')
+      const logo = screen.getByTestId('logo-badge')
       expect(logo).toBeInTheDocument()
       expect(logo).toHaveAttribute('data-animate', 'loop')
     })
