@@ -1,10 +1,18 @@
-import { CURRENT_APP } from '../auth-core/config'
+import { twMerge } from 'tailwind-merge'
+import { BRAND_COLORS, BRAND_GRADIENTS, CURRENT_APP } from '../auth-core/config'
 import type { AppName } from '../auth-core/types'
 
 export interface AnimatedLogoProps {
   className?: string
   animate?: 'once' | 'loop'
   app?: AppName
+  /**
+   * Render the mark in the app's brand color instead of the inherited text
+   * color. Use for cross-app identity (e.g. the AppSwitcher, foreign-app marks)
+   * and branded auth screens. Defaults to false so existing monochrome usages
+   * (navbar, spinner, search) are unaffected.
+   */
+  brand?: boolean
 }
 
 /* Graph nodes (shared across all three logos) */
@@ -254,12 +262,14 @@ export function AnimatedLogo({
   className,
   animate = 'loop',
   app = CURRENT_APP,
+  brand = false,
 }: AnimatedLogoProps) {
   return (
     <svg
       viewBox="0 0 1024 1024"
       fill="currentColor"
       className={className}
+      style={brand ? { color: BRAND_COLORS[app] } : undefined}
       role="img"
       aria-label="Loading"
       fillRule="evenodd"
@@ -271,5 +281,41 @@ export function AnimatedLogo({
       {app === 'robosystems' && <SystemsBook animate={animate} />}
       <GraphNodes />
     </svg>
+  )
+}
+
+export interface LogoBadgeProps {
+  app?: AppName
+  animate?: 'once' | 'loop'
+  /** Sizing/utility classes for the chip, e.g. `h-10 w-10`. */
+  className?: string
+}
+
+/**
+ * The mark rendered as an app-icon: a white AnimatedLogo on the app's
+ * brand-gradient rounded chip. At small/icon sizes this reads far crisper than
+ * a brand-colored mark on a dark background, and it surfaces the brand color as
+ * a background element. Cross-app safe — renders the correct gradient for any
+ * `app` from inside any app, so the AppSwitcher shows three distinct chips.
+ */
+export function LogoBadge({
+  app = CURRENT_APP,
+  animate = 'once',
+  className,
+}: LogoBadgeProps) {
+  return (
+    <span
+      className={twMerge(
+        'inline-flex shrink-0 items-center justify-center rounded-xl',
+        className
+      )}
+      style={{ background: BRAND_GRADIENTS[app] }}
+    >
+      <AnimatedLogo
+        app={app}
+        animate={animate}
+        className="h-[68%] w-[68%] text-white"
+      />
+    </span>
   )
 }
