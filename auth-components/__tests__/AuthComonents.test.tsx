@@ -27,6 +27,11 @@ vi.mock('../../ui-components', () => ({
       Loading {size} {fullScreen && '(fullscreen)'}
     </div>
   ),
+  BrandSpinner: ({ size, fullScreen }: any) => (
+    <div data-testid="spinner">
+      Loading {size} {fullScreen && '(fullscreen)'}
+    </div>
+  ),
 }))
 
 const mockUseAuth = vi.mocked(useAuth)
