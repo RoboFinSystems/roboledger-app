@@ -183,7 +183,7 @@ export const PasswordInformationCard: React.FC<
       : passwordStrength.score < 60
         ? 'bg-yellow-500'
         : passwordStrength.score < 80
-          ? 'bg-blue-400'
+          ? 'bg-primary-400'
           : 'bg-green-500'
 
   const strengthTextColor = !passwordStrength
@@ -193,7 +193,7 @@ export const PasswordInformationCard: React.FC<
       : passwordStrength.score < 60
         ? 'text-yellow-400'
         : passwordStrength.score < 80
-          ? 'text-blue-300'
+          ? 'text-primary-300'
           : 'text-green-400'
 
   return (

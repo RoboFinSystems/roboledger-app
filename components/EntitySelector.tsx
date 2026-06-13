@@ -259,13 +259,13 @@ function EntityDropdownItem<T extends SelectableEntity>({
       <div className="flex w-full items-center gap-3">
         <div
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-            isRepository ? 'bg-purple-600/20' : 'bg-blue-600/20'
+            isRepository ? 'bg-secondary-600/20' : 'bg-primary-600/20'
           }`}
         >
           {EntityIcon && (
             <EntityIcon
               className={`h-4 w-4 ${
-                isRepository ? 'text-purple-400' : 'text-blue-400'
+                isRepository ? 'text-secondary-400' : 'text-primary-400'
               }`}
             />
           )}
