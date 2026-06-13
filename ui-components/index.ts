@@ -6,7 +6,7 @@ export * from './settings'
 
 // UI Components
 export { AnimatedLogo, LogoBadge } from './Logo'
-export { Spinner } from './Spinner'
+export { BrandSpinner, Spinner } from './Spinner'
 
 // Chat Components
 export * from './chat'

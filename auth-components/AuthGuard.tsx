@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import type { PropsWithChildren } from 'react'
 import { useEffect } from 'react'
-import { Spinner } from '../ui-components'
+import { BrandSpinner } from '../ui-components'
 import { useAuth } from './AuthProvider'
 
 interface AuthGuardProps extends PropsWithChildren {
@@ -37,7 +37,7 @@ export function AuthGuard({
   }, [isAuthenticated, isLoading, router, redirectTo])
 
   if (isLoading) {
-    return loadingComponent || <Spinner size="xl" fullScreen />
+    return loadingComponent || <BrandSpinner size="xl" fullScreen />
   }
 
   if (!isAuthenticated) {
