@@ -368,7 +368,7 @@ export function LibraryHierarchy({
                   aria-pressed={arcType === t.value}
                   className={`px-3 py-1 text-xs font-medium transition-colors ${
                     arcType === t.value
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-primary-600 text-white'
                       : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
                   }`}
                 >
@@ -480,7 +480,7 @@ function HierarchyRow({
       <div
         className={`flex items-center gap-1 rounded px-1 py-0.5 ${
           isSelected
-            ? 'bg-blue-100 dark:bg-blue-900/50'
+            ? 'bg-primary-100 dark:bg-primary-900/50'
             : 'hover:bg-gray-100 dark:hover:bg-gray-800'
         }`}
         style={{ paddingLeft: `${depth * 16}px` }}
@@ -522,7 +522,7 @@ function HierarchyRow({
           <span
             className={`truncate ${
               isSelected
-                ? 'text-blue-900 dark:text-blue-100'
+                ? 'text-primary-900 dark:text-primary-100'
                 : 'text-gray-800 dark:text-gray-100'
             }`}
           >

@@ -182,7 +182,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
     return (
       <PageLayout>
         <div className="py-12 text-center">
-          <div className="mx-auto mb-4 w-fit rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 p-3">
+          <div className="from-primary-500 to-secondary-600 mx-auto mb-4 w-fit rounded-lg bg-gradient-to-br p-3">
             <HiSearch className="h-8 w-8 text-white" />
           </div>
           <h2 className="font-heading text-lg font-semibold text-gray-700 dark:text-gray-300">
@@ -200,7 +200,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
     <PageLayout>
       {/* Header */}
       <div className="flex items-center gap-4">
-        <div className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 p-3">
+        <div className="from-primary-500 to-secondary-600 rounded-lg bg-gradient-to-br p-3">
           <HiSearch className="h-8 w-8 text-white" />
         </div>
         <div>

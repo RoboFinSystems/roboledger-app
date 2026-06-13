@@ -155,7 +155,7 @@ export function useToast() {
                       ? 'bg-red-100 text-red-500 dark:bg-red-800 dark:text-red-200'
                       : toast.type === 'warning'
                         ? 'bg-orange-100 text-orange-500 dark:bg-orange-700 dark:text-orange-200'
-                        : 'bg-blue-100 text-blue-500 dark:bg-blue-800 dark:text-blue-200'
+                        : 'bg-primary-100 text-primary-500 dark:bg-primary-800 dark:text-primary-200'
                 }`}
               >
                 <Icon className="h-5 w-5" />
