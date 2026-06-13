@@ -109,28 +109,10 @@ export default {
           950: '#030712',
         },
       },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-knowledge':
-          'linear-gradient(135deg, #1B3A57 0%, #00D4AA 50%, #FF6B35 100%)',
-        'gradient-primary': 'linear-gradient(135deg, #1B3A57 0%, #3B7AF5 100%)',
-        'gradient-secondary':
-          'linear-gradient(135deg, #00B894 0%, #00D4AA 50%, #1AFFD1 100%)',
-        'gradient-accent':
-          'linear-gradient(135deg, #DC4313 0%, #FF6B35 50%, #FFA589 100%)',
-      },
-      boxShadow: {
-        'glow-primary': '0 0 20px rgba(27, 58, 87, 0.3)',
-        'glow-secondary': '0 0 20px rgba(0, 212, 170, 0.3)',
-        'glow-accent': '0 0 20px rgba(255, 107, 53, 0.3)',
-        'inner-glow': 'inset 0 0 20px rgba(0, 212, 170, 0.1)',
-      },
       animation: {
-        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         float: 'float 6s ease-in-out infinite',
         'float-slow': 'float-slow 8s ease-in-out infinite',
         'float-slower': 'float-slower 12s ease-in-out infinite',
-        glow: 'glow 2s ease-in-out infinite',
       },
       keyframes: {
         float: {
@@ -144,10 +126,6 @@ export default {
         'float-slower': {
           '0%, 100%': { transform: 'translateY(0px) translateX(0px)' },
           '50%': { transform: 'translateY(-15px) translateX(-10px)' },
-        },
-        glow: {
-          '0%, 100%': { opacity: '0.5' },
-          '50%': { opacity: '1' },
         },
       },
       typography: {
