@@ -16,44 +16,60 @@ export default {
     extend: {
       colors: {
         // RoboLedger Brand Colors
+        // RoboLedger brand: violet primary, purple secondary, fuchsia accent.
         primary: {
-          50: '#EFF6FF', // Lightest blue for backgrounds
-          100: '#DBEAFE', // Light blue for hover states
-          200: '#BFDBFE', // Soft blue for borders
-          300: '#93BBFD', // Medium light blue
-          400: '#6098FA', // Medium blue
-          500: '#3B7AF5', // Bright blue
-          600: '#2563EB', // Strong blue
-          700: '#1D4ED8', // Deep blue
-          800: '#1B3A57', // Brand primary (dark blue)
-          900: '#1E3A8A', // Darker blue
-          950: '#172E47', // Darkest blue
+          50: '#F5F3FF', // Lightest violet
+          100: '#EDE9FE', // Very light violet
+          200: '#DDD6FE', // Light violet
+          300: '#C4B5FD', // Soft violet
+          400: '#A78BFA', // Medium violet
+          500: '#8B5CF6', // Bright violet
+          600: '#7C3AED', // Strong violet
+          700: '#6D28D9', // Deep violet
+          800: '#5B21B6', // Brand primary (dark violet)
+          900: '#4C1D95', // Darker violet
+          950: '#2E1065', // Darkest violet
         },
         secondary: {
-          50: '#E6FFFA', // Lightest teal
-          100: '#B2FFF0', // Very light green
-          200: '#7FFFE6', // Light green
-          300: '#4CFFDB', // Bright light green
-          400: '#1AFFD1', // Bright green
-          500: '#00D4AA', // Brand secondary (bright green)
-          600: '#00B894', // Medium green
-          700: '#009B7D', // Deep green
-          800: '#007D65', // Darker green
-          900: '#00604D', // Very dark green
-          950: '#004438', // Darkest green
+          50: '#FAF5FF', // Lightest purple
+          100: '#F3E8FF', // Very light purple
+          200: '#E9D5FF', // Light purple
+          300: '#D8B4FE', // Soft purple
+          400: '#C084FC', // Medium purple
+          500: '#A855F7', // Brand secondary (purple)
+          600: '#9333EA', // Medium purple
+          700: '#7E22CE', // Deep purple
+          800: '#6B21A8', // Darker purple
+          900: '#581C87', // Very dark purple
+          950: '#3B0764', // Darkest purple
         },
         accent: {
-          50: '#FFF5F0', // Lightest orange
-          100: '#FFE6D9', // Very light orange
-          200: '#FFD4C1', // Light orange
-          300: '#FFBFA6', // Soft orange
-          400: '#FFA589', // Medium orange
-          500: '#FF6B35', // Brand accent (warm orange)
-          600: '#F54E17', // Strong orange
-          700: '#DC4313', // Deep orange
-          800: '#B93810', // Dark orange
-          900: '#962D0D', // Very dark orange
-          950: '#731F08', // Darkest orange
+          50: '#FDF4FF', // Lightest fuchsia
+          100: '#FAE8FF', // Very light fuchsia
+          200: '#F5D0FE', // Light fuchsia
+          300: '#F0ABFC', // Soft fuchsia
+          400: '#E879F9', // Medium fuchsia
+          500: '#D946EF', // Brand accent (fuchsia)
+          600: '#C026D3', // Strong fuchsia
+          700: '#A21CAF', // Deep fuchsia
+          800: '#86198F', // Dark fuchsia
+          900: '#701A75', // Very dark fuchsia
+          950: '#4A044E', // Darkest fuchsia
+        },
+        // Shared semantic amber (decoupled from brand accent so `warning`
+        // stays amber across all apps regardless of the per-app accent hue).
+        amber: {
+          50: '#FFF5F0',
+          100: '#FFE6D9',
+          200: '#FFD4C1',
+          300: '#FFBFA6',
+          400: '#FFA589',
+          500: '#FF6B35',
+          600: '#F54E17',
+          700: '#DC4313',
+          800: '#B93810',
+          900: '#962D0D',
+          950: '#731F08',
         },
         graph: {
           node: {
