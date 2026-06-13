@@ -11,28 +11,28 @@ export default function AIReportingSection() {
             Intelligent Automation
           </div>
           <h2 className="font-heading mb-6 text-4xl font-bold text-white md:text-5xl">
-            AI-Native Financial Reporting
+            AI in Every Step
           </h2>
           <p className="mx-auto max-w-3xl text-xl text-gray-300">
-            Pioneering autonomous financial report generation - where natural
-            language requests become complete, validated financial statements in
-            seconds.
+            From inbox triage to chart-of-accounts mapping to the close itself,
+            Claude works across your books — and you can drive the entire
+            month-end close from Claude Desktop over MCP.
           </p>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="rounded-xl border border-purple-500/30 bg-purple-900/20 p-8">
             <h3 className="mb-6 text-2xl font-bold text-white">
-              From Request to Report in Seconds
+              AI On Both Sides of the Ledger
             </h3>
             <div className="space-y-4 text-gray-300">
               <div className="space-y-2">
                 <div className="rounded-lg bg-black/30 p-3">
                   <div className="mb-1 text-xs text-purple-300">
-                    Report Creator
+                    Event Inbox
                   </div>
                   <p className="text-sm italic">
-                    "Create a balance sheet for Q4 2024"
+                    A $2,400 vendor bill arrives — Claude proposes the entry
                   </p>
                 </div>
                 <div className="rounded-lg bg-black/30 p-3">
@@ -64,10 +64,10 @@ export default function AIReportingSection() {
                   Claude delivers:
                 </div>
                 <ul className="space-y-1 text-sm">
-                  <li>✓ Complete, validated balance sheet</li>
-                  <li>✓ XBRL-compliant formatting</li>
+                  <li>✓ Pre-classified events ready to approve</li>
+                  <li>✓ US-GAAP mappings with confidence scores</li>
                   <li>✓ Transaction analysis &amp; trend summaries</li>
-                  <li>✓ Export to Excel or formatted statement</li>
+                  <li>✓ Answers grounded in your actual ledger</li>
                 </ul>
               </div>
             </div>
@@ -79,11 +79,11 @@ export default function AIReportingSection() {
                 <span className="mr-3 flex h-8 w-8 items-center justify-center rounded-full bg-purple-500 text-sm">
                   1
                 </span>
-                Natural Language Understanding
+                AI Event Triage
               </h4>
               <p className="text-sm text-gray-300">
-                Claude AI parses your request and understands report type,
-                period, dimensions, and format preferences
+                Claude pre-classifies every incoming business event in the inbox
+                — approve in one click, reclassify, or run on autopilot
               </p>
             </div>
 
@@ -92,11 +92,11 @@ export default function AIReportingSection() {
                 <span className="mr-3 flex h-8 w-8 items-center justify-center rounded-full bg-green-500 text-sm">
                   2
                 </span>
-                Intelligent Element Discovery
+                AI Chart-of-Accounts Mapping
               </h4>
               <p className="text-sm text-gray-300">
-                AI discovers relevant taxonomy elements from your chart of
-                accounts and XBRL standards
+                The mapping operator suggests US-GAAP taxonomy targets for each
+                account, gated by confidence scores for review
               </p>
             </div>
 
@@ -105,11 +105,12 @@ export default function AIReportingSection() {
                 <span className="mr-3 flex h-8 w-8 items-center justify-center rounded-full bg-purple-500 text-sm">
                   3
                 </span>
-                AI Guard Rails
+                Close Guard Rails
               </h4>
               <p className="text-sm text-gray-300">
-                Multi-layer validation ensures accounting equation balance, XBRL
-                compliance, and semantic accuracy
+                A rule engine validates every entry — accounting-equation
+                balance, period rollforward, and XBRL compliance — before you
+                lock
               </p>
             </div>
 
@@ -118,12 +119,12 @@ export default function AIReportingSection() {
                 <span className="mr-3 flex h-8 w-8 items-center justify-center rounded-full bg-violet-500 text-sm">
                   4
                 </span>
-                AI Console for Ad-Hoc Analysis
+                AI Console &amp; MCP
               </h4>
               <p className="text-sm text-gray-300">
-                Beyond reports, use the AI Console to ask Claude anything about
-                your books — query transactions, compare periods, or explore
-                your chart of accounts in natural language
+                Ask Claude anything about your books in the AI Console, or
+                connect Claude Desktop over MCP to drive the entire month-end
+                close from your own agent
               </p>
             </div>
           </div>

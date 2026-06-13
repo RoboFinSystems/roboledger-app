@@ -62,9 +62,9 @@ export default function OutputFormats() {
           />
         </svg>
       ),
-      title: 'Excel Workbook',
+      title: 'JSON-LD Bundle',
       description:
-        'Multi-sheet workbook with formulas, formatting, and pivot tables',
+        'Structured linked-data export of every fact, dimension, and period',
       color: 'from-green-500 to-emerald-500',
       badge: 'Current',
     },
@@ -126,10 +126,10 @@ export default function OutputFormats() {
           />
         </svg>
       ),
-      title: 'XBRL Instance',
-      description: 'SEC-ready filing with validated taxonomy tagging',
+      title: 'XBRL 2.1 Package',
+      description: 'SEC-ready instance with Arelle-validated taxonomy tagging',
       color: 'from-indigo-500 to-purple-500',
-      badge: 'Coming Soon',
+      badge: 'Current',
     },
   ]
 

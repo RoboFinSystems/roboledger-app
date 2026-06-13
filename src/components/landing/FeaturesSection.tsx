@@ -14,13 +14,13 @@ export default function FeaturesSection() {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
           />
         </svg>
       ),
-      title: 'QuickBooks Integration',
+      title: 'Connect Your Sources',
       description:
-        'Sync your existing accounting data from QuickBooks into your knowledge graph',
+        'Sync QuickBooks, link bank accounts via Plaid, and pull SEC EDGAR data into one knowledge graph — customers, vendors, and employees resolved automatically',
       color: 'violet',
     },
     {
@@ -35,13 +35,13 @@ export default function FeaturesSection() {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
           />
         </svg>
       ),
-      title: 'Plaid Bank Feeds',
+      title: 'Event Inbox',
       description:
-        'Direct bank account integration for real-time transaction data',
+        'Every transaction arrives as a typed business event, pre-classified by AI. Review and approve in one click, or run on autopilot',
       color: 'purple',
     },
     {
@@ -60,52 +60,10 @@ export default function FeaturesSection() {
           />
         </svg>
       ),
-      title: 'Ledger & Trial Balance',
+      title: 'Ledger & Live Statements',
       description:
-        'Full chart of accounts, journal entries, and trial balance with US-GAAP AI auto-mapping',
+        'Full chart of accounts, journal entries, and trial balance with US-GAAP AI auto-mapping — plus Balance Sheet, Income Statement, Cash Flow & Equity rendered live',
       color: 'fuchsia',
-    },
-    {
-      icon: (
-        <svg
-          className="h-6 w-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-          />
-        </svg>
-      ),
-      title: 'Financial Reports',
-      description:
-        'Create custom report templates and share digital financial statements',
-      color: 'green',
-    },
-    {
-      icon: (
-        <svg
-          className="h-6 w-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-          />
-        </svg>
-      ),
-      title: 'AI Console',
-      description:
-        'Ask Claude AI questions about your books — natural language queries, transaction analysis, and on-demand insights',
-      color: 'orange',
     },
     {
       icon: (
@@ -123,10 +81,52 @@ export default function FeaturesSection() {
           />
         </svg>
       ),
-      title: 'Period Close Workflow',
+      title: 'AI-Assisted Close',
       description:
-        'Guided fiscal period close with financial statement generation, draft management, and XBRL compliance checking',
+        'Guided fiscal close with depreciation & prepaid schedules, a rule engine, and draft-entry review before you lock the period',
+      color: 'green',
+    },
+    {
+      icon: (
+        <svg
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+      ),
+      title: 'Reports & XBRL',
+      description:
+        'Generate statements with the Report Creator, export XBRL 2.1 and JSON-LD bundles, and share to stakeholder publish lists',
       color: 'pink',
+    },
+    {
+      icon: (
+        <svg
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+          />
+        </svg>
+      ),
+      title: 'AI Console & MCP',
+      description:
+        'Ask Claude about your books in natural language in-app, or drive the month-end close from Claude Desktop via the @robosystems/mcp tools',
+      color: 'orange',
     },
   ]
 
@@ -154,10 +154,10 @@ export default function FeaturesSection() {
         {/* Paradigm Shift Header */}
         <div className="mb-12 text-center">
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-            A New Way to Create Financial Reports
+            A New Way to Close the Books
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Moving from manual configuration to intelligent automation
+            Moving from manual bookkeeping to an event-driven, AI-assisted close
           </p>
         </div>
 
@@ -182,7 +182,7 @@ export default function FeaturesSection() {
                 </svg>
               </div>
               <h3 className="text-2xl font-bold text-white">
-                Traditional Reporting
+                Traditional Close
               </h3>
             </div>
 
@@ -285,9 +285,10 @@ export default function FeaturesSection() {
                   1
                 </div>
                 <div>
-                  <div className="font-semibold text-white">State Intent</div>
+                  <div className="font-semibold text-white">Events Flow In</div>
                   <p className="text-sm text-gray-400">
-                    "Create Q4 balance sheet" or use Report Creator interface
+                    QuickBooks, bank feeds, and manual entries arrive as typed
+                    business events
                   </p>
                 </div>
               </div>
@@ -297,9 +298,10 @@ export default function FeaturesSection() {
                   2
                 </div>
                 <div>
-                  <div className="font-semibold text-white">AI Creates</div>
+                  <div className="font-semibold text-white">AI Triages</div>
                   <p className="text-sm text-gray-400">
-                    Discovers accounts, builds fact grid, applies XBRL taxonomy
+                    Claude pre-classifies each event in the inbox — approve in
+                    one click or run on autopilot
                   </p>
                 </div>
               </div>
@@ -309,9 +311,10 @@ export default function FeaturesSection() {
                   3
                 </div>
                 <div>
-                  <div className="font-semibold text-white">AI Validates</div>
+                  <div className="font-semibold text-white">Guided Close</div>
                   <p className="text-sm text-gray-400">
-                    Checks accounting equation, XBRL compliance, semantic rules
+                    Schedules post depreciation & amortization; the rule engine
+                    validates every entry
                   </p>
                 </div>
               </div>
@@ -321,11 +324,10 @@ export default function FeaturesSection() {
                   4
                 </div>
                 <div>
-                  <div className="font-semibold text-white">
-                    Approve & Publish
-                  </div>
+                  <div className="font-semibold text-white">Publish & File</div>
                   <p className="text-sm text-gray-400">
-                    Review exceptions only, export to multiple formats
+                    Generate statements, export XBRL, and share to stakeholder
+                    lists
                   </p>
                 </div>
               </div>
@@ -357,7 +359,7 @@ export default function FeaturesSection() {
                 d="M13 10V3L4 14h7v7l9-11h-7z"
               />
             </svg>
-            10x faster financial reporting - the end of spreadsheet hell
+            10x faster close — the end of spreadsheet hell
           </div>
         </div>
 

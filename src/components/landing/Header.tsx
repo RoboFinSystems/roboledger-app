@@ -63,6 +63,12 @@ export default function Header() {
               Features
             </Link>
             <Link
+              href="#workflow"
+              className="px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:text-violet-400"
+            >
+              Workflow
+            </Link>
+            <Link
               href="#ai-reporting"
               className="px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:text-violet-400"
             >
@@ -149,6 +155,13 @@ export default function Header() {
                 className="px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-violet-400"
               >
                 Features
+              </Link>
+              <Link
+                href="#workflow"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-violet-400"
+              >
+                Workflow
               </Link>
               <Link
                 href="#ai-reporting"

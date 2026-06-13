@@ -11,8 +11,9 @@ export default function PlatformSection() {
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
             RoboLedger runs on the RoboSystems knowledge graph platform,
-            integrating your accounting data into the RoboLedger schema for
-            intelligent financial reporting
+            integrating your accounting data into a unified three-block model —
+            taxonomy, events, and information — for intelligent financial
+            reporting
           </p>
         </div>
 
@@ -78,7 +79,7 @@ export default function PlatformSection() {
 
             <div className="relative">
               <h3 className="mb-6 text-center text-sm font-semibold tracking-wider text-gray-500 uppercase">
-                RoboLedger Schema
+                Three-Block Model
               </h3>
               <div className="relative mx-auto mt-8 h-72 w-72">
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -102,14 +103,14 @@ export default function PlatformSection() {
                 <div className="rounded-lg border border-purple-500/30 bg-purple-950/20 p-3">
                   <div className="mb-1 flex items-center gap-2">
                     <span className="font-semibold text-purple-300">
-                      Base Schema
+                      Taxonomy Block
                     </span>
                   </div>
                   <div className="text-xs text-gray-400">
-                    Entities, elements, taxonomy
+                    Concepts, structures, and rules
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {['Entity', 'Element', 'Taxonomy'].map((comp, cidx) => (
+                    {['Element', 'Structure', 'Rule'].map((comp, cidx) => (
                       <span
                         key={cidx}
                         className="rounded bg-purple-900/50 px-2 py-0.5 text-xs text-purple-300"
@@ -123,14 +124,14 @@ export default function PlatformSection() {
                 <div className="rounded-lg border border-green-500/30 bg-green-950/20 p-3">
                   <div className="mb-1 flex items-center gap-2">
                     <span className="font-semibold text-green-300">
-                      Transaction Schema
+                      Event Block
                     </span>
                   </div>
                   <div className="text-xs text-gray-400">
-                    Journal entries, line items, processes
+                    Business events, agents, journal entries
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {['Transaction', 'Entry', 'LineItem'].map((comp, cidx) => (
+                    {['Event', 'Transaction', 'Entry'].map((comp, cidx) => (
                       <span
                         key={cidx}
                         className="rounded bg-green-900/50 px-2 py-0.5 text-xs text-green-300"
@@ -144,14 +145,14 @@ export default function PlatformSection() {
                 <div className="rounded-lg border border-violet-500/30 bg-violet-950/20 p-3">
                   <div className="mb-1 flex items-center gap-2">
                     <span className="font-semibold text-violet-300">
-                      Report Schema
+                      Information Block
                     </span>
                   </div>
                   <div className="text-xs text-gray-400">
-                    Financial statements and facts
+                    Facts, statements, and rendering
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {['Report', 'Fact'].map((comp, cidx) => (
+                    {['Fact', 'Statement', 'Report'].map((comp, cidx) => (
                       <span
                         key={cidx}
                         className="rounded bg-violet-900/50 px-2 py-0.5 text-xs text-violet-300"
