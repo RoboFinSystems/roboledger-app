@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { RoboSystemsAuthClient } from '../auth-core/client'
 import { getAppConfig } from '../auth-core/config'
 import type { AuthUser } from '../auth-core/types'
-import { AnimatedLogo, Spinner } from '../ui-components'
+import { LogoBadge, Spinner } from '../ui-components'
 import { TurnstileWidget } from './TurnstileWidget'
 
 export interface SignUpFormProps {
@@ -199,13 +199,10 @@ export function SignUpForm({
   const appName = getAppConfig(currentApp || 'robosystems').displayName
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-black via-gray-900 to-zinc-800 px-4 py-12 sm:px-6 lg:px-8">
+    <div className="via-primary-950 flex min-h-screen items-center justify-center bg-linear-to-br from-black to-zinc-900 px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-lg space-y-8">
         <div className="text-center">
-          <AnimatedLogo
-            animate="once"
-            className="mx-auto h-14 w-14 text-white"
-          />
+          <LogoBadge animate="once" className="mx-auto h-14 w-14" />
           <h1 className="font-heading mt-4 text-center text-2xl font-semibold tracking-tight text-white">
             {appName}
           </h1>
@@ -242,7 +239,7 @@ export function SignUpForm({
                 required
                 value={formData.name}
                 onChange={handleInputChange}
-                className="relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset"
+                className="focus:ring-primary-500 relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset"
                 placeholder="Full name"
                 disabled={loading}
               />
@@ -259,7 +256,7 @@ export function SignUpForm({
                 required
                 value={formData.email}
                 onChange={handleInputChange}
-                className="relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset"
+                className="focus:ring-primary-500 relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset"
                 placeholder="Email address"
                 disabled={loading}
               />
@@ -276,7 +273,7 @@ export function SignUpForm({
                 required
                 value={formData.password}
                 onChange={handleInputChange}
-                className="relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset"
+                className="focus:ring-primary-500 relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset"
                 placeholder="Password"
                 disabled={loading}
               />
@@ -294,7 +291,7 @@ export function SignUpForm({
                   required
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-white focus:ring-inset"
+                  className="focus:ring-primary-500 relative block w-full rounded-md border-0 bg-gray-800 px-5 py-4 text-base leading-7 text-white ring-1 ring-gray-600 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset"
                   placeholder="Confirm password"
                   disabled={loading}
                 />
@@ -373,9 +370,9 @@ export function SignUpForm({
                 checkingPassword ||
                 (turnstileSiteKey && !captchaToken)
               }
-              className="group relative flex w-full justify-center rounded-md bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white focus-visible:outline-solid disabled:cursor-not-allowed disabled:opacity-50"
+              className="group bg-primary-600 hover:bg-primary-700 focus-visible:outline-primary-500 relative flex w-full justify-center rounded-md px-4 py-3 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading && <Spinner size="sm" className="mr-2 border-black" />}
+              {loading && <Spinner size="sm" className="mr-2 border-white" />}
               {loading ? 'Creating account...' : 'Create account'}
             </button>
           </div>
@@ -387,7 +384,7 @@ export function SignUpForm({
                 href="/pages/terms"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-gray-300 hover:text-white"
+                className="hover:text-primary-400 font-medium text-gray-300"
               >
                 Terms of Service
               </a>{' '}
@@ -396,7 +393,7 @@ export function SignUpForm({
                 href="/pages/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-gray-300 hover:text-white"
+                className="hover:text-primary-400 font-medium text-gray-300"
               >
                 Privacy Policy
               </a>
@@ -407,7 +404,7 @@ export function SignUpForm({
             <button
               type="button"
               onClick={handleSignInClick}
-              className="font-medium text-gray-300 hover:text-white"
+              className="hover:text-primary-400 font-medium text-gray-300"
             >
               Already have an account? Sign in
             </button>
