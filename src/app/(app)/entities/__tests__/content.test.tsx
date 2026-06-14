@@ -24,6 +24,11 @@ vi.mock('@/lib/core', () => ({
     },
   },
   PageHeader: () => <div data-testid="page-header" />,
+  LoadingState: ({ message }: any) => (
+    <div data-testid="loading-state" role="status">
+      {message ?? 'Loading'}
+    </div>
+  ),
 }))
 
 vi.mock('flowbite-react', () => ({
@@ -93,7 +98,7 @@ describe('EntitiesListPageContent', () => {
     mockGetEntity.mockReturnValue(new Promise(() => {})) // never resolves
 
     render(<EntitiesListPageContent />)
-    expect(screen.getByTestId('spinner')).toBeInTheDocument()
+    expect(screen.getByTestId('loading-state')).toBeInTheDocument()
   })
 
   it('shows empty state when no entities', async () => {

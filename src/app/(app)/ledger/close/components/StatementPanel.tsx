@@ -1,6 +1,6 @@
 'use client'
 
-import { clients, customTheme } from '@/lib/core'
+import { clients, customTheme, LoadingState } from '@/lib/core'
 import type { PeriodSpecInput } from '@robosystems/client/clients'
 import { Button, Spinner } from 'flowbite-react'
 import type { FC } from 'react'
@@ -239,11 +239,7 @@ const StatementPanel: FC<StatementPanelProps> = ({
   )
 
   if (isLoading && !isRegenerating) {
-    return (
-      <div className="flex justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    )
+    return <LoadingState />
   }
 
   if (error && !envelope) {

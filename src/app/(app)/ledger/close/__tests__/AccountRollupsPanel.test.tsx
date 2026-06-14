@@ -10,6 +10,11 @@ vi.mock('@/lib/core', () => ({
       getAccountRollups: (...args: any[]) => mockGetAccountRollups(...args),
     },
   },
+  LoadingState: ({ message }: any) => (
+    <div data-testid="loading-state" role="status">
+      {message ?? 'Loading'}
+    </div>
+  ),
 }))
 
 vi.mock('flowbite-react', () => ({
@@ -115,7 +120,7 @@ describe('AccountRollupsPanel', () => {
         viewMode="rendered"
       />
     )
-    expect(screen.getByTestId('spinner')).toBeInTheDocument()
+    expect(screen.getByTestId('loading-state')).toBeInTheDocument()
   })
 
   it('renders reporting element group headers', async () => {

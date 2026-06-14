@@ -4,6 +4,7 @@ import {
   clients,
   customTheme,
   GraphFilters,
+  LoadingState,
   PageHeader,
   PageLayout,
   useGraphContext,
@@ -813,9 +814,7 @@ const ChartOfAccountsContent: FC = function () {
       <Card theme={customTheme.card}>
         <div className="overflow-x-auto">
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Spinner size="lg" />
-            </div>
+            <LoadingState />
           ) : accounts.length === 0 ? (
             <div className="p-8 text-center">
               <Card theme={customTheme.card}>

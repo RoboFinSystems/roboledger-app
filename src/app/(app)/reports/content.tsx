@@ -4,6 +4,7 @@ import {
   clients,
   customTheme,
   GraphFilters,
+  LoadingState,
   PageHeader,
   PageLayout,
   useGraphContext,
@@ -13,7 +14,6 @@ import {
   Badge,
   Button,
   Card,
-  Spinner,
   Table,
   TableBody,
   TableCell,
@@ -143,9 +143,7 @@ const ReportsContent: FC = function () {
       <Card theme={customTheme.card}>
         <div className="overflow-x-auto">
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Spinner size="lg" />
-            </div>
+            <LoadingState />
           ) : reports.length === 0 ? (
             <div className="py-12 text-center">
               <HiDocumentReport className="mx-auto mb-4 h-12 w-12 text-gray-400" />

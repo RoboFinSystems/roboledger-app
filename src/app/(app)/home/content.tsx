@@ -4,12 +4,13 @@ import {
   clients,
   customTheme,
   GraphFilters,
+  LoadingState,
   PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
 import { useSSO } from '@/lib/core/auth-core/sso'
-import { Badge, Button, Card, Spinner } from 'flowbite-react'
+import { Badge, Button, Card } from 'flowbite-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { FC } from 'react'
@@ -343,9 +344,7 @@ const HomePageContent: FC = function () {
                 </div>
 
                 {isLoading && stats.recentTransactions.length === 0 ? (
-                  <div className="flex justify-center py-10">
-                    <Spinner size="md" />
-                  </div>
+                  <LoadingState size="md" className="py-10" />
                 ) : stats.recentTransactions.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-8 text-center">
                     <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -418,9 +417,7 @@ const HomePageContent: FC = function () {
                 </div>
 
                 {isLoading && stats.recentReports.length === 0 ? (
-                  <div className="flex justify-center py-10">
-                    <Spinner size="md" />
-                  </div>
+                  <LoadingState size="md" className="py-10" />
                 ) : stats.recentReports.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-8 text-center">
                     <p className="text-sm text-gray-500 dark:text-gray-400">

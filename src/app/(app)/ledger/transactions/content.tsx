@@ -4,6 +4,7 @@ import {
   clients,
   customTheme,
   GraphFilters,
+  LoadingState,
   PageHeader,
   PageLayout,
   useGraphContext,
@@ -14,7 +15,6 @@ import {
   Button,
   Card,
   Select,
-  Spinner,
   Table,
   TableBody,
   TableCell,
@@ -403,9 +403,7 @@ const TransactionsContent: FC = function () {
       <Card theme={customTheme.card}>
         <div className="overflow-x-auto">
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Spinner size="lg" />
-            </div>
+            <LoadingState />
           ) : transactions.length === 0 ? (
             <div className="p-8 text-center">
               <Card theme={customTheme.card}>
@@ -497,9 +495,7 @@ const TransactionsContent: FC = function () {
                           <TableCell colSpan={5} className="p-0">
                             <div className="px-8 py-4">
                               {isLoadingItems ? (
-                                <div className="flex justify-center py-4">
-                                  <Spinner size="sm" />
-                                </div>
+                                <LoadingState size="sm" className="py-4" />
                               ) : lineItems.length === 0 ? (
                                 <p className="py-2 text-center text-sm text-gray-500 dark:text-gray-400">
                                   No line items found

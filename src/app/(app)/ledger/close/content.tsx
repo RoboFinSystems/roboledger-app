@@ -4,12 +4,13 @@ import {
   clients,
   customTheme,
   GraphFilters,
+  LoadingState,
   PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
 import type { LedgerClosingBookStructures } from '@robosystems/client/clients'
-import { Card, Spinner } from 'flowbite-react'
+import { Card } from 'flowbite-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
@@ -167,9 +168,7 @@ const CloseContent: FC = function () {
         <div className="min-w-0 flex-1">
           <Card theme={customTheme.card}>
             {isSidebarLoading ? (
-              <div className="flex justify-center py-24">
-                <Spinner size="xl" />
-              </div>
+              <LoadingState size="xl" className="py-24" />
             ) : !selectedItem ? (
               <div className="py-12 text-center text-gray-500 dark:text-gray-400">
                 Select a section from the sidebar to view.

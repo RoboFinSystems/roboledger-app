@@ -1,8 +1,7 @@
 // @ts-nocheck - connections functionality removed from SDK, pending overhaul
 'use client'
 
-import { SDK, useGraphContext } from '@/lib/core'
-import { Spinner } from '@/lib/core/ui-components'
+import { LoadingState, SDK, useGraphContext } from '@/lib/core'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
@@ -71,14 +70,11 @@ export default function QuickBooksCallbackPage() {
 
   if (status === 'loading') {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="flex flex-col items-center text-center">
-          <Spinner size="xl" />
-          <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
-            Connecting to QuickBooks...
-          </p>
-        </div>
-      </div>
+      <LoadingState
+        message="Connecting to QuickBooks..."
+        size="xl"
+        className="min-h-[60vh]"
+      />
     )
   }
 

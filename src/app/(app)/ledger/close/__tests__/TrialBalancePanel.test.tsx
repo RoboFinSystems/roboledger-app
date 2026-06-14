@@ -10,6 +10,11 @@ vi.mock('@/lib/core', () => ({
       getTrialBalance: (...args: any[]) => mockGetTrialBalance(...args),
     },
   },
+  LoadingState: ({ message }: any) => (
+    <div data-testid="loading-state" role="status">
+      {message ?? 'Loading'}
+    </div>
+  ),
 }))
 
 vi.mock('flowbite-react', () => ({
@@ -41,7 +46,7 @@ describe('TrialBalancePanel', () => {
   it('renders a spinner while loading', () => {
     mockGetTrialBalance.mockReturnValue(new Promise(() => {}))
     render(<TrialBalancePanel graphId="kg_test" />)
-    expect(screen.getByTestId('spinner')).toBeInTheDocument()
+    expect(screen.getByTestId('loading-state')).toBeInTheDocument()
   })
 
   it('renders an error message on API failure', async () => {

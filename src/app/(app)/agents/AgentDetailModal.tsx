@@ -1,7 +1,6 @@
 'use client'
 
-import { clients, customTheme } from '@/lib/core'
-import { Spinner } from '@/lib/core/ui-components'
+import { clients, customTheme, LoadingState } from '@/lib/core'
 import {
   formatAddress,
   formatAmount,
@@ -105,9 +104,7 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
 
       <ModalBody>
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Spinner size="lg" />
-          </div>
+          <LoadingState />
         ) : error ? (
           <Alert theme={customTheme.alert} color="failure">
             <HiExclamationCircle className="h-4 w-4" />

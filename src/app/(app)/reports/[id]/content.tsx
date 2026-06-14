@@ -1,6 +1,12 @@
 'use client'
 
-import { clients, customTheme, PageHeader, PageLayout } from '@/lib/core'
+import {
+  clients,
+  customTheme,
+  LoadingState,
+  PageHeader,
+  PageLayout,
+} from '@/lib/core'
 import type { PublishList, ReportPackage } from '@robosystems/client/clients'
 import {
   Alert,
@@ -271,9 +277,7 @@ const ReportViewerContent: FC = function () {
   if (isLoading) {
     return (
       <PageLayout>
-        <div className="flex justify-center py-24">
-          <Spinner size="xl" />
-        </div>
+        <LoadingState size="xl" className="py-24" />
       </PageLayout>
     )
   }
@@ -467,9 +471,7 @@ const ReportViewerContent: FC = function () {
             </p>
 
             {isLoadingLists ? (
-              <div className="flex justify-center py-4">
-                <Spinner size="md" />
-              </div>
+              <LoadingState size="md" className="py-4" />
             ) : publishLists.length === 0 ? (
               <div className="rounded-lg border border-gray-200 p-4 text-center dark:border-gray-700">
                 <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">

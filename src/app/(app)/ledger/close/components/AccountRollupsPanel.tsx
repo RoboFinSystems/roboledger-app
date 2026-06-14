@@ -1,10 +1,9 @@
 'use client'
 
-import { clients, customTheme } from '@/lib/core'
+import { clients, customTheme, LoadingState } from '@/lib/core'
 import type { LedgerAccountRollups } from '@robosystems/client/clients'
 import {
   Badge,
-  Spinner,
   Table,
   TableBody,
   TableCell,
@@ -55,11 +54,7 @@ const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
   }, [loadData])
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    )
+    return <LoadingState />
   }
 
   if (error) {
