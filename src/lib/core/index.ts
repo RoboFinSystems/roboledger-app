@@ -187,6 +187,7 @@ export {
   SettingsFormField,
   SettingsPageHeader,
   Spinner,
+  StatCard,
   StatusAlert,
   SupportModal,
   ThemeToggle,
