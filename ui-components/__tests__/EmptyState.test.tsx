@@ -39,4 +39,11 @@ describe('EmptyState', () => {
     )
     expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument()
   })
+
+  it('merges a className override onto the container', () => {
+    const { container } = render(
+      <EmptyState icon={HiInbox} title="X" className="py-4" />
+    )
+    expect(container.firstChild).toHaveClass('py-4')
+  })
 })
