@@ -24,6 +24,11 @@ vi.mock('@/lib/core', () => ({
     },
   },
   PageHeader: () => <div data-testid="page-header" />,
+  LoadingState: ({ message }: any) => (
+    <div data-testid="spinner" role="status">
+      {message ?? 'Loading'}
+    </div>
+  ),
 }))
 
 vi.mock('flowbite-react', () => ({

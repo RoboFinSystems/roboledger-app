@@ -4,11 +4,11 @@ import {
   clients,
   customTheme,
   GraphFilters,
+  LoadingState,
   PageHeader,
   PageLayout,
   useGraphContext,
 } from '@/lib/core'
-import { Spinner } from '@/lib/core/ui-components'
 import { formatAmount, formatDate } from '@/lib/ledger/formatters'
 import type { LedgerAgent, LedgerEventBlock } from '@robosystems/client/clients'
 import {
@@ -359,9 +359,7 @@ const InboxContent: FC = function () {
       <Card theme={customTheme.card}>
         <div className="overflow-x-auto">
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Spinner size="lg" />
-            </div>
+            <LoadingState />
           ) : events.length === 0 ? (
             <div className="p-8 text-center">
               <HiInbox className="mx-auto mb-4 h-12 w-12 text-gray-400" />

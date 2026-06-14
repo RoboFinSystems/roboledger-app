@@ -29,6 +29,11 @@ vi.mock('@/lib/core', () => ({
       {actions}
     </div>
   ),
+  LoadingState: ({ message }: any) => (
+    <div data-testid="spinner" role="status">
+      {message ?? 'Loading'}
+    </div>
+  ),
 }))
 
 vi.mock('flowbite-react', () => ({

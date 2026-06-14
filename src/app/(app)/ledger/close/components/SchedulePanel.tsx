@@ -1,7 +1,6 @@
 'use client'
 
-import { clients } from '@/lib/core'
-import { Spinner } from 'flowbite-react'
+import { clients, LoadingState } from '@/lib/core'
 import type { FC } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
@@ -54,11 +53,7 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
   }, [loadEnvelope])
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    )
+    return <LoadingState />
   }
 
   if (error) {

@@ -4,6 +4,7 @@ import {
   clients,
   customTheme,
   GraphFilters,
+  LoadingState,
   PageHeader,
   PageLayout,
   useGraphContext,
@@ -13,7 +14,6 @@ import {
   Alert,
   Badge,
   Card,
-  Spinner,
   Table,
   TableBody,
   TableCell,
@@ -404,9 +404,7 @@ const TrialBalanceContent: FC = function () {
       <Card theme={customTheme.card}>
         <div className="overflow-x-auto">
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Spinner size="lg" />
-            </div>
+            <LoadingState />
           ) : data.length === 0 ? (
             <div className="py-12 text-center">
               <TbReportMoney className="mx-auto mb-4 h-12 w-12 text-gray-400" />

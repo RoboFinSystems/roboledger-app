@@ -1,6 +1,6 @@
 'use client'
 
-import { clients, customTheme } from '@/lib/core'
+import { clients, customTheme, LoadingState } from '@/lib/core'
 import type {
   LedgerFiscalCalendar,
   LedgerPeriodCloseStatus,
@@ -304,11 +304,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
 
   // ── Render guards ────────────────────────────────────────────────────
   if (isLoadingCalendar) {
-    return (
-      <div className="flex justify-center py-8">
-        <Spinner size="md" />
-      </div>
-    )
+    return <LoadingState size="md" className="py-8" />
   }
 
   // First-run: ledger not yet initialized
@@ -402,9 +398,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
 
       {/* Schedules in selected period */}
       {isLoadingStatus ? (
-        <div className="flex justify-center py-8">
-          <Spinner size="md" />
-        </div>
+        <LoadingState size="md" className="py-8" />
       ) : !closeStatus || closeStatus.schedules.length === 0 ? (
         <div className="py-8 text-center text-gray-500 dark:text-gray-400">
           No schedules found for this period.

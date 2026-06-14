@@ -10,6 +10,11 @@ vi.mock('@/lib/core', () => ({
       getAccountRollups: (...args: any[]) => mockGetAccountRollups(...args),
     },
   },
+  LoadingState: ({ message }: any) => (
+    <div data-testid="spinner" role="status">
+      {message ?? 'Loading'}
+    </div>
+  ),
 }))
 
 vi.mock('flowbite-react', () => ({

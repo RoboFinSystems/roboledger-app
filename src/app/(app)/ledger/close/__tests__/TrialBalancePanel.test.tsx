@@ -10,6 +10,11 @@ vi.mock('@/lib/core', () => ({
       getTrialBalance: (...args: any[]) => mockGetTrialBalance(...args),
     },
   },
+  LoadingState: ({ message }: any) => (
+    <div data-testid="spinner" role="status">
+      {message ?? 'Loading'}
+    </div>
+  ),
 }))
 
 vi.mock('flowbite-react', () => ({

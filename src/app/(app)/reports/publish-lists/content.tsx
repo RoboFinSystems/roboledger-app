@@ -4,6 +4,7 @@ import {
   clients,
   customTheme,
   GraphFilters,
+  LoadingState,
   PageHeader,
   PageLayout,
   useGraphContext,
@@ -236,9 +237,7 @@ const PublishListsContent: FC = function () {
         <Card theme={customTheme.card} className="lg:col-span-1">
           <h2 className="mb-4 text-lg font-bold dark:text-white">Your Lists</h2>
           {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Spinner size="lg" />
-            </div>
+            <LoadingState className="py-8" />
           ) : lists.length === 0 ? (
             <div className="py-8 text-center">
               <HiUserGroup className="mx-auto mb-3 h-10 w-10 text-gray-400" />

@@ -1,7 +1,8 @@
 'use client'
 
+import { LoadingState } from '@/lib/core'
 import type { LedgerClosingBookStructures } from '@robosystems/client/clients'
-import { Button, Spinner } from 'flowbite-react'
+import { Button } from 'flowbite-react'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi'
@@ -125,9 +126,7 @@ const StructureSidebar: FC<StructureSidebarProps> = ({
       {/* Content */}
       <div className="max-h-[calc(100vh-16rem)] overflow-y-auto py-2">
         {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Spinner size="md" />
-          </div>
+          <LoadingState size="md" className="py-8" />
         ) : (
           categories.map((cat) => (
             <div key={cat.label} className="mb-3">

@@ -1,9 +1,8 @@
 'use client'
 
-import { clients, customTheme } from '@/lib/core'
+import { clients, customTheme, LoadingState } from '@/lib/core'
 import {
   Badge,
-  Spinner,
   Table,
   TableBody,
   TableCell,
@@ -151,11 +150,7 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
   const totalCredits = rows.reduce((sum, r) => sum + r.totalCredits, 0)
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-24">
-        <Spinner size="xl" />
-      </div>
-    )
+    return <LoadingState size="xl" className="py-24" />
   }
 
   if (error) {

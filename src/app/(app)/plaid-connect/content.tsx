@@ -3,12 +3,13 @@
 
 import {
   customTheme,
+  LoadingState,
   PageHeader,
   PageLayout,
   SDK,
   useGraphContext,
 } from '@/lib/core'
-import { Button, Card, Spinner } from 'flowbite-react'
+import { Button, Card } from 'flowbite-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { HiCreditCard } from 'react-icons/hi'
@@ -129,11 +130,7 @@ export default function PlaidConnectContent() {
   }, [ready, open])
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Spinner aria-label="Loading Plaid..." size="xl" />
-      </div>
-    )
+    return <LoadingState size="xl" className="h-screen" />
   }
 
   return (

@@ -1,6 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+vi.mock('@/lib/core', () => ({
+  LoadingState: ({ message }: any) => (
+    <div data-testid="spinner" role="status">
+      {message ?? 'Loading'}
+    </div>
+  ),
+}))
+
 vi.mock('flowbite-react', () => ({
   Button: ({ children, onClick }: any) => (
     <button onClick={onClick}>{children}</button>

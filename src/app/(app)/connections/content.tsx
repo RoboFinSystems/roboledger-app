@@ -8,7 +8,7 @@ import {
   useGraphContext,
   useToast,
 } from '@/lib/core'
-import { Spinner } from '@/lib/core/ui-components'
+import { LoadingState, Spinner } from '@/lib/core/ui-components'
 import {
   Alert,
   Badge,
@@ -516,9 +516,7 @@ export default function ModernConnectionsContent() {
             ) : setupProvider === 'quickbooks' ? (
               <QuickBooksSetupForm onCancel={() => setSetupProvider(null)} />
             ) : providersLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Spinner size="lg" />
-              </div>
+              <LoadingState />
             ) : availableProviders.length === 0 ? (
               <div className="py-12 text-center">
                 <HiLink className="mx-auto mb-4 h-12 w-12 text-gray-400" />

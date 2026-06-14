@@ -4,6 +4,7 @@ import {
   clients,
   customTheme,
   GraphFilters,
+  LoadingState,
   PageHeader,
   PageLayout,
   useGraphContext,
@@ -452,9 +453,7 @@ const ReportBuilderContent: FC = function () {
         </p>
 
         {isLoadingMappings ? (
-          <div className="flex justify-center py-6">
-            <Spinner size="lg" />
-          </div>
+          <LoadingState className="py-6" />
         ) : mappings.length === 0 ? (
           <div className="py-6 text-center">
             <p className="text-gray-500 dark:text-gray-400">

@@ -1,7 +1,6 @@
 'use client'
 
-import { clients, customTheme } from '@/lib/core'
-import { Spinner } from '@/lib/core/ui-components'
+import { clients, customTheme, LoadingState } from '@/lib/core'
 import { formatDateTime } from '@/lib/ledger/formatters'
 import type { PreviewEventBlockResponse } from '@robosystems/client'
 import type {
@@ -260,9 +259,7 @@ const EventBlockDetailModal: FC<Props> = function ({
 
       <ModalBody>
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Spinner size="lg" />
-          </div>
+          <LoadingState />
         ) : !event ? (
           <Alert theme={customTheme.alert} color="failure">
             <HiExclamationCircle className="h-4 w-4" />
