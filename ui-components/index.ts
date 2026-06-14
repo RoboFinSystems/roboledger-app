@@ -9,6 +9,7 @@ export { EmptyState } from './EmptyState'
 export { LoadingState } from './LoadingState'
 export { AnimatedLogo, LogoBadge } from './Logo'
 export { BrandSpinner, Spinner } from './Spinner'
+export { StatCard } from './StatCard'
 
 // Chat Components
 export * from './chat'
