@@ -5,6 +5,7 @@ export * from './layout'
 export * from './settings'
 
 // UI Components
+export { ConfirmModal } from './ConfirmModal'
 export { EmptyState } from './EmptyState'
 export { LoadingState } from './LoadingState'
 export { AnimatedLogo, LogoBadge } from './Logo'

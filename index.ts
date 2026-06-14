@@ -167,6 +167,7 @@ export {
   ChatInputArea,
   // Chat components
   ChatMessage,
+  ConfirmModal,
   CoreNavbar,
   CoreSidebar,
   CreateApiKeyModal,
