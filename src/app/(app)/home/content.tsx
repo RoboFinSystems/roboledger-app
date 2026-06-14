@@ -7,6 +7,7 @@ import {
   LoadingState,
   PageHeader,
   PageLayout,
+  StatCard,
   useGraphContext,
 } from '@/lib/core'
 import { useSSO } from '@/lib/core/auth-core/sso'
@@ -288,36 +289,18 @@ const HomePageContent: FC = function () {
             </h3>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:grid-cols-3">
-            <Card theme={customTheme.card}>
-              <div className="space-y-2">
-                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Total Transactions
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {formatCount(stats.transactionCount)}
-                </div>
-              </div>
-            </Card>
-            <Card theme={customTheme.card}>
-              <div className="space-y-2">
-                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Active Accounts
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {formatCount(stats.accountCount)}
-                </div>
-              </div>
-            </Card>
-            <Card theme={customTheme.card}>
-              <div className="space-y-2">
-                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Reports Generated
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {formatCount(stats.reportCount)}
-                </div>
-              </div>
-            </Card>
+            <StatCard
+              label="Total Transactions"
+              value={formatCount(stats.transactionCount)}
+            />
+            <StatCard
+              label="Active Accounts"
+              value={formatCount(stats.accountCount)}
+            />
+            <StatCard
+              label="Reports Generated"
+              value={formatCount(stats.reportCount)}
+            />
           </div>
 
           {/* Recent activity */}
