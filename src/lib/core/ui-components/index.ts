@@ -5,6 +5,7 @@ export * from './layout'
 export * from './settings'
 
 // UI Components
+export { LoadingState } from './LoadingState'
 export { AnimatedLogo, LogoBadge } from './Logo'
 export { BrandSpinner, Spinner } from './Spinner'
 

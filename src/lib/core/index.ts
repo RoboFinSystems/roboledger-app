@@ -175,6 +175,7 @@ export {
   GeneralInformationCard,
   generateMessageId,
   getErrorMessage,
+  LoadingState,
   PageContainer,
   PageHeader,
   PasswordInformationCard,
