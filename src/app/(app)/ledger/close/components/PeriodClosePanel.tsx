@@ -1,6 +1,6 @@
 'use client'
 
-import { clients, customTheme, LoadingState } from '@/lib/core'
+import { clients, customTheme, EmptyState, LoadingState } from '@/lib/core'
 import type {
   LedgerFiscalCalendar,
   LedgerPeriodCloseStatus,
@@ -312,35 +312,35 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     return (
       <div className="space-y-4">
         <Card theme={customTheme.card}>
-          <div className="py-8 text-center">
-            <HiCalendar className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-            <h3 className="font-heading mb-2 text-xl font-bold dark:text-white">
-              Fiscal Calendar Not Initialized
-            </h3>
-            <p className="mb-6 text-gray-500 dark:text-gray-400">
-              Initialize the fiscal calendar to start tracking close state and
-              enforcing period sequence.
-            </p>
-            {error && (
-              <div className="mb-4 flex items-center justify-center gap-2 text-red-500">
-                <HiExclamationCircle className="h-5 w-5" />
-                <span>{error}</span>
-              </div>
-            )}
-            <Button
-              theme={customTheme.button}
-              color="primary"
-              disabled={isInitializing}
-              onClick={handleInitialize}
-            >
-              {isInitializing ? (
-                <Spinner size="sm" className="mr-2" />
-              ) : (
-                <HiPlay className="mr-2 h-4 w-4" />
-              )}
-              Initialize Fiscal Calendar
-            </Button>
-          </div>
+          <EmptyState
+            icon={HiCalendar}
+            title="Fiscal Calendar Not Initialized"
+            description="Initialize the fiscal calendar to start tracking close state and enforcing period sequence."
+            className="py-8"
+            action={
+              <>
+                {error && (
+                  <div className="mb-4 flex items-center justify-center gap-2 text-red-500">
+                    <HiExclamationCircle className="h-5 w-5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                <Button
+                  theme={customTheme.button}
+                  color="primary"
+                  disabled={isInitializing}
+                  onClick={handleInitialize}
+                >
+                  {isInitializing ? (
+                    <Spinner size="sm" className="mr-2" />
+                  ) : (
+                    <HiPlay className="mr-2 h-4 w-4" />
+                  )}
+                  Initialize Fiscal Calendar
+                </Button>
+              </>
+            }
+          />
         </Card>
       </div>
     )

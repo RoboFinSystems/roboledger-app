@@ -3,6 +3,7 @@
 import {
   clients,
   customTheme,
+  EmptyState,
   GraphFilters,
   LoadingState,
   PageHeader,
@@ -213,25 +214,19 @@ const AgentsContent: FC = function () {
           {isLoading ? (
             <LoadingState />
           ) : agents.length === 0 ? (
-            <div className="p-8 text-center">
-              <HiUserGroup className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-              <h3 className="font-heading mb-2 text-xl font-bold dark:text-white">
-                No agents
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Sync a connection to populate customers, vendors, and employees.
-              </p>
-            </div>
+            <EmptyState
+              icon={HiUserGroup}
+              title="No agents"
+              description="Sync a connection to populate customers, vendors, and employees."
+              className="p-8"
+            />
           ) : filteredAgents.length === 0 ? (
-            <div className="p-8 text-center">
-              <HiSearch className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-              <h3 className="font-heading mb-2 text-xl font-bold dark:text-white">
-                No matches
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Try adjusting search or filters.
-              </p>
-            </div>
+            <EmptyState
+              icon={HiSearch}
+              title="No matches"
+              description="Try adjusting search or filters."
+              className="p-8"
+            />
           ) : (
             <Table theme={customTheme.table}>
               <TableHead>

@@ -34,6 +34,13 @@ vi.mock('@/lib/core', () => ({
       {message ?? 'Loading'}
     </div>
   ),
+  EmptyState: ({ title, description, action }: any) => (
+    <div data-testid="empty-state">
+      <h3>{title}</h3>
+      {description}
+      {action}
+    </div>
+  ),
 }))
 
 vi.mock('flowbite-react', () => ({

@@ -3,6 +3,7 @@
 import {
   clients,
   customTheme,
+  EmptyState,
   GraphFilters,
   LoadingState,
   PageHeader,
@@ -361,25 +362,19 @@ const InboxContent: FC = function () {
           {isLoading ? (
             <LoadingState />
           ) : events.length === 0 ? (
-            <div className="p-8 text-center">
-              <HiInbox className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-              <h3 className="font-heading mb-2 text-xl font-bold dark:text-white">
-                No events to review
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Sync a connection or wait for new events.
-              </p>
-            </div>
+            <EmptyState
+              icon={HiInbox}
+              title="No events to review"
+              description="Sync a connection or wait for new events."
+              className="p-8"
+            />
           ) : filteredEvents.length === 0 ? (
-            <div className="p-8 text-center">
-              <HiSearch className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-              <h3 className="font-heading mb-2 text-xl font-bold dark:text-white">
-                No matches
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Try clearing the search or adjusting filters.
-              </p>
-            </div>
+            <EmptyState
+              icon={HiSearch}
+              title="No matches"
+              description="Try clearing the search or adjusting filters."
+              className="p-8"
+            />
           ) : (
             <Table theme={customTheme.table}>
               <TableHead>
