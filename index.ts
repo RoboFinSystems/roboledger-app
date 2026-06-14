@@ -171,6 +171,7 @@ export {
   CoreSidebar,
   CreateApiKeyModal,
   DeepResearchToggle,
+  EmptyState,
   ErrorType,
   GeneralInformationCard,
   generateMessageId,
