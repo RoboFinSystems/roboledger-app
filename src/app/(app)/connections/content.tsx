@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  ConfirmModal,
   customTheme,
   EmptyState,
   PageHeader,
@@ -552,28 +553,19 @@ export default function ModernConnectionsContent() {
         />
 
         {/* ── Delete Confirmation Modal ── */}
-        <Modal
-          theme={customTheme.modal}
+        <ConfirmModal
           show={deleteModalOpen}
           onClose={() => setDeleteModalOpen(false)}
+          onConfirm={handleDeleteConnection}
+          title="Delete Connection"
+          confirmLabel="Delete Connection"
         >
-          <ModalHeader>Delete Connection</ModalHeader>
-          <ModalBody>
-            <p className="text-gray-700 dark:text-gray-300">
-              Are you sure you want to delete the{' '}
-              <strong>{connectionToDelete?.provider}</strong> connection? This
-              action cannot be undone.
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button color="failure" onClick={handleDeleteConnection}>
-              Delete Connection
-            </Button>
-            <Button color="gray" onClick={() => setDeleteModalOpen(false)}>
-              Cancel
-            </Button>
-          </ModalFooter>
-        </Modal>
+          <p className="text-gray-700 dark:text-gray-300">
+            Are you sure you want to delete the{' '}
+            <strong>{connectionToDelete?.provider}</strong> connection? This
+            action cannot be undone.
+          </p>
+        </ConfirmModal>
       </PageLayout>
     </>
   )
