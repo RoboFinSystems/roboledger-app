@@ -9,6 +9,8 @@ interface SpinnerProps {
   size?: SpinnerSize
   className?: string
   fullScreen?: boolean
+  /** Accessible label for screen readers. Defaults to "Loading". */
+  'aria-label'?: string
 }
 
 // Border width scales with diameter so the ring stays visually proportional.
@@ -32,11 +34,12 @@ export function Spinner({
   size = 'md',
   className = '',
   fullScreen = false,
+  'aria-label': ariaLabel = 'Loading',
 }: SpinnerProps) {
   const ring = (
     <span
       role="status"
-      aria-label="Loading"
+      aria-label={ariaLabel}
       className={twMerge(
         'text-primary-600 dark:text-primary-500 inline-block animate-spin rounded-full border-current border-t-transparent',
         ringSizeClasses[size],
@@ -59,6 +62,8 @@ interface BrandSpinnerProps {
   className?: string
   fullScreen?: boolean
   app?: AppName
+  /** Accessible label for screen readers. Defaults to "Loading". */
+  'aria-label'?: string
 }
 
 const logoSizeClasses: Record<SpinnerSize, string> = {
@@ -74,23 +79,29 @@ const logoSizeClasses: Record<SpinnerSize, string> = {
  * sparingly — full-page initial loads, auth screens, major transitions — where
  * the brand moment earns its keep. For routine button / inline / page loading,
  * use the plain `Spinner`.
+ *
+ * Note: a given `size` renders LARGER here than on `Spinner` (the logo needs
+ * more visual weight to read) — e.g. `lg` is 80px vs the ring's 48px.
  */
 export function BrandSpinner({
   size = 'lg',
   className = '',
   fullScreen = false,
   app = CURRENT_APP,
+  'aria-label': ariaLabel = 'Loading',
 }: BrandSpinnerProps) {
   const logo = (
-    <AnimatedLogo
-      animate="loop"
-      app={app}
-      className={twMerge(
-        'text-black dark:text-white',
-        logoSizeClasses[size],
-        className
-      )}
-    />
+    <span role="status" aria-label={ariaLabel}>
+      <AnimatedLogo
+        animate="loop"
+        app={app}
+        className={twMerge(
+          'text-black dark:text-white',
+          logoSizeClasses[size],
+          className
+        )}
+      />
+    </span>
   )
 
   if (!fullScreen) return logo
