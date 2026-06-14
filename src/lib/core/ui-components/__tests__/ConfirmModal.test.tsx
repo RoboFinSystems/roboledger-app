@@ -72,9 +72,27 @@ describe('ConfirmModal', () => {
     )
     expect(screen.getByText('Deleting…')).toBeInTheDocument()
     const cancel = screen.getByRole('button', { name: 'Cancel' })
+    const confirm = screen.getByRole('button', { name: /Deleting…/ })
     expect(cancel).toBeDisabled()
+    expect(confirm).toBeDisabled()
     fireEvent.click(cancel)
     expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('does not call onConfirm while loading', () => {
+    const onConfirm = vi.fn()
+    render(
+      <ConfirmModal
+        show
+        loading
+        title="Delete"
+        loadingLabel="Deleting…"
+        onClose={vi.fn()}
+        onConfirm={onConfirm}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Deleting…/ }))
+    expect(onConfirm).not.toHaveBeenCalled()
   })
 
   it('renders a confirm icon when provided', () => {
