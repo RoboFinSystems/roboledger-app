@@ -11,7 +11,7 @@ vi.mock('@/lib/core', () => ({
     },
   },
   LoadingState: ({ message }: any) => (
-    <div data-testid="spinner" role="status">
+    <div data-testid="loading-state" role="status">
       {message ?? 'Loading'}
     </div>
   ),
@@ -46,7 +46,7 @@ describe('TrialBalancePanel', () => {
   it('renders a spinner while loading', () => {
     mockGetTrialBalance.mockReturnValue(new Promise(() => {}))
     render(<TrialBalancePanel graphId="kg_test" />)
-    expect(screen.getByTestId('spinner')).toBeInTheDocument()
+    expect(screen.getByTestId('loading-state')).toBeInTheDocument()
   })
 
   it('renders an error message on API failure', async () => {

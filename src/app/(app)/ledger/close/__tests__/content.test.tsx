@@ -30,7 +30,7 @@ vi.mock('@/lib/core', () => ({
     </div>
   ),
   LoadingState: ({ message }: any) => (
-    <div data-testid="spinner" role="status">
+    <div data-testid="loading-state" role="status">
       {message ?? 'Loading'}
     </div>
   ),
@@ -154,7 +154,7 @@ describe('CloseContent', () => {
     mockGetEntity.mockReturnValue(new Promise(() => {}))
 
     render(<CloseContent />)
-    expect(screen.getByTestId('spinner')).toBeInTheDocument()
+    expect(screen.getByTestId('loading-state')).toBeInTheDocument()
   })
 
   it('renders sidebar with categories after loading', async () => {
