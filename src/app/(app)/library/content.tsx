@@ -188,11 +188,10 @@ export default function LibraryContent() {
             </div>
           </div>
 
-          {/* Grid height = viewport minus ~280px of header + toolbar + padding. */}
-          <div
-            className="grid grid-cols-12 items-stretch gap-6"
-            style={{ height: 'calc(100vh - 280px)', minHeight: '560px' }}
-          >
+          {/* On mobile the two panels stack (each col-span-12); give each row a
+              usable height so the inner scroll areas work. On md+ they sit side
+              by side, filling the viewport (minus ~280px of header + toolbar). */}
+          <div className="grid auto-rows-[75vh] grid-cols-12 items-stretch gap-6 md:h-[calc(100vh_-_280px)] md:min-h-[560px] md:auto-rows-auto">
             {viewMode === 'browse' ? (
               <ElementBrowser
                 key={selectedTaxonomyId ?? 'none'}
