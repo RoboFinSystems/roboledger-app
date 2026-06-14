@@ -3,6 +3,7 @@
 import {
   clients,
   customTheme,
+  EmptyState,
   GraphFilters,
   LoadingState,
   PageHeader,
@@ -106,16 +107,11 @@ const CloseContent: FC = function () {
       <PageLayout>
         <PageHeader icon={TbBook2} title="Closing Book" />
         <Card theme={customTheme.card}>
-          <div className="py-12 text-center">
-            <TbBook2 className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-            <h3 className="font-heading mb-2 text-xl font-bold dark:text-white">
-              No Ledger Found
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              Connect a QuickBooks account to get started with your closing
-              book.
-            </p>
-          </div>
+          <EmptyState
+            icon={TbBook2}
+            title="No Ledger Found"
+            description="Connect a QuickBooks account to get started with your closing book."
+          />
         </Card>
       </PageLayout>
     )

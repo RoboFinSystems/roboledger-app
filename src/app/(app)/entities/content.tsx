@@ -4,6 +4,7 @@ import type { Entity } from '@/lib/core'
 import {
   clients,
   customTheme,
+  EmptyState,
   GraphFilters,
   LoadingState,
   PageHeader,
@@ -142,17 +143,12 @@ const EntitiesListPageContent: FC = function () {
           {isLoading ? (
             <LoadingState />
           ) : entities.length === 0 ? (
-            <div className="p-8 text-center">
-              <Card theme={customTheme.card}>
-                <HiOfficeBuilding className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                <h3 className="font-heading mb-4 text-xl font-bold dark:text-white">
-                  No Entities Found
-                </h3>
-                <p className="mb-4 text-gray-500 dark:text-gray-400">
-                  No entities found in your roboledger graphs.
-                </p>
-              </Card>
-            </div>
+            <EmptyState
+              icon={HiOfficeBuilding}
+              title="No Entities Found"
+              description="No entities found in your roboledger graphs."
+              className="p-8"
+            />
           ) : (
             <Table theme={customTheme.table}>
               <TableHead>

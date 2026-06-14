@@ -3,6 +3,7 @@
 import {
   clients,
   customTheme,
+  EmptyState,
   GraphFilters,
   LoadingState,
   PageHeader,
@@ -323,17 +324,15 @@ const LiveStatementsContent: FC = function () {
           {isLoading ? (
             <LoadingState />
           ) : !statement || statement.facts.length === 0 ? (
-            <div className="py-12 text-center">
-              <TbReportMoney className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-                No data for this statement
-              </h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {preset === 'custom' && (!customStart || !customEnd)
+            <EmptyState
+              icon={TbReportMoney}
+              title="No data for this statement"
+              description={
+                preset === 'custom' && (!customStart || !customEnd)
                   ? 'Pick a start and end date to render.'
-                  : 'No ledger activity falls in the selected period.'}
-              </p>
-            </div>
+                  : 'No ledger activity falls in the selected period.'
+              }
+            />
           ) : (
             <LiveStatementTable statement={statement} />
           )}

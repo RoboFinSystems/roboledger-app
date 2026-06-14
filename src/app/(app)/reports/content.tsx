@@ -3,6 +3,7 @@
 import {
   clients,
   customTheme,
+  EmptyState,
   GraphFilters,
   LoadingState,
   PageHeader,
@@ -145,15 +146,11 @@ const ReportsContent: FC = function () {
           {isLoading ? (
             <LoadingState />
           ) : reports.length === 0 ? (
-            <div className="py-12 text-center">
-              <HiDocumentReport className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-              <h3 className="font-heading mb-4 text-xl font-bold dark:text-white">
-                No Reports Found
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Create your first financial report to get started.
-              </p>
-            </div>
+            <EmptyState
+              icon={HiDocumentReport}
+              title="No Reports Found"
+              description="Create your first financial report to get started."
+            />
           ) : (
             <Table theme={customTheme.table}>
               <TableHead>

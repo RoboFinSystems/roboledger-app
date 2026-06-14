@@ -13,6 +13,11 @@ interface LoadingStateProps {
    * or `className="min-h-screen"` to fill the viewport.
    */
   className?: string
+  /**
+   * Accessible label for screen readers. Defaults to `message` (or "Loading"
+   * when neither is provided).
+   */
+  'aria-label'?: string
 }
 
 /**
@@ -25,6 +30,7 @@ export function LoadingState({
   message,
   size = 'lg',
   className,
+  'aria-label': ariaLabel,
 }: LoadingStateProps) {
   return (
     <div
@@ -33,7 +39,7 @@ export function LoadingState({
         className
       )}
     >
-      <Spinner size={size} />
+      <Spinner size={size} aria-label={ariaLabel ?? message} />
       {message && (
         <p className="text-sm text-gray-500 dark:text-gray-400">{message}</p>
       )}

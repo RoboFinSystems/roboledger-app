@@ -3,6 +3,7 @@
 import {
   clients,
   customTheme,
+  EmptyState,
   LoadingState,
   PageHeader,
   PageLayout,
@@ -286,18 +287,18 @@ const ReportViewerContent: FC = function () {
     return (
       <PageLayout>
         <Card theme={customTheme.card}>
-          <div className="py-12 text-center">
-            <HiExclamationCircle className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-            <h3 className="font-heading mb-4 text-xl font-bold dark:text-white">
-              {error || 'Report not found'}
-            </h3>
-            <Link href="/reports">
-              <Button theme={customTheme.button} color="primary">
-                <HiChevronLeft className="mr-2 h-5 w-5" />
-                Back to Reports
-              </Button>
-            </Link>
-          </div>
+          <EmptyState
+            icon={HiExclamationCircle}
+            title={error || 'Report not found'}
+            action={
+              <Link href="/reports">
+                <Button theme={customTheme.button} color="primary">
+                  <HiChevronLeft className="mr-2 h-5 w-5" />
+                  Back to Reports
+                </Button>
+              </Link>
+            }
+          />
         </Card>
       </PageLayout>
     )

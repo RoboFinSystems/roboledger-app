@@ -3,6 +3,7 @@
 import {
   clients,
   customTheme,
+  EmptyState,
   GraphFilters,
   LoadingState,
   PageHeader,
@@ -406,25 +407,17 @@ const TrialBalanceContent: FC = function () {
           {isLoading ? (
             <LoadingState />
           ) : data.length === 0 ? (
-            <div className="py-12 text-center">
-              <TbReportMoney className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-                No Trial Balance Data
-              </h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                No transaction data found to generate trial balance.
-              </p>
-            </div>
+            <EmptyState
+              icon={TbReportMoney}
+              title="No Trial Balance Data"
+              description="No transaction data found to generate trial balance."
+            />
           ) : filteredData.length === 0 ? (
-            <div className="py-12 text-center">
-              <HiSearch className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-                No Matching Accounts
-              </h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Try adjusting your search.
-              </p>
-            </div>
+            <EmptyState
+              icon={HiSearch}
+              title="No Matching Accounts"
+              description="Try adjusting your search."
+            />
           ) : (
             <Table theme={customTheme.table}>
               <TableHead>

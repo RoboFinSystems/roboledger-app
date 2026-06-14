@@ -3,6 +3,7 @@
 import {
   clients,
   customTheme,
+  EmptyState,
   GraphFilters,
   LoadingState,
   PageHeader,
@@ -816,32 +817,24 @@ const ChartOfAccountsContent: FC = function () {
           {isLoading ? (
             <LoadingState />
           ) : accounts.length === 0 ? (
-            <div className="p-8 text-center">
-              <Card theme={customTheme.card}>
-                <MdOutlineAccountBalanceWallet className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                <h3 className="font-heading mb-4 text-xl font-bold dark:text-white">
-                  No Accounts Found
-                </h3>
-                <p className="mb-4 text-gray-500 dark:text-gray-400">
-                  No chart of accounts found in your roboledger graphs.
-                </p>
-                <p className="text-sm text-gray-400 dark:text-gray-500">
-                  Import accounting data to see accounts here.
-                </p>
-              </Card>
-            </div>
+            <EmptyState
+              icon={MdOutlineAccountBalanceWallet}
+              title="No Accounts Found"
+              description={
+                <>
+                  No chart of accounts found in your roboledger graphs. Import
+                  accounting data to see accounts here.
+                </>
+              }
+              className="p-8"
+            />
           ) : filteredAccounts.length === 0 ? (
-            <div className="p-8 text-center">
-              <Card theme={customTheme.card}>
-                <HiViewList className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                <h3 className="font-heading mb-4 text-xl font-bold dark:text-white">
-                  No Matching Accounts
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400">
-                  Try adjusting your search or filters.
-                </p>
-              </Card>
-            </div>
+            <EmptyState
+              icon={HiViewList}
+              title="No Matching Accounts"
+              description="Try adjusting your search or filters."
+              className="p-8"
+            />
           ) : (
             <Table theme={customTheme.table}>
               <TableHead>

@@ -2,6 +2,7 @@
 
 import {
   customTheme,
+  EmptyState,
   PageHeader,
   PageLayout,
   SDK,
@@ -478,16 +479,11 @@ export default function ModernConnectionsContent() {
 
           {connections.length === 0 && (
             <Card theme={customTheme.card}>
-              <div className="flex flex-col items-center py-12">
-                <HiLink className="mb-4 h-12 w-12 text-gray-400" />
-                <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
-                  No connections yet
-                </h3>
-                <p className="max-w-md text-center text-sm text-gray-500 dark:text-gray-400">
-                  Connect your data sources to automatically import
-                  transactions, chart of accounts, and other financial data.
-                </p>
-              </div>
+              <EmptyState
+                icon={HiLink}
+                title="No connections yet"
+                description="Connect your data sources to automatically import transactions, chart of accounts, and other financial data."
+              />
             </Card>
           )}
         </div>
@@ -518,12 +514,10 @@ export default function ModernConnectionsContent() {
             ) : providersLoading ? (
               <LoadingState />
             ) : availableProviders.length === 0 ? (
-              <div className="py-12 text-center">
-                <HiLink className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                <p className="text-gray-500 dark:text-gray-400">
-                  No connection providers available
-                </p>
-              </div>
+              <EmptyState
+                icon={HiLink}
+                title="No connection providers available"
+              />
             ) : (
               <div className="space-y-3">
                 {availableProviders.map((provider) => (
