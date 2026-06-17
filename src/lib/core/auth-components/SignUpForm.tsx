@@ -381,7 +381,7 @@ export function SignUpForm({
             <div className="text-center text-xs text-gray-400">
               By creating an account, you agree to our{' '}
               <a
-                href="/pages/terms"
+                href={`${process.env.NEXT_PUBLIC_ROBOSYSTEMS_APP_URL || 'https://robosystems.ai'}/pages/terms`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-primary-400 font-medium text-gray-300"
@@ -390,7 +390,7 @@ export function SignUpForm({
               </a>{' '}
               and{' '}
               <a
-                href="/pages/privacy"
+                href={`${process.env.NEXT_PUBLIC_ROBOSYSTEMS_APP_URL || 'https://robosystems.ai'}/pages/privacy`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-primary-400 font-medium text-gray-300"
