@@ -49,27 +49,27 @@ npm run format:check # Check code formatting
 
 **Route Inventory (consolidated from archived `roboledger-frontend.md` spec):**
 
-| Route                                     | Backend reads                                                       | Status                                                                   |
-| ----------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `/home`                                   | listReports, listTransactions                                       | shipped                                                                  |
-| `/entity` `/entities`                     | getEntity, listEntities, opMaterialize                              | shipped (materialize card 2026-05-14)                                    |
-| `/connections`                            | listConnections, syncConnection                                     | shipped                                                                  |
-| `/connections/qb-callback`                | oauthCallback                                                       | shipped                                                                  |
-| `/connections/sec/setup`                  | createConnection                                                    | shipped                                                                  |
-| `/ledger/chart-of-accounts`               | getAccountTree, autoMapElements, mapping ops                        | shipped (auto-map UI live; CoA → US-GAAP mapping pending OLTP migration) |
-| `/ledger/transactions`                    | listTransactions, getTransaction, createJournalEntry (modal)        | shipped (NewJournalEntryModal 2026-05-14)                                |
-| `/ledger/trial-balance`                   | getTrialBalance, getMappedTrialBalance                              | shipped                                                                  |
-| `/ledger/close`                           | getPeriodCloseStatus, closePeriod, reopenPeriod, listPeriodDrafts   | shipped (also renders schedule/statement/rules blocks via BlockView)     |
-| `/ledger/inbox`                           | listEventBlocks, getEventBlock, previewEventBlock, updateEventBlock | shipped 2026-05-01                                                       |
-| `/agents`                                 | listAgents, getAgent                                                | shipped 2026-05-01                                                       |
-| `/reports` `/reports/new` `/reports/[id]` | listReports, createReport, getReportPackage                         | shipped                                                                  |
-| `/reports/publish-lists`                  | publishList CRUD                                                    | shipped                                                                  |
-| `/library`                                | listLibraryTaxonomies, getLibraryElement                            | shipped                                                                  |
-| `/console`                                | MCP-backed                                                          | shipped                                                                  |
-| `/search`                                 | placeholder                                                         | stub (depends on OpenSearch infra — `project_text_search` memory)        |
-| `/settings`                               | auth client                                                         | shipped                                                                  |
-| `/plaid-connect`                          | Plaid Link                                                          | shipped                                                                  |
-| `/graphs/new`                             | graph creation                                                      | shipped                                                                  |
+| Route                                     | Backend reads                                                       | Status                                                                                      |
+| ----------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `/home`                                   | listReports, listTransactions                                       | shipped                                                                                     |
+| `/entity` `/entities`                     | getEntity, listEntities, opMaterialize                              | shipped (materialize card 2026-05-14)                                                       |
+| `/connections`                            | listConnections, syncConnection                                     | shipped                                                                                     |
+| `/connections/qb-callback`                | oauthCallback                                                       | shipped                                                                                     |
+| `/connections/sec/setup`                  | createConnection                                                    | shipped                                                                                     |
+| `/ledger/chart-of-accounts`               | getAccountTree, autoMapElements, mapping ops                        | shipped (auto-map UI live; CoA → US-GAAP mapping pending OLTP migration)                    |
+| `/ledger/transactions`                    | listTransactions, getTransaction, createJournalEntry (modal)        | shipped (NewJournalEntryModal 2026-05-14)                                                   |
+| `/ledger/trial-balance`                   | getTrialBalance, getMappedTrialBalance                              | shipped                                                                                     |
+| `/ledger/close`                           | getPeriodCloseStatus, closePeriod, reopenPeriod, listPeriodDrafts   | shipped (also renders schedule/statement/rules blocks via BlockView)                        |
+| `/ledger/inbox`                           | listEventBlocks, getEventBlock, previewEventBlock, updateEventBlock | shipped 2026-05-01                                                                          |
+| `/agents`                                 | listAgents, getAgent                                                | shipped 2026-05-01                                                                          |
+| `/reports` `/reports/new` `/reports/[id]` | listReports, createReport, getReportPackage                         | shipped                                                                                     |
+| `/reports/publish-lists`                  | publishList CRUD                                                    | shipped                                                                                     |
+| `/library`                                | listLibraryTaxonomies, getLibraryElement                            | shipped                                                                                     |
+| `/console`                                | MCP-backed                                                          | shipped                                                                                     |
+| `/search`                                 | searchDocuments, listDocuments, getDocumentSection                  | shipped (full-text + semantic document search via core SearchContent)                       |
+| `/settings`                               | auth client                                                         | shipped                                                                                     |
+| `/plaid-connect`                          | Plaid Link                                                          | scaffold only — not built/specced; medium-term (distinct product surface from the QB layer) |
+| `/graphs/new`                             | graph creation                                                      | shipped                                                                                     |
 
 ## Frontend Conventions
 
@@ -129,8 +129,8 @@ For larger forward-work surfaces tracked in proper specs:
 **Data Integrations:**
 
 - QuickBooks: OAuth 2.0 via `intuit-oauth` for accounting data sync
-- Plaid: Bank connections via `react-plaid-link` for transaction feeds
 - SEC XBRL: CIK-based filing connections with US-GAAP taxonomy data
+- Plaid: **not built / not specced** — only scaffolding exists (`plaid` + `react-plaid-link` deps, a `/plaid-connect` route, and landing-page copy). Likely medium-term. It's a distinct product surface (direct bank feeds), not just another connection on top of the QuickBooks layer, so it isn't advertised in the README and isn't a shipped integration.
 
 ## Key Development Patterns
 

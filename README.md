@@ -8,7 +8,7 @@ RoboLedger App is the web interface for AI-native accounting, building semantic 
 - **QuickBooks Integration**: Sync with existing QuickBooks data and add AI automation without changing workflows
 - **Natural Language Queries**: Ask questions in plain English and get instant, intelligent answers about your finances
 - **AI-Powered Automation**: Leverage Claude AI for intelligent financial analysis that understands business context
-- **Multi-Source Data**: QuickBooks, Plaid bank feeds, SEC XBRL filings, and custom datasets
+- **Multi-Source Data**: QuickBooks, SEC XBRL filings, and custom datasets
 
 ## Core Features
 
@@ -17,10 +17,11 @@ RoboLedger App is the web interface for AI-native accounting, building semantic 
 - **Dashboard**: Financial overview with quick actions
 - **Ledger**: Chart of accounts, journal entries, trial balance, and account mappings
 - **Period Close**: Fiscal calendar bootstrap, close workflow with gate checks, and rule-based pre-close evaluation
+- **Live Statements**: Render balance sheet, income statement, and cash flow directly from the current ledger — no period close required
 - **Schedules**: Recurring journal entry templates with auto-evaluation on close
 - **Inbox**: Event block review for rule violations and pending obligations
 - **Reports**: Custom report builder with fact grids, templates, publish lists, and multi-format export
-- **Connections**: QuickBooks OAuth sync, Plaid bank feeds, and SEC XBRL filings
+- **Connections**: QuickBooks OAuth sync and SEC XBRL filings
 - **Entity Detail**: Per-entity dashboard with materialize-to-graph workflow
 - **Agents**: AI agent management with conversation history and tool access
 - **AI Console**: Natural language and Cypher query terminal with streaming results and MCP integration
@@ -102,7 +103,6 @@ npm run core:add         # Add core subtree (initial setup)
 
 - RoboSystems API endpoint (local development or production)
 - Intuit Developer account (for QuickBooks OAuth)
-- Plaid account (for bank connections) — optional
 
 #### Deployment Requirements
 
@@ -121,7 +121,6 @@ See the **[Bootstrap Guide](https://github.com/RoboFinSystems/robosystems/wiki/B
 - Flowbite React with Tailwind CSS for UI components
 - RoboSystems Client SDK for API communication
 - Intuit OAuth for QuickBooks integration
-- Plaid Link for bank connections
 
 **Core Library (`/src/lib/core/`):**
 

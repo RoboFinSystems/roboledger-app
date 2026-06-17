@@ -178,7 +178,9 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/pages/privacy"
+                  href={`${process.env.NEXT_PUBLIC_ROBOSYSTEMS_APP_URL || 'https://robosystems.ai'}/pages/privacy`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-gray-400 transition-colors hover:text-white"
                 >
                   Privacy
@@ -186,7 +188,9 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/pages/terms"
+                  href={`${process.env.NEXT_PUBLIC_ROBOSYSTEMS_APP_URL || 'https://robosystems.ai'}/pages/terms`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-gray-400 transition-colors hover:text-white"
                 >
                   Terms
