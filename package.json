@@ -2,6 +2,7 @@
   "name": "@robosystems/core",
   "version": "0.2.0",
   "private": true,
+  "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/RoboFinSystems/robosystems-core.git"
