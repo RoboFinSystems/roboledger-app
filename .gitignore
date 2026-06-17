@@ -49,3 +49,9 @@ GEMINI.md
 
 # local dev
 local/
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+src/lib/core/.ds-compiled.css

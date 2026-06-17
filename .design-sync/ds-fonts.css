@@ -1,0 +1,103 @@
+/* Brand @font-face for the design-sync bundle. url()s resolve relative to this
+   file (.design-sync/) → ../public/fonts. The converter (cfg.extraFonts) parses
+   this, copies each ttf into the bundle's fonts/ (flattened basename) and
+   rewrites url() to ./fonts/<basename>. Mirrors src/app/globals.css. */
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('../public/fonts/SpaceGrotesk/SpaceGrotesk-Light.ttf')
+    format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('../public/fonts/SpaceGrotesk/SpaceGrotesk-Regular.ttf')
+    format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('../public/fonts/SpaceGrotesk/SpaceGrotesk-Medium.ttf')
+    format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('../public/fonts/SpaceGrotesk/SpaceGrotesk-SemiBold.ttf')
+    format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('../public/fonts/SpaceGrotesk/SpaceGrotesk-Bold.ttf')
+    format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk Variable';
+  src: url('../public/fonts/SpaceGrotesk/SpaceGrotesk-VariableFont_wght.ttf')
+    format('truetype-variations');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Orbitron';
+  src: url('../public/fonts/Orbitron/Orbitron-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Orbitron';
+  src: url('../public/fonts/Orbitron/Orbitron-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Orbitron';
+  src: url('../public/fonts/Orbitron/Orbitron-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Orbitron';
+  src: url('../public/fonts/Orbitron/Orbitron-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Orbitron';
+  src: url('../public/fonts/Orbitron/Orbitron-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Orbitron';
+  src: url('../public/fonts/Orbitron/Orbitron-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Orbitron Variable';
+  src: url('../public/fonts/Orbitron/Orbitron-VariableFont_wght.ttf')
+    format('truetype-variations');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
