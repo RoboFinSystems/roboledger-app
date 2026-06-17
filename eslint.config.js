@@ -19,6 +19,11 @@ export default [
       'build/',
       'out/',
       '.flowbite-react/',
+      // design-sync (claude.ai/design) tooling + generated artifacts
+      'ds-bundle/',
+      '.ds-sync/',
+      '.design-sync/',
+      'src/lib/core/dist/',
     ],
   },
 

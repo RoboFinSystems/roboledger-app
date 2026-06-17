@@ -39,7 +39,8 @@
     "feature:create": "./bin/create-feature.sh",
     "release:create": "./bin/create-release.sh",
     "setup:gha": "./bin/gha-setup.sh",
-    "setup:bootstrap": "./bin/bootstrap.sh"
+    "setup:bootstrap": "./bin/bootstrap.sh",
+    "build:types": "rm -rf src/lib/core/dist && tsc -p src/lib/core/tsconfig.build.json; test -f src/lib/core/dist/index.d.ts"
   },
   "dependencies": {
     "@aws-sdk/client-sns": "^3.1059.0",
