@@ -140,3 +140,26 @@ BrandSpinner) render THIS app's mark + brand color. CSS brand colors (primary/se
 accent utilities) are already per-app via the compiled stylesheet; this fixes the
 JS-driven logo brand, which otherwise defaults to the RoboSystems blue mark on every app.
 Re-sync: keep `.design-sync/app-name` correct per app; the patch step handles the rest.
+
+## Real types build (`build:types`) — added after the initial sync
+
+The bundle is still synth-entry (esbuild over source); only component PROP TYPES
+changed — they now come from real `.d.ts` instead of `[key:string]: unknown` stubs.
+
+- `npm run build:types` = `rm -rf src/lib/core/dist && tsc -p src/lib/core/tsconfig.build.json`
+  (emitDeclarationOnly) → `src/lib/core/dist/**/*.d.ts` (gitignored). Two benign
+  `typeof jest` warnings in `hooks/use-user.ts` don't block emit (success = `dist/index.d.ts` exists).
+- core `package.json` `"types": "dist/index.d.ts"` points the converter at them.
+- **Run `npm run build:types` BEFORE `package-build` on every (re)sync** (after compile-css).
+- The real public API (`index.ts` exports) ≠ the synth all-source scan: it exposes
+  non-components (SDK clients, `AuthCore` namespace, `QueuedQueryError`, `GraphFilters`)
+  and omits internal components (logos, `ProgressiveText`, `SessionWarningDialog`,
+  `TurnstileWidget`). `cfg.componentSrcMap` reconciles this: 8 null-exclusions for the
+  non-components + 3 pins (`AnimatedLogo`, `LogoBadge`, `ProgressiveText`) to keep them.
+  Net **55 components** (was 57 under synth).
+- Pinning moved `AnimatedLogo`/`LogoBadge` group `general` → `ui-components` (group derives
+  from the pinned src path). On re-sync these regroup; `SessionWarningDialog` + `TurnstileWidget`
+  are dropped — the upload deletes their old paths.
+- `eslint.config.js` ignores `src/lib/core/dist/` (the generated `.d.ts`).
+
+Full run order: `build:types` → `compile-css.mjs` → `package-build.mjs` → `patch-bundle.mjs` → `package-validate.mjs`.
