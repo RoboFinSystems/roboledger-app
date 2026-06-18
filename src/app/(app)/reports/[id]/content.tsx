@@ -113,24 +113,27 @@ const ReportViewerContent: FC = function () {
     }
   }, [graphId])
 
-  // window.location.href (not <a download>) because the presigned URL is
-  // cross-origin — the download attribute is ignored cross-origin, but the
-  // backend sets Content-Disposition: attachment so the file still saves.
+  // Both flavors resolve to a presigned S3 URL via the GraphQL
+  // `reportDownloadUrl` read. window.location.href (not <a download>)
+  // because the URL is cross-origin — the download attribute is ignored
+  // cross-origin, but the backend signs Content-Disposition: attachment
+  // so the file still saves with a versioned filename.
   const handleDownloadBundle = useCallback(async () => {
     if (!graphId || !reportId) return
     try {
       setIsDownloadingBundle(true)
       setDownloadError(null)
-      const resp = await clients.reports.getReportBundleDownloadUrl(
-        graphId,
-        reportId
-      )
+      const resp = await clients.reports.getReportDownloadUrl(graphId, reportId)
+      if (!resp) {
+        setDownloadError('Report not found.')
+        return
+      }
       window.location.href = resp.downloadUrl
     } catch (err) {
       console.error('Bundle download failed:', err)
-      // 404 message from the backend ("no stamped bundle — regenerate to
-      // produce one") is the most actionable failure mode for users
-      // viewing a pre-feature Report, so surface the server detail when
+      // The REPORT_BUNDLE_NOT_AVAILABLE error ("publish or regenerate to
+      // produce a bundle") is the most actionable failure mode for users
+      // viewing an unpublished Report, so surface the server detail when
       // available rather than a generic string.
       const message =
         err instanceof Error ? err.message : 'Failed to start download.'
@@ -140,27 +143,26 @@ const ReportViewerContent: FC = function () {
     }
   }, [graphId, reportId])
 
-  // XBRL is streamed as a blob (no presigned URL), so it saves via the
-  // object-URL + temporary-anchor pattern used for backup downloads.
+  // XBRL is now a presigned S3 URL too (materialized + cached server-side
+  // on first request), so it follows the same redirect path as JSON-LD —
+  // no more client-side blob assembly.
   const handleDownloadXbrl = useCallback(async () => {
     if (!graphId || !reportId) return
     try {
       setIsDownloadingXbrl(true)
       setDownloadError(null)
-      const { blob, filename } = await clients.reports.getReportBundleXbrlZip(
+      const resp = await clients.reports.getReportDownloadUrl(
         graphId,
-        reportId
+        reportId,
+        {
+          format: 'XBRL_2_1',
+        }
       )
-      const url = URL.createObjectURL(blob)
-      const anchor = document.createElement('a')
-      anchor.href = url
-      anchor.download = filename
-      document.body.appendChild(anchor)
-      anchor.click()
-      document.body.removeChild(anchor)
-      // Release the object URL after the browser starts the download —
-      // some browsers cancel an in-flight save if we revoke immediately.
-      setTimeout(() => URL.revokeObjectURL(url), 5000)
+      if (!resp) {
+        setDownloadError('Report not found.')
+        return
+      }
+      window.location.href = resp.downloadUrl
     } catch (err) {
       console.error('XBRL download failed:', err)
       const message =
