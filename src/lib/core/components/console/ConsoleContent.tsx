@@ -453,7 +453,7 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
           `     "mcpServers": {\n` +
           `       "${mcp.serverName}": {\n` +
           `         "command": "npx",\n` +
-          `         "args": ["-y", "${mcp.packageName}"],\n` +
+          `         "args": ["-y", "${mcp.packageName}@latest"],\n` +
           `         "env": {\n` +
           `           "ROBOSYSTEMS_API_URL": "${apiUrl}",\n` +
           `           "ROBOSYSTEMS_API_KEY": "${apiKey}",\n` +
