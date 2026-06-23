@@ -1,5 +1,5 @@
 import { clients } from '@robosystems/client/clients'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { LibraryHierarchy } from '../components/LibraryHierarchy'
 
@@ -246,6 +246,11 @@ describe('LibraryHierarchy', () => {
 
     // Root + its single child render expanded by default (depth < 2).
     await waitFor(() => expect(screen.getByText('Cash')).toBeInTheDocument())
+    // The arc load also schedules a passive effect that resets the collapse
+    // state to the default expand depth. Flush it before toggling — otherwise,
+    // under full-suite timing, that reset can land after the click and clobber
+    // it, re-expanding the node (a rare cross-file flake when run with others).
+    await act(async () => {})
 
     // Collapse the root → child disappears. The toggle's label names the node.
     fireEvent.click(screen.getByLabelText('Collapse Assets'))
