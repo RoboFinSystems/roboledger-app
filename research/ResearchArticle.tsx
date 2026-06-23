@@ -66,12 +66,16 @@ export function ResearchArticle({
         </div>
       )}
 
-      {(podcastYtId || item.assets.podcast_mp3) && (
+      {(item.assets.podcast_mp3 || podcastYtId) && (
         <section className="mt-10">
           <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white">
             Listen — Q&amp;A podcast
           </h2>
-          {podcastYtId ? (
+          {item.assets.podcast_mp3 ? (
+            // eslint-disable-next-line jsx-a11y/media-has-caption
+            <audio controls src={item.assets.podcast_mp3} className="w-full" />
+          ) : (
+            // no MP3 yet — fall back to the YouTube video player
             <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
               <iframe
                 className="h-full w-full"
@@ -82,9 +86,16 @@ export function ResearchArticle({
                 allowFullScreen
               />
             </div>
-          ) : (
-            // eslint-disable-next-line jsx-a11y/media-has-caption
-            <audio controls src={item.assets.podcast_mp3} className="w-full" />
+          )}
+          {item.assets.podcast_mp3 && podcastYtId && (
+            <a
+              href={item.podcast_youtube_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-sm text-cyan-600 hover:underline dark:text-cyan-400"
+            >
+              ▶ Watch the Q&amp;A on YouTube
+            </a>
           )}
         </section>
       )}
