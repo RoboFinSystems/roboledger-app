@@ -1,12 +1,12 @@
-// Data access for the research catalog. The catalog is a single public JSON file on S3
-// (the "no database" store) produced by `just reindex` in robosystems-content-machine.
+// Data access for the research catalog. The catalog is a single public JSON file served
+// via the CloudFront CDN, produced by `just reindex` in robosystems-content-machine.
 // Fetched server-side (SSG/ISR) in the public site and client-side in the logged-in app.
 
 import type { Catalog, CoverageItem } from './types'
 
 export const CATALOG_URL =
   process.env.NEXT_PUBLIC_RESEARCH_CATALOG_URL ||
-  'https://robosystems-marketing-assets.s3.amazonaws.com/content/index.json'
+  'https://assets.robosystems.ai/content/index.json'
 
 /** Fetch the full catalog. `revalidate` (seconds) drives Next ISR on the server. */
 export async function fetchCatalog(revalidate = 3600): Promise<Catalog> {
