@@ -177,6 +177,7 @@ export {
   GeneralInformationCard,
   generateMessageId,
   getErrorMessage,
+  LandingFooter,
   LoadingState,
   PageContainer,
   PageHeader,
@@ -197,6 +198,8 @@ export {
 // Export commonly used types
 export type {
   AgentType,
+  FooterLink,
+  LandingFooterProps,
   Message,
   PageHeaderProps,
   SidebarItemData,
