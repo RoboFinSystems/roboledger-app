@@ -6,7 +6,7 @@ import ContactModal from './ContactModal'
 export default function Footer() {
   return (
     <LandingFooter
-      tagline="AI-native accounting and financial close powered by the RoboSystems knowledge graph platform. From business events to validated, XBRL-ready statements."
+      tagline="Open-source accounting and financial close powered by the RoboSystems knowledge graph platform. Build AI-native workflows from business events to validated, XBRL-ready statements."
       productLinks={[
         { label: 'Features', href: '#features' },
         { label: 'Workflow', href: '#workflow' },
