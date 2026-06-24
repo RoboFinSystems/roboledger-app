@@ -1,5 +1,5 @@
 // Shared types for the equity-research catalog produced by robosystems-content-machine
-// (s3://robosystems-marketing-assets/content/index.json). The company is the durable
+// (https://assets.robosystems.ai/content/index.json). The company is the durable
 // entity; each run is a dated quarterly report version (latest + history[]).
 
 export interface CoverageAssets {
