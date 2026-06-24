@@ -5,9 +5,10 @@ import { CoverageHistory } from './CoverageHistory'
 import type { CoverageItem } from './types'
 
 /**
- * The full coverage report: native video, the brief rendered from markdown (its own
- * leading H1 is stripped — we render the title above it), the Q&A podcast, and the
- * continuing-coverage history. Works in a server component (SSR'd for SEO) or a client one.
+ * The full coverage report: native video, the Q&A podcast (surfaced as a prominent
+ * "Listen" card right under the video), then the brief rendered from markdown (its own
+ * leading H1 is stripped — we render the title above it), and the continuing-coverage
+ * history. Works in a server component (SSR'd for SEO) or a client one.
  * Styled for a dark background — render inside a dark (`bg-black`/`.dark`) container.
  * The prose styling mirrors the blog article body so research reads consistently with it
  * (explicit `prose-invert` + element overrides rather than `dark:prose-invert`, which the
@@ -60,44 +61,58 @@ export function ResearchArticle({
         )
       )}
 
+      {(item.assets.podcast_mp3 || podcastYtId) && (
+        <section className="mb-8">
+          {item.assets.podcast_mp3 ? (
+            <div className="rounded-xl border border-cyan-500/30 bg-gray-900/50 p-4">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-cyan-600 dark:text-cyan-400">
+                  🎙 Listen — Q&amp;A podcast
+                </p>
+                {podcastYtId && (
+                  <a
+                    href={item.podcast_youtube_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 text-xs text-cyan-600 hover:underline dark:text-cyan-400"
+                  >
+                    Watch on YouTube ↗
+                  </a>
+                )}
+              </div>
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              <audio
+                controls
+                preload="none"
+                src={item.assets.podcast_mp3}
+                className="w-full"
+              />
+            </div>
+          ) : (
+            // no MP3 yet — fall back to the YouTube video player
+            <>
+              <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white">
+                Listen — Q&amp;A podcast
+              </h2>
+              <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
+                <iframe
+                  className="h-full w-full"
+                  src={`https://www.youtube.com/embed/${podcastYtId}`}
+                  title={`${item.title} — Q&A podcast`}
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            </>
+          )}
+        </section>
+      )}
+
       {body && (
         <div className="prose prose-lg prose-invert prose-headings:font-heading prose-headings:font-bold prose-headings:text-white prose-p:text-gray-300 prose-p:leading-relaxed prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:text-cyan-300 prose-strong:text-white prose-strong:font-semibold prose-code:text-cyan-400 prose-code:bg-gray-800 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-800 prose-blockquote:border-l-cyan-500 prose-blockquote:text-gray-400 prose-blockquote:italic prose-ul:text-gray-300 prose-ol:text-gray-300 prose-li:marker:text-cyan-500 prose-table:border-gray-700 prose-th:bg-gray-900 prose-th:text-white prose-td:text-gray-300 max-w-none">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{body}</ReactMarkdown>
         </div>
-      )}
-
-      {(item.assets.podcast_mp3 || podcastYtId) && (
-        <section className="mt-10">
-          <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white">
-            Listen — Q&amp;A podcast
-          </h2>
-          {item.assets.podcast_mp3 ? (
-            // eslint-disable-next-line jsx-a11y/media-has-caption
-            <audio controls src={item.assets.podcast_mp3} className="w-full" />
-          ) : (
-            // no MP3 yet — fall back to the YouTube video player
-            <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
-              <iframe
-                className="h-full w-full"
-                src={`https://www.youtube.com/embed/${podcastYtId}`}
-                title={`${item.title} — Q&A podcast`}
-                loading="lazy"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-              />
-            </div>
-          )}
-          {item.assets.podcast_mp3 && podcastYtId && (
-            <a
-              href={item.podcast_youtube_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-block text-sm text-cyan-600 hover:underline dark:text-cyan-400"
-            >
-              ▶ Watch the Q&amp;A on YouTube
-            </a>
-          )}
-        </section>
       )}
 
       <CoverageHistory history={item.history} />
