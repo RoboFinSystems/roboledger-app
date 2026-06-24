@@ -173,13 +173,15 @@ export function LandingFooter({
           <div>
             <h3 className={headingClass}>Company</h3>
             <ul className="space-y-2 text-sm">
-              {isRoboSystems && (
-                <li>
-                  <Link href="/research" className={linkClass}>
-                    Research
-                  </Link>
-                </li>
-              )}
+              <li>
+                <Link
+                  href={`${companyBase}/research`}
+                  {...companyLinkProps}
+                  className={linkClass}
+                >
+                  Research
+                </Link>
+              </li>
               <li>
                 <Link
                   href={`${companyBase}/blog`}
