@@ -14,8 +14,6 @@ export const viewport: Viewport = {
 const TITLE = 'RoboLedger | AI-Native Financial Reporting'
 const DESCRIPTION =
   'AI-powered financial reporting platform. Transform natural language requests into complete, validated financial statements powered by Claude AI and RoboSystems.'
-// Square brand logo as the OG fallback until a 1200×630 share image is designed.
-const OG_IMAGE = '/images/logos/roboledger.png'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://roboledger.ai'),
@@ -28,13 +26,13 @@ export const metadata: Metadata = {
     siteName: 'RoboLedger',
     title: TITLE,
     description: DESCRIPTION,
-    images: [{ url: OG_IMAGE, width: 1024, height: 1024, alt: 'RoboLedger' }],
+    // og:image comes from the generated app/opengraph-image.tsx (site-wide).
   },
   twitter: {
     card: 'summary_large_image',
     title: TITLE,
     description: DESCRIPTION,
-    images: [OG_IMAGE],
+    // twitter:image comes from the generated app/twitter-image.tsx (site-wide).
     site: '@robofinsystems',
     creator: '@robofinsystems',
   },
