@@ -106,11 +106,30 @@ node .design-sync/compile-css.mjs src/app/globals.css .design-sync/.cache/ds-com
 node .ds-sync/package-build.mjs --config .design-sync/config.json --node-modules ./node_modules --out ./ds-bundle
 node .design-sync/patch-bundle.mjs ./ds-bundle      # <-- do NOT skip
 node .ds-sync/package-validate.mjs ./ds-bundle
+node .design-sync/gen-manifest.mjs ./ds-bundle      # <-- do NOT skip (see below)
 ```
 
 No `node_modules/<pkg>` symlink and no `build:types` step are needed (both were
 `@robosystems/core`-only). Upload is the 14 cards under `components/landing/` to the
 RoboLedger project, deleting the old `@core` card tree.
+
+## `_ds_manifest.json` — the card index (MUST upload manually)
+
+The pane's card grid is driven by `_ds_manifest.json`. The package-build CLI does
+NOT emit it; normally the claude.ai/design app's **server-side self-check** rebuilds
+it from the bundle. **That self-check does NOT fire on raw DesignSync file uploads**
+(confirmed 2026-06-29 on both apps — the `_ds_needs_recompile` marker sitting in the
+remote listing means the self-check never ran). So a CLI sync leaves the project's OLD
+manifest in place and the pane shows the previous components, every card reading
+**"file not found"** (their HTML was deleted). This is exactly the "validate says fine
+but the project isn't syncing" symptom.
+
+Fix / contract: after the build, run **`node .design-sync/gen-manifest.mjs ./ds-bundle`**
+(derives namespace + components from the `_ds_bundle.js` `@ds-bundle` header, cards
+from each HTML's `@dsCard` marker, tokens from `_ds_bundle.css`, fonts from
+`fonts/fonts.css`) and **include `_ds_manifest.json` in the upload write set**. Verify
+remotely with `get_file _ds_manifest.json` — `namespace` must be `RoboledgerApp` and
+`cards` must list the `landing` HTML, not `@core`.
 
 ## Sibling apps
 
