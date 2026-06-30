@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "es2017",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "baseUrl": "..",
+    "paths": {
+      "@/lib/core": ["src/lib/core/index.ts"],
+      "@/lib/core/ui-components": ["src/lib/core/ui-components/index.ts"],
+      "@/*": ["src/*"],
+      "next/image": [".design-sync/shims/next-image.tsx"]
+    }
+  }
+}

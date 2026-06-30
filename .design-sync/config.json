@@ -1,32 +1,45 @@
 {
-  "pkg": "@robosystems/core",
-  "globalName": "RobosystemsCore",
+  "pkg": "roboledger-app",
+  "globalName": "RoboledgerApp",
   "projectId": "b4288ca4-6078-4580-89cd-be108cf62a7a",
   "shape": "package",
-  "srcDir": ".",
-  "tsconfig": "tsconfig.json",
-  "cssEntry": ".ds-compiled.css",
+  "srcDir": "src/components",
+  "entry": ".design-sync/entry.ts",
+  "tsconfig": ".design-sync/tsconfig.json",
+  "cssEntry": ".design-sync/.cache/ds-compiled.css",
   "readmeHeader": ".design-sync/conventions.md",
-  "extraFonts": ["../../../.design-sync/ds-fonts.css"],
+  "extraFonts": [".design-sync/ds-fonts.css"],
   "runtimeFontPrefixes": ["JetBrains"],
   "componentSrcMap": {
-    "SupportModal": null,
-    "AuthCore": null,
-    "GraphFilters": null,
-    "LibraryClient": null,
-    "OperationClient": null,
-    "QueryClient": null,
-    "QueuedQueryError": null,
-    "RoboSystemsClients": null,
-    "SSEClient": null,
-    "AnimatedLogo": "ui-components/Logo.tsx",
-    "LogoBadge": "ui-components/Logo.tsx",
-    "ProgressiveText": "components/console/ProgressiveText.tsx"
+    "Header": "src/components/landing/Header.tsx",
+    "HeroSection": "src/components/landing/HeroSection.tsx",
+    "FeaturesSection": "src/components/landing/FeaturesSection.tsx",
+    "WorkflowSection": "src/components/landing/WorkflowSection.tsx",
+    "ReportCreator": "src/components/landing/ReportCreator.tsx",
+    "OutputFormats": "src/components/landing/OutputFormats.tsx",
+    "AIReportingSection": "src/components/landing/AIReportingSection.tsx",
+    "PlatformSection": "src/components/landing/PlatformSection.tsx",
+    "FinalCTA": "src/components/landing/FinalCTA.tsx",
+    "Footer": "src/components/landing/Footer.tsx",
+    "OpenSourceSection": "src/components/landing/OpenSourceSection.tsx",
+    "ContactForm": "src/components/landing/ContactForm.tsx",
+    "ContactModal": "src/components/landing/ContactModal.tsx",
+    "FloatingElementsVariant": "src/components/landing/FloatingElementsVariant.tsx"
   },
   "overrides": {
-    "ConfirmModal": {
+    "HeroSection": {
+      "viewport": "1280x1000"
+    },
+    "Header": {
       "cardMode": "single",
-      "viewport": "560x440"
+      "viewport": "1280x200"
+    },
+    "ContactModal": {
+      "cardMode": "single",
+      "viewport": "640x600"
+    },
+    "FloatingElementsVariant": {
+      "viewport": "960x460"
     }
   }
 }
