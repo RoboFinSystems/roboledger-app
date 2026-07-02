@@ -16,6 +16,56 @@ function generateMessageId() {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
 }
 
+// Cap rendered rows so a large result set can't bloat the DOM; the full set
+// is always available via the CSV export.
+const MAX_TABLE_ROWS = 200
+
+function isNumericValue(value: any): boolean {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function formatCell(value: any): string {
+  if (value === null || value === undefined) return '—'
+  if (typeof value === 'number') {
+    return Number.isInteger(value)
+      ? value.toLocaleString()
+      : value.toLocaleString(undefined, { maximumFractionDigits: 2 })
+  }
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
+}
+
+function rowsToCsv(rows: any[]): string {
+  const cols = Object.keys(rows[0])
+  const escape = (v: any) => {
+    const s =
+      v === null || v === undefined
+        ? ''
+        : typeof v === 'object'
+          ? JSON.stringify(v)
+          : String(v)
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+  }
+  return [
+    cols.join(','),
+    ...rows.map((row) => cols.map((c) => escape(row[c])).join(',')),
+  ].join('\n')
+}
+
+function downloadText(filename: string, text: string, mime: string): void {
+  const blob = new Blob([text], { type: mime })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
+
+function copyRowsJson(rows: any[]): void {
+  navigator.clipboard?.writeText(JSON.stringify(rows, null, 2))
+}
+
 export function ConsoleContent({ config }: { config: ConsoleConfig }) {
   const { state: graphState } = useGraphContext()
   const graphId = graphState.currentGraphId
@@ -111,16 +161,20 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
     setTerminalMessages((prev) => [...prev, message])
   }, [])
 
-  const addResultMessage = useCallback((content: string, data?: any) => {
-    const message: TerminalMessage = {
-      id: generateMessageId(),
-      type: 'system',
-      content,
-      timestamp: new Date(),
-      data,
-    }
-    setTerminalMessages((prev) => [...prev, message])
-  }, [])
+  const addResultMessage = useCallback(
+    (content: string, data?: any, cypher?: string) => {
+      const message: TerminalMessage = {
+        id: generateMessageId(),
+        type: 'system',
+        content,
+        timestamp: new Date(),
+        data,
+        cypher,
+      }
+      setTerminalMessages((prev) => [...prev, message])
+    },
+    []
+  )
 
   const addErrorMessage = useCallback((content: string) => {
     const message: TerminalMessage = {
@@ -346,56 +400,65 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
       setOperatorProgress({ isRunning: false, message: '' })
 
       const duration = Date.now() - startTime
-      const metadata = result.metadata || {}
+      const metadata = (result.metadata || {}) as Record<string, any>
 
       const creditsUsed = metadata.credits_consumed as number | undefined
-      const creditsRemaining = metadata.credits_remaining as number | undefined
       const resultCount = metadata.result_count as number | undefined
 
-      // Try to extract JSON data from the response content for table display
-      let tableData: any[] | undefined
-      let displayContent = result.content
+      // Prefer the structured outputs the operator loop now returns
+      // (metadata.rows + metadata.cypher). Fall back to scraping the prose
+      // for backends that don't emit them yet, so this stays compatible
+      // during the rollout.
+      let rows: any[] | undefined =
+        Array.isArray(metadata.rows) &&
+        metadata.rows.length > 0 &&
+        typeof metadata.rows[0] === 'object'
+          ? (metadata.rows as any[])
+          : undefined
+      let cypher: string | undefined =
+        typeof metadata.cypher === 'string' ? metadata.cypher : undefined
+      let narrative = result.content
 
-      // Look for JSON array in code blocks or raw in the content
-      const jsonBlockMatch = result.content.match(
-        /```(?:json)?\s*\n(\[[\s\S]*?\])\s*\n```/
-      )
-      if (jsonBlockMatch) {
-        try {
-          const parsed = JSON.parse(jsonBlockMatch[1])
-          if (
-            Array.isArray(parsed) &&
-            parsed.length > 0 &&
-            typeof parsed[0] === 'object'
-          ) {
-            tableData = parsed
-            // Remove the JSON block from the display text
-            displayContent = result.content
-              .replace(jsonBlockMatch[0], '')
-              .trim()
+      if (!rows) {
+        const jsonBlockMatch = narrative.match(
+          /```(?:json)?\s*\n(\[[\s\S]*?\])\s*\n```/
+        )
+        if (jsonBlockMatch) {
+          try {
+            const parsed = JSON.parse(jsonBlockMatch[1])
+            if (
+              Array.isArray(parsed) &&
+              parsed.length > 0 &&
+              typeof parsed[0] === 'object'
+            ) {
+              rows = parsed
+              narrative = narrative.replace(jsonBlockMatch[0], '').trim()
+            }
+          } catch {
+            // Not valid JSON, keep as text
           }
-        } catch {
-          // Not valid JSON, keep as text
+        }
+      }
+      if (!cypher) {
+        const cypherMatch = narrative.match(/```cypher\s*\n([\s\S]*?)```/)
+        if (cypherMatch) {
+          cypher = cypherMatch[1].trim()
+          narrative = narrative.replace(cypherMatch[0], '').trim()
         }
       }
 
-      // Extract just the cypher query from the agent response content
-      const cypherMatch = displayContent.match(/```cypher\s*\n([\s\S]*?)```/)
-      const cypherQuery = cypherMatch ? cypherMatch[1].trim() : null
-
-      // Build compact output matching the regular query style
-      let outputMessage = `Query completed in ${duration}ms`
-      if (resultCount !== undefined) {
-        outputMessage += `\nRows returned: ${resultCount}`
+      // Compact status footer matching the direct-query style.
+      let footer = `Query completed in ${duration}ms`
+      const count = resultCount ?? rows?.length
+      if (count !== undefined) {
+        footer += `\nRows returned: ${count}`
       }
       if (creditsUsed != null && Number(creditsUsed) > 0) {
-        outputMessage += `\nCredits used: ${Number(creditsUsed).toFixed(1)}`
-      }
-      if (cypherQuery) {
-        outputMessage += `\nGenerated Cypher:\n  ${cypherQuery.replace(/\n/g, '\n  ')}`
+        footer += `\nCredits used: ${Number(creditsUsed).toFixed(1)}`
       }
 
-      addResultMessage(outputMessage, tableData)
+      const displayText = narrative ? `${narrative}\n\n${footer}` : footer
+      addResultMessage(displayText, rows, cypher)
     } catch (error: any) {
       setOperatorProgress({ isRunning: false, message: '' })
 
@@ -685,47 +748,108 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
                   )}
                 </div>
 
+                {/* Generated Cypher with a one-click re-run */}
+                {message.cypher && (
+                  <div className="mt-3 overflow-hidden rounded border border-gray-800 bg-gray-900/40">
+                    <div className="flex items-center justify-between border-b border-gray-800 px-3 py-1.5">
+                      <span className="text-xs tracking-wider text-gray-500 uppercase">
+                        Generated Cypher
+                      </span>
+                      <button
+                        onClick={() =>
+                          handleCommand(`/query ${message.cypher ?? ''}`)
+                        }
+                        className="rounded bg-cyan-600/90 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-cyan-600"
+                      >
+                        Run
+                      </button>
+                    </div>
+                    <pre className="overflow-x-auto px-3 py-2 font-mono text-xs whitespace-pre-wrap text-cyan-300">
+                      {message.cypher}
+                    </pre>
+                  </div>
+                )}
+
                 {/* Render data table if present */}
                 {message.data && message.data.length > 0 && (
-                  <div className="mt-4 overflow-x-auto rounded border border-gray-800">
-                    <table className="w-full border-collapse text-xs">
-                      <thead>
-                        <tr className="border-b border-gray-800 bg-gray-900">
-                          {Object.keys(message.data[0]).map((key) => (
-                            <th
-                              key={key}
-                              className="px-4 py-2 text-left font-semibold text-cyan-400"
-                            >
-                              {key}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {message.data
-                          .slice(0, 10)
-                          .map((row: any, idx: number) => (
-                            <tr
-                              key={idx}
-                              className="border-b border-gray-900 hover:bg-gray-900/50"
-                            >
-                              {Object.values(row).map((value: any, vidx) => (
-                                <td
-                                  key={vidx}
-                                  className="px-4 py-2 text-gray-400"
-                                >
-                                  {typeof value === 'object'
-                                    ? JSON.stringify(value)
-                                    : String(value)}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                    {message.data.length > 10 && (
+                  <div className="mt-3 overflow-hidden rounded border border-gray-800">
+                    <div className="flex items-center justify-between border-b border-gray-800 bg-gray-900 px-4 py-2">
+                      <span className="text-xs text-gray-500">
+                        {message.data.length} row
+                        {message.data.length === 1 ? '' : 's'}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => copyRowsJson(message.data)}
+                          className="rounded border border-gray-700 px-2 py-0.5 text-xs text-gray-300 transition-colors hover:bg-gray-800"
+                        >
+                          Copy JSON
+                        </button>
+                        <button
+                          onClick={() =>
+                            downloadText(
+                              'results.csv',
+                              rowsToCsv(message.data),
+                              'text/csv'
+                            )
+                          }
+                          className="rounded border border-gray-700 px-2 py-0.5 text-xs text-gray-300 transition-colors hover:bg-gray-800"
+                        >
+                          Download CSV
+                        </button>
+                      </div>
+                    </div>
+                    <div className="max-h-96 overflow-auto">
+                      <table className="w-full border-collapse text-xs">
+                        <thead className="sticky top-0">
+                          <tr className="border-b border-gray-800 bg-gray-900">
+                            {Object.keys(message.data[0]).map((key) => (
+                              <th
+                                key={key}
+                                className="px-4 py-2 text-left font-semibold whitespace-nowrap text-cyan-400"
+                              >
+                                {key}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {message.data
+                            .slice(0, MAX_TABLE_ROWS)
+                            .map((row: any, idx: number) => (
+                              <tr
+                                key={idx}
+                                className="border-b border-gray-900 hover:bg-gray-900/50"
+                              >
+                                {Object.keys(message.data[0]).map(
+                                  (key: string) => {
+                                    const value = row[key]
+                                    const numeric = isNumericValue(value)
+                                    const isNull =
+                                      value === null || value === undefined
+                                    return (
+                                      <td
+                                        key={key}
+                                        className={`px-4 py-2 ${
+                                          numeric
+                                            ? 'text-right text-gray-300 tabular-nums'
+                                            : 'text-gray-400'
+                                        } ${isNull ? 'text-gray-600' : ''}`}
+                                      >
+                                        {formatCell(value)}
+                                      </td>
+                                    )
+                                  }
+                                )}
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {message.data.length > MAX_TABLE_ROWS && (
                       <div className="border-t border-gray-800 bg-gray-900/50 px-4 py-2 text-xs text-gray-600">
-                        ... and {message.data.length - 10} more rows
+                        Showing {MAX_TABLE_ROWS} of {message.data.length} rows —
+                        download CSV for the full set
                       </div>
                     )}
                   </div>

@@ -71,6 +71,9 @@ export interface TerminalMessage {
   type: 'system' | 'user' | 'result' | 'error'
   content: string
   timestamp: Date
+  /** Tabular result rows rendered below the message. */
   data?: any
+  /** Generated Cypher for a natural-language result, shown with a Run button. */
+  cypher?: string
   isAnimating?: boolean
 }
