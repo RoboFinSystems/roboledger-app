@@ -116,6 +116,46 @@ export function ResearchArticle({
       )}
 
       <CoverageHistory history={item.history} />
+
+      <footer className="mt-12 border-t border-gray-200 pt-6 dark:border-gray-800">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Audio &amp; music produced with ElevenLabs.
+        </p>
+        <a
+          href="https://elevenlabs.io/startup-grants"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Backed by the ElevenLabs Grants program"
+          className="mt-3 inline-block"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/logos/elevenlabs-grants.webp"
+            alt="Backed by the ElevenLabs Grants program"
+            width={200}
+            className="h-auto dark:hidden"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/logos/elevenlabs-grants-white.webp"
+            alt="Backed by the ElevenLabs Grants program"
+            width={200}
+            className="hidden h-auto dark:block"
+          />
+        </a>
+        <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+          Using ElevenLabs yourself? Our{' '}
+          <a
+            href="https://try.elevenlabs.io/v9z3wzm97gk3"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline"
+          >
+            referral link
+          </a>{' '}
+          costs you nothing extra and supports this research.
+        </p>
+      </footer>
     </article>
   )
 }
