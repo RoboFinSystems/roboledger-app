@@ -178,13 +178,16 @@ export function AuthProvider({
 
         debugLog('Logout cleanup completed')
 
-        // Always hard-redirect to the login page. A full-page navigation (not a
-        // client-side router.push) guarantees the authenticated tree tears down
-        // instead of AuthGuard flashing a blank screen once user state clears.
-        // A reason (e.g. session_expired) is forwarded so the login page can
-        // explain why the session ended.
+        // Always hard-redirect out of the authenticated area. A full-page
+        // navigation (not a client-side router.push) guarantees the
+        // authenticated tree tears down instead of AuthGuard flashing a blank
+        // screen once user state clears. A forced logout (reason set, e.g.
+        // session_expired) goes to the login page so it can explain why the
+        // session ended and let the user sign back in; a manual logout goes to
+        // the public homepage, since the user likely isn't trying to sign in
+        // again right away.
         if (typeof window !== 'undefined') {
-          window.location.href = reason ? `/login?reason=${reason}` : '/login'
+          window.location.href = reason ? `/login?reason=${reason}` : '/'
         }
       }
     },
