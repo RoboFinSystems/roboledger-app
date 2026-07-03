@@ -70,8 +70,8 @@ export function CoreNavbar({
     } catch (error) {
       console.error('Logout failed:', error)
       // Fallback: if logout() threw before it could redirect, still get the
-      // user out of the authenticated area.
-      window.location.href = '/login'
+      // user out of the authenticated area to the public homepage.
+      window.location.href = '/'
     }
   }
 
