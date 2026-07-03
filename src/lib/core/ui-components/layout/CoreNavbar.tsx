@@ -65,13 +65,14 @@ export function CoreNavbar({
 
   const handleLogout = async () => {
     try {
+      // logout() clears the backend session and hard-redirects to /login.
       await logout()
     } catch (error) {
       console.error('Logout failed:', error)
+      // Fallback: if logout() threw before it could redirect, still get the
+      // user out of the authenticated area to the public homepage.
+      window.location.href = '/'
     }
-    // Hard-redirect immediately so AuthGuard doesn't render a blank screen
-    // after user state is cleared.
-    window.location.replace('/')
   }
 
   const renderThemeToggle = () => {

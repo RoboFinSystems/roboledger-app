@@ -156,36 +156,38 @@ export function AuthProvider({
         debugLog('Backend logout failed, continuing with local cleanup', error)
         // Could show a non-blocking notification here if needed
       } finally {
-        // Clear auth client cache
+        // Clear the httpOnly graph/entity selection cookies server-side. These
+        // can't be removed by performLogoutCleanup() (which only touches
+        // JS-readable cookies), so the server actions are still required. Bound
+        // them with a timeout while the page is still authenticated: once the
+        // auth token is cleared, these server actions can stall, and awaiting
+        // them unconditionally previously hung logout() forever — leaving
+        // AuthGuard on a blank screen with no redirect.
+        await Promise.race([
+          Promise.allSettled([clearGraphSelection(), clearEntitySelection()]),
+          new Promise((resolve) => setTimeout(resolve, 2000)),
+        ])
+
+        // Clear auth client cache and local user/session state
         authClient.clearAuthCache()
-
-        // Clear user state
         setUser(null)
-
-        // Clear session warning
         setSessionWarning({ show: false, timeLeft: 0 })
-
-        // Clear graph and entity selection cookies (server-side)
-        try {
-          await clearGraphSelection()
-        } catch (error) {
-          debugLog('Failed to clear graph selection cookie', error)
-        }
-
-        try {
-          await clearEntitySelection()
-        } catch (error) {
-          debugLog('Failed to clear entity selection cookie', error)
-        }
 
         // Perform comprehensive cleanup of all user-specific data
         performLogoutCleanup()
 
         debugLog('Logout cleanup completed')
 
-        // If logout has a reason (like session_expired), pass it to login page
-        if (reason && typeof window !== 'undefined') {
-          window.location.href = `/login?reason=${reason}`
+        // Always hard-redirect out of the authenticated area. A full-page
+        // navigation (not a client-side router.push) guarantees the
+        // authenticated tree tears down instead of AuthGuard flashing a blank
+        // screen once user state clears. A forced logout (reason set, e.g.
+        // session_expired) goes to the login page so it can explain why the
+        // session ended and let the user sign back in; a manual logout goes to
+        // the public homepage, since the user likely isn't trying to sign in
+        // again right away.
+        if (typeof window !== 'undefined') {
+          window.location.href = reason ? `/login?reason=${reason}` : '/'
         }
       }
     },
