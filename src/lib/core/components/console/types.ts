@@ -76,4 +76,16 @@ export interface TerminalMessage {
   /** Generated Cypher for a natural-language result, shown with a Run button. */
   cypher?: string
   isAnimating?: boolean
+  /**
+   * Render `content` as GitHub-flavored markdown (headings, bold, tables)
+   * rather than raw monospace text. Set for natural-language answers, which the
+   * backend now returns as enriched markdown.
+   */
+  markdown?: boolean
+  /**
+   * Query stats (e.g. "Query completed in 123ms\nRows returned: 40") shown as a
+   * muted footer below a markdown answer, kept out of `content` so its line
+   * breaks survive markdown rendering.
+   */
+  footer?: string
 }
