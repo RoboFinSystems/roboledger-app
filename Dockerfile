@@ -41,7 +41,10 @@ RUN npm install -g npm@latest
 # Create non-root user before copying files (enables --chown)
 RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
 
-# Install only production dependencies
+# Install only production dependencies. This is the authoritative runtime
+# node_modules — we deliberately do NOT copy node_modules from the builder,
+# so devDependencies (jsdom, vitest, eslint, ...) stay out of the scanned
+# runtime image and don't drag in their CVEs (e.g. jsdom's transitive undici).
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
@@ -50,7 +53,6 @@ COPY --from=builder --chown=appuser:appgroup /app/.next ./.next
 COPY --from=builder --chown=appuser:appgroup /app/.flowbite-react ./.flowbite-react
 COPY --from=builder --chown=appuser:appgroup /app/public ./public
 COPY --from=builder --chown=appuser:appgroup /app/next.config.js ./next.config.js
-COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
 # Copy entrypoint script and set permissions
