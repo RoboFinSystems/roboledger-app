@@ -97,6 +97,7 @@ const ReportViewerContent: FC = function () {
   const [shareResult, setShareResult] = useState<string | null>(null)
 
   const [isDownloadingBundle, setIsDownloadingBundle] = useState(false)
+  const [isDownloadingHolon, setIsDownloadingHolon] = useState(false)
   const [isDownloadingXbrl, setIsDownloadingXbrl] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
 
@@ -140,6 +141,37 @@ const ReportViewerContent: FC = function () {
       setDownloadError(message)
     } finally {
       setIsDownloadingBundle(false)
+    }
+  }, [graphId, reportId])
+
+  // The holon is the same report as dataset-form JSON-LD — scene / boundary /
+  // projection named graphs — materialized + cached server-side on first
+  // request, then the same presigned-redirect path. It's what the holon viewer
+  // and report-components library consume.
+  const handleDownloadHolon = useCallback(async () => {
+    if (!graphId || !reportId) return
+    try {
+      setIsDownloadingHolon(true)
+      setDownloadError(null)
+      const resp = await clients.reports.getReportDownloadUrl(
+        graphId,
+        reportId,
+        {
+          format: 'HOLON_JSONLD',
+        }
+      )
+      if (!resp) {
+        setDownloadError('Report not found.')
+        return
+      }
+      window.location.href = resp.downloadUrl
+    } catch (err) {
+      console.error('Holon download failed:', err)
+      const message =
+        err instanceof Error ? err.message : 'Failed to download holon bundle.'
+      setDownloadError(message)
+    } finally {
+      setIsDownloadingHolon(false)
     }
   }, [graphId, reportId])
 
@@ -321,10 +353,14 @@ const ReportViewerContent: FC = function () {
               <Dropdown
                 color="light"
                 arrowIcon={false}
-                disabled={isDownloadingBundle || isDownloadingXbrl}
+                disabled={
+                  isDownloadingBundle || isDownloadingHolon || isDownloadingXbrl
+                }
                 label={
                   <span className="inline-flex items-center">
-                    {isDownloadingBundle || isDownloadingXbrl ? (
+                    {isDownloadingBundle ||
+                    isDownloadingHolon ||
+                    isDownloadingXbrl ? (
                       <Spinner size="sm" className="mr-2" />
                     ) : (
                       <HiDocumentDownload className="mr-2 h-5 w-5" />
@@ -336,6 +372,9 @@ const ReportViewerContent: FC = function () {
               >
                 <DropdownItem onClick={handleDownloadBundle}>
                   JSON-LD bundle
+                </DropdownItem>
+                <DropdownItem onClick={handleDownloadHolon}>
+                  Holon (JSON-LD)
                 </DropdownItem>
                 <DropdownItem onClick={handleDownloadXbrl}>
                   XBRL 2.1 package
