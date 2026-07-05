@@ -528,7 +528,9 @@ const ReportViewerContent: FC = function () {
             onClick={handleShare}
             disabled={isSharing || !selectedListId}
           >
-            {isSharing ? <Spinner size="sm" className="mr-2" /> : null}
+            {isSharing ? (
+              <Spinner size="sm" className="mr-2 text-white" />
+            ) : null}
             Share Report
           </Button>
           <Button
