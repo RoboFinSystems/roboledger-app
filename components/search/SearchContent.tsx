@@ -24,7 +24,6 @@ import remarkGfm from 'remark-gfm'
 import { useIsRepository } from '../../components/RepositoryGuard'
 import { useGraphContext } from '../../contexts'
 import { customTheme } from '../../theme'
-import { AnimatedLogo } from '../../ui-components/Logo'
 import { PageLayout } from '../PageLayout'
 import type { SearchConfig } from './types'
 
@@ -236,7 +235,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
               disabled={loading || !query.trim()}
             >
               {loading ? (
-                <AnimatedLogo animate="loop" className="h-5 w-5 text-white" />
+                <Spinner size="sm" className="text-white" />
               ) : (
                 'Search'
               )}
