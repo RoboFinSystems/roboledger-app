@@ -251,7 +251,7 @@ export function SignInForm({
               disabled={loading || redirecting}
               className="group bg-primary-600 hover:bg-primary-700 focus-visible:outline-primary-500 relative flex w-full justify-center rounded-md px-4 py-3 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading && <Spinner size="sm" className="mr-2 border-white" />}
+              {loading && <Spinner size="sm" className="mr-2 text-white" />}
               {redirecting
                 ? 'Redirecting...'
                 : loading
