@@ -9,6 +9,7 @@ import { HiTerminal } from 'react-icons/hi'
 import { useGraphContext } from '../../contexts'
 import { useStreamingQuery } from '../../hooks'
 import { customTheme } from '../../theme'
+import { ConsoleMarkdown } from './ConsoleMarkdown'
 import { ProgressiveText } from './ProgressiveText'
 import type { ConsoleConfig, TerminalMessage } from './types'
 
@@ -162,7 +163,12 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
   }, [])
 
   const addResultMessage = useCallback(
-    (content: string, data?: any, cypher?: string) => {
+    (
+      content: string,
+      data?: any,
+      cypher?: string,
+      opts?: { markdown?: boolean; footer?: string }
+    ) => {
       const message: TerminalMessage = {
         id: generateMessageId(),
         type: 'system',
@@ -170,6 +176,8 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
         timestamp: new Date(),
         data,
         cypher,
+        markdown: opts?.markdown,
+        footer: opts?.footer,
       }
       setTerminalMessages((prev) => [...prev, message])
     },
@@ -457,8 +465,15 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
         footer += `\nCredits used: ${Number(creditsUsed).toFixed(1)}`
       }
 
-      const displayText = narrative ? `${narrative}\n\n${footer}` : footer
-      addResultMessage(displayText, rows, cypher)
+      // Natural-language answers come back as enriched markdown, so render them
+      // as such and keep the query-stats footer separate (its line breaks would
+      // otherwise collapse under markdown). With no narrative, fall back to the
+      // plain footer, matching the direct-query result style.
+      if (narrative) {
+        addResultMessage(narrative, rows, cypher, { markdown: true, footer })
+      } else {
+        addResultMessage(footer, rows, cypher)
+      }
     } catch (error: any) {
       setOperatorProgress({ isRunning: false, message: '' })
 
@@ -724,7 +739,11 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
                   </span>
                 </div>
                 <div
-                  className={`leading-relaxed break-words whitespace-pre-wrap ${
+                  className={`leading-relaxed break-words ${
+                    message.markdown && !message.isAnimating
+                      ? ''
+                      : 'whitespace-pre-wrap'
+                  } ${
                     message.type === 'system'
                       ? 'text-cyan-400'
                       : message.type === 'user'
@@ -743,10 +762,20 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
                       onComplete={() => handleAnimationComplete(message.id)}
                       onUpdate={scrollToBottom}
                     />
+                  ) : message.markdown ? (
+                    <ConsoleMarkdown content={message.content} />
                   ) : (
                     message.content
                   )}
                 </div>
+
+                {/* Query-stats footer for markdown answers, kept separate so
+                    its line breaks survive markdown rendering. */}
+                {message.footer && (
+                  <div className="mt-3 text-xs whitespace-pre-wrap text-gray-500">
+                    {message.footer}
+                  </div>
+                )}
 
                 {/* Generated Cypher with a one-click re-run */}
                 {message.cypher && (
