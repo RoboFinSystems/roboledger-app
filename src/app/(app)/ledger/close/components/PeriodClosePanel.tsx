@@ -332,7 +332,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
                   onClick={handleInitialize}
                 >
                   {isInitializing ? (
-                    <Spinner size="sm" className="mr-2" />
+                    <Spinner size="sm" className="mr-2 text-white" />
                   ) : (
                     <HiPlay className="mr-2 h-4 w-4" />
                   )}
@@ -439,7 +439,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
                         onClick={() => handleCreateEntry(item.structureId)}
                       >
                         {creatingEntry === item.structureId ? (
-                          <Spinner size="sm" className="mr-1" />
+                          <Spinner size="sm" className="mr-1 text-white" />
                         ) : (
                           <TbFileInvoice className="mr-1 h-4 w-4" />
                         )}
@@ -531,7 +531,9 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
             disabled={!reopenReason.trim() || isReopening}
             onClick={handleReopen}
           >
-            {isReopening ? <Spinner size="sm" className="mr-2" /> : null}
+            {isReopening ? (
+              <Spinner size="sm" className="mr-2 text-white" />
+            ) : null}
             Reopen Period
           </Button>
         </ModalFooter>
@@ -806,7 +808,7 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
             onClick={onClose}
           >
             {isClosing ? (
-              <Spinner size="sm" className="mr-2" />
+              <Spinner size="sm" className="mr-2 text-white" />
             ) : (
               <HiLockClosed className="mr-2 h-4 w-4" />
             )}

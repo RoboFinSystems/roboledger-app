@@ -668,7 +668,7 @@ const ReportBuilderContent: FC = function () {
           >
             {isGenerating ? (
               <>
-                <Spinner size="sm" className="mr-2" />
+                <Spinner size="sm" className="mr-2 text-white" />
                 Generating...
               </>
             ) : (

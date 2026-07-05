@@ -145,7 +145,11 @@ export const GeneralInformationCard: React.FC<GeneralInformationCardProps> = ({
               type="submit"
               disabled={isLoading}
             >
-              {isLoading ? <Spinner size="sm" /> : 'Save Changes'}
+              {isLoading ? (
+                <Spinner size="sm" className="text-white" />
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </div>
         </div>

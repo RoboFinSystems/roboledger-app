@@ -288,7 +288,11 @@ export const PasswordInformationCard: React.FC<
               type="submit"
               disabled={isLoading || checkingPassword}
             >
-              {isLoading ? <Spinner size="sm" /> : 'Update Password'}
+              {isLoading ? (
+                <Spinner size="sm" className="text-white" />
+              ) : (
+                'Update Password'
+              )}
             </Button>
           </div>
         </div>

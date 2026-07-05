@@ -174,7 +174,11 @@ export const CreateApiKeyModal: React.FC<CreateApiKeyModalProps> = ({
               onClick={handleSubmit}
               disabled={isCreating || !keyName}
             >
-              {isCreating ? <Spinner size="sm" /> : 'Create API Key'}
+              {isCreating ? (
+                <Spinner size="sm" className="text-white" />
+              ) : (
+                'Create API Key'
+              )}
             </Button>
           </>
         )}

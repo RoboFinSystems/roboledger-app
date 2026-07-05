@@ -412,7 +412,9 @@ const PublishListsContent: FC = function () {
             onClick={handleCreateList}
             disabled={isCreating || !newListName.trim()}
           >
-            {isCreating ? <Spinner size="sm" className="mr-2" /> : null}
+            {isCreating ? (
+              <Spinner size="sm" className="mr-2 text-white" />
+            ) : null}
             Create
           </Button>
           <Button
@@ -466,7 +468,9 @@ const PublishListsContent: FC = function () {
             onClick={handleAddMember}
             disabled={isAddingMember || !newMemberGraphId.trim()}
           >
-            {isAddingMember ? <Spinner size="sm" className="mr-2" /> : null}
+            {isAddingMember ? (
+              <Spinner size="sm" className="mr-2 text-white" />
+            ) : null}
             Add
           </Button>
           <Button
