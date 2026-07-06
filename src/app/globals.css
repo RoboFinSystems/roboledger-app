@@ -222,3 +222,67 @@
   -webkit-background-clip: text;
   animation: pulsate-gradient-subtle 8s ease-in-out infinite;
 }
+
+/*
+  @robosystems/report-components renders XBRL financial statements with inline
+  styles keyed off `--rs-*` custom properties (each has a built-in fallback). Scope
+  those variables to `.rs-report-scope` so a rendered report picks up the app
+  palette and font in both light and dark. The holon report viewer wraps
+  `<ReportView>` in this class. Only the `--rs-*` vars the library actually reads
+  are mapped here. (Ported from roboinvestor-app; `--color-primary-*` resolves to
+  RoboLedger's violet.)
+*/
+.rs-report-scope {
+  --rs-font-sans: inherit;
+  --rs-font-heading: inherit;
+  --rs-font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    monospace;
+
+  --rs-primary-50: var(--color-primary-50);
+  --rs-primary-100: var(--color-primary-100);
+  --rs-primary-300: var(--color-primary-300);
+  --rs-primary-500: var(--color-primary-500);
+  --rs-primary-700: var(--color-primary-700);
+  --rs-primary-800: var(--color-primary-800);
+
+  --rs-text: #18181b; /* zinc-900 */
+  --rs-muted: #71717a; /* zinc-500 */
+  --rs-border: #e4e4e7; /* zinc-200 */
+  --rs-border-strong: #a1a1aa; /* zinc-400 */
+  --rs-subtotal-bg: #fafafa; /* zinc-50 */
+  --rs-selected-bg: var(--color-primary-100);
+  --rs-panel-bg: #ffffff;
+  --rs-success: #047857; /* emerald-700 */
+  --rs-error: #dc2626; /* red-600 */
+}
+
+.dark .rs-report-scope {
+  --rs-text: #f4f4f5; /* zinc-100 */
+  --rs-muted: #a1a1aa; /* zinc-400 */
+  --rs-border: #3f3f46; /* zinc-700 */
+  --rs-border-strong: #52525b; /* zinc-600 */
+  --rs-subtotal-bg: #27272a; /* zinc-800 */
+  --rs-selected-bg: var(--color-primary-900);
+  --rs-panel-bg: #18181b; /* zinc-900 */
+  --rs-success: #34d399; /* emerald-400 */
+  --rs-error: #f87171; /* red-400 */
+  /* The library colors its headings (entity name, statement title) with
+     --rs-primary-700; the light violet reads on a dark surface where the
+     700 shade would not. */
+  --rs-primary-700: var(--color-primary-400);
+}
+
+/*
+  Externalized disclosure blocks (report-components ExternalTextBlock) render raw
+  filing HTML — black text, no background — inside a sandboxed iframe. On the dark
+  theme that leaves dark-on-dark, unreadable text. Give the iframe a white
+  "document" surface with an inner buffer so the filing stays legible.
+*/
+.rs-report-scope iframe {
+  box-sizing: content-box;
+  width: calc(100% - 2rem) !important;
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  border-radius: 8px;
+}
