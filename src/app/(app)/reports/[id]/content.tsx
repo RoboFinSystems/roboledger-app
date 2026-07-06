@@ -15,6 +15,8 @@ import {
   Button,
   Card,
   Dropdown,
+  DropdownDivider,
+  DropdownHeader,
   DropdownItem,
   Label,
   Modal,
@@ -28,16 +30,16 @@ import { useParams, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  HiChevronDown,
   HiChevronLeft,
-  HiDocumentDownload,
   HiDocumentReport,
+  HiDotsVertical,
   HiExclamationCircle,
   HiShare,
 } from 'react-icons/hi'
 import BlockView from '../../ledger/close/components/blockview/BlockView'
 import type { ViewMode } from '../../ledger/close/components/ViewModeToggle'
 import ViewModeToggle from '../../ledger/close/components/ViewModeToggle'
+import HolonReportView from './components/HolonReportView'
 import ReportPackageSidebar from './components/ReportPackageSidebar'
 
 const formatDate = (dateString: string | null): string => {
@@ -85,6 +87,9 @@ const ReportViewerContent: FC = function () {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('rendered')
+  // Comparison spike: 'envelope' = in-app BlockView (current), 'holon' =
+  // shared @robosystems/report-components ReportView fed a holon JSON-LD.
+  const [renderer, setRenderer] = useState<'envelope' | 'holon'>('envelope')
   const [activeFactSetId, setActiveFactSetId] = useState<string | null>(null)
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
@@ -352,24 +357,22 @@ const ReportViewerContent: FC = function () {
             {pkg.generationStatus === 'published' && (
               <Dropdown
                 color="light"
+                size="sm"
                 arrowIcon={false}
                 disabled={
                   isDownloadingBundle || isDownloadingHolon || isDownloadingXbrl
                 }
                 label={
-                  <span className="inline-flex items-center">
-                    {isDownloadingBundle ||
-                    isDownloadingHolon ||
-                    isDownloadingXbrl ? (
-                      <Spinner size="sm" className="mr-2" />
-                    ) : (
-                      <HiDocumentDownload className="mr-2 h-5 w-5" />
-                    )}
-                    Download
-                    <HiChevronDown className="ml-2 h-4 w-4" />
-                  </span>
+                  isDownloadingBundle ||
+                  isDownloadingHolon ||
+                  isDownloadingXbrl ? (
+                    <Spinner size="sm" />
+                  ) : (
+                    <HiDotsVertical className="h-5 w-5" />
+                  )
                 }
               >
+                <DropdownHeader>Download</DropdownHeader>
                 <DropdownItem onClick={handleDownloadBundle}>
                   JSON-LD bundle
                 </DropdownItem>
@@ -379,29 +382,24 @@ const ReportViewerContent: FC = function () {
                 <DropdownItem onClick={handleDownloadXbrl}>
                   XBRL 2.1 package
                 </DropdownItem>
+                {!pkg.sourceGraphId && (
+                  <>
+                    <DropdownDivider />
+                    <DropdownItem
+                      icon={HiShare}
+                      onClick={() => {
+                        setShareResult(null)
+                        setSelectedListId(null)
+                        loadPublishLists()
+                        setShowShareModal(true)
+                      }}
+                    >
+                      Share
+                    </DropdownItem>
+                  </>
+                )}
               </Dropdown>
             )}
-            {pkg.generationStatus === 'published' && !pkg.sourceGraphId && (
-              <Button
-                theme={customTheme.button}
-                color="purple"
-                onClick={() => {
-                  setShareResult(null)
-                  setSelectedListId(null)
-                  loadPublishLists()
-                  setShowShareModal(true)
-                }}
-              >
-                <HiShare className="mr-2 h-5 w-5" />
-                Share
-              </Button>
-            )}
-            <Link href="/reports">
-              <Button theme={customTheme.button} color="light">
-                <HiChevronLeft className="mr-2 h-5 w-5" />
-                Back to Reports
-              </Button>
-            </Link>
           </>
         }
       />
@@ -416,8 +414,14 @@ const ReportViewerContent: FC = function () {
         </Alert>
       )}
 
-      {/* Status banner — filing lifecycle + provenance */}
-      <Card theme={customTheme.card}>
+      {/* Status banner — filing lifecycle + provenance.
+          `relative z-[5]` lifts this card — and the inline ViewModeToggle /
+          renderer-toggle dropdowns it holds — above the report cards below it.
+          Flowbite dropdowns render inline (no portal), so their menus would
+          otherwise be painted under the next `backdrop-blur` card (which forms
+          its own stacking context). Kept under z-10 so the PageHeader kebab
+          menu still paints over this card. */}
+      <Card className="relative z-[5]" theme={customTheme.card}>
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <Badge color={filingBadge.color} size="sm">
             {filingBadge.label}
@@ -438,14 +442,49 @@ const ReportViewerContent: FC = function () {
                 : ''}
             </span>
           )}
-          <div className="ml-auto">
-            <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+          <div className="ml-auto flex items-center gap-3">
+            {renderer === 'envelope' && (
+              <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+            )}
+            <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={() => setRenderer('envelope')}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  renderer === 'envelope'
+                    ? 'bg-primary-500 text-white'
+                    : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+              >
+                Package
+              </button>
+              <button
+                type="button"
+                onClick={() => setRenderer('holon')}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  renderer === 'holon'
+                    ? 'bg-primary-500 text-white'
+                    : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+              >
+                Holon
+              </button>
+            </div>
           </div>
         </div>
       </Card>
 
-      {/* Package items — sidebar + stacked BlockViews, one per FactSet */}
-      {pkg.items.length === 0 ? (
+      {/* Package items — sidebar + stacked BlockViews, one per FactSet.
+          The 'holon' renderer swaps in the shared ReportView for comparison. */}
+      {renderer === 'holon' ? (
+        <Card theme={customTheme.card}>
+          <HolonReportView
+            graphId={graphId}
+            reportId={reportId}
+            published={pkg.generationStatus === 'published'}
+          />
+        </Card>
+      ) : pkg.items.length === 0 ? (
         <Card theme={customTheme.card}>
           <div className="py-12 text-center text-gray-500 dark:text-gray-400">
             No statements available for this report yet.
