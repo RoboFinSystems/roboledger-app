@@ -301,6 +301,7 @@ export function ActiveSubscriptions({
 
                   {onCancel && (
                     <Button
+                      theme={customTheme.button}
                       color="failure"
                       outline
                       onClick={() => onCancel(subscription)}
