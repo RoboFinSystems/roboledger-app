@@ -1,6 +1,6 @@
-import { AuthProvider } from '@/lib/core'
+import { AuthProvider, customTheme } from '@/lib/core'
 import { organizationJsonLd } from '@/lib/structured-data'
-import { ThemeModeScript } from 'flowbite-react'
+import { ThemeModeScript, ThemeProvider } from 'flowbite-react'
 import type { Metadata, Viewport } from 'next'
 import { twMerge } from 'tailwind-merge'
 
@@ -69,7 +69,9 @@ export default function RootLayout({
         className={twMerge('bg-zinc-50 font-sans dark:bg-black')}
         suppressHydrationWarning
       >
-        <AuthProvider>{children}</AuthProvider>
+        <ThemeProvider theme={customTheme}>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
