@@ -2,7 +2,6 @@ import { Card, Progress } from 'flowbite-react'
 import React from 'react'
 import { FaClock, FaSpinner } from 'react-icons/fa'
 import ReactMarkdown from 'react-markdown'
-import { customTheme } from '../../theme'
 import type { Message } from './types'
 
 interface ChatMessageProps {
@@ -16,7 +15,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => (
     }`}
   >
     <Card
-      theme={customTheme.card}
       className={`max-w-[80%] ${
         message.user === 'You'
           ? 'bg-secondary-500 dark:bg-secondary-600 text-white'

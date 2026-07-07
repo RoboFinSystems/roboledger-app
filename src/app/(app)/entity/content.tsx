@@ -2,7 +2,6 @@
 
 import {
   clients,
-  customTheme,
   PageHeader,
   PageLayout,
   useEntity,
@@ -183,7 +182,7 @@ const EntityInfoPageContent: FC = function () {
 
       <div className="space-y-6">
         {loading ? (
-          <Card theme={customTheme.card}>
+          <Card>
             <div className="flex items-center justify-center py-12">
               <Spinner size="lg" />
               <span className="ml-3 text-gray-500 dark:text-gray-400">
@@ -192,14 +191,14 @@ const EntityInfoPageContent: FC = function () {
             </div>
           </Card>
         ) : error ? (
-          <Card theme={customTheme.card}>
+          <Card>
             <div className="py-8 text-center">
               <HiOfficeBuilding className="mx-auto mb-4 h-16 w-16 text-gray-400" />
               <p className="text-gray-500 dark:text-gray-400">{error}</p>
             </div>
           </Card>
         ) : !entity ? (
-          <Card theme={customTheme.card}>
+          <Card>
             <div className="py-8 text-center">
               <HiOfficeBuilding className="mx-auto mb-4 h-16 w-16 text-gray-400" />
               <h3 className="font-heading mb-4 text-xl font-bold dark:text-white">
@@ -210,11 +209,7 @@ const EntityInfoPageContent: FC = function () {
                 to view its details.
               </p>
               {!graphId && (
-                <Alert
-                  theme={customTheme.alert}
-                  color="info"
-                  className="mt-4 text-left"
-                >
+                <Alert color="info" className="mt-4 text-left">
                   <span className="font-medium">No graph selected.</span> Please
                   select a graph first.
                 </Alert>
@@ -228,7 +223,6 @@ const EntityInfoPageContent: FC = function () {
               {editing ? (
                 <div className="flex gap-2">
                   <Button
-                    theme={customTheme.button}
                     color="gray"
                     size="sm"
                     onClick={cancelEditing}
@@ -238,7 +232,6 @@ const EntityInfoPageContent: FC = function () {
                     Cancel
                   </Button>
                   <Button
-                    theme={customTheme.button}
                     color="success"
                     size="sm"
                     onClick={handleSave}
@@ -249,26 +242,17 @@ const EntityInfoPageContent: FC = function () {
                   </Button>
                 </div>
               ) : (
-                <Button
-                  theme={customTheme.button}
-                  color="gray"
-                  size="sm"
-                  onClick={startEditing}
-                >
+                <Button color="gray" size="sm" onClick={startEditing}>
                   <HiPencil className="mr-1 h-4 w-4" />
                   Edit
                 </Button>
               )}
             </div>
 
-            {saveError && (
-              <Alert theme={customTheme.alert} color="failure">
-                {saveError}
-              </Alert>
-            )}
+            {saveError && <Alert color="failure">{saveError}</Alert>}
 
             {/* Basic Information */}
-            <Card theme={customTheme.card}>
+            <Card>
               <div className="mb-4 border-b border-gray-200 pb-4 dark:border-gray-600">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   Basic Information
@@ -335,7 +319,7 @@ const EntityInfoPageContent: FC = function () {
             </Card>
 
             {/* Contact & Address */}
-            <Card theme={customTheme.card}>
+            <Card>
               <div className="mb-4 border-b border-gray-200 pb-4 dark:border-gray-600">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   Contact & Address
@@ -402,7 +386,7 @@ const EntityInfoPageContent: FC = function () {
             </Card>
 
             {/* Financial & Regulatory */}
-            <Card theme={customTheme.card}>
+            <Card>
               <div className="mb-4 border-b border-gray-200 pb-4 dark:border-gray-600">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   Financial & Regulatory
@@ -487,7 +471,7 @@ const EntityInfoPageContent: FC = function () {
             </Card>
 
             {/* Metadata */}
-            <Card theme={customTheme.card}>
+            <Card>
               <div className="mb-4 border-b border-gray-200 pb-4 dark:border-gray-600">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   Metadata

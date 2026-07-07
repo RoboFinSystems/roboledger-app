@@ -2,7 +2,6 @@
 
 import {
   clients,
-  customTheme,
   EmptyState,
   GraphFilters,
   LoadingState,
@@ -134,7 +133,7 @@ const AgentsContent: FC = function () {
         subtitle="Counterparties — customers, vendors, employees"
       />
 
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="flex flex-wrap items-end gap-4 p-4">
           <div className="w-full sm:w-64">
             <label
@@ -148,7 +147,6 @@ const AgentsContent: FC = function () {
                 <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
               </div>
               <TextInput
-                theme={customTheme.textInput}
                 id="search"
                 placeholder="Name, email, ext id…"
                 value={searchTerm}
@@ -167,7 +165,6 @@ const AgentsContent: FC = function () {
             </label>
             <Select
               id="agentType"
-              theme={customTheme.select}
               value={agentType}
               onChange={(e) => setAgentType(e.target.value)}
             >
@@ -188,7 +185,6 @@ const AgentsContent: FC = function () {
             </label>
             <Select
               id="source"
-              theme={customTheme.select}
               value={source}
               onChange={(e) => setSource(e.target.value)}
             >
@@ -203,13 +199,13 @@ const AgentsContent: FC = function () {
       </Card>
 
       {error && (
-        <Alert theme={customTheme.alert} color="failure">
+        <Alert color="failure">
           <HiExclamationCircle className="h-4 w-4" />
           <span className="font-medium">Error.</span> {error}
         </Alert>
       )}
 
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="overflow-x-auto">
           {isLoading ? (
             <LoadingState />
@@ -228,7 +224,7 @@ const AgentsContent: FC = function () {
               className="p-8"
             />
           ) : (
-            <Table theme={customTheme.table}>
+            <Table>
               <TableHead>
                 <TableHeadCell>Name</TableHeadCell>
                 <TableHeadCell>Type</TableHeadCell>

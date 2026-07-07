@@ -1,6 +1,6 @@
 'use client'
 
-import { customTheme, SDK, useGraphContext } from '@/lib/core'
+import { SDK, useGraphContext } from '@/lib/core'
 import { Spinner } from '@/lib/core/ui-components'
 import { Alert, Button } from 'flowbite-react'
 import Image from 'next/image'
@@ -108,23 +108,14 @@ export default function QuickBooksSetupForm({
             </span>
           </div>
         ) : (
-          <Button
-            color="primary"
-            theme={customTheme.button}
-            onClick={handleConnect}
-          >
+          <Button color="primary" onClick={handleConnect}>
             Sign in with QuickBooks
           </Button>
         )}
       </div>
 
       <div className="flex justify-end pt-2">
-        <Button
-          color="gray"
-          theme={customTheme.button}
-          onClick={onCancel}
-          disabled={loading}
-        >
+        <Button color="gray" onClick={onCancel} disabled={loading}>
           Cancel
         </Button>
       </div>

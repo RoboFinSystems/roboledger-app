@@ -97,7 +97,6 @@ export const customTheme = createTheme({
           'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
         info: 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300',
       },
-      href: 'group',
       size: {
         xs: 'p-1 text-xs',
         sm: 'p-1.5 text-sm',
@@ -147,23 +146,6 @@ export const customTheme = createTheme({
         'bg-green-700 text-white hover:bg-green-800 focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800',
       warning:
         'bg-amber-700 text-white hover:bg-amber-800 focus:ring-amber-300 dark:bg-amber-600 dark:hover:bg-amber-700 dark:focus:ring-amber-800',
-    },
-    gradientDuoTone: {
-      cyanToBlue:
-        'bg-linear-to-r from-cyan-500 to-blue-500 text-white hover:from-cyan-600 hover:to-blue-600 focus:ring-cyan-300 dark:focus:ring-cyan-800',
-      greenToBlue:
-        'bg-linear-to-r from-green-500 to-blue-500 text-white hover:from-green-600 hover:to-blue-600 focus:ring-green-300 dark:focus:ring-green-800',
-      purpleToBlue:
-        'bg-linear-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 focus:ring-purple-300 dark:focus:ring-purple-800',
-      purpleToPink:
-        'bg-linear-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 focus:ring-purple-300 dark:focus:ring-purple-800',
-      pinkToOrange:
-        'bg-linear-to-r from-pink-500 to-orange-500 text-white hover:from-pink-600 hover:to-orange-600 focus:ring-pink-300 dark:focus:ring-pink-800',
-      tealToLime:
-        'bg-linear-to-r from-teal-500 to-lime-500 text-white hover:from-teal-600 hover:to-lime-600 focus:ring-teal-300 dark:focus:ring-teal-800',
-    },
-    inner: {
-      base: 'flex items-center transition-all duration-200',
     },
     // flowbite-react 0.12 reads outline button colors from `outlineColor`
     // (Button.js: `outline ? theme.outlineColor[color] : theme.color[color]`).
@@ -560,8 +542,6 @@ export const customTheme = createTheme({
       },
       label: '',
       listItem: '',
-      hover:
-        'hover:bg-zinc-100 dark:hover:bg-zinc-700/50 dark:hover:text-white',
     },
     items: {
       base: '',
@@ -659,7 +639,7 @@ export const customTheme = createTheme({
     base: 'flex flex-col gap-2',
     tablist: {
       base: 'flex text-center',
-      styles: {
+      variant: {
         default: 'flex-wrap border-b border-gray-200 dark:border-gray-700',
         underline:
           '-mb-px flex-wrap border-b border-gray-200 dark:border-gray-700',
@@ -670,7 +650,7 @@ export const customTheme = createTheme({
       },
       tabitem: {
         base: 'focus:ring-primary-300 mx-1 flex items-center justify-center rounded-t-lg px-4 py-3 text-sm font-medium first:ml-0 focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:text-gray-400 disabled:dark:text-gray-500',
-        styles: {
+        variant: {
           default: {
             base: 'rounded-t-lg',
             active: {
@@ -705,7 +685,7 @@ export const customTheme = createTheme({
     },
     tabitemcontainer: {
       base: '',
-      styles: {
+      variant: {
         default: '',
         underline: '',
         pills: '',

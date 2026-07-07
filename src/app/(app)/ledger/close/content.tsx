@@ -2,7 +2,6 @@
 
 import {
   clients,
-  customTheme,
   EmptyState,
   GraphFilters,
   LoadingState,
@@ -106,7 +105,7 @@ const CloseContent: FC = function () {
     return (
       <PageLayout>
         <PageHeader icon={TbBook2} title="Closing Book" />
-        <Card theme={customTheme.card}>
+        <Card>
           <EmptyState
             icon={TbBook2}
             title="No Ledger Found"
@@ -143,7 +142,7 @@ const CloseContent: FC = function () {
       />
 
       {error && (
-        <Card theme={customTheme.card}>
+        <Card>
           <div className="flex items-center gap-2 text-red-500">
             <HiExclamationCircle className="h-5 w-5" />
             <span>{error}</span>
@@ -162,7 +161,7 @@ const CloseContent: FC = function () {
 
         {/* Content Area */}
         <div className="min-w-0 flex-1">
-          <Card theme={customTheme.card}>
+          <Card>
             {isSidebarLoading ? (
               <LoadingState size="xl" className="py-24" />
             ) : !selectedItem ? (

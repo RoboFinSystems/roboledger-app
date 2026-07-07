@@ -1,6 +1,6 @@
 'use client'
 
-import { clients, customTheme } from '@/lib/core'
+import { clients } from '@/lib/core'
 import {
   Alert,
   Button,
@@ -225,7 +225,6 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
               <TextInput
                 id="je-posting-date"
                 type="date"
-                theme={customTheme.textInput}
                 value={postingDate}
                 onChange={(e) => setPostingDate(e.target.value)}
                 disabled={submitting}
@@ -273,7 +272,6 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
             <Label htmlFor="je-memo">Memo</Label>
             <TextInput
               id="je-memo"
-              theme={customTheme.textInput}
               placeholder="Describe this entry (visible on the transaction)"
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
@@ -289,7 +287,6 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
               <Button
                 size="xs"
                 color="light"
-                theme={customTheme.button}
                 onClick={addLine}
                 disabled={submitting}
               >
@@ -334,7 +331,6 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
                     </Label>
                     <TextInput
                       id={`line-debit-${idx}`}
-                      theme={customTheme.textInput}
                       type="number"
                       step="0.01"
                       placeholder="0.00"
@@ -351,7 +347,6 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
                     </Label>
                     <TextInput
                       id={`line-credit-${idx}`}
-                      theme={customTheme.textInput}
                       type="number"
                       step="0.01"
                       placeholder="0.00"
@@ -371,7 +366,6 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
                     </Label>
                     <TextInput
                       id={`line-description-${idx}`}
-                      theme={customTheme.textInput}
                       value={line.description}
                       onChange={(e) =>
                         updateLine(idx, { description: e.target.value })
@@ -383,7 +377,6 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
                     <Button
                       size="xs"
                       color="failure"
-                      theme={customTheme.button}
                       onClick={() => removeLine(idx)}
                       disabled={submitting || lineItems.length <= 2}
                       title="Remove line"
@@ -422,28 +415,14 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
             </div>
           </div>
 
-          {submitError && (
-            <Alert theme={customTheme.alert} color="failure">
-              {submitError}
-            </Alert>
-          )}
+          {submitError && <Alert color="failure">{submitError}</Alert>}
         </div>
       </ModalBody>
       <ModalFooter>
-        <Button
-          color="gray"
-          theme={customTheme.button}
-          onClick={onClose}
-          disabled={submitting}
-        >
+        <Button color="gray" onClick={onClose} disabled={submitting}>
           Cancel
         </Button>
-        <Button
-          color="primary"
-          theme={customTheme.button}
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-        >
+        <Button color="primary" onClick={handleSubmit} disabled={!canSubmit}>
           {submitting
             ? 'Submitting…'
             : status === 'posted'

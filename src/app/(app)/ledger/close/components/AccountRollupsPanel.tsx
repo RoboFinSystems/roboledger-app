@@ -1,6 +1,6 @@
 'use client'
 
-import { clients, customTheme, LoadingState } from '@/lib/core'
+import { clients, LoadingState } from '@/lib/core'
 import type { LedgerAccountRollups } from '@robosystems/client/clients'
 import {
   Badge,
@@ -109,7 +109,7 @@ const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
       </div>
 
       <div className="overflow-x-auto">
-        <Table theme={customTheme.table}>
+        <Table>
           <TableHead>
             <TableHeadCell className="w-2/3">Account</TableHeadCell>
             <TableHeadCell className="text-right">Balance</TableHeadCell>

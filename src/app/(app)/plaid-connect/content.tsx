@@ -2,7 +2,6 @@
 'use client'
 
 import {
-  customTheme,
   LoadingState,
   PageHeader,
   PageLayout,
@@ -141,7 +140,7 @@ export default function PlaidConnectContent() {
         subtitle="Securely link your bank accounts with Plaid"
       />
 
-      <Card theme={customTheme.card} className="max-w-2xl">
+      <Card className="max-w-2xl">
         <h3 className="font-heading mb-4 text-lg font-bold dark:text-white">
           Securely Connect with Plaid
         </h3>
@@ -161,11 +160,7 @@ export default function PlaidConnectContent() {
           <Button onClick={() => open()} disabled={!ready}>
             {ready ? 'Connect Bank Account' : 'Initializing...'}
           </Button>
-          <Button
-            color="secondary"
-            theme={customTheme.button}
-            onClick={() => router.push('/connections')}
-          >
+          <Button color="secondary" onClick={() => router.push('/connections')}>
             Cancel
           </Button>
         </div>

@@ -23,7 +23,6 @@ import remarkGfm from 'remark-gfm'
 
 import { useIsRepository } from '../../components/RepositoryGuard'
 import { useGraphContext } from '../../contexts'
-import { customTheme } from '../../theme'
 import { PageLayout } from '../PageLayout'
 import type { SearchConfig } from './types'
 
@@ -218,7 +217,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
       </div>
 
       {/* Search Bar */}
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="space-y-4">
           <div className="flex gap-2">
             <TextInput
@@ -376,7 +375,7 @@ export function SearchContent({ config }: { config: SearchConfig }) {
           </div>
 
           {results.map((hit) => (
-            <Card key={hit.document_id} theme={customTheme.card}>
+            <Card key={hit.document_id}>
               <button
                 type="button"
                 className="w-full cursor-pointer text-left"

@@ -3,7 +3,6 @@
 import type { Entity } from '@/lib/core'
 import {
   clients,
-  customTheme,
   EmptyState,
   GraphFilters,
   LoadingState,
@@ -115,13 +114,12 @@ const EntitiesListPageContent: FC = function () {
       />
 
       {/* Search */}
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="relative w-full sm:w-64">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
             <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
           </div>
           <TextInput
-            theme={customTheme.textInput}
             id="search"
             placeholder="Search entities..."
             value={searchTerm}
@@ -132,13 +130,13 @@ const EntitiesListPageContent: FC = function () {
       </Card>
 
       {error && (
-        <Alert theme={customTheme.alert} color="failure">
+        <Alert color="failure">
           <HiExclamationCircle className="h-4 w-4" />
           <span className="font-medium">Error!</span> {error}
         </Alert>
       )}
 
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="overflow-x-auto">
           {isLoading ? (
             <LoadingState />
@@ -150,7 +148,7 @@ const EntitiesListPageContent: FC = function () {
               className="p-8"
             />
           ) : (
-            <Table theme={customTheme.table}>
+            <Table>
               <TableHead>
                 <TableHeadCell>Entity</TableHeadCell>
                 <TableHeadCell>Graph</TableHeadCell>

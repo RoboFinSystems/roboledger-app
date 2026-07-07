@@ -1,7 +1,6 @@
 import { Button, Textarea } from 'flowbite-react'
 import React from 'react'
 import { IoSend } from 'react-icons/io5'
-import { customTheme } from '../../theme'
 import { DeepResearchToggle } from './DeepResearchToggle'
 
 interface ChatInputAreaProps {
@@ -42,7 +41,6 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
           />
 
           <Textarea
-            theme={customTheme.textarea}
             ref={textareaRef}
             className="focus:border-secondary-500 focus:ring-secondary-500 min-h-[52px] w-full resize-none rounded-lg border-gray-200 bg-white pl-10 text-gray-900 placeholder:text-gray-500 dark:border-gray-700 dark:bg-zinc-800 dark:text-gray-100 dark:placeholder:text-gray-400"
             value={
@@ -58,7 +56,6 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
           />
         </div>
         <Button
-          theme={customTheme.button}
           size="sm"
           color="secondary"
           className="h-10 w-10 p-0"

@@ -1,6 +1,6 @@
 'use client'
 
-import { clients, customTheme, LoadingState } from '@/lib/core'
+import { clients, LoadingState } from '@/lib/core'
 import {
   formatAddress,
   formatAmount,
@@ -80,7 +80,7 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
   }, [graphId, agentId])
 
   return (
-    <Modal show onClose={onClose} size="3xl" theme={customTheme.modal}>
+    <Modal show onClose={onClose} size="3xl">
       <ModalHeader>
         {agent ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -106,12 +106,12 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
         {loading ? (
           <LoadingState />
         ) : error ? (
-          <Alert theme={customTheme.alert} color="failure">
+          <Alert color="failure">
             <HiExclamationCircle className="h-4 w-4" />
             {error}
           </Alert>
         ) : !agent ? (
-          <Alert theme={customTheme.alert} color="failure">
+          <Alert color="failure">
             <HiExclamationCircle className="h-4 w-4" />
             Agent not found.
           </Alert>
@@ -196,7 +196,7 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
                 </p>
               ) : (
                 <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                  <Table theme={customTheme.table}>
+                  <Table>
                     <TableHead>
                       <TableHeadCell>Date</TableHeadCell>
                       <TableHeadCell>Type</TableHeadCell>
@@ -254,7 +254,7 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
             View all events in inbox →
           </Link>
         )}
-        <Button theme={customTheme.button} color="gray" onClick={onClose}>
+        <Button color="gray" onClick={onClose}>
           Close
         </Button>
       </ModalFooter>

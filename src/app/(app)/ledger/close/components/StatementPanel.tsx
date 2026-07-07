@@ -1,6 +1,6 @@
 'use client'
 
-import { clients, customTheme, LoadingState } from '@/lib/core'
+import { clients, LoadingState } from '@/lib/core'
 import type { PeriodSpecInput } from '@robosystems/client/clients'
 import { Button, Spinner } from 'flowbite-react'
 import type { FC } from 'react'
@@ -269,7 +269,6 @@ const StatementPanel: FC<StatementPanelProps> = ({
           {PRESETS.map((p) => (
             <Button
               key={p.key}
-              theme={customTheme.button}
               size="xs"
               color={selectedPreset === p.key ? 'primary' : 'light'}
               onClick={() => handlePresetClick(p.key)}

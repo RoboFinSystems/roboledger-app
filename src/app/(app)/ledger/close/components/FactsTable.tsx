@@ -1,6 +1,5 @@
 'use client'
 
-import { customTheme } from '@/lib/core'
 import {
   Table,
   TableBody,
@@ -56,7 +55,7 @@ const FactsTable: FC<FactsTableProps> = ({ facts }) => {
 
   return (
     <div className="overflow-x-auto">
-      <Table theme={customTheme.table}>
+      <Table>
         <TableHead>
           <TableHeadCell>Element</TableHeadCell>
           <TableHeadCell>QName</TableHeadCell>

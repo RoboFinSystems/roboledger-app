@@ -1,6 +1,5 @@
 'use client'
 
-import { customTheme } from '@/lib/core'
 import type { StatementData, StatementRow } from '@robosystems/client/clients'
 import {
   Table,
@@ -42,7 +41,7 @@ const StatementTable: FC<StatementTableProps> = ({ data, entityName }) => {
         )}
       </div>
 
-      <Table theme={customTheme.table}>
+      <Table>
         <TableHead>
           <TableHeadCell className="w-1/2" />
           {periods.map((period, i) => (

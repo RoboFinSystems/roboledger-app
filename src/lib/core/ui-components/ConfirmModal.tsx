@@ -6,7 +6,6 @@ import {
   ModalHeader,
 } from 'flowbite-react'
 import type { ComponentType, ReactNode } from 'react'
-import { customTheme } from '../theme'
 import { Spinner } from './Spinner'
 
 interface ConfirmModalProps {
@@ -67,12 +66,7 @@ export function ConfirmModal({
   }
 
   return (
-    <Modal
-      theme={customTheme.modal}
-      show={show}
-      onClose={handleClose}
-      size={size}
-    >
+    <Modal show={show} onClose={handleClose} size={size}>
       <ModalHeader>{title}</ModalHeader>
       <ModalBody>{children}</ModalBody>
       <ModalFooter>

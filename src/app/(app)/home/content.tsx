@@ -316,7 +316,6 @@ const HomePageContent: FC = function () {
                     </h3>
                   </div>
                   <Button
-                    theme={customTheme.button}
                     size="xs"
                     color="gray"
                     onClick={() => router.push('/ledger/transactions')}
@@ -334,7 +333,6 @@ const HomePageContent: FC = function () {
                       No transactions yet.
                     </p>
                     <Button
-                      theme={customTheme.button}
                       color="primary"
                       size="xs"
                       onClick={() => router.push('/connections')}
@@ -389,7 +387,6 @@ const HomePageContent: FC = function () {
                     </h3>
                   </div>
                   <Button
-                    theme={customTheme.button}
                     size="xs"
                     color="gray"
                     onClick={() => router.push('/reports')}
@@ -407,7 +404,6 @@ const HomePageContent: FC = function () {
                       No reports yet.
                     </p>
                     <Button
-                      theme={customTheme.button}
                       color="primary"
                       size="xs"
                       onClick={() => router.push('/reports')}
@@ -481,10 +477,7 @@ const HomePageContent: FC = function () {
         </>
       ) : (
         <div className="space-y-6">
-          <Card
-            theme={customTheme.card}
-            className="transition-shadow hover:shadow-lg"
-          >
+          <Card className="transition-shadow hover:shadow-lg">
             <div className="space-y-4 p-6">
               <div className="flex items-center gap-3">
                 <div className="bg-primary-100 dark:bg-primary-900 rounded-lg p-3">
@@ -527,7 +520,6 @@ const HomePageContent: FC = function () {
                 </li>
               </ul>
               <Button
-                theme={customTheme.button}
                 color="primary"
                 onClick={() => navigateToApp('robosystems', '/graphs/new')}
                 className="w-full"

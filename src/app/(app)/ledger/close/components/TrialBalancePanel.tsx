@@ -1,6 +1,6 @@
 'use client'
 
-import { clients, customTheme, LoadingState } from '@/lib/core'
+import { clients, LoadingState } from '@/lib/core'
 import {
   Badge,
   Table,
@@ -207,7 +207,7 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <Table theme={customTheme.table}>
+        <Table>
           <TableHead>
             <TableHeadCell>Account</TableHeadCell>
             <TableHeadCell>Classification</TableHeadCell>

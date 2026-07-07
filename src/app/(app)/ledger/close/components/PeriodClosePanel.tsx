@@ -1,6 +1,6 @@
 'use client'
 
-import { clients, customTheme, EmptyState, LoadingState } from '@/lib/core'
+import { clients, EmptyState, LoadingState } from '@/lib/core'
 import type {
   LedgerFiscalCalendar,
   LedgerPeriodCloseStatus,
@@ -311,7 +311,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   if (!calendar) {
     return (
       <div className="space-y-4">
-        <Card theme={customTheme.card}>
+        <Card>
           <EmptyState
             icon={HiCalendar}
             title="Fiscal Calendar Not Initialized"
@@ -326,7 +326,6 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
                   </div>
                 )}
                 <Button
-                  theme={customTheme.button}
                   color="primary"
                   disabled={isInitializing}
                   onClick={handleInitialize}
@@ -385,7 +384,6 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
         )}
         {selectedPeriodStatus === 'closed' && selectedPeriod && (
           <Button
-            theme={customTheme.button}
             color="light"
             size="xs"
             onClick={() => openReopenModal(selectedPeriod)}
@@ -405,7 +403,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
         </div>
       ) : (
         <>
-          <Table theme={customTheme.table}>
+          <Table>
             <TableHead>
               <TableHeadCell>Schedule</TableHeadCell>
               <TableHeadCell>Amount</TableHeadCell>
@@ -432,7 +430,6 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
                   <TableCell>
                     {item.status === 'pending' && (
                       <Button
-                        theme={customTheme.button}
                         size="xs"
                         color="primary"
                         disabled={creatingEntry === item.structureId}
@@ -518,7 +515,6 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
         </ModalBody>
         <ModalFooter>
           <Button
-            theme={customTheme.button}
             color="light"
             onClick={() => setReopenTarget(null)}
             disabled={isReopening}
@@ -526,7 +522,6 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
             Cancel
           </Button>
           <Button
-            theme={customTheme.button}
             color="warning"
             disabled={!reopenReason.trim() || isReopening}
             onClick={handleReopen}
@@ -551,7 +546,7 @@ interface CalendarSummaryProps {
 
 const CalendarSummary: FC<CalendarSummaryProps> = ({ calendar, onRefresh }) => {
   return (
-    <Card theme={customTheme.card}>
+    <Card>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 md:grid-cols-4">
           <SummaryField label="Closed through">
@@ -591,12 +586,7 @@ const CalendarSummary: FC<CalendarSummaryProps> = ({ calendar, onRefresh }) => {
             )}
           </SummaryField>
         </div>
-        <Button
-          theme={customTheme.button}
-          color="light"
-          size="xs"
-          onClick={onRefresh}
-        >
+        <Button color="light" size="xs" onClick={onRefresh}>
           <HiRefresh className="mr-1 h-4 w-4" />
           Refresh
         </Button>
@@ -642,7 +632,7 @@ const DraftReviewPanel: FC<DraftReviewPanelProps> = ({ drafts, isLoading }) => {
   if (isLoading) return null
 
   return (
-    <Card theme={customTheme.card}>
+    <Card>
       <div className="mb-3 flex items-center justify-between text-gray-900 dark:text-white">
         <h3 className="text-lg font-semibold">
           Draft review ({drafts.draftCount})
@@ -717,7 +707,7 @@ const DraftReviewPanel: FC<DraftReviewPanelProps> = ({ drafts, isLoading }) => {
                 </Badge>
               )}
             </div>
-            <Table theme={customTheme.table}>
+            <Table>
               <TableBody>
                 {d.lineItems.map((li) => (
                   <TableRow key={li.lineItemId}>
@@ -773,7 +763,7 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
   const hasUnbalancedDrafts = drafts ? !drafts.allBalanced : false
 
   return (
-    <Card theme={customTheme.card}>
+    <Card>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -798,7 +788,6 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
             </label>
           )}
           <Button
-            theme={customTheme.button}
             color="primary"
             disabled={
               isClosing ||

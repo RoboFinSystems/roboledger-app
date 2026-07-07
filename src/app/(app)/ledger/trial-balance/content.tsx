@@ -2,7 +2,6 @@
 
 import {
   clients,
-  customTheme,
   EmptyState,
   GraphFilters,
   LoadingState,
@@ -301,7 +300,7 @@ const TrialBalanceContent: FC = function () {
       />
 
       {/* Filters */}
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="flex flex-wrap items-end gap-4 p-4">
           {/* Search */}
           <div className="w-full sm:w-64">
@@ -310,7 +309,6 @@ const TrialBalanceContent: FC = function () {
                 <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
               </div>
               <TextInput
-                theme={customTheme.textInput}
                 id="search"
                 placeholder="Search accounts..."
                 value={searchTerm}
@@ -331,7 +329,6 @@ const TrialBalanceContent: FC = function () {
               <ToggleSwitch
                 checked={viewMode === 'usgaap'}
                 onChange={(checked) => setViewMode(checked ? 'usgaap' : 'coa')}
-                theme={customTheme.toggleSwitch}
               />
               <span
                 className={`text-sm ${viewMode === 'usgaap' ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
@@ -345,7 +342,7 @@ const TrialBalanceContent: FC = function () {
 
       {/* US-GAAP Mode Notice */}
       {viewMode === 'usgaap' && (
-        <Alert theme={customTheme.alert} color="info">
+        <Alert color="info">
           <span className="font-medium">US-GAAP View:</span> Balances aggregated
           to US-GAAP reporting elements via the active CoA→GAAP mapping. Edit
           mappings on the{' '}
@@ -357,7 +354,7 @@ const TrialBalanceContent: FC = function () {
       )}
 
       {error && (
-        <Alert theme={customTheme.alert} color="failure">
+        <Alert color="failure">
           <HiExclamationCircle className="h-4 w-4" />
           <span className="font-medium">Error!</span> {error}
         </Alert>
@@ -369,7 +366,7 @@ const TrialBalanceContent: FC = function () {
           {(
             ['asset', 'liability', 'equity', 'revenue', 'expense'] as const
           ).map((classification) => (
-            <Card key={classification} theme={customTheme.card} className="p-3">
+            <Card key={classification} className="p-3">
               <div className="flex items-center justify-between">
                 <Badge
                   color={CLASSIFICATION_COLORS[classification]}
@@ -402,7 +399,7 @@ const TrialBalanceContent: FC = function () {
         </div>
       )}
 
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="overflow-x-auto">
           {isLoading ? (
             <LoadingState />
@@ -419,7 +416,7 @@ const TrialBalanceContent: FC = function () {
               description="Try adjusting your search."
             />
           ) : (
-            <Table theme={customTheme.table}>
+            <Table>
               <TableHead>
                 <TableHeadCell>Account</TableHeadCell>
                 <TableHeadCell>Classification</TableHeadCell>

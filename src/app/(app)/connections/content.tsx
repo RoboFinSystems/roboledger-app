@@ -2,7 +2,6 @@
 
 import {
   ConfirmModal,
-  customTheme,
   EmptyState,
   PageHeader,
   PageLayout,
@@ -446,12 +445,7 @@ export default function ModernConnectionsContent() {
           title="Data Connections"
           subtitle="Connect external data sources to automatically import transactions and financial data"
           actions={
-            <Button
-              size="sm"
-              color="primary"
-              theme={customTheme.button}
-              onClick={openMarketplace}
-            >
+            <Button size="sm" color="primary" onClick={openMarketplace}>
               <HiPlus className="mr-2 h-4 w-4" />
               Add Connection
             </Button>
@@ -479,7 +473,7 @@ export default function ModernConnectionsContent() {
           ))}
 
           {connections.length === 0 && (
-            <Card theme={customTheme.card}>
+            <Card>
               <EmptyState
                 icon={HiLink}
                 title="No connections yet"
@@ -490,12 +484,7 @@ export default function ModernConnectionsContent() {
         </div>
 
         {/* ── Marketplace / Setup Modal ── */}
-        <Modal
-          theme={customTheme.modal}
-          show={marketplaceOpen}
-          onClose={closeMarketplace}
-          size="2xl"
-        >
+        <Modal show={marketplaceOpen} onClose={closeMarketplace} size="2xl">
           <ModalHeader>
             <div className="flex items-center gap-3">
               <HiLink className="h-5 w-5 text-gray-500" />
@@ -533,11 +522,7 @@ export default function ModernConnectionsContent() {
           </ModalBody>
           {!setupProvider && (
             <ModalFooter>
-              <Button
-                color="gray"
-                theme={customTheme.button}
-                onClick={closeMarketplace}
-              >
+              <Button color="gray" onClick={closeMarketplace}>
                 Close
               </Button>
             </ModalFooter>
@@ -604,12 +589,7 @@ function ProviderRow({ provider, onConnect }: ProviderRowProps) {
         )}
       </div>
       <div className="ml-4 shrink-0">
-        <Button
-          size="sm"
-          color="primary"
-          theme={customTheme.button}
-          onClick={onConnect}
-        >
+        <Button size="sm" color="primary" onClick={onConnect}>
           Connect
         </Button>
       </div>

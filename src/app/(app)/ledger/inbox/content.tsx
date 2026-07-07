@@ -2,7 +2,6 @@
 
 import {
   clients,
-  customTheme,
   EmptyState,
   GraphFilters,
   LoadingState,
@@ -239,7 +238,7 @@ const InboxContent: FC = function () {
       />
 
       {/* Filters */}
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="flex flex-wrap items-end gap-4 p-4">
           <div className="w-full sm:w-64">
             <label
@@ -253,7 +252,6 @@ const InboxContent: FC = function () {
                 <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
               </div>
               <TextInput
-                theme={customTheme.textInput}
                 id="search"
                 placeholder="Description, ext id, agent…"
                 value={searchTerm}
@@ -272,7 +270,6 @@ const InboxContent: FC = function () {
             </label>
             <Select
               id="eventType"
-              theme={customTheme.select}
               value={eventType}
               onChange={(e) => setEventType(e.target.value)}
             >
@@ -293,7 +290,6 @@ const InboxContent: FC = function () {
             </label>
             <Select
               id="status"
-              theme={customTheme.select}
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
@@ -314,7 +310,6 @@ const InboxContent: FC = function () {
             </label>
             <Select
               id="source"
-              theme={customTheme.select}
               value={source}
               onChange={(e) => setSource(e.target.value)}
             >
@@ -335,7 +330,6 @@ const InboxContent: FC = function () {
             </label>
             <Select
               id="agent"
-              theme={customTheme.select}
               value={agentId}
               onChange={(e) => setAgentId(e.target.value)}
             >
@@ -351,13 +345,13 @@ const InboxContent: FC = function () {
       </Card>
 
       {error && (
-        <Alert theme={customTheme.alert} color="failure">
+        <Alert color="failure">
           <HiExclamationCircle className="h-4 w-4" />
           <span className="font-medium">Error.</span> {error}
         </Alert>
       )}
 
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="overflow-x-auto">
           {isLoading ? (
             <LoadingState />
@@ -376,7 +370,7 @@ const InboxContent: FC = function () {
               className="p-8"
             />
           ) : (
-            <Table theme={customTheme.table}>
+            <Table>
               <TableHead>
                 <TableHeadCell>Date</TableHeadCell>
                 <TableHeadCell>Event</TableHeadCell>

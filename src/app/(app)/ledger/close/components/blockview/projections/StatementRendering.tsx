@@ -1,6 +1,5 @@
 'use client'
 
-import { customTheme } from '@/lib/core'
 import {
   Badge,
   Table,
@@ -115,7 +114,7 @@ const StatementGrid: FC<StatementGridProps> = ({
         )}
       </div>
 
-      <Table theme={customTheme.table}>
+      <Table>
         <TableHead>
           <TableHeadCell className="w-1/2" />
           {periods.map((period: EnvelopeRenderingPeriod, i: number) => (

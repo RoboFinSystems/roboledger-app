@@ -9,7 +9,6 @@ import type {
 import { Alert, Badge, Card, Spinner } from 'flowbite-react'
 import { useEffect, useMemo, useState } from 'react'
 import { HiExternalLink, HiInformationCircle } from 'react-icons/hi'
-import { customTheme } from '../../theme'
 import { arcTypeColor, classificationColor } from '../colors'
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
@@ -116,10 +115,7 @@ export function ElementDetail({
 
   return (
     <section className="col-span-12 min-h-0 md:col-span-7">
-      <Card
-        theme={customTheme.card}
-        className="flex h-full flex-col overflow-hidden"
-      >
+      <Card className="flex h-full flex-col overflow-hidden">
         {state === 'idle' && (
           <div className="flex h-full items-center justify-center text-sm text-gray-500 dark:text-gray-400">
             Select an element to view details
