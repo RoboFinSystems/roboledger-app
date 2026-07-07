@@ -14,7 +14,6 @@ import {
   HiChevronRight,
   HiInformationCircle,
 } from 'react-icons/hi'
-import { customTheme } from '../../theme'
 import { classificationColor } from '../colors'
 
 type ArcType = 'calculation' | 'presentation'
@@ -472,10 +471,7 @@ export function LibraryHierarchy({
 
   return (
     <section className="col-span-12 min-h-0 md:col-span-5">
-      <Card
-        theme={customTheme.card}
-        className="flex h-full flex-col overflow-hidden"
-      >
+      <Card className="flex h-full flex-col overflow-hidden">
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
           <h2 className="font-heading text-lg font-semibold text-gray-900 dark:text-white">
             Hierarchy

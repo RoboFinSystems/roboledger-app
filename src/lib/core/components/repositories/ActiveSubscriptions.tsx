@@ -19,7 +19,6 @@ import { useGraphContext } from '../../contexts/graph-context'
 import { useOrg } from '../../contexts/org-context'
 import { useServiceOfferings } from '../../contexts/service-offerings-context'
 import { useToast } from '../../hooks/use-toast'
-import { customTheme } from '../../theme'
 
 // Use the SDK type directly - id field contains the subscription ID
 type SubscriptionInfo = SDK.GraphSubscriptionResponse
@@ -192,7 +191,7 @@ export function ActiveSubscriptions({
         )?.features
 
         return (
-          <Card key={subscription.resource_id} theme={customTheme.card}>
+          <Card key={subscription.resource_id}>
             <div className="space-y-6">
               {/* Repository Header with Status */}
               <div className="flex items-start justify-between">
@@ -301,7 +300,6 @@ export function ActiveSubscriptions({
 
                   {onCancel && (
                     <Button
-                      theme={customTheme.button}
                       color="failure"
                       outline
                       onClick={() => onCancel(subscription)}

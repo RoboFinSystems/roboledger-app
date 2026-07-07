@@ -27,7 +27,6 @@ import { useOrg } from '../../contexts/org-context'
 import { useServiceOfferings } from '../../contexts/service-offerings-context'
 import { useToast } from '../../hooks/use-toast'
 import { useRepositorySubscription } from '../../task-monitoring/operationHooks'
-import { customTheme } from '../../theme'
 
 // Use the SDK type directly - id field contains the subscription ID
 type SubscriptionInfo = SDK.GraphSubscriptionResponse
@@ -275,7 +274,7 @@ export function BrowseRepositories({
 
       {/* How it Works Card */}
       {showInfoCard && (
-        <Card theme={customTheme.card}>
+        <Card>
           <div className="flex items-start gap-4">
             <div className="bg-primary-100 dark:bg-primary-900/30 rounded-lg p-3">
               <HiInformationCircle className="text-primary-600 dark:text-primary-400 h-6 w-6" />
@@ -329,11 +328,7 @@ export function BrowseRepositories({
             const userSub = getUserSubscription(repoType)
 
             return (
-              <Card
-                key={repoType}
-                theme={customTheme.card}
-                className="overflow-hidden"
-              >
+              <Card key={repoType} className="overflow-hidden">
                 <div className="space-y-6">
                   {/* Repository Header */}
                   <div className="flex items-start justify-between">
@@ -516,7 +511,7 @@ export function BrowseRepositories({
             offerings.repositoryPlans![key].enabled &&
             !offerings.repositoryPlans![key].comingSoon
         ).length === 0) && (
-        <Card theme={customTheme.card}>
+        <Card>
           <div className="py-8 text-center">
             <HiDatabase className="mx-auto mb-4 h-12 w-12 text-zinc-400" />
             <p className="text-zinc-600 dark:text-zinc-400">
@@ -531,7 +526,6 @@ export function BrowseRepositories({
         show={!!planChangeModal}
         onClose={() => !changingPlan && setPlanChangeModal(null)}
         size="md"
-        theme={customTheme.modal}
       >
         <ModalHeader>
           {planChangeModal?.isUpgrade ? 'Upgrade' : 'Downgrade'} Plan

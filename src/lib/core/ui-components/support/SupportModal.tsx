@@ -15,7 +15,6 @@ import {
   type TurnstileWidgetRef,
 } from '../../auth-components/TurnstileWidget'
 import { useUser } from '../../hooks'
-import { customTheme } from '../../theme'
 import {
   isTurnstileEnabled,
   isTurnstileValid,
@@ -109,12 +108,7 @@ export default function SupportModal({
   }
 
   return (
-    <Modal
-      show={isOpen}
-      onClose={handleClose}
-      size="lg"
-      theme={customTheme.modal}
-    >
+    <Modal show={isOpen} onClose={handleClose} size="lg">
       <ModalHeader>Contact Support</ModalHeader>
       <ModalBody>
         {submitStatus === 'success' ? (

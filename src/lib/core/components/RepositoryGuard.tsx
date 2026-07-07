@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useEffect, type ReactNode } from 'react'
 import { HiInformationCircle } from 'react-icons/hi'
 import { useGraphContext } from '../contexts/graph-context'
-import { customTheme } from '../theme'
 
 export interface RepositoryGuardProps {
   children: ReactNode
@@ -90,7 +89,7 @@ export function RepositoryGuard({
       // Show loading state while redirecting
       return (
         <div className="flex min-h-screen items-center justify-center">
-          <Card theme={customTheme.card}>
+          <Card>
             <div className="text-center">
               <HiInformationCircle className="mx-auto mb-4 h-12 w-12 text-gray-400" />
               <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
