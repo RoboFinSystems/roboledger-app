@@ -165,25 +165,27 @@ export const customTheme = createTheme({
     inner: {
       base: 'flex items-center transition-all duration-200',
     },
-    outline: {
-      color: {
-        primary:
-          'border-primary-500 text-primary-500 hover:bg-primary-500 focus:ring-primary-300 dark:border-primary-500 dark:text-primary-500 dark:hover:bg-primary-500 dark:focus:ring-primary-800 hover:text-white dark:hover:text-white',
-        secondary:
-          'border-secondary-500 text-secondary-500 hover:bg-secondary-500 focus:ring-secondary-300 dark:border-secondary-500 dark:text-secondary-500 dark:hover:bg-secondary-500 dark:focus:ring-secondary-800 hover:text-white dark:hover:text-white',
-        accent:
-          'border-accent-500 text-accent-500 hover:bg-accent-500 focus:ring-accent-300 dark:border-accent-500 dark:text-accent-500 dark:hover:bg-accent-500 dark:focus:ring-accent-800 hover:text-white dark:hover:text-white',
-        gray: 'border-gray-500 text-gray-500 hover:bg-zinc-500 hover:text-white focus:ring-gray-300 dark:border-gray-500 dark:text-gray-500 dark:hover:bg-zinc-500 dark:hover:text-white dark:focus:ring-gray-800',
-        light:
-          'border-gray-200 text-gray-900 hover:bg-zinc-100 focus:ring-gray-300 dark:border-gray-600 dark:text-white dark:hover:bg-zinc-700 dark:focus:ring-gray-800',
-        dark: 'border-gray-900 text-gray-900 hover:bg-zinc-900 hover:text-white focus:ring-gray-300 dark:border-gray-600 dark:text-white dark:hover:bg-zinc-600 dark:hover:text-white dark:focus:ring-gray-800',
-        failure:
-          'border-red-500 text-red-500 hover:bg-red-500 hover:text-white focus:ring-red-300 dark:border-red-500 dark:text-red-500 dark:hover:bg-red-500 dark:hover:text-white dark:focus:ring-red-800',
-        success:
-          'border-green-500 text-green-500 hover:bg-green-500 hover:text-white focus:ring-green-300 dark:border-green-500 dark:text-green-500 dark:hover:bg-green-500 dark:hover:text-white dark:focus:ring-green-800',
-        warning:
-          'border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white focus:ring-amber-300 dark:border-amber-500 dark:text-amber-500 dark:hover:bg-amber-500 dark:hover:text-white dark:focus:ring-amber-800',
-      },
+    // flowbite-react 0.12 reads outline button colors from `outlineColor`
+    // (Button.js: `outline ? theme.outlineColor[color] : theme.color[color]`).
+    // Keep these keys in sync with `color` above so outline variants of the
+    // brand/state colors render (the old `outline.color` shape was never read).
+    outlineColor: {
+      primary:
+        'border-primary-500 text-primary-500 hover:bg-primary-500 focus:ring-primary-300 dark:border-primary-500 dark:text-primary-500 dark:hover:bg-primary-500 dark:focus:ring-primary-800 hover:text-white dark:hover:text-white',
+      secondary:
+        'border-secondary-500 text-secondary-500 hover:bg-secondary-500 focus:ring-secondary-300 dark:border-secondary-500 dark:text-secondary-500 dark:hover:bg-secondary-500 dark:focus:ring-secondary-800 hover:text-white dark:hover:text-white',
+      accent:
+        'border-accent-500 text-accent-500 hover:bg-accent-500 focus:ring-accent-300 dark:border-accent-500 dark:text-accent-500 dark:hover:bg-accent-500 dark:focus:ring-accent-800 hover:text-white dark:hover:text-white',
+      gray: 'border-gray-500 text-gray-500 hover:bg-zinc-500 hover:text-white focus:ring-gray-300 dark:border-gray-500 dark:text-gray-500 dark:hover:bg-zinc-500 dark:hover:text-white dark:focus:ring-gray-800',
+      light:
+        'border-gray-200 text-gray-900 hover:bg-zinc-100 focus:ring-gray-300 dark:border-gray-600 dark:text-white dark:hover:bg-zinc-700 dark:focus:ring-gray-800',
+      dark: 'border-gray-900 text-gray-900 hover:bg-zinc-900 hover:text-white focus:ring-gray-300 dark:border-gray-600 dark:text-white dark:hover:bg-zinc-600 dark:hover:text-white dark:focus:ring-gray-800',
+      failure:
+        'border-red-500 text-red-500 hover:bg-red-500 hover:text-white focus:ring-red-300 dark:border-red-500 dark:text-red-500 dark:hover:bg-red-500 dark:hover:text-white dark:focus:ring-red-800',
+      success:
+        'border-green-500 text-green-500 hover:bg-green-500 hover:text-white focus:ring-green-300 dark:border-green-500 dark:text-green-500 dark:hover:bg-green-500 dark:hover:text-white dark:focus:ring-green-800',
+      warning:
+        'border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white focus:ring-amber-300 dark:border-amber-500 dark:text-amber-500 dark:hover:bg-amber-500 dark:hover:text-white dark:focus:ring-amber-800',
     },
     pill: 'rounded-full',
     size: {
