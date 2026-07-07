@@ -1,4 +1,4 @@
-import { buildStatements, reportSections } from '@robosystems/report-components'
+import { buildPivots, reportSections } from '@robosystems/report-components'
 import { parseJsonld } from '@robosystems/report-components/adapters'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -32,7 +32,7 @@ describe('holon render pipeline', () => {
   it('reconstructs statements + sections the viewer renders', async () => {
     const report = await parseJsonld(fixture)
 
-    const statements = buildStatements(report)
+    const statements = buildPivots(report)
     expect(statements.length).toBe(4)
     // Every statement lays out at least one presentation row with cells.
     for (const stmt of statements) {

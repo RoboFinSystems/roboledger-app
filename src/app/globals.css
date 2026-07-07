@@ -243,6 +243,7 @@
   --rs-primary-100: var(--color-primary-100);
   --rs-primary-300: var(--color-primary-300);
   --rs-primary-500: var(--color-primary-500);
+  --rs-primary-600: var(--color-primary-600);
   --rs-primary-700: var(--color-primary-700);
   --rs-primary-800: var(--color-primary-800);
 
@@ -251,6 +252,7 @@
   --rs-border: #e4e4e7; /* zinc-200 */
   --rs-border-strong: #a1a1aa; /* zinc-400 */
   --rs-subtotal-bg: #fafafa; /* zinc-50 */
+  --rs-slicer-bg: #fafafa; /* zinc-50, matches subtotal */
   --rs-selected-bg: var(--color-primary-100);
   --rs-panel-bg: #ffffff;
   --rs-success: #047857; /* emerald-700 */
@@ -263,6 +265,7 @@
   --rs-border: #3f3f46; /* zinc-700 */
   --rs-border-strong: #52525b; /* zinc-600 */
   --rs-subtotal-bg: #27272a; /* zinc-800 */
+  --rs-slicer-bg: #27272a; /* zinc-800, matches subtotal */
   --rs-selected-bg: var(--color-primary-900);
   --rs-panel-bg: #18181b; /* zinc-900 */
   --rs-success: #34d399; /* emerald-400 */
