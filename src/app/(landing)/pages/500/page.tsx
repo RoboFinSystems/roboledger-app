@@ -1,3 +1,4 @@
+import { customTheme } from '@/lib/core'
 import { Button } from 'flowbite-react'
 import Image from 'next/image'
 import { HiChevronLeft } from 'react-icons/hi'
@@ -21,7 +22,12 @@ export default function ServerErrorPage() {
           It&apos;s always time for a coffee break. We should be back by the
           time you finish your coffee.
         </p>
-        <Button color="primary" href="/" className="inline-flex p-px">
+        <Button
+          theme={customTheme.button}
+          color="primary"
+          href="/"
+          className="inline-flex p-px"
+        >
           <div className="mr-1 flex items-center gap-x-2">
             <HiChevronLeft className="text-xl" /> Go back home
           </div>
