@@ -17,7 +17,6 @@ import {
 } from 'flowbite-react'
 import { useEffect, useState } from 'react'
 import { HiInformationCircle, HiSearch } from 'react-icons/hi'
-import { customTheme } from '../../theme'
 import { classificationColor } from '../colors'
 import { ClassificationPicker } from './ClassificationPicker'
 
@@ -129,10 +128,7 @@ export function ElementBrowser({
 
   return (
     <section className="col-span-12 min-h-0 md:col-span-5">
-      <Card
-        theme={customTheme.card}
-        className="flex h-full flex-col overflow-hidden"
-      >
+      <Card className="flex h-full flex-col overflow-hidden">
         <h2 className="font-heading shrink-0 text-lg font-semibold text-gray-900 dark:text-white">
           Elements
         </h2>

@@ -1,6 +1,5 @@
 import { Card } from 'flowbite-react'
 import type { ComponentType, ReactNode } from 'react'
-import { customTheme } from '../theme'
 
 interface StatCardProps {
   /** Short muted label above the value, e.g. "Total Graphs". */
@@ -25,7 +24,7 @@ export function StatCard({
   className,
 }: StatCardProps) {
   return (
-    <Card theme={customTheme.card} className={className}>
+    <Card className={className}>
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <div className="text-sm font-medium text-gray-500 dark:text-gray-400">

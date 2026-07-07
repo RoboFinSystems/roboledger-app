@@ -8,7 +8,6 @@ import { HiTerminal } from 'react-icons/hi'
 
 import { useGraphContext } from '../../contexts'
 import { useStreamingQuery } from '../../hooks'
-import { customTheme } from '../../theme'
 import { ConsoleMarkdown } from './ConsoleMarkdown'
 import { ProgressiveText } from './ProgressiveText'
 import type { ConsoleConfig, TerminalMessage } from './types'
@@ -716,10 +715,7 @@ export function ConsoleContent({ config }: { config: ConsoleConfig }) {
       </div>
 
       {/* Terminal Interface */}
-      <Card
-        theme={customTheme.card}
-        className="overflow-hidden bg-gray-950 !p-0 [&>div]:!p-0"
-      >
+      <Card className="overflow-hidden bg-gray-950 !p-0 [&>div]:!p-0">
         <div
           className="flex flex-col bg-gray-950"
           style={{ height: 'calc(100vh - 280px)' }}

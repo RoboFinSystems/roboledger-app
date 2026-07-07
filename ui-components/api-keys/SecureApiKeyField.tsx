@@ -9,7 +9,6 @@ import {
   HiEye,
   HiEyeOff,
 } from 'react-icons/hi'
-import { customTheme } from '../../theme'
 
 export interface SecureApiKeyFieldProps {
   apiKey: string
@@ -110,7 +109,6 @@ Delete this file after storing the key in a secure location.
             value={isRevealed ? apiKey : maskedKey}
             readOnly
             className="pr-28 font-mono text-sm"
-            theme={customTheme.textInput}
             style={{
               minWidth: '100%',
               overflow: isRevealed ? 'auto' : 'hidden',
@@ -125,7 +123,6 @@ Delete this file after storing the key in a secure location.
               color="gray"
               onClick={handleReveal}
               className="h-7 w-7 p-0"
-              theme={customTheme.button}
             >
               {isRevealed ? (
                 <HiEyeOff className="h-4 w-4" />
@@ -141,7 +138,6 @@ Delete this file after storing the key in a secure location.
               color={copyStatus === 'copied' ? 'success' : 'gray'}
               onClick={handleCopy}
               className="h-7 w-7 p-0"
-              theme={customTheme.button}
             >
               {copyStatus === 'copied' ? (
                 <HiCheckCircle className="h-4 w-4" />
@@ -157,7 +153,6 @@ Delete this file after storing the key in a secure location.
               color="gray"
               onClick={handleDownload}
               className="h-7 w-7 p-0"
-              theme={customTheme.button}
             >
               <HiDownload className="h-4 w-4" />
             </Button>

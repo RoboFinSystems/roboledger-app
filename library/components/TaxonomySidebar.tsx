@@ -2,7 +2,6 @@
 
 import type { LibraryTaxonomy } from '@robosystems/client/clients'
 import { Badge, Card } from 'flowbite-react'
-import { customTheme } from '../../theme'
 
 const SECTION_ORDER = ['reporting', 'chart_of_accounts', 'schedule', 'mapping']
 const SECTION_LABELS: Record<string, string> = {
@@ -47,10 +46,7 @@ export function TaxonomySidebar({
 
   return (
     <aside className="col-span-12 min-h-0 md:col-span-3">
-      <Card
-        theme={customTheme.card}
-        className="flex h-full flex-col overflow-hidden"
-      >
+      <Card className="flex h-full flex-col overflow-hidden">
         <h2 className="font-heading shrink-0 text-lg font-semibold text-gray-900 dark:text-white">
           Taxonomies
         </h2>
