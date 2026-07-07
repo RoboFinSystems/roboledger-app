@@ -1,6 +1,5 @@
 'use client'
 
-import { customTheme } from '@/lib/core'
 import {
   Table,
   TableBody,
@@ -69,7 +68,7 @@ const ScheduleRenderingProjection: FC<ScheduleRenderingProjectionProps> = ({
       </div>
 
       <div className="overflow-x-auto">
-        <Table theme={customTheme.table}>
+        <Table>
           <TableHead>
             <TableHeadCell>Period</TableHeadCell>
             <TableHeadCell>Element</TableHeadCell>

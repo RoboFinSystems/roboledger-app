@@ -1,6 +1,6 @@
 'use client'
 
-import { clients, customTheme } from '@/lib/core'
+import { clients } from '@/lib/core'
 import type { NormalizedReport } from '@robosystems/report-components'
 import {
   ReportView,
@@ -164,19 +164,10 @@ export default function HolonReportView({
 
   if (error) {
     return (
-      <Alert
-        theme={customTheme.alert}
-        color="failure"
-        icon={HiExclamationCircle}
-      >
+      <Alert color="failure" icon={HiExclamationCircle}>
         <div className="flex flex-col items-start gap-3">
           <span>{error}</span>
-          <Button
-            theme={customTheme.button}
-            color="light"
-            size="xs"
-            onClick={loadFromServer}
-          >
+          <Button color="light" size="xs" onClick={loadFromServer}>
             Retry
           </Button>
         </div>

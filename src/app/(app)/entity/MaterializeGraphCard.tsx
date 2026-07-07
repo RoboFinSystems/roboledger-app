@@ -1,6 +1,6 @@
 'use client'
 
-import { customTheme, useOperationMonitoring } from '@/lib/core'
+import { useOperationMonitoring } from '@/lib/core'
 import { opMaterialize, client as sdkClient } from '@robosystems/client'
 import { Alert, Badge, Button, Card, Progress } from 'flowbite-react'
 import { type FC, useCallback, useState } from 'react'
@@ -104,7 +104,7 @@ export const MaterializeGraphCard: FC<MaterializeGraphCardProps> = ({
   }, [graphId, rebuild, startMonitoring])
 
   return (
-    <Card theme={customTheme.card}>
+    <Card>
       <div className="mb-4 border-b border-gray-200 pb-4 dark:border-gray-600">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
           Graph Index
@@ -133,7 +133,6 @@ export const MaterializeGraphCard: FC<MaterializeGraphCardProps> = ({
             </span>
           </label>
           <Button
-            theme={customTheme.button}
             color="primary"
             onClick={handleMaterialize}
             disabled={!graphId || isLoading}
@@ -155,17 +154,9 @@ export const MaterializeGraphCard: FC<MaterializeGraphCardProps> = ({
           </div>
         )}
 
-        {submitError && (
-          <Alert theme={customTheme.alert} color="failure">
-            {submitError}
-          </Alert>
-        )}
+        {submitError && <Alert color="failure">{submitError}</Alert>}
 
-        {error && (
-          <Alert theme={customTheme.alert} color="failure">
-            {error}
-          </Alert>
-        )}
+        {error && <Alert color="failure">{error}</Alert>}
 
         {status === 'completed' && (
           <div className="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800/40 dark:bg-green-900/20">

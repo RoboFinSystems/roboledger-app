@@ -1,4 +1,3 @@
-import { customTheme } from '@/lib/core'
 import { Button } from 'flowbite-react'
 import Image from 'next/image'
 import { HiChevronLeft } from 'react-icons/hi'
@@ -22,12 +21,7 @@ export default function NotFoundPage() {
           Oops! Looks like you followed a bad link. If you think this is a
           problem with us, please tell us.
         </p>
-        <Button
-          theme={customTheme.button}
-          color="primary"
-          href="/"
-          className="inline-flex p-px"
-        >
+        <Button color="primary" href="/" className="inline-flex p-px">
           <div className="mr-1 flex items-center gap-x-2">
             <HiChevronLeft className="text-xl" /> Go back home
           </div>

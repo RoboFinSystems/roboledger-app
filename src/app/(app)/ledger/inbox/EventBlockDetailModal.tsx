@@ -1,6 +1,6 @@
 'use client'
 
-import { clients, customTheme, LoadingState } from '@/lib/core'
+import { clients, LoadingState } from '@/lib/core'
 import { formatDateTime } from '@/lib/ledger/formatters'
 import type { PreviewEventBlockResponse } from '@robosystems/client'
 import type {
@@ -236,7 +236,7 @@ const EventBlockDetailModal: FC<Props> = function ({
     event && ['voided', 'fulfilled', 'superseded'].includes(event.status)
 
   return (
-    <Modal show onClose={onClose} size="4xl" theme={customTheme.modal}>
+    <Modal show onClose={onClose} size="4xl">
       <ModalHeader>
         {event ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -261,7 +261,7 @@ const EventBlockDetailModal: FC<Props> = function ({
         {loading ? (
           <LoadingState />
         ) : !event ? (
-          <Alert theme={customTheme.alert} color="failure">
+          <Alert color="failure">
             <HiExclamationCircle className="h-4 w-4" />
             Event not found.
           </Alert>
@@ -493,7 +493,7 @@ const EventBlockDetailModal: FC<Props> = function ({
 
             {/* Error */}
             {error && (
-              <Alert theme={customTheme.alert} color="failure">
+              <Alert color="failure">
                 <HiExclamationCircle className="h-4 w-4" />
                 <span className="font-medium">Error.</span> {error.message}
                 {error.link && (
@@ -509,13 +509,12 @@ const EventBlockDetailModal: FC<Props> = function ({
 
             {/* Reject confirm */}
             {confirmReject && (
-              <Alert theme={customTheme.alert} color="warning">
+              <Alert color="warning">
                 <HiExclamationCircle className="h-4 w-4" />
                 <span className="font-medium">Reject this event?</span> It will
                 be marked <code>voided</code> and won&apos;t post to the GL.
                 <div className="mt-2 flex gap-2">
                   <Button
-                    theme={customTheme.button}
                     size="xs"
                     color="failure"
                     onClick={handleReject}
@@ -526,7 +525,6 @@ const EventBlockDetailModal: FC<Props> = function ({
                       : 'Confirm reject'}
                   </Button>
                   <Button
-                    theme={customTheme.button}
                     size="xs"
                     color="gray"
                     onClick={() => setConfirmReject(false)}
@@ -545,7 +543,6 @@ const EventBlockDetailModal: FC<Props> = function ({
         {event && !isTerminal && (
           <div className="flex flex-1 flex-wrap justify-end gap-2">
             <Button
-              theme={customTheme.button}
               color="light"
               onClick={handlePreview}
               disabled={actionInFlight !== null}
@@ -554,7 +551,6 @@ const EventBlockDetailModal: FC<Props> = function ({
               {actionInFlight === 'preview' ? 'Previewing…' : 'Preview'}
             </Button>
             <Button
-              theme={customTheme.button}
               color="failure"
               onClick={() => setConfirmReject(true)}
               disabled={actionInFlight !== null || confirmReject}
@@ -563,7 +559,6 @@ const EventBlockDetailModal: FC<Props> = function ({
               Reject
             </Button>
             <Button
-              theme={customTheme.button}
               color="success"
               onClick={handleApprove}
               disabled={actionInFlight !== null}
@@ -573,7 +568,7 @@ const EventBlockDetailModal: FC<Props> = function ({
             </Button>
           </div>
         )}
-        <Button theme={customTheme.button} color="gray" onClick={onClose}>
+        <Button color="gray" onClick={onClose}>
           Close
         </Button>
       </ModalFooter>

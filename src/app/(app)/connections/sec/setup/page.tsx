@@ -2,7 +2,7 @@
 'use client'
 
 import { CIK_LENGTH } from '@/lib/constants'
-import { customTheme, SDK, useGraphContext } from '@/lib/core'
+import { SDK, useGraphContext } from '@/lib/core'
 import {
   Alert,
   Breadcrumb,
@@ -130,7 +130,7 @@ export default function SECSetupPage() {
   if (success) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <Card theme={customTheme.card} className="w-full max-w-md">
+        <Card className="w-full max-w-md">
           <div className="text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
               <svg
@@ -180,11 +180,7 @@ export default function SECSetupPage() {
           </Breadcrumb>
 
           <div className="mb-6 flex items-center gap-4">
-            <Button
-              color="gray"
-              theme={customTheme.button}
-              onClick={() => router.back()}
-            >
+            <Button color="gray" onClick={() => router.back()}>
               <HiArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
@@ -197,7 +193,7 @@ export default function SECSetupPage() {
 
       <div className="px-4 pb-6">
         <div className="mx-auto max-w-2xl">
-          <Card theme={customTheme.card}>
+          <Card>
             <h3 className="mb-4 text-lg font-medium text-gray-900 dark:text-white">
               Connect SEC EDGAR Database
             </h3>
@@ -226,7 +222,6 @@ export default function SECSetupPage() {
                   value={cik}
                   onChange={handleCikChange}
                   required
-                  theme={customTheme.textInput}
                   color={
                     validationResult?.valid === false
                       ? 'failure'
@@ -293,7 +288,6 @@ export default function SECSetupPage() {
                 <Button
                   type="button"
                   color="gray"
-                  theme={customTheme.button}
                   onClick={() => router.back()}
                   disabled={loading}
                 >
@@ -302,7 +296,6 @@ export default function SECSetupPage() {
                 <Button
                   type="submit"
                   color="primary"
-                  theme={customTheme.button}
                   disabled={loading || !cik.trim()}
                 >
                   {loading ? 'Setting up...' : 'Connect SEC'}

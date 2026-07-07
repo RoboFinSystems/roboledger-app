@@ -1,6 +1,5 @@
 'use client'
 
-import { customTheme } from '@/lib/core'
 import { Alert, Badge, Button, Card, Progress, Select } from 'flowbite-react'
 import Image from 'next/image'
 import { useState } from 'react'
@@ -139,7 +138,7 @@ export default function ConnectionCard({
         : null
 
   return (
-    <Card theme={customTheme.card}>
+    <Card>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           {image && (
@@ -229,7 +228,6 @@ export default function ConnectionCard({
                 <Select
                   id={`write-policy-${connection.connection_id}`}
                   sizing="sm"
-                  theme={customTheme.select}
                   value={writePolicyValue}
                   disabled={!onSetWritePolicy || savingPolicy}
                   onChange={async (e) => {
@@ -267,7 +265,6 @@ export default function ConnectionCard({
           <Button
             size="sm"
             color="primary"
-            theme={customTheme.button}
             onClick={onSync}
             disabled={isSyncing(status.status)}
           >
@@ -277,7 +274,6 @@ export default function ConnectionCard({
           <Button
             size="sm"
             color="failure"
-            theme={customTheme.button}
             onClick={onDelete}
             disabled={isSyncing(status.status)}
             title="Delete connection"

@@ -2,7 +2,6 @@
 
 import {
   clients,
-  customTheme,
   GraphFilters,
   LoadingState,
   PageHeader,
@@ -187,7 +186,7 @@ const PublishListsContent: FC = function () {
   if (!currentGraph) {
     return (
       <PageLayout>
-        <Card theme={customTheme.card}>
+        <Card>
           <p className="text-gray-500 dark:text-gray-400">
             No graph selected. Select a graph to manage publish lists.
           </p>
@@ -205,16 +204,12 @@ const PublishListsContent: FC = function () {
         actions={
           <div className="flex gap-2">
             <Link href="/reports">
-              <Button theme={customTheme.button} color="light">
+              <Button color="light">
                 <HiArrowLeft className="mr-2 h-4 w-4" />
                 Back to Reports
               </Button>
             </Link>
-            <Button
-              theme={customTheme.button}
-              color="primary"
-              onClick={() => setShowCreateModal(true)}
-            >
+            <Button color="primary" onClick={() => setShowCreateModal(true)}>
               <HiOutlinePlusCircle className="mr-2 h-5 w-5" />
               New List
             </Button>
@@ -223,18 +218,14 @@ const PublishListsContent: FC = function () {
       />
 
       {error && (
-        <Alert
-          theme={customTheme.alert}
-          color="failure"
-          onDismiss={() => setError(null)}
-        >
+        <Alert color="failure" onDismiss={() => setError(null)}>
           {error}
         </Alert>
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* List panel */}
-        <Card theme={customTheme.card} className="lg:col-span-1">
+        <Card className="lg:col-span-1">
           <h2 className="mb-4 text-lg font-bold dark:text-white">Your Lists</h2>
           {isLoading ? (
             <LoadingState className="py-8" />
@@ -277,7 +268,7 @@ const PublishListsContent: FC = function () {
         </Card>
 
         {/* Detail panel */}
-        <Card theme={customTheme.card} className="lg:col-span-2">
+        <Card className="lg:col-span-2">
           {selectedList ? (
             <>
               <div className="mb-4 flex items-start justify-between">
@@ -293,7 +284,6 @@ const PublishListsContent: FC = function () {
                 </div>
                 <div className="flex gap-2">
                   <Button
-                    theme={customTheme.button}
                     size="sm"
                     color="primary"
                     onClick={() => setShowAddMemberModal(true)}
@@ -302,7 +292,6 @@ const PublishListsContent: FC = function () {
                     Add Recipient
                   </Button>
                   <Button
-                    theme={customTheme.button}
                     size="sm"
                     color="failure"
                     onClick={() => handleDeleteList(selectedList.id)}
@@ -319,7 +308,7 @@ const PublishListsContent: FC = function () {
                   </p>
                 </div>
               ) : (
-                <Table theme={customTheme.table}>
+                <Table>
                   <TableHead>
                     <TableHeadCell>Graph ID</TableHeadCell>
                     <TableHeadCell>Organization</TableHeadCell>
@@ -351,7 +340,6 @@ const PublishListsContent: FC = function () {
                         </TableCell>
                         <TableCell>
                           <Button
-                            theme={customTheme.button}
                             size="xs"
                             color="failure"
                             onClick={() => handleRemoveMember(member.id)}
@@ -407,7 +395,6 @@ const PublishListsContent: FC = function () {
         </ModalBody>
         <ModalFooter>
           <Button
-            theme={customTheme.button}
             color="purple"
             onClick={handleCreateList}
             disabled={isCreating || !newListName.trim()}
@@ -417,11 +404,7 @@ const PublishListsContent: FC = function () {
             ) : null}
             Create
           </Button>
-          <Button
-            theme={customTheme.button}
-            color="gray"
-            onClick={() => setShowCreateModal(false)}
-          >
+          <Button color="gray" onClick={() => setShowCreateModal(false)}>
             Cancel
           </Button>
         </ModalFooter>
@@ -439,11 +422,7 @@ const PublishListsContent: FC = function () {
         <ModalHeader>Add Recipient</ModalHeader>
         <ModalBody>
           <div className="space-y-4">
-            {addMemberError && (
-              <Alert theme={customTheme.alert} color="failure">
-                {addMemberError}
-              </Alert>
-            )}
+            {addMemberError && <Alert color="failure">{addMemberError}</Alert>}
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Enter the graph ID of the investor or entity you want to share
               reports with. They will receive a copy of any report you share to
@@ -463,7 +442,6 @@ const PublishListsContent: FC = function () {
         </ModalBody>
         <ModalFooter>
           <Button
-            theme={customTheme.button}
             color="purple"
             onClick={handleAddMember}
             disabled={isAddingMember || !newMemberGraphId.trim()}
@@ -474,7 +452,6 @@ const PublishListsContent: FC = function () {
             Add
           </Button>
           <Button
-            theme={customTheme.button}
             color="gray"
             onClick={() => {
               setShowAddMemberModal(false)

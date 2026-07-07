@@ -2,7 +2,6 @@
 
 import {
   clients,
-  customTheme,
   EmptyState,
   GraphFilters,
   LoadingState,
@@ -117,13 +116,13 @@ const ReportsContent: FC = function () {
         actions={
           <div className="flex gap-2">
             <Link href="/reports/publish-lists">
-              <Button theme={customTheme.button} color="light">
+              <Button color="light">
                 <HiShare className="mr-2 h-5 w-5" />
                 Publish Lists
               </Button>
             </Link>
             <Link href="/reports/new">
-              <Button theme={customTheme.button} color="primary">
+              <Button color="primary">
                 <HiOutlinePlusCircle className="mr-2 h-5 w-5" />
                 Create Report
               </Button>
@@ -133,7 +132,7 @@ const ReportsContent: FC = function () {
       />
 
       {error && (
-        <Card theme={customTheme.card}>
+        <Card>
           <div className="flex items-center gap-2 text-red-500">
             <HiExclamationCircle className="h-5 w-5" />
             <span>{error}</span>
@@ -141,7 +140,7 @@ const ReportsContent: FC = function () {
         </Card>
       )}
 
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="overflow-x-auto">
           {isLoading ? (
             <LoadingState />
@@ -152,7 +151,7 @@ const ReportsContent: FC = function () {
               description="Create your first financial report to get started."
             />
           ) : (
-            <Table theme={customTheme.table}>
+            <Table>
               <TableHead>
                 <TableHeadCell>Report Name</TableHeadCell>
                 <TableHeadCell>Period</TableHeadCell>
@@ -202,11 +201,7 @@ const ReportsContent: FC = function () {
                       <Link
                         href={`/reports/${report.id}?graph=${report._graphId}`}
                       >
-                        <Button
-                          theme={customTheme.button}
-                          size="sm"
-                          color="light"
-                        >
+                        <Button size="sm" color="light">
                           <HiEye className="mr-1 h-4 w-4" />
                           View
                         </Button>

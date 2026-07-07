@@ -2,7 +2,6 @@
 
 import {
   clients,
-  customTheme,
   EmptyState,
   GraphFilters,
   LoadingState,
@@ -673,7 +672,7 @@ const ChartOfAccountsContent: FC = function () {
 
       {/* Mapping header bar */}
       {hasMappings && (
-        <Card theme={customTheme.card}>
+        <Card>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {mappings.length > 1 ? (
@@ -722,7 +721,6 @@ const ChartOfAccountsContent: FC = function () {
             </div>
             <div className="flex items-center gap-2">
               <Button
-                theme={customTheme.button}
                 color="light"
                 size="xs"
                 onClick={() => setShowMappings((v) => !v)}
@@ -730,7 +728,6 @@ const ChartOfAccountsContent: FC = function () {
                 {showMappings ? 'Hide mappings' : 'Show mappings'}
               </Button>
               <Button
-                theme={customTheme.button}
                 color="purple"
                 size="xs"
                 onClick={handleAutoMap}
@@ -754,7 +751,7 @@ const ChartOfAccountsContent: FC = function () {
       )}
 
       {/* Filters */}
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="space-y-4 p-4">
           <div className="block items-center gap-4 sm:flex">
             <div className="mb-4 flex flex-1 sm:mb-0">
@@ -763,7 +760,6 @@ const ChartOfAccountsContent: FC = function () {
                   <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 </div>
                 <TextInput
-                  theme={customTheme.textInput}
                   id="search"
                   placeholder="Search accounts..."
                   value={searchTerm}
@@ -804,7 +800,7 @@ const ChartOfAccountsContent: FC = function () {
       </Card>
 
       {error && (
-        <Card theme={customTheme.card}>
+        <Card>
           <div className="flex items-center gap-2 text-red-500">
             <HiExclamationCircle className="h-5 w-5" />
             <span>{error}</span>
@@ -812,7 +808,7 @@ const ChartOfAccountsContent: FC = function () {
         </Card>
       )}
 
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="overflow-x-auto">
           {isLoading ? (
             <LoadingState />
@@ -836,7 +832,7 @@ const ChartOfAccountsContent: FC = function () {
               className="p-8"
             />
           ) : (
-            <Table theme={customTheme.table}>
+            <Table>
               <TableHead>
                 <TableHeadCell>Account Name</TableHeadCell>
                 <TableHeadCell>Classification</TableHeadCell>

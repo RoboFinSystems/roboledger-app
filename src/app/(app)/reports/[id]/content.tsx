@@ -2,7 +2,6 @@
 
 import {
   clients,
-  customTheme,
   EmptyState,
   LoadingState,
   PageHeader,
@@ -325,13 +324,13 @@ const ReportViewerContent: FC = function () {
   if (error || !pkg) {
     return (
       <PageLayout>
-        <Card theme={customTheme.card}>
+        <Card>
           <EmptyState
             icon={HiExclamationCircle}
             title={error || 'Report not found'}
             action={
               <Link href="/reports">
-                <Button theme={customTheme.button} color="primary">
+                <Button color="primary">
                   <HiChevronLeft className="mr-2 h-5 w-5" />
                   Back to Reports
                 </Button>
@@ -421,7 +420,7 @@ const ReportViewerContent: FC = function () {
           otherwise be painted under the next `backdrop-blur` card (which forms
           its own stacking context). Kept under z-10 so the PageHeader kebab
           menu still paints over this card. */}
-      <Card className="relative z-[5]" theme={customTheme.card}>
+      <Card className="relative z-[5]">
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <Badge color={filingBadge.color} size="sm">
             {filingBadge.label}
@@ -477,7 +476,7 @@ const ReportViewerContent: FC = function () {
       {/* Package items — sidebar + stacked BlockViews, one per FactSet.
           The 'holon' renderer swaps in the shared ReportView for comparison. */}
       {renderer === 'holon' ? (
-        <Card theme={customTheme.card}>
+        <Card>
           <HolonReportView
             graphId={graphId}
             reportId={reportId}
@@ -485,7 +484,7 @@ const ReportViewerContent: FC = function () {
           />
         </Card>
       ) : pkg.items.length === 0 ? (
-        <Card theme={customTheme.card}>
+        <Card>
           <div className="py-12 text-center text-gray-500 dark:text-gray-400">
             No statements available for this report yet.
           </div>
@@ -513,7 +512,7 @@ const ReportViewerContent: FC = function () {
                 // sticky page header when sidebar clicks scroll-to-anchor.
                 className="scroll-mt-4"
               >
-                <Card theme={customTheme.card}>
+                <Card>
                   <BlockView
                     envelope={item.block}
                     viewMode={viewMode}
@@ -536,7 +535,6 @@ const ReportViewerContent: FC = function () {
         <ModalBody>
           {shareResult && (
             <Alert
-              theme={customTheme.alert}
               color={shareResult.includes('Failed') ? 'failure' : 'success'}
               className="mb-4"
             >
@@ -559,7 +557,7 @@ const ReportViewerContent: FC = function () {
                   No publish lists yet.
                 </p>
                 <Link href="/reports/publish-lists">
-                  <Button theme={customTheme.button} size="sm" color="purple">
+                  <Button size="sm" color="purple">
                     Create a Publish List
                   </Button>
                 </Link>
@@ -601,7 +599,6 @@ const ReportViewerContent: FC = function () {
         </ModalBody>
         <ModalFooter>
           <Button
-            theme={customTheme.button}
             color="purple"
             onClick={handleShare}
             disabled={isSharing || !selectedListId}
@@ -611,11 +608,7 @@ const ReportViewerContent: FC = function () {
             ) : null}
             Share Report
           </Button>
-          <Button
-            theme={customTheme.button}
-            color="gray"
-            onClick={() => setShowShareModal(false)}
-          >
+          <Button color="gray" onClick={() => setShowShareModal(false)}>
             Close
           </Button>
         </ModalFooter>

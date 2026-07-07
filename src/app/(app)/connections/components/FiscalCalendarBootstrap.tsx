@@ -1,6 +1,6 @@
 'use client'
 
-import { clients, customTheme } from '@/lib/core'
+import { clients } from '@/lib/core'
 import type { LedgerFiscalCalendar } from '@robosystems/client/clients'
 import { Alert, Badge, Button } from 'flowbite-react'
 import { type FC, useCallback, useEffect, useState } from 'react'
@@ -64,11 +64,7 @@ export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
 
   if (loadError) {
     return (
-      <Alert
-        theme={customTheme.alert}
-        color="warning"
-        icon={HiExclamationCircle}
-      >
+      <Alert color="warning" icon={HiExclamationCircle}>
         Could not load fiscal calendar: {loadError}
       </Alert>
     )
@@ -109,7 +105,6 @@ export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
           </div>
         </div>
         <Button
-          theme={customTheme.button}
           color="warning"
           size="xs"
           onClick={handleInitialize}
@@ -119,7 +114,7 @@ export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
         </Button>
       </div>
       {initError && (
-        <Alert theme={customTheme.alert} color="failure" className="mt-2">
+        <Alert color="failure" className="mt-2">
           {initError}
         </Alert>
       )}

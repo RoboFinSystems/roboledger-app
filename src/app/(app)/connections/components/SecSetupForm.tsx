@@ -1,7 +1,7 @@
 'use client'
 
 import { CIK_LENGTH } from '@/lib/constants'
-import { customTheme, SDK, useGraphContext } from '@/lib/core'
+import { SDK, useGraphContext } from '@/lib/core'
 import { Alert, Button, Label, TextInput } from 'flowbite-react'
 import { useCallback, useState } from 'react'
 
@@ -95,7 +95,6 @@ export default function SecSetupForm({
             value={cik}
             onChange={(e) => setCik(e.target.value)}
             required
-            theme={customTheme.textInput}
           />
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Leading zeros are added automatically. Example: Apple Inc. is
@@ -125,7 +124,6 @@ export default function SecSetupForm({
           <Button
             type="button"
             color="gray"
-            theme={customTheme.button}
             onClick={onCancel}
             disabled={loading}
           >
@@ -134,7 +132,6 @@ export default function SecSetupForm({
           <Button
             type="submit"
             color="primary"
-            theme={customTheme.button}
             disabled={loading || !cik.trim()}
           >
             {loading ? 'Connecting...' : 'Connect'}

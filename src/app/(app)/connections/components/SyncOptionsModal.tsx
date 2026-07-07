@@ -1,6 +1,5 @@
 'use client'
 
-import { customTheme } from '@/lib/core'
 import {
   Alert,
   Button,
@@ -58,7 +57,7 @@ export default function SyncOptionsModal({
   }
 
   return (
-    <Modal theme={customTheme.modal} show={isOpen} onClose={onClose} size="lg">
+    <Modal show={isOpen} onClose={onClose} size="lg">
       <ModalHeader>Sync {providerLabel}</ModalHeader>
       <ModalBody>
         <div className="space-y-4">
@@ -136,11 +135,7 @@ export default function SyncOptionsModal({
           </div>
 
           {mode === 'full_rebuild' && (
-            <Alert
-              theme={customTheme.alert}
-              color="warning"
-              className="text-xs"
-            >
+            <Alert color="warning" className="text-xs">
               Pulls every transaction from the provider. Can take several
               minutes for large companies.
             </Alert>
@@ -150,13 +145,12 @@ export default function SyncOptionsModal({
       <ModalFooter>
         <Button
           color="primary"
-          theme={customTheme.button}
           onClick={handleSubmit}
           disabled={submitDisabled}
         >
           Start Sync
         </Button>
-        <Button color="gray" theme={customTheme.button} onClick={onClose}>
+        <Button color="gray" onClick={onClose}>
           Cancel
         </Button>
       </ModalFooter>

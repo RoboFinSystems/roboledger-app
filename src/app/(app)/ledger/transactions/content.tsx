@@ -2,7 +2,6 @@
 
 import {
   clients,
-  customTheme,
   EmptyState,
   GraphFilters,
   LoadingState,
@@ -296,11 +295,7 @@ const TransactionsContent: FC = function () {
       {/* §3.10 — New manual journal entry */}
       {graphState.currentGraphId && (
         <div className="mb-4 flex justify-end">
-          <Button
-            color="primary"
-            theme={customTheme.button}
-            onClick={() => setNewEntryOpen(true)}
-          >
+          <Button color="primary" onClick={() => setNewEntryOpen(true)}>
             <HiPlus className="mr-2 h-4 w-4" />
             New Entry
           </Button>
@@ -316,7 +311,7 @@ const TransactionsContent: FC = function () {
       )}
 
       {/* Filters */}
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="flex flex-wrap items-end gap-4 p-4">
           {/* Search */}
           <div className="w-full sm:w-64">
@@ -325,7 +320,6 @@ const TransactionsContent: FC = function () {
                 <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
               </div>
               <TextInput
-                theme={customTheme.textInput}
                 id="search"
                 placeholder="Search transactions..."
                 value={searchTerm}
@@ -346,7 +340,6 @@ const TransactionsContent: FC = function () {
               </label>
               <TextInput
                 id="startDate"
-                theme={customTheme.textInput}
                 type="date"
                 value={startDate || ''}
                 onChange={(e) => setStartDate(e.target.value || null)}
@@ -361,7 +354,6 @@ const TransactionsContent: FC = function () {
               </label>
               <TextInput
                 id="endDate"
-                theme={customTheme.textInput}
                 type="date"
                 value={endDate || ''}
                 onChange={(e) => setEndDate(e.target.value || null)}
@@ -379,7 +371,6 @@ const TransactionsContent: FC = function () {
             </label>
             <Select
               id="typeFilter"
-              theme={customTheme.select}
               value={transactionTypeFilter}
               onChange={(e) => setTransactionTypeFilter(e.target.value)}
             >
@@ -395,13 +386,13 @@ const TransactionsContent: FC = function () {
       </Card>
 
       {error && (
-        <Alert theme={customTheme.alert} color="failure">
+        <Alert color="failure">
           <HiExclamationCircle className="h-4 w-4" />
           <span className="font-medium">Error!</span> {error}
         </Alert>
       )}
 
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="overflow-x-auto">
           {isLoading ? (
             <LoadingState />
@@ -425,7 +416,7 @@ const TransactionsContent: FC = function () {
               className="p-8"
             />
           ) : (
-            <Table theme={customTheme.table}>
+            <Table>
               <TableHead>
                 <TableHeadCell className="w-10"></TableHeadCell>
                 <TableHeadCell>Date</TableHeadCell>

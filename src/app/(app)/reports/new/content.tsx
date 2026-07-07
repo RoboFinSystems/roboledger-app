@@ -2,7 +2,6 @@
 
 import {
   clients,
-  customTheme,
   GraphFilters,
   LoadingState,
   PageHeader,
@@ -424,11 +423,7 @@ const ReportBuilderContent: FC = function () {
         title="Create Report"
         subtitle="Generate financial statements from your mapped trial balance"
         actions={
-          <Button
-            theme={customTheme.button}
-            color="light"
-            onClick={() => router.push('/reports')}
-          >
+          <Button color="light" onClick={() => router.push('/reports')}>
             <HiChevronLeft className="mr-2 h-5 w-5" />
             Back to Reports
           </Button>
@@ -436,14 +431,14 @@ const ReportBuilderContent: FC = function () {
       />
 
       {error && (
-        <Alert theme={customTheme.alert} color="failure">
+        <Alert color="failure">
           <HiExclamationCircle className="h-4 w-4" />
           <span className="font-medium">Error:</span> {error}
         </Alert>
       )}
 
       {/* Mapping Selection */}
-      <Card theme={customTheme.card}>
+      <Card>
         <h3 className="font-heading text-lg font-bold dark:text-white">
           1. Select Mapping
         </h3>
@@ -466,7 +461,6 @@ const ReportBuilderContent: FC = function () {
               {mappings.map((m) => (
                 <Button
                   key={m.id}
-                  theme={customTheme.button}
                   color={selectedMappingId === m.id ? 'primary' : 'light'}
                   size="sm"
                   onClick={() => setSelectedMappingId(m.id)}
@@ -511,7 +505,6 @@ const ReportBuilderContent: FC = function () {
                       {coverage.unmappedCount !== 1 ? 's' : ''}
                     </span>
                     <Button
-                      theme={customTheme.button}
                       color="purple"
                       size="xs"
                       onClick={handleAutoMap}
@@ -538,7 +531,7 @@ const ReportBuilderContent: FC = function () {
       </Card>
 
       {/* Report Configuration */}
-      <Card theme={customTheme.card}>
+      <Card>
         <h3 className="font-heading text-lg font-bold dark:text-white">
           2. Configure Report
         </h3>
@@ -550,7 +543,6 @@ const ReportBuilderContent: FC = function () {
           <div>
             <Label htmlFor="report-name">Report Name</Label>
             <TextInput
-              theme={customTheme.textInput}
               id="report-name"
               placeholder="e.g., Q1 2026 Financial Statements"
               value={reportName}
@@ -585,7 +577,6 @@ const ReportBuilderContent: FC = function () {
               <div>
                 <Label htmlFor="period-start">Period Start</Label>
                 <TextInput
-                  theme={customTheme.textInput}
                   id="period-start"
                   type="date"
                   value={periodStart}
@@ -598,7 +589,6 @@ const ReportBuilderContent: FC = function () {
               <div>
                 <Label htmlFor="period-end">Period End</Label>
                 <TextInput
-                  theme={customTheme.textInput}
                   id="period-end"
                   type="date"
                   value={periodEnd}
@@ -648,7 +638,7 @@ const ReportBuilderContent: FC = function () {
       </Card>
 
       {/* Generate */}
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-heading text-lg font-bold dark:text-white">
@@ -660,7 +650,6 @@ const ReportBuilderContent: FC = function () {
             </p>
           </div>
           <Button
-            theme={customTheme.button}
             color="primary"
             size="lg"
             onClick={handleGenerate}

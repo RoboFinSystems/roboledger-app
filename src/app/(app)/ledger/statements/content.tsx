@@ -2,7 +2,6 @@
 
 import {
   clients,
-  customTheme,
   EmptyState,
   GraphFilters,
   LoadingState,
@@ -210,7 +209,7 @@ const LiveStatementsContent: FC = function () {
       />
 
       {/* Live, ephemeral render — make it unmistakable this is not a filing. */}
-      <Alert theme={customTheme.alert} color="info">
+      <Alert color="info">
         <span className="font-medium">Live render.</span> Reflects the current
         ledger state, including un-closed activity. Nothing is saved — this is
         not a filed statement. File from{' '}
@@ -221,7 +220,7 @@ const LiveStatementsContent: FC = function () {
       </Alert>
 
       {/* Controls */}
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="flex flex-wrap items-end gap-4 p-4">
           {/* Statement type */}
           <div className="flex flex-wrap gap-2">
@@ -229,7 +228,6 @@ const LiveStatementsContent: FC = function () {
               <Button
                 key={s.key}
                 size="sm"
-                theme={customTheme.button}
                 color={statementType === s.key ? 'primary' : 'gray'}
                 onClick={() => setStatementType(s.key)}
               >
@@ -249,7 +247,6 @@ const LiveStatementsContent: FC = function () {
             <Select
               id="period-preset"
               sizing="sm"
-              theme={customTheme.select}
               value={preset}
               onChange={(e) => setPreset(e.target.value as PresetKey)}
             >
@@ -275,7 +272,6 @@ const LiveStatementsContent: FC = function () {
                   id="custom-start"
                   type="date"
                   sizing="sm"
-                  theme={customTheme.textInput}
                   value={customStart}
                   onChange={(e) => setCustomStart(e.target.value)}
                 />
@@ -291,7 +287,6 @@ const LiveStatementsContent: FC = function () {
                   id="custom-end"
                   type="date"
                   sizing="sm"
-                  theme={customTheme.textInput}
                   value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)}
                 />
@@ -301,7 +296,6 @@ const LiveStatementsContent: FC = function () {
 
           <Button
             size="sm"
-            theme={customTheme.button}
             color="gray"
             onClick={() => load()}
             disabled={isLoading}
@@ -313,13 +307,13 @@ const LiveStatementsContent: FC = function () {
       </Card>
 
       {error && (
-        <Alert theme={customTheme.alert} color="failure">
+        <Alert color="failure">
           <HiExclamationCircle className="h-4 w-4" />
           <span className="font-medium">Error!</span> {error}
         </Alert>
       )}
 
-      <Card theme={customTheme.card}>
+      <Card>
         <div className="overflow-x-auto">
           {isLoading ? (
             <LoadingState />
@@ -356,7 +350,7 @@ const LiveStatementsContent: FC = function () {
 
 function LiveStatementTable({ statement }: { statement: LiveStatement }) {
   return (
-    <Table theme={customTheme.table}>
+    <Table>
       <TableHead>
         <TableHeadCell>Concept</TableHeadCell>
         {statement.periods.map((p) => (
