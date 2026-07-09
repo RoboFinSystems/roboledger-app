@@ -52,7 +52,7 @@ npm run format:check # Check code formatting
 | Route                                     | Backend reads                                                       | Status                                                                                      |
 | ----------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `/home`                                   | listReports, listTransactions                                       | shipped                                                                                     |
-| `/entity` `/entities`                     | getEntity, listEntities, opMaterialize                              | shipped (materialize card 2026-05-14)                                                       |
+| `/entity` `/entities`                     | getEntity, listEntities                                             | shipped                                                                                     |
 | `/connections`                            | listConnections, syncConnection                                     | shipped                                                                                     |
 | `/connections/qb-callback`                | oauthCallback                                                       | shipped                                                                                     |
 | `/connections/sec/setup`                  | createConnection                                                    | shipped                                                                                     |
