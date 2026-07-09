@@ -111,14 +111,23 @@ export { customTheme } from './theme'
 
 // Export components
 // Export console components
-export { ConsoleContent } from './components/console'
+export {
+  buildGraphAwareConsoleConfig,
+  ConsoleContent,
+  EXAMPLE_SETS,
+  getGraphExampleKind,
+  useGraphAwareConsoleConfig,
+} from './components/console'
 export type {
+  ConsoleBranding,
   ConsoleCommandContext,
   ConsoleConfig,
   ConsoleExtraCommand,
   ConsoleHeaderConfig,
   ConsoleMcpConfig,
   ConsoleWelcomeConfig,
+  GraphExampleKind,
+  GraphExampleSet,
   SampleQuery,
 } from './components/console'
 
