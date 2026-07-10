@@ -76,7 +76,7 @@ export const exportGraphSchema = vi.fn()
 export const listSchemaExtensions = vi.fn()
 
 // Query functions
-export const executeCypherQuery = vi.fn()
+export const executeCypher = vi.fn()
 
 // Service functions
 export const getServiceOfferings = vi.fn()
