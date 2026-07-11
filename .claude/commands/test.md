@@ -44,7 +44,7 @@ For single-layer commands (below), output is short enough that `| tail -30` alon
 
 - Vitest uses `✓` for pass and `✗`/`×` for fail, plus a `FAIL` prefix for files containing failures.
 - The `test` script runs `vitest run --silent` — stack traces on failure are still shown, but per-test pass logs are suppressed.
-- After editing a component under `src/lib/core/`, the same fix may need to land upstream via `npm run core:push` so other apps pick it up on their next `core:pull`.
+- Shared components come from the `@robosystems/core` npm package — fixes to them land in the robosystems-core repo (test there, release, then bump the version here), not in this app.
 
 ## Goal
 

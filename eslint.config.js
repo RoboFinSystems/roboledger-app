@@ -23,7 +23,6 @@ export default [
       'ds-bundle/',
       '.ds-sync/',
       '.design-sync/',
-      'src/lib/core/dist/',
     ],
   },
 

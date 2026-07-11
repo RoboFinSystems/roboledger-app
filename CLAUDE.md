@@ -177,25 +177,16 @@ For larger forward-work surfaces tracked in proper specs:
 - Always run `npm run test:all` before commits
 - Format code before submitting PRs
 
-## Core Library (Git Subtree)
+## Core Library (npm Package)
 
-The `/src/lib/core/` directory is a shared library maintained as a git subtree across all RoboSystems frontend apps (robosystems-app, roboledger-app, roboinvestor-app).
+Shared components are consumed from the [`@robosystems/core`](https://www.npmjs.com/package/@robosystems/core) npm package (repo: `RoboFinSystems/robosystems-core`), shared across all RoboSystems frontend apps (robosystems-app, roboledger-app, roboinvestor-app). Import from `@robosystems/core` or its subpaths (e.g. `@robosystems/core/ui-components`).
 
-### Subtree Commands
+### Working with Core
 
-```bash
-npm run core:pull        # Pull latest changes from core repository
-npm run core:push        # Push local core changes back to repository
-npm run core:add         # Initial setup (only needed once)
-```
-
-### Important Guidelines
-
-- **Pull before making changes**: Always run `npm run core:pull` before modifying core components
-- **Test locally first**: Verify changes work in this app before pushing to core
-- **Push changes back**: After testing, use `npm run core:push` to share improvements
-- **Sync other apps**: After pushing, other apps need to run `core:pull` to get updates
-- **Avoid conflicts**: Coordinate with team when making significant core changes
+- **Core changes happen in the robosystems-core repo**, not here: branch there, test with `npm run test:all`, and validate in this app with a local tarball (`npm run pack:local` in core, then `npm install ../robosystems-core/robosystems-core-<version>.tgz` here) before releasing
+- **Releases**: core publishes to npm via its `create-release` workflow; adopt a new version here with `npm install @robosystems/core@<version>`
+- **Version pinning**: this app pins a semver range in package.json — core changes land here deliberately via a version bump, not implicitly
+- **App wiring**: the package is in the Tailwind `content` globs (`node_modules/@robosystems/core/**/*.js`) and inlined in vitest (`test.server.deps.inline`) — keep both if configs are reworked
 
 ### What's in Core
 

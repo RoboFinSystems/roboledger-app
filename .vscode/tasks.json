@@ -131,18 +131,6 @@
       "problemMatcher": []
     },
     {
-      "label": "Core Pull",
-      "type": "shell",
-      "command": "npm run core:pull",
-      "problemMatcher": []
-    },
-    {
-      "label": "Core Push",
-      "type": "shell",
-      "command": "npm run core:push",
-      "problemMatcher": []
-    },
-    {
       "label": "Setup GitHub Actions",
       "type": "shell",
       "command": "npm run setup:gha",
