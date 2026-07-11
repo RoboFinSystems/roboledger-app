@@ -1,7 +1,7 @@
 // Compile a static Tailwind v4 stylesheet from an app's globals.css for the
 // design-sync bundle. Run from the app root so the @config / @source / content
 // globs resolve. Tailwind generates utilities by scanning the config's content
-// (which covers src/lib/core) plus any extra @source we inject for previews.
+// (which covers node_modules/@robosystems/core) plus any extra @source we inject for previews.
 //   node .ds-sync/compile-css.mjs <globals.css> <out.css>
 import tailwind from '@tailwindcss/postcss'
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -13,7 +13,7 @@ if (!input || !output) {
   process.exit(1)
 }
 // Inject the previews dir as an extra content source so preview-only utility
-// classes are generated too (the config globs already cover src/lib/core).
+// classes are generated too (the config globs already cover node_modules/@robosystems/core).
 // Scan previews AND a brand-color safelist so the full brand palette (every
 // family × scale × bg/text/border/ring + hover/dark/focus variants) ships in
 // styles.css — designs the claude.ai/design agent builds receive only this
