@@ -75,6 +75,14 @@ describe('getSafeReturnUrl (M5 open-redirect guard)', () => {
     expect(getSafeReturnUrl('/path\\..\\x', origin)).toBeNull()
   })
 
+  it('rejects embedded tab/CR/LF that browsers strip before navigating', () => {
+    // "/\t/evil.com" -> browser strips the tab -> "//evil.com" (open redirect)
+    expect(getSafeReturnUrl('/\t/evil.com', origin)).toBeNull()
+    expect(getSafeReturnUrl('/\r/evil.com', origin)).toBeNull()
+    expect(getSafeReturnUrl('/\n/evil.com', origin)).toBeNull()
+    expect(getSafeReturnUrl('/\t//evil.com', origin)).toBeNull()
+  })
+
   it('rejects dangerous schemes (javascript:/data:)', () => {
     expect(getSafeReturnUrl('javascript:alert(1)', origin)).toBeNull()
     expect(

@@ -51,21 +51,21 @@ jobs:
 
       - name: Check If Tag Exists
         id: check-tag
+        env:
+          VERSION: ${{ steps.get-version.outputs.version }}
         run: |
-          if [ $(git tag -l "v${{ steps.get-version.outputs.version }}") ]; then
+          if [ $(git tag -l "v${VERSION}") ]; then
             echo "tag_exists=true" >> $GITHUB_OUTPUT
-            echo "Tag v${{ steps.get-version.outputs.version }} already exists"
+            echo "Tag v${VERSION} already exists"
           else
             echo "tag_exists=false" >> $GITHUB_OUTPUT
-            echo "Tag v${{ steps.get-version.outputs.version }} does not exist yet"
+            echo "Tag v${VERSION} does not exist yet"
           fi
 
       - name: Analyze changes since last release
         if: steps.check-tag.outputs.tag_exists == 'false'
         id: analyze-changes
         run: |
-          VERSION="${{ steps.get-version.outputs.version }}"
-
           # Get the last release tag
           LAST_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 
@@ -260,11 +260,13 @@ jobs:
 
       - name: Create Release Tag
         if: steps.check-tag.outputs.tag_exists == 'false'
+        env:
+          VERSION: ${{ steps.get-version.outputs.version }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "v${{ steps.get-version.outputs.version }}" -m "Release v${{ steps.get-version.outputs.version }}"
-          git push origin "v${{ steps.get-version.outputs.version }}"
+          git tag -a "v${VERSION}" -m "Release v${VERSION}"
+          git push origin "v${VERSION}"
 
       - name: Create GitHub Release
         if: steps.check-tag.outputs.tag_exists == 'false'
@@ -311,8 +313,8 @@ jobs:
         # rather than interpolating ${{ ... }} into the shell.
         env:
           CHANGELOG: ${{ steps.claude-changelog.outputs.changelog }}
+          VERSION: ${{ steps.get-version.outputs.version }}
         run: |
-          VERSION="${{ steps.get-version.outputs.version }}"
 
           echo "## 🚀 RoboLedger v$VERSION Released" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -333,8 +335,9 @@ jobs:
       - name: Set outputs
         id: set-outputs
         if: steps.check-tag.outputs.tag_exists == 'false'
+        env:
+          VERSION: ${{ steps.get-version.outputs.version }}
         run: |
-          VERSION="${{ steps.get-version.outputs.version }}"
           TAG_NAME="v$VERSION"
           RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/$TAG_NAME"
 

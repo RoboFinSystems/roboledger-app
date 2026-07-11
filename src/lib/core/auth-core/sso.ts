@@ -37,14 +37,31 @@ export function getSafeReturnUrl(
   const raw = returnUrl.trim()
   if (!raw) return null
 
+  // Browsers strip ASCII tab/newline/CR from a URL before navigating, so a
+  // value like "/\t/evil.com" collapses to "//evil.com" (a protocol-relative
+  // redirect) at navigation time. Reject any control character outright rather
+  // than trying to normalize it.
+  for (let i = 0; i < raw.length; i++) {
+    const code = raw.charCodeAt(i)
+    if (code <= 0x1f || code === 0x7f) return null
+  }
+
   const origin =
     currentOrigin ??
     (typeof window !== 'undefined' ? window.location.origin : undefined)
 
-  // Relative path: reject protocol-relative ("//host"), backslash tricks
-  // ("/\\host", "\\host") and anything not anchored to a single leading slash.
+  // Relative path: reject protocol-relative ("//host") and backslash tricks,
+  // then require that it resolves back to the current origin (belt-and-suspenders
+  // against anything the prefix checks miss).
   if (raw.startsWith('/')) {
     if (raw.startsWith('//') || raw.includes('\\')) return null
+    if (origin) {
+      try {
+        if (new URL(raw, origin).origin !== origin) return null
+      } catch {
+        return null
+      }
+    }
     return raw
   }
 
