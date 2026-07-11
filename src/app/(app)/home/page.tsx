@@ -1,6 +1,6 @@
 'use client'
-import { useUser } from '@/lib/core'
-import { Spinner } from '@/lib/core/ui-components'
+import { useUser } from '@robosystems/core'
+import { Spinner } from '@robosystems/core/ui-components'
 import HomePageContent from './content'
 
 export default function HomePage() {

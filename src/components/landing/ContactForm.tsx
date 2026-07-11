@@ -4,7 +4,7 @@ import { isTurnstileEnabled, isTurnstileValid } from '@/lib/config/turnstile'
 import {
   TurnstileWidget,
   type TurnstileWidgetRef,
-} from '@/lib/core/auth-components/TurnstileWidget'
+} from '@robosystems/core/auth-components/TurnstileWidget'
 import { Button, Label, TextInput, Textarea } from 'flowbite-react'
 import { useRef, useState } from 'react'
 

@@ -1,5 +1,10 @@
 'use client'
 
+import type {
+  LedgerMappingCoverage,
+  LedgerMappingInfo,
+  PeriodSpecInput,
+} from '@robosystems/client/clients'
 import {
   clients,
   GraphFilters,
@@ -7,12 +12,7 @@ import {
   PageHeader,
   PageLayout,
   useGraphContext,
-} from '@/lib/core'
-import type {
-  LedgerMappingCoverage,
-  LedgerMappingInfo,
-  PeriodSpecInput,
-} from '@robosystems/client/clients'
+} from '@robosystems/core'
 import {
   Alert,
   Badge,

@@ -1,6 +1,6 @@
 'use client'
 
-import { LandingFooter } from '@/lib/core'
+import { LandingFooter } from '@robosystems/core'
 import ContactModal from './ContactModal'
 
 export default function Footer() {

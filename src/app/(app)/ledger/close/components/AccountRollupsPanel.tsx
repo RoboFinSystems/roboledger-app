@@ -1,7 +1,7 @@
 'use client'
 
-import { clients, LoadingState } from '@/lib/core'
 import type { LedgerAccountRollups } from '@robosystems/client/clients'
+import { clients, LoadingState } from '@robosystems/core'
 import {
   Badge,
   Table,

@@ -1,7 +1,7 @@
 'use client'
 
-import { SDK, useGraphContext } from '@/lib/core'
-import { Spinner } from '@/lib/core/ui-components'
+import { SDK, useGraphContext } from '@robosystems/core'
+import { Spinner } from '@robosystems/core/ui-components'
 import { Alert, Button } from 'flowbite-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'

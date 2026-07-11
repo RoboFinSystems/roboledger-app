@@ -8,7 +8,7 @@ import {
   PageHeader,
   PageLayout,
   useGraphContext,
-} from '@/lib/core'
+} from '@robosystems/core'
 import {
   Alert,
   Button,

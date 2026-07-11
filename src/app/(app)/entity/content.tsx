@@ -1,14 +1,14 @@
 'use client'
 
+import type { LedgerEntity } from '@robosystems/client/clients'
+import type { UpdateEntityRequest } from '@robosystems/client/types'
 import {
   clients,
   PageHeader,
   PageLayout,
   useEntity,
   useGraphContext,
-} from '@/lib/core'
-import type { LedgerEntity } from '@robosystems/client/clients'
-import type { UpdateEntityRequest } from '@robosystems/client/types'
+} from '@robosystems/core'
 import {
   Alert,
   Badge,

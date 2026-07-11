@@ -2,7 +2,7 @@
 'use client'
 
 import { CIK_LENGTH } from '@/lib/constants'
-import { SDK, useGraphContext } from '@/lib/core'
+import { SDK, useGraphContext } from '@robosystems/core'
 import {
   Alert,
   Breadcrumb,

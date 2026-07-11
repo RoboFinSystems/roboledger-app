@@ -39,6 +39,14 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    server: {
+      deps: {
+        // Compiled ESM with directory imports + needs the @robosystems/client
+        // mock aliases applied inside it — must be processed by vite, not
+        // loaded by Node's native resolver.
+        inline: [/@robosystems\/core/],
+      },
+    },
     setupFiles: './vitest.setup.ts',
     include: ['**/__tests__/**/*.test.{ts,tsx,js,jsx}'],
     silent: true,

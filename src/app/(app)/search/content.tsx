@@ -1,6 +1,6 @@
 'use client'
 
-import { SearchContent, type SearchConfig } from '@/lib/core'
+import { SearchContent, type SearchConfig } from '@robosystems/core'
 
 const CONFIG: SearchConfig = {
   title: 'Document Search',

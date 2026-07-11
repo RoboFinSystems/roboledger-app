@@ -5,7 +5,7 @@ const mockGetClosingBookStructures = vi.fn()
 const mockGetEntity = vi.fn()
 const mockUseGraphContext = vi.fn()
 
-vi.mock('@/lib/core', () => ({
+vi.mock('@robosystems/core', () => ({
   customTheme: { card: {} },
   clients: {
     ledger: {

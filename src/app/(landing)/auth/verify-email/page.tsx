@@ -1,6 +1,6 @@
 'use client'
 
-import { useAuth } from '@/lib/core/auth-components/AuthProvider'
+import { useAuth } from '@robosystems/core/auth-components/AuthProvider'
 import { Spinner } from 'flowbite-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useRef, useState } from 'react'

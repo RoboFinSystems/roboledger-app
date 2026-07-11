@@ -1,13 +1,13 @@
 'use client'
 
+import type { PublishList, ReportPackage } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
   LoadingState,
   PageHeader,
   PageLayout,
-} from '@/lib/core'
-import type { PublishList, ReportPackage } from '@robosystems/client/clients'
+} from '@robosystems/core'
 import {
   Alert,
   Badge,

@@ -1,12 +1,12 @@
 'use client'
 
-import { clients, LoadingState } from '@/lib/core'
 import { formatDateTime } from '@/lib/ledger/formatters'
 import type { PreviewEventBlockResponse } from '@robosystems/client'
 import type {
   LedgerAgent,
   LedgerEventBlockDetail,
 } from '@robosystems/client/clients'
+import { clients, LoadingState } from '@robosystems/core'
 import {
   Alert,
   Badge,

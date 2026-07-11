@@ -1,5 +1,6 @@
 'use client'
 
+import type { LedgerClosingBookStructures } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
@@ -8,8 +9,7 @@ import {
   PageHeader,
   PageLayout,
   useGraphContext,
-} from '@/lib/core'
-import type { LedgerClosingBookStructures } from '@robosystems/client/clients'
+} from '@robosystems/core'
 import { Card } from 'flowbite-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'

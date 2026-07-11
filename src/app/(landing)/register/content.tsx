@@ -1,6 +1,6 @@
 'use client'
 
-import { CURRENT_APP, SignUpForm } from '@/lib/core'
+import { CURRENT_APP, SignUpForm } from '@robosystems/core'
 
 export default function RegisterContent() {
   return (

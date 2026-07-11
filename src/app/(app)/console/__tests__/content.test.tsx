@@ -7,8 +7,8 @@ import ConsolePageContent from '../content'
 // the shared hook and renders the resulting config.
 const mockUseGraphAwareConsoleConfig = vi.fn()
 
-vi.mock('@/lib/core', async () => {
-  const actual = await vi.importActual('@/lib/core')
+vi.mock('@robosystems/core', async () => {
+  const actual = await vi.importActual('@robosystems/core')
   return {
     ...actual,
     ConsoleContent: vi.fn(({ config }) => (

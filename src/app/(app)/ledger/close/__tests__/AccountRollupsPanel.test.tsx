@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 const mockGetAccountRollups = vi.fn()
 
-vi.mock('@/lib/core', () => ({
+vi.mock('@robosystems/core', () => ({
   customTheme: { table: {} },
   clients: {
     ledger: {

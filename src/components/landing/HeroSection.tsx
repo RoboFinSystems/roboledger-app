@@ -1,6 +1,6 @@
 'use client'
 
-import { AnimatedLogo } from '@/lib/core/ui-components'
+import { AnimatedLogo } from '@robosystems/core/ui-components'
 import Image from 'next/image'
 import Link from 'next/link'
 import FloatingElementsVariant from './FloatingElementsVariant'

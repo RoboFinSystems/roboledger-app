@@ -8,8 +8,8 @@ import {
   SDK,
   useGraphContext,
   useToast,
-} from '@/lib/core'
-import { LoadingState, Spinner } from '@/lib/core/ui-components'
+} from '@robosystems/core'
+import { LoadingState, Spinner } from '@robosystems/core/ui-components'
 import {
   Alert,
   Badge,

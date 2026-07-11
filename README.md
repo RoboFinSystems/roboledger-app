@@ -82,12 +82,12 @@ npm run deploy:staging   # Deploy to staging environment
 npm run deploy:prod      # Deploy to production
 ```
 
-### Core Subtree Management
+### Shared Core Library
+
+Shared components live in the [`@robosystems/core`](https://www.npmjs.com/package/@robosystems/core) npm package (repo: [robosystems-core](https://github.com/RoboFinSystems/robosystems-core)). Bump the pinned version to pick up changes:
 
 ```bash
-npm run core:pull        # Pull latest core subtree updates
-npm run core:push        # Push core subtree changes
-npm run core:add         # Add core subtree (initial setup)
+npm install @robosystems/core@latest
 ```
 
 ### Prerequisites
@@ -122,9 +122,9 @@ See the **[Bootstrap Guide](https://github.com/RoboFinSystems/robosystems/wiki/B
 - RoboSystems Client SDK for API communication
 - Intuit OAuth for QuickBooks integration
 
-**Core Library (`/src/lib/core/`):**
+**Core Library ([`@robosystems/core`](https://www.npmjs.com/package/@robosystems/core)):**
 
-Shared modules maintained as a git subtree across RoboSystems frontend apps:
+Shared modules consumed as an npm package across RoboSystems frontend apps:
 
 - Auth components (login, register, password reset)
 - Session management and JWT handling
