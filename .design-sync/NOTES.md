@@ -37,17 +37,21 @@ if a component's props matter to the design agent.
 `cfg.tsconfig` points at **`.design-sync/tsconfig.json`**, NOT the app's root
 tsconfig. Three reasons, all of which bit roboinvestor during its refocus:
 
-1. **`@/` alias.** Landing sections import `@/lib/core/*` and `@/lib/config/*`. The
-   engine's `tsconfigPathsPlugin` (lib/bundle.mjs) reads `compilerOptions.paths` to
-   resolve them. `baseUrl: ".."` makes paths resolve from the app root.
+1. **`@/` alias.** Landing sections import `@/lib/config/*` (and formerly
+   `@/lib/core/*` — since the 2026-07-11 npm migration they import the bare
+   `@robosystems/core` package instead, resolved natively from `node_modules`;
+   the `@/lib/core*` exact-match entries were removed with the subtree). The
+   engine's `tsconfigPathsPlugin` (lib/bundle.mjs) reads `compilerOptions.paths`
+   to resolve the remaining aliases. `baseUrl: ".."` makes paths resolve from
+   the app root.
 2. **Directory barrels.** That plugin returns the first `existsSync` hit and tries
-   the bare path BEFORE `/index.ts`, so a directory-barrel import like `@/lib/core`
-   resolves to the _directory_ and esbuild dies with `"… is a directory"`. Fix:
-   **exact-match path entries** for each directory barrel pointing straight at its
-   `index.ts` (`@/lib/core`, `@/lib/core/ui-components`), listed BEFORE the `@/*`
-   wildcard (rules match in key order). RoboLedger's landing imports both of those
-   barrels (via `ContactForm` → `TurnstileWidget` and the logo). Add a new entry
-   here whenever a featured component imports another `@/…` _directory_.
+   the bare path BEFORE `/index.ts`, so a directory-barrel import like `@/lib/foo`
+   (a directory) resolves to the _directory_ and esbuild dies with `"… is a
+directory"`. Fix: **exact-match path entries** for each directory barrel
+   pointing straight at its `index.ts`, listed BEFORE the `@/*` wildcard (rules
+   match in key order). Add a new entry here whenever a featured component
+   imports another `@/…` _directory_. (Bare `@robosystems/core*` imports don't
+   need this — node-modules resolution handles the package's directories.)
 3. **`next/image`.** Its default export bundles as an object in the static bundle →
    React throws `Element type is invalid … got: object`. Aliased to
    **`.design-sync/shims/next-image.tsx`** (a plain `<img>`). `next/link` is fine —
