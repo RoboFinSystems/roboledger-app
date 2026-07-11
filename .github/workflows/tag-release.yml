@@ -136,10 +136,26 @@ jobs:
       - name: Generate changelog with Claude
         if: steps.check-tag.outputs.tag_exists == 'false'
         id: generate-changelog
+        # SECURITY (H2): pass all git-derived, attacker-influenceable values
+        # (commit messages, changed filenames, PR refs) via env instead of
+        # splicing them into the script with ${{ ... }}. The heredoc expands
+        # $VAR from the environment but never re-evaluates command
+        # substitutions contained in an expansion result, so a commit message
+        # or filename like $(...) or `...` cannot execute.
+        env:
+          VERSION: ${{ steps.get-version.outputs.version }}
+          LAST_TAG: ${{ steps.analyze-changes.outputs.last_tag }}
+          FILES_CHANGED: ${{ steps.analyze-changes.outputs.files_changed }}
+          COMMITS_COUNT: ${{ steps.analyze-changes.outputs.commits_count }}
+          ADDITIONS: ${{ steps.analyze-changes.outputs.additions }}
+          DELETIONS: ${{ steps.analyze-changes.outputs.deletions }}
+          COMPONENTS_CHANGED: ${{ steps.analyze-changes.outputs.components_changed }}
+          PAGES_CHANGED: ${{ steps.analyze-changes.outputs.pages_changed }}
+          STYLES_CHANGED: ${{ steps.analyze-changes.outputs.styles_changed }}
+          COMMIT_MESSAGES: ${{ steps.analyze-changes.outputs.commit_messages }}
+          DETAILED_CHANGES: ${{ steps.analyze-changes.outputs.detailed_changes }}
+          PR_REFS: ${{ steps.analyze-changes.outputs.pr_refs }}
         run: |
-          VERSION="${{ steps.get-version.outputs.version }}"
-          LAST_TAG="${{ steps.analyze-changes.outputs.last_tag }}"
-
           # Create analysis prompt for Claude
           cat > /tmp/changelog_prompt.txt << PROMPT_EOF
           I need you to generate a concise but informative changelog for a Next.js frontend application release.
@@ -148,22 +164,22 @@ jobs:
           - App: RoboLedger (Financial reporting & accounting web application)
           - Version: $VERSION
           - Previous Version: $LAST_TAG
-          - Files Changed: ${{ steps.analyze-changes.outputs.files_changed }}
-          - Commits: ${{ steps.analyze-changes.outputs.commits_count }}
-          - Lines Added: ${{ steps.analyze-changes.outputs.additions }}
-          - Lines Deleted: ${{ steps.analyze-changes.outputs.deletions }}
-          - Components Changed: ${{ steps.analyze-changes.outputs.components_changed }}
-          - Pages Changed: ${{ steps.analyze-changes.outputs.pages_changed }}
-          - Styles Changed: ${{ steps.analyze-changes.outputs.styles_changed }}
+          - Files Changed: $FILES_CHANGED
+          - Commits: $COMMITS_COUNT
+          - Lines Added: $ADDITIONS
+          - Lines Deleted: $DELETIONS
+          - Components Changed: $COMPONENTS_CHANGED
+          - Pages Changed: $PAGES_CHANGED
+          - Styles Changed: $STYLES_CHANGED
 
           **Recent Commits:**
-          ${{ steps.analyze-changes.outputs.commit_messages }}
+          $COMMIT_MESSAGES
 
           **File Changes:**
-          ${{ steps.analyze-changes.outputs.detailed_changes }}
+          $DETAILED_CHANGES
 
           **PR References:**
-          ${{ steps.analyze-changes.outputs.pr_refs }}
+          $PR_REFS
 
           Please generate a changelog for this Next.js frontend application that includes:
           1. A brief 1-2 sentence summary focusing on user-facing improvements
@@ -252,7 +268,7 @@ jobs:
 
       - name: Create GitHub Release
         if: steps.check-tag.outputs.tag_exists == 'false'
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3
         with:
           tag_name: v${{ steps.get-version.outputs.version }}
           name: Release v${{ steps.get-version.outputs.version }}
@@ -290,6 +306,11 @@ jobs:
 
       - name: Create release summary
         if: steps.check-tag.outputs.tag_exists == 'false'
+        # SECURITY (H2): the Claude-generated changelog is influenced by the
+        # untrusted prompt inputs above; pass it via env and echo "$CHANGELOG"
+        # rather than interpolating ${{ ... }} into the shell.
+        env:
+          CHANGELOG: ${{ steps.claude-changelog.outputs.changelog }}
         run: |
           VERSION="${{ steps.get-version.outputs.version }}"
 
@@ -307,7 +328,7 @@ jobs:
           echo "- **Previous Release:** ${{ steps.analyze-changes.outputs.last_tag }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🤖 Claude-Generated Changelog" >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.claude-changelog.outputs.changelog }}" >> $GITHUB_STEP_SUMMARY
+          echo "$CHANGELOG" >> $GITHUB_STEP_SUMMARY
 
       - name: Set outputs
         id: set-outputs
