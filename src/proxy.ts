@@ -106,7 +106,9 @@ export function proxy(request: NextRequest) {
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  response.headers.set('X-XSS-Protection', '1; mode=block')
+  // Set to 0 (not the legacy '1; mode=block'): the deprecated XSS auditor can
+  // itself introduce vulnerabilities in older browsers. CSP is the real defense.
+  response.headers.set('X-XSS-Protection', '0')
 
   // Add Cross-Origin-Opener-Policy for enhanced isolation
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin')

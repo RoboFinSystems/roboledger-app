@@ -47,18 +47,24 @@ jobs:
   create-deployment:
     needs: [runner, test]
     runs-on: ${{ fromJSON(needs.runner.outputs.runner_config) }}
+    # SECURITY (M8): gate the entire prod pipeline behind the "production" GitHub
+    # Environment. deploy-s3, build, and deploy-app all depend (transitively) on
+    # this job, so adding required reviewers to the "production" environment
+    # (Settings → Environments → production) forces a manual approval before any
+    # prod AWS mutation. With no protection rules configured this is a no-op.
+    environment: production
     outputs:
       deployment_id: ${{ steps.deployment.outputs.deployment_id }}
     steps:
       - name: Create GitHub Deployment
         id: deployment
-        uses: chrnorm/deployment-action@v2
+        uses: chrnorm/deployment-action@500aa6a23c81ffa1acf71072aee3cfa2cc2e556a # v2
         with:
           token: ${{ github.token }}
           environment: production
           description: 'Production Deployment Created'
       - name: Update Deployment Status
-        uses: chrnorm/deployment-status@v2
+        uses: chrnorm/deployment-status@6df8d036fd2fee9eb82936733953da1f8382b41e # v2
         with:
           token: ${{ github.token }}
           state: in_progress
@@ -137,7 +143,7 @@ jobs:
       deployment_id: ${{ needs.create-deployment.outputs.deployment_id }}
     steps:
       - name: Update Deployment Status
-        uses: chrnorm/deployment-status@v2
+        uses: chrnorm/deployment-status@6df8d036fd2fee9eb82936733953da1f8382b41e # v2
         with:
           token: ${{ github.token }}
           state: success

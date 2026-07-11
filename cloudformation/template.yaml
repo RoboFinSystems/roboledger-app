@@ -366,6 +366,17 @@ Resources:
             Condition:
               StringEquals:
                 AWS:SourceArn: !Sub arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
+          # Enforce TLS: deny any request made over plain HTTP.
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: s3:*
+            Resource:
+              - !Ref StaticAssetsBucketArn
+              - !Sub ${StaticAssetsBucketArn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: 'false'
 
   # CloudFront Origin Access Control
   CloudFrontOAC:

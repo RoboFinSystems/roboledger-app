@@ -1,6 +1,6 @@
 import { client } from '@robosystems/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { SSOManager } from '../sso'
+import { getSafeReturnUrl, SSOManager } from '../sso'
 
 // Mock the config module
 vi.mock('../config', () => ({
@@ -38,6 +38,65 @@ const runWithDevelopmentEnv = async (callback: () => Promise<void> | void) => {
 const syncLocationHref = () => {
   window.location.href = `${window.location.origin}${window.location.pathname}${window.location.search || ''}${window.location.hash || ''}`
 }
+
+// APP_CONFIGS is mocked (app1/app2.example.com), so the allowlist is
+// { currentOrigin, https://app1.example.com, https://app2.example.com }.
+describe('getSafeReturnUrl (M5 open-redirect guard)', () => {
+  const origin = 'https://app1.example.com'
+
+  it('allows same-origin relative paths', () => {
+    expect(getSafeReturnUrl('/dashboard', origin)).toBe('/dashboard')
+    expect(getSafeReturnUrl('/a/b?c=1#d', origin)).toBe('/a/b?c=1#d')
+  })
+
+  it('allows absolute URLs on the current origin', () => {
+    expect(getSafeReturnUrl('https://app1.example.com/x', origin)).toBe(
+      'https://app1.example.com/x'
+    )
+  })
+
+  it('allows absolute URLs on other known apps (APP_CONFIGS)', () => {
+    expect(getSafeReturnUrl('https://app2.example.com/x', origin)).toBe(
+      'https://app2.example.com/x'
+    )
+  })
+
+  it('rejects off-allowlist origins (open redirect)', () => {
+    expect(getSafeReturnUrl('https://evil.com/phish', origin)).toBeNull()
+    // Suffix/lookalike host must not match app1.example.com.
+    expect(
+      getSafeReturnUrl('https://app1.example.com.evil.com/x', origin)
+    ).toBeNull()
+  })
+
+  it('rejects protocol-relative and backslash tricks', () => {
+    expect(getSafeReturnUrl('//evil.com', origin)).toBeNull()
+    expect(getSafeReturnUrl('/\\evil.com', origin)).toBeNull()
+    expect(getSafeReturnUrl('/path\\..\\x', origin)).toBeNull()
+  })
+
+  it('rejects embedded tab/CR/LF that browsers strip before navigating', () => {
+    // "/\t/evil.com" -> browser strips the tab -> "//evil.com" (open redirect)
+    expect(getSafeReturnUrl('/\t/evil.com', origin)).toBeNull()
+    expect(getSafeReturnUrl('/\r/evil.com', origin)).toBeNull()
+    expect(getSafeReturnUrl('/\n/evil.com', origin)).toBeNull()
+    expect(getSafeReturnUrl('/\t//evil.com', origin)).toBeNull()
+  })
+
+  it('rejects dangerous schemes (javascript:/data:)', () => {
+    expect(getSafeReturnUrl('javascript:alert(1)', origin)).toBeNull()
+    expect(
+      getSafeReturnUrl('data:text/html,<script>alert(1)</script>', origin)
+    ).toBeNull()
+  })
+
+  it('rejects empty / whitespace / nullish input', () => {
+    expect(getSafeReturnUrl('', origin)).toBeNull()
+    expect(getSafeReturnUrl('   ', origin)).toBeNull()
+    expect(getSafeReturnUrl(null, origin)).toBeNull()
+    expect(getSafeReturnUrl(undefined, origin)).toBeNull()
+  })
+})
 
 describe('SSOManager', () => {
   let ssoManager: SSOManager
@@ -286,11 +345,11 @@ describe('SSOManager', () => {
       originalLocation = window.location
       delete (window as any).location
       window.location = {
-        href: 'https://app1.example.com/login?session_id=session-123&returnUrl=https%3A%2F%2Fexample.com%2Fdashboard',
+        href: 'https://app1.example.com/login?session_id=session-123&returnUrl=https%3A%2F%2Fapp2.example.com%2Fdashboard',
         origin: 'https://app1.example.com',
         pathname: '/login',
         search:
-          '?session_id=session-123&returnUrl=https%3A%2F%2Fexample.com%2Fdashboard',
+          '?session_id=session-123&returnUrl=https%3A%2F%2Fapp2.example.com%2Fdashboard',
         hash: '',
       } as any
 
@@ -352,9 +411,9 @@ describe('SSOManager', () => {
         'sso_return_url'
       )
 
-      // Should navigate after delay
+      // Should navigate after delay (allowlisted app origin)
       vi.advanceTimersByTime(100)
-      expect(window.location.href).toBe('https://example.com/dashboard')
+      expect(window.location.href).toBe('https://app2.example.com/dashboard')
     })
 
     it('should handle sessionStorage fallback for return URL', async () => {
@@ -369,14 +428,14 @@ describe('SSOManager', () => {
       ;(ssoManager as any).authClient = mockAuthClient
       mockSessionStorage.getItem = vi
         .fn()
-        .mockReturnValue('https://example.com/fallback')
+        .mockReturnValue('https://app2.example.com/fallback')
 
       const result = await ssoManager.handleSSOLogin()
 
       expect(result).toEqual(mockUser)
       expect(mockSessionStorage.getItem).toHaveBeenCalledWith('sso_return_url')
       vi.advanceTimersByTime(100)
-      expect(window.location.href).toBe('https://example.com/fallback')
+      expect(window.location.href).toBe('https://app2.example.com/fallback')
     })
 
     it('should handle sessionStorage read errors gracefully', async () => {
@@ -494,6 +553,28 @@ describe('SSOManager', () => {
         'https://app1.example.com/login'
       )
       vi.advanceTimersByTime(100)
+    })
+
+    it('blocks navigation to an off-allowlist returnUrl (open redirect)', async () => {
+      window.location.search =
+        '?session_id=session-123&returnUrl=https%3A%2F%2Fevil.com%2Fphish'
+      syncLocationHref()
+
+      const mockAuthClient = createMockAuthClient()
+      mockAuthClient.ssoComplete.mockResolvedValue({
+        user: mockUser,
+      } as any)
+      ;(ssoManager as any).authClient = mockAuthClient
+
+      const result = await ssoManager.handleSSOLogin()
+
+      expect(result).toEqual(mockUser)
+      // The decoded evil.com destination must never be navigated to; the page
+      // stays on the app1 login URL (evil.com only survives url-encoded as a
+      // query param, not as the navigation target).
+      vi.advanceTimersByTime(100)
+      expect(window.location.href).not.toBe('https://evil.com/phish')
+      expect(window.location.href).toContain('app1.example.com/login')
     })
   })
 })

@@ -43,6 +43,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Enforce string types and bound field lengths on the required fields to
+    // reject oversized or malformed payloads before they reach SNS.
+    const fieldLimits: Array<[string, number]> = [
+      ['name', 200],
+      ['email', 254],
+      ['subject', 300],
+      ['message', 5000],
+    ]
+    for (const [field, maxLen] of fieldLimits) {
+      const value = body[field]
+      if (typeof value !== 'string' || value.length > maxLen) {
+        return NextResponse.json(
+          {
+            error: `Invalid or too-long field: ${field}`,
+            code: 'INVALID_FIELD',
+          },
+          { status: 400 }
+        )
+      }
+    }
+
     // Verify CAPTCHA if required
     if (isCaptchaRequired()) {
       const captchaToken = body.captchaToken
