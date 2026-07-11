@@ -14,6 +14,63 @@ const debugLog = (message: string, error?: unknown) => {
   }
 }
 
+/**
+ * SECURITY (M5): validate a cross-app `returnUrl` before it is used for
+ * navigation.
+ *
+ * `returnUrl` arrives from the query string (with a sessionStorage mirror), so
+ * it is fully attacker-controlled. Assigning it straight to `window.location`
+ * is an open redirect (phishing / token relay) and, for a `javascript:` or
+ * `data:` URL, a potential DOM-XSS. We accept only:
+ *   - same-origin relative paths — a single leading "/", never "//" or "/\"
+ *     (which browsers treat as protocol-relative/absolute) and no backslashes;
+ *   - absolute http(s) URLs whose origin is the current origin or one of the
+ *     known RoboSystems apps (derived from APP_CONFIGS).
+ * Anything else returns null and the caller must skip the redirect.
+ */
+export function getSafeReturnUrl(
+  returnUrl: string | null | undefined,
+  currentOrigin?: string
+): string | null {
+  if (!returnUrl) return null
+
+  const raw = returnUrl.trim()
+  if (!raw) return null
+
+  const origin =
+    currentOrigin ??
+    (typeof window !== 'undefined' ? window.location.origin : undefined)
+
+  // Relative path: reject protocol-relative ("//host"), backslash tricks
+  // ("/\\host", "\\host") and anything not anchored to a single leading slash.
+  if (raw.startsWith('/')) {
+    if (raw.startsWith('//') || raw.includes('\\')) return null
+    return raw
+  }
+
+  // Absolute URL: only http(s) pointing at an allowlisted origin.
+  let parsed: URL
+  try {
+    parsed = new URL(raw)
+  } catch {
+    return null
+  }
+
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null
+
+  const allowedOrigins = new Set<string>()
+  if (origin) allowedOrigins.add(origin)
+  for (const config of Object.values(APP_CONFIGS)) {
+    try {
+      allowedOrigins.add(new URL(config.url).origin)
+    } catch {
+      // Ignore a malformed configured app URL rather than throwing.
+    }
+  }
+
+  return allowedOrigins.has(parsed.origin) ? parsed.toString() : null
+}
+
 export class SSOManager {
   private authClient: RoboSystemsAuthClient
 
@@ -131,11 +188,13 @@ export class SSOManager {
         debugLog('sessionStorage cleanup failed during SSO success', error)
       }
 
-      // Handle return URL if provided
-      if (finalReturnUrl && finalReturnUrl !== window.location.pathname) {
+      // Handle return URL if provided. SECURITY (M5): only navigate to an
+      // allowlisted destination — never the raw, attacker-controlled value.
+      const safeReturnUrl = getSafeReturnUrl(finalReturnUrl)
+      if (safeReturnUrl && safeReturnUrl !== window.location.pathname) {
         // Delay navigation to allow authentication to complete
         setTimeout(() => {
-          window.location.href = finalReturnUrl
+          window.location.href = safeReturnUrl
         }, NAVIGATION_DELAY_MS)
       }
 
