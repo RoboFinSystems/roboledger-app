@@ -1,6 +1,6 @@
 'use client'
 
-import { AnimatedLogo } from '@/lib/core/ui-components/Logo'
+import { AnimatedLogo } from '@robosystems/core/ui-components/Logo'
 
 export default function MaintenancePage() {
   return (

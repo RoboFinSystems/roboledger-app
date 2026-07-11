@@ -1,7 +1,7 @@
 'use client'
 
-import { LoadingState } from '@/lib/core'
 import type { LedgerClosingBookStructures } from '@robosystems/client/clients'
+import { LoadingState } from '@robosystems/core'
 import { Button } from 'flowbite-react'
 import type { FC } from 'react'
 import { useState } from 'react'

@@ -1,7 +1,7 @@
 'use client'
 
-import { clients } from '@/lib/core'
 import type { LedgerFiscalCalendar } from '@robosystems/client/clients'
+import { clients } from '@robosystems/core'
 import { Alert, Badge, Button } from 'flowbite-react'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { HiCalendar, HiExclamationCircle } from 'react-icons/hi'

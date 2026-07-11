@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/lib/core', () => ({ customTheme: { table: {} } }))
+vi.mock('@robosystems/core', () => ({ customTheme: { table: {} } }))
 
 vi.mock('flowbite-react', () => ({
   Badge: ({ children, color }: any) => (

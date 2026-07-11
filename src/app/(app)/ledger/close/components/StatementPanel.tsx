@@ -1,7 +1,7 @@
 'use client'
 
-import { clients, LoadingState } from '@/lib/core'
 import type { PeriodSpecInput } from '@robosystems/client/clients'
+import { clients, LoadingState } from '@robosystems/core'
 import { Button, Spinner } from 'flowbite-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useState } from 'react'

@@ -4,7 +4,7 @@ import {
   ConsoleContent,
   useGraphAwareConsoleConfig,
   type ConsoleBranding,
-} from '@/lib/core'
+} from '@robosystems/core'
 
 // The example sets themselves live in core (graphAwareConfig) so all three
 // apps stay in sync; this app only supplies branding. When the user is on a

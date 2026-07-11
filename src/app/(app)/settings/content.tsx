@@ -1,6 +1,6 @@
 'use client'
 
-import type { User } from '@/lib/core'
+import type { User } from '@robosystems/core'
 import {
   ApiKeysCard,
   customTheme,
@@ -8,9 +8,9 @@ import {
   PageHeader,
   PageLayout,
   PasswordInformationCard,
-} from '@/lib/core'
-import { useAuth } from '@/lib/core/auth-components'
-import { useToast } from '@/lib/core/hooks/use-toast'
+} from '@robosystems/core'
+import { useAuth } from '@robosystems/core/auth-components'
+import { useToast } from '@robosystems/core/hooks/use-toast'
 import { Button } from 'flowbite-react'
 import type { FC } from 'react'
 import { useState } from 'react'

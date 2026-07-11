@@ -1,7 +1,7 @@
 // @ts-nocheck - connections functionality removed from SDK, pending overhaul
 'use client'
 
-import { LoadingState, SDK, useGraphContext } from '@/lib/core'
+import { LoadingState, SDK, useGraphContext } from '@robosystems/core'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 

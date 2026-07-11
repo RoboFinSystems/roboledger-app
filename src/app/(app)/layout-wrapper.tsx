@@ -11,7 +11,7 @@ import {
   useGraphContext,
   useOrg,
   useToast,
-} from '@/lib/core'
+} from '@robosystems/core'
 import { useMemo, useState } from 'react'
 import { HiExclamationCircle, HiMail } from 'react-icons/hi'
 import { LayoutContent } from './layout-content'

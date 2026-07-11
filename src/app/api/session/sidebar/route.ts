@@ -1,4 +1,4 @@
-import { sidebarCookie, type SidebarCookie } from '@/lib/core'
+import { sidebarCookie, type SidebarCookie } from '@robosystems/core'
 import type { NextRequest } from 'next/server'
 
 export async function POST(req: NextRequest) {

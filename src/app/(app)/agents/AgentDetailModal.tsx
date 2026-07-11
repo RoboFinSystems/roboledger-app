@@ -1,6 +1,5 @@
 'use client'
 
-import { clients, LoadingState } from '@/lib/core'
 import {
   formatAddress,
   formatAmount,
@@ -10,6 +9,7 @@ import type {
   LedgerAgentDetail,
   LedgerEventBlock,
 } from '@robosystems/client/clients'
+import { clients, LoadingState } from '@robosystems/core'
 import {
   Alert,
   Badge,

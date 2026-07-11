@@ -1,6 +1,6 @@
 'use client'
 
-import { CURRENT_APP, SignInForm } from '@/lib/core'
+import { CURRENT_APP, SignInForm } from '@robosystems/core'
 
 export default function LoginContent() {
   return (

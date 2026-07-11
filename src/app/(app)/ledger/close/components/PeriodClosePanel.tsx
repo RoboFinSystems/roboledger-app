@@ -1,11 +1,11 @@
 'use client'
 
-import { clients, EmptyState, LoadingState } from '@/lib/core'
 import type {
   LedgerFiscalCalendar,
   LedgerPeriodCloseStatus,
   LedgerPeriodDrafts,
 } from '@robosystems/client/clients'
+import { clients, EmptyState, LoadingState } from '@robosystems/core'
 import {
   Badge,
   Button,

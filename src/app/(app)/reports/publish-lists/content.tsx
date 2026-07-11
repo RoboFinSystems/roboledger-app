@@ -1,5 +1,9 @@
 'use client'
 
+import type {
+  PublishList,
+  PublishListDetail,
+} from '@robosystems/client/clients'
 import {
   clients,
   GraphFilters,
@@ -7,11 +11,7 @@ import {
   PageHeader,
   PageLayout,
   useGraphContext,
-} from '@/lib/core'
-import type {
-  PublishList,
-  PublishListDetail,
-} from '@robosystems/client/clients'
+} from '@robosystems/core'
 import {
   Alert,
   Badge,

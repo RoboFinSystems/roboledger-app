@@ -1,6 +1,6 @@
 'use client'
 
-import { clients } from '@/lib/core'
+import { clients } from '@robosystems/core'
 import {
   Alert,
   Button,

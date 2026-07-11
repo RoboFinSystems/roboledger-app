@@ -1,6 +1,6 @@
 'use client'
 
-import { useSSO } from '@/lib/core/auth-core/sso'
+import { useSSO } from '@robosystems/core/auth-core/sso'
 import { Card } from 'flowbite-react'
 import { useState } from 'react'
 import { HiExternalLink } from 'react-icons/hi'

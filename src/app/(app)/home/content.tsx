@@ -9,8 +9,8 @@ import {
   PageLayout,
   StatCard,
   useGraphContext,
-} from '@/lib/core'
-import { useSSO } from '@/lib/core/auth-core/sso'
+} from '@robosystems/core'
+import { useSSO } from '@robosystems/core/auth-core/sso'
 import { Badge, Button, Card } from 'flowbite-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'

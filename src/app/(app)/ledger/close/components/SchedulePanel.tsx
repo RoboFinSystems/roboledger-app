@@ -1,6 +1,6 @@
 'use client'
 
-import { clients, LoadingState } from '@/lib/core'
+import { clients, LoadingState } from '@robosystems/core'
 import type { FC } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'

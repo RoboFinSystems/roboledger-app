@@ -7,7 +7,7 @@ import {
   PageLayout,
   SDK,
   useGraphContext,
-} from '@/lib/core'
+} from '@robosystems/core'
 import { Button, Card } from 'flowbite-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'

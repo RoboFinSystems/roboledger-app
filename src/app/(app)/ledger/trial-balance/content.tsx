@@ -1,5 +1,6 @@
 'use client'
 
+import type { ElementClassification } from '@/lib/ledger'
 import {
   clients,
   EmptyState,
@@ -8,8 +9,7 @@ import {
   PageHeader,
   PageLayout,
   useGraphContext,
-} from '@/lib/core'
-import type { ElementClassification } from '@/lib/ledger'
+} from '@robosystems/core'
 import {
   Alert,
   Badge,

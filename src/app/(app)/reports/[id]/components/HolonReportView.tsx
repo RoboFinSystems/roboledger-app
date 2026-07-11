@@ -1,6 +1,6 @@
 'use client'
 
-import { clients } from '@/lib/core'
+import { clients } from '@robosystems/core'
 import type { NormalizedReport } from '@robosystems/report-components'
 import {
   ReportView,

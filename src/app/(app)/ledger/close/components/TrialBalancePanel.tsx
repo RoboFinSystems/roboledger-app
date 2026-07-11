@@ -1,6 +1,6 @@
 'use client'
 
-import { clients, LoadingState } from '@/lib/core'
+import { clients, LoadingState } from '@robosystems/core'
 import {
   Badge,
   Table,

@@ -1,5 +1,5 @@
-import { AuthProvider, customTheme } from '@/lib/core'
 import { organizationJsonLd } from '@/lib/structured-data'
+import { AuthProvider, customTheme } from '@robosystems/core'
 import { ThemeModeScript, ThemeProvider } from 'flowbite-react'
 import type { Metadata, Viewport } from 'next'
 import { twMerge } from 'tailwind-merge'

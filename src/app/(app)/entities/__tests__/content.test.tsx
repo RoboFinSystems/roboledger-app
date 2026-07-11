@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockGetEntity = vi.fn()
 
-vi.mock('@/lib/core', () => ({
+vi.mock('@robosystems/core', () => ({
   customTheme: { card: {}, alert: {}, table: {}, textInput: {} },
   GraphFilters: {
     roboledger: (graph: any) =>
@@ -58,7 +58,7 @@ vi.mock('react-icons/hi', () => ({
   HiSearch: () => <span />,
 }))
 
-import { useEntity, useGraphContext } from '@/lib/core'
+import { useEntity, useGraphContext } from '@robosystems/core'
 import EntitiesListPageContent from '../content'
 
 const mockUseGraphContext = vi.mocked(useGraphContext)

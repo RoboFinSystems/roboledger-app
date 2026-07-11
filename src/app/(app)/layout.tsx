@@ -6,12 +6,12 @@ import {
   ServiceOfferingsProvider,
   SidebarProvider,
   sidebarCookie,
-} from '@/lib/core'
-import { getEntitySelection } from '@/lib/core/actions/entity-actions'
+} from '@robosystems/core'
+import { getEntitySelection } from '@robosystems/core/actions/entity-actions'
 import {
   getGraphSelection,
   persistGraphSelection,
-} from '@/lib/core/actions/graph-actions'
+} from '@robosystems/core/actions/graph-actions'
 import type { PropsWithChildren } from 'react'
 import { LayoutWrapper } from './layout-wrapper'
 

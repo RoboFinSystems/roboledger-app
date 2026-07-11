@@ -9,8 +9,8 @@ import {
   PageHeader,
   useGraphContext,
   type LibraryTaxonomy,
-} from '@/lib/core'
-import { getValidToken } from '@/lib/core/auth-core/token-storage'
+} from '@robosystems/core'
+import { getValidToken } from '@robosystems/core/auth-core/token-storage'
 import { Alert, Select, Spinner } from 'flowbite-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { HiBookOpen, HiInformationCircle } from 'react-icons/hi'

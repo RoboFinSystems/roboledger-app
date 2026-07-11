@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/lib/core', () => ({
+vi.mock('@robosystems/core', () => ({
   LoadingState: ({ message }: any) => (
     <div data-testid="loading-state" role="status">
       {message ?? 'Loading'}

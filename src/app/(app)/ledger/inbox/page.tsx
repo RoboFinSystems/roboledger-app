@@ -1,7 +1,7 @@
 'use client'
 
-import { useUser } from '@/lib/core'
-import { Spinner } from '@/lib/core/ui-components'
+import { useUser } from '@robosystems/core'
+import { Spinner } from '@robosystems/core/ui-components'
 import { Suspense } from 'react'
 import InboxContent from './content'
 

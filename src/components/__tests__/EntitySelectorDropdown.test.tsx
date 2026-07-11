@@ -6,7 +6,7 @@ const mockSetCurrentEntity = vi.fn()
 const mockNavigateToApp = vi.fn()
 const mockGetEntity = vi.fn()
 
-vi.mock('@/lib/core', () => ({
+vi.mock('@robosystems/core', () => ({
   GraphFilters: {
     roboledger: (graph: any) =>
       graph.graphType === 'entity' &&
@@ -23,7 +23,7 @@ vi.mock('@/lib/core', () => ({
   },
 }))
 
-vi.mock('@/lib/core/auth-core/sso', () => ({
+vi.mock('@robosystems/core/auth-core/sso', () => ({
   useSSO: () => ({ navigateToApp: mockNavigateToApp }),
 }))
 
@@ -32,7 +32,7 @@ vi.mock('react-icons/hi', () => ({
   HiOfficeBuilding: () => <span data-testid="office-icon" />,
 }))
 
-import { useEntity, useGraphContext } from '@/lib/core'
+import { useEntity, useGraphContext } from '@robosystems/core'
 import { EntitySelectorDropdown } from '../EntitySelectorDropdown'
 
 const mockUseGraphContext = vi.mocked(useGraphContext)

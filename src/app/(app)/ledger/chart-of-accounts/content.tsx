@@ -1,5 +1,11 @@
 'use client'
 
+import type { ElementClassification } from '@/lib/ledger'
+import type {
+  LedgerMapping,
+  LedgerMappingCoverage,
+  LedgerMappingInfo,
+} from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
@@ -8,13 +14,7 @@ import {
   PageHeader,
   PageLayout,
   useGraphContext,
-} from '@/lib/core'
-import type { ElementClassification } from '@/lib/ledger'
-import type {
-  LedgerMapping,
-  LedgerMappingCoverage,
-  LedgerMappingInfo,
-} from '@robosystems/client/clients'
+} from '@robosystems/core'
 import {
   Badge,
   Button,

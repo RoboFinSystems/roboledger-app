@@ -1,5 +1,7 @@
 'use client'
 
+import { formatAmount, formatDate } from '@/lib/ledger/formatters'
+import type { LedgerAgent, LedgerEventBlock } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
@@ -8,9 +10,7 @@ import {
   PageHeader,
   PageLayout,
   useGraphContext,
-} from '@/lib/core'
-import { formatAmount, formatDate } from '@/lib/ledger/formatters'
-import type { LedgerAgent, LedgerEventBlock } from '@robosystems/client/clients'
+} from '@robosystems/core'
 import {
   Alert,
   Badge,

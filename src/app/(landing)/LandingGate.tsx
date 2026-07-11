@@ -1,6 +1,6 @@
 'use client'
-import { useAuth } from '@/lib/core/auth-components'
-import { BrandSpinner } from '@/lib/core/ui-components'
+import { useAuth } from '@robosystems/core/auth-components'
+import { BrandSpinner } from '@robosystems/core/ui-components'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import LandingPageContent from './content'
