@@ -12,6 +12,9 @@
 export const HARBINGER_URL =
   process.env.NEXT_PUBLIC_HARBINGER_URL || 'https://harbinger.finance'
 
+export const ROBOSYSTEMS_URL =
+  process.env.NEXT_PUBLIC_ROBOSYSTEMS_APP_URL || 'https://robosystems.ai'
+
 export const GITHUB_URL = 'https://github.com/RoboFinSystems/roboledger-app'
 
 export const REGISTER_PATH = '/register'

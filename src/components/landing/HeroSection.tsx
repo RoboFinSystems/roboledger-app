@@ -3,7 +3,7 @@
 import { AnimatedLogo } from '@robosystems/core/ui-components'
 import Image from 'next/image'
 import Link from 'next/link'
-import { GITHUB_URL, REGISTER_PATH } from './constants'
+import { GITHUB_URL, REGISTER_PATH, ROBOSYSTEMS_URL } from './constants'
 import FloatingElementsVariant from './FloatingElementsVariant'
 import ProductShot from './ProductShot'
 
@@ -85,7 +85,12 @@ export default function HeroSection() {
               />
               <span>Powered by Claude</span>
             </div>
-            <div className="flex items-center gap-2">
+            <a
+              href={ROBOSYSTEMS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary-400 flex items-center gap-2 transition-colors"
+            >
               <AnimatedLogo
                 app="robosystems"
                 brand
@@ -93,7 +98,7 @@ export default function HeroSection() {
                 className="h-5 w-5"
               />
               <span>Built on RoboSystems</span>
-            </div>
+            </a>
             <div className="flex items-center gap-2">
               <svg
                 className="text-primary-400 h-4 w-4"
