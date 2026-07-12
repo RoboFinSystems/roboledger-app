@@ -37,17 +37,25 @@ export default function ProductShot({
     <figure className={`group relative ${className}`}>
       <div className="from-primary-500/20 to-accent-500/20 absolute -inset-1 rounded-2xl bg-linear-to-br opacity-40 blur-xl transition-opacity duration-500 group-hover:opacity-70"></div>
       <div className="relative overflow-hidden rounded-xl border border-gray-800 bg-zinc-950 shadow-2xl">
-        {/* window chrome */}
-        <div className="flex items-center gap-1.5 border-b border-gray-800 bg-zinc-900/80 px-4 py-2.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-red-500/70"></span>
-          <span className="h-2.5 w-2.5 rounded-full bg-amber-500/70"></span>
-          <span className="h-2.5 w-2.5 rounded-full bg-green-500/70"></span>
-          {caption && (
-            <span className="ml-3 truncate text-xs text-gray-500">
-              {caption}
-            </span>
-          )}
-        </div>
+        {/* breadcrumb bar */}
+        {caption && (
+          <div className="flex items-center gap-2 border-b border-gray-800 bg-zinc-900/80 px-4 py-2.5">
+            <svg
+              className="h-3.5 w-3.5 shrink-0 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+              />
+            </svg>
+            <span className="truncate text-xs text-gray-400">{caption}</span>
+          </div>
+        )}
         {src ? (
           <div className={`relative w-full ${aspect}`}>
             <Image

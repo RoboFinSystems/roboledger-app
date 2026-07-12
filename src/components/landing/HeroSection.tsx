@@ -126,11 +126,11 @@ export default function HeroSection() {
           {/* Product preview */}
           <div className="mx-auto mt-14 max-w-4xl md:mt-20">
             <ProductShot
-              alt="RoboLedger event inbox — every transaction pre-classified by AI, ready to approve"
-              caption="roboledger.ai · Ledger › Inbox"
+              alt="RoboLedger guided period close — schedules drafted, rule engine passed, ready to lock"
+              caption="roboledger.ai · Ledger › Closing Book"
               aspect="aspect-[16/9]"
             >
-              <HeroInboxPreview />
+              <HeroClosePreview />
             </ProductShot>
           </div>
         </div>
@@ -140,86 +140,91 @@ export default function HeroSection() {
 }
 
 /**
- * Lightweight in-frame preview of the event inbox, used until a real screenshot
- * is captured. Mirrors the real surface: typed events, AI-classified badges,
- * one-click approve.
+ * Lightweight in-frame preview of the guided period close — the flagship
+ * surface, upstream of the inbox — used until a real screenshot is captured.
+ * Mirrors the real panel: fiscal-calendar summary, drafted schedules, rule
+ * engine, and the gated Close button.
  */
-function HeroInboxPreview() {
-  const rows = [
-    {
-      t: 'Bill received',
-      who: 'Cloudflare, Inc.',
-      amt: '$2,400.00',
-      tag: 'AP',
-    },
-    {
-      t: 'Invoice issued',
-      who: 'Northwind LLC',
-      amt: '$18,750.00',
-      tag: 'AR',
-    },
-    {
-      t: 'Payment received',
-      who: 'Acme Robotics',
-      amt: '$9,120.00',
-      tag: 'Bank',
-    },
-    {
-      t: 'Sales receipt',
-      who: 'Retail — Store 04',
-      amt: '$1,284.55',
-      tag: 'Rev',
-    },
+function HeroClosePreview() {
+  const drafts = [
+    { name: 'Depreciation — fixed assets', amt: '$4,200.00' },
+    { name: 'Prepaid insurance amortization', amt: '$1,150.00' },
+    { name: 'Accrued payroll', amt: '$8,940.00' },
   ]
   return (
-    <div className="h-full w-full bg-zinc-950 p-4 text-left sm:p-6">
+    <div className="w-full bg-zinc-950 p-4 text-left sm:p-6">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <div className="text-sm font-semibold text-white">Inbox</div>
+          <div className="text-sm font-semibold text-white">Closing Book</div>
           <div className="text-xs text-gray-500">
-            Review and approve captured events before they post to the GL
+            Lock the period once every draft is balanced and validated
           </div>
         </div>
         <div className="bg-primary-500/20 text-primary-300 rounded-full px-3 py-1 text-xs font-medium">
-          4 pending
+          May 2026 · next to close
         </div>
       </div>
-      <div className="space-y-2">
-        {rows.map((r) => (
+
+      <div className="mb-3 grid grid-cols-3 gap-2 text-center">
+        {[
+          ['Closed through', 'Apr 2026'],
+          ['Pending', '1 period'],
+          ['Blockers', '0'],
+        ].map(([k, v]) => (
           <div
-            key={r.who}
-            className="flex items-center justify-between rounded-lg border border-gray-800 bg-zinc-900/60 px-3 py-2.5"
+            key={k}
+            className="rounded-lg border border-gray-800 bg-zinc-900/60 p-2"
           >
-            <div className="flex items-center gap-3">
+            <div className="text-[10px] text-gray-500">{k}</div>
+            <div className="text-xs font-semibold text-white">{v}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-1.5">
+        {drafts.map((d) => (
+          <div
+            key={d.name}
+            className="flex items-center justify-between rounded-lg border border-gray-800 bg-zinc-900/60 px-3 py-2"
+          >
+            <div className="flex items-center gap-2">
               <span className="border-secondary-500/30 bg-secondary-950/50 text-secondary-300 rounded border px-1.5 py-0.5 text-[10px] font-medium">
-                {r.tag}
+                schedule
               </span>
-              <div>
-                <div className="text-xs font-medium text-white">{r.t}</div>
-                <div className="text-[11px] text-gray-500">{r.who}</div>
-              </div>
+              <span className="text-xs text-gray-200">{d.name}</span>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-xs text-gray-300">{r.amt}</span>
-              <span className="inline-flex items-center gap-1 rounded-md bg-green-500/15 px-2 py-1 text-[10px] font-medium text-green-300">
-                <svg
-                  className="h-3 w-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                AI classified
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[11px] text-gray-400">
+                {d.amt}
+              </span>
+              <span className="rounded bg-green-500/15 px-1.5 py-0.5 text-[10px] text-green-300">
+                draft · balanced
               </span>
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-green-300">
+          <svg
+            className="h-3.5 w-3.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          Rule engine — 12 checks passed
+        </span>
+        <span className="from-primary-500 to-secondary-500 rounded-md bg-linear-to-r px-4 py-1.5 text-[11px] font-semibold text-white">
+          Close period →
+        </span>
       </div>
     </div>
   )
