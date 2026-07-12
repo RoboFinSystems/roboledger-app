@@ -3,6 +3,7 @@
 import { AnimatedLogo } from '@robosystems/core/ui-components'
 import Image from 'next/image'
 import Link from 'next/link'
+import type { ReactNode } from 'react'
 import { GITHUB_URL, REGISTER_PATH, ROBOSYSTEMS_URL } from './constants'
 import FloatingElementsVariant from './FloatingElementsVariant'
 import ProductShot from './ProductShot'
@@ -131,11 +132,11 @@ export default function HeroSection() {
           {/* Product preview */}
           <div className="mx-auto mt-14 max-w-4xl md:mt-20">
             <ProductShot
-              alt="RoboLedger guided period close — schedules drafted, rule engine passed, ready to lock"
-              caption="roboledger.ai · Ledger › Closing Book"
-              aspect="aspect-[16/9]"
+              alt="Claude closing the books with a human in the loop — calling RoboLedger tools over MCP"
+              caption="Claude · @robosystems/mcp › roboledger"
+              aspect="aspect-[4/3]"
             >
-              <HeroClosePreview />
+              <HeroCoworkPreview />
             </ProductShot>
           </div>
         </div>
@@ -145,91 +146,131 @@ export default function HeroSection() {
 }
 
 /**
- * Lightweight in-frame preview of the guided period close — the flagship
- * surface, upstream of the inbox — used until a real screenshot is captured.
- * Mirrors the real panel: fiscal-calendar summary, drafted schedules, rule
- * engine, and the gated Close button.
+ * In-frame emulation of the human-in-the-loop close: Claude drives the
+ * RoboLedger tools over MCP while a person approves each step. Used until a
+ * real screenshot of a Claude cowork session is captured.
  */
-function HeroClosePreview() {
-  const drafts = [
-    { name: 'Depreciation — fixed assets', amt: '$4,200.00' },
-    { name: 'Prepaid insurance amortization', amt: '$1,150.00' },
-    { name: 'Accrued payroll', amt: '$8,940.00' },
-  ]
+function HeroCoworkPreview() {
   return (
-    <div className="w-full bg-zinc-950 p-4 text-left sm:p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <div className="text-sm font-semibold text-white">Closing Book</div>
-          <div className="text-xs text-gray-500">
-            Lock the period once every draft is balanced and validated
-          </div>
-        </div>
-        <div className="bg-primary-500/20 text-primary-300 rounded-full px-3 py-1 text-xs font-medium">
-          May 2026 · next to close
-        </div>
-      </div>
+    <div className="w-full bg-zinc-950 p-4 text-left sm:p-5">
+      <div className="space-y-3">
+        <UserBubble>Close the books for May 2026.</UserBubble>
 
-      <div className="mb-3 grid grid-cols-3 gap-2 text-center">
-        {[
-          ['Closed through', 'Apr 2026'],
-          ['Pending', '1 period'],
-          ['Blockers', '0'],
-        ].map(([k, v]) => (
-          <div
-            key={k}
-            className="rounded-lg border border-gray-800 bg-zinc-900/60 p-2"
-          >
-            <div className="text-[10px] text-gray-500">{k}</div>
-            <div className="text-xs font-semibold text-white">{v}</div>
-          </div>
-        ))}
-      </div>
+        <ClaudeTurn>
+          <Bubble>
+            Let me review what&apos;s pending before we lock the period.
+          </Bubble>
+          <ToolCall
+            tool="roboledger.list_inbox_events"
+            result="3 events · all AI-classified, balanced"
+          />
+        </ClaudeTurn>
 
-      <div className="space-y-1.5">
-        {drafts.map((d) => (
-          <div
-            key={d.name}
-            className="flex items-center justify-between rounded-lg border border-gray-800 bg-zinc-900/60 px-3 py-2"
-          >
-            <div className="flex items-center gap-2">
-              <span className="border-secondary-500/30 bg-secondary-950/50 text-secondary-300 rounded border px-1.5 py-0.5 text-[10px] font-medium">
-                schedule
-              </span>
-              <span className="text-xs text-gray-200">{d.name}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] text-gray-400">
-                {d.amt}
-              </span>
-              <span className="rounded bg-green-500/15 px-1.5 py-0.5 text-[10px] text-green-300">
-                draft · balanced
-              </span>
-            </div>
+        <ClaudeTurn>
+          <Bubble>
+            All three look right. Commit them and post the close schedules?
+          </Bubble>
+          <div className="flex gap-2">
+            <span className="rounded-md bg-green-500/15 px-2.5 py-1 text-[11px] font-medium text-green-300">
+              Approve &amp; continue
+            </span>
+            <span className="rounded-md border border-gray-700 px-2.5 py-1 text-[11px] font-medium text-gray-400">
+              Review each
+            </span>
           </div>
-        ))}
-      </div>
+        </ClaudeTurn>
 
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-1.5 text-[11px] text-green-300">
-          <svg
-            className="h-3.5 w-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          Rule engine — 12 checks passed
+        <UserBubble>Approved ✓</UserBubble>
+
+        <ClaudeTurn>
+          <ToolCall
+            tool="roboledger.draft_closing_entries"
+            result="Depreciation + prepaid → 2 drafts, balanced"
+          />
+          <ToolCall
+            tool="roboledger.close_period"
+            arg="2026-05"
+            success
+            result="✓ Rule engine 12/12 · closed through May 2026"
+          />
+        </ClaudeTurn>
+      </div>
+    </div>
+  )
+}
+
+function UserBubble({ children }: { children: ReactNode }) {
+  return (
+    <div className="bg-primary-600/30 ml-auto w-fit max-w-[82%] rounded-lg rounded-br-sm px-3 py-2 text-[12px] text-white">
+      {children}
+    </div>
+  )
+}
+
+function ClaudeTurn({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex items-start gap-2">
+      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/5 ring-1 ring-gray-800">
+        <Image
+          src="/images/claude.svg"
+          alt="Claude"
+          width={14}
+          height={14}
+          className="h-3.5 w-3.5"
+        />
+      </span>
+      <div className="max-w-[86%] flex-1 space-y-2">{children}</div>
+    </div>
+  )
+}
+
+function Bubble({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-lg rounded-tl-sm border border-gray-800 bg-zinc-900/70 px-3 py-2 text-[12px] leading-relaxed text-gray-200">
+      {children}
+    </div>
+  )
+}
+
+function ToolCall({
+  tool,
+  arg,
+  result,
+  success,
+}: {
+  tool: string
+  arg?: string
+  result: string
+  success?: boolean
+}) {
+  return (
+    <div
+      className={`rounded-lg border px-3 py-2 ${
+        success
+          ? 'border-green-500/30 bg-green-950/20'
+          : 'border-secondary-500/30 bg-secondary-950/25'
+      }`}
+    >
+      <div className="flex items-center gap-1.5 text-[10px]">
+        <svg
+          className={`h-3 w-3 shrink-0 ${success ? 'text-green-400' : 'text-secondary-300'}`}
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        <span className="font-mono text-gray-300">
+          {tool}
+          <span className="text-gray-500">({arg ?? ''})</span>
         </span>
-        <span className="from-primary-500 to-secondary-500 rounded-md bg-linear-to-r px-4 py-1.5 text-[11px] font-semibold text-white">
-          Close period →
+        <span className="ml-auto rounded bg-gray-800 px-1.5 py-0.5 text-[9px] tracking-wide text-gray-500 uppercase">
+          MCP
         </span>
+      </div>
+      <div
+        className={`mt-1 text-[11px] ${success ? 'text-green-300' : 'text-gray-400'}`}
+      >
+        {result}
       </div>
     </div>
   )
