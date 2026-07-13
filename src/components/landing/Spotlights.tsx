@@ -62,7 +62,7 @@ const spotlights: Spotlight[] = [
     label: 'Natural language',
     title: 'Ask Claude about your books',
     description:
-      'Query your ledger in plain English in the AI Console, or connect Claude Desktop over MCP to drive the whole month-end close from your own agent.',
+      'Query your ledger in plain English in the AI Console, or connect Claude Desktop over MCP to help drive your month-end close from your own agent.',
     bullets: [
       'Natural language → Cypher, with the generated query shown and results one copy away',
       'Grounded in your actual ledger — transactions, trial balance, statements',

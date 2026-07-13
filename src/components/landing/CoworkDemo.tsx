@@ -32,7 +32,7 @@ const SCRIPT: Step[] = [
   },
   {
     kind: 'tool',
-    tool: 'roboledger.list_inbox_events',
+    tool: 'list-event-blocks',
     running: 'scanning inbox…',
     result: '3 events · all AI-classified, balanced',
   },
@@ -44,13 +44,13 @@ const SCRIPT: Step[] = [
   { kind: 'user', text: 'Approved ✓' },
   {
     kind: 'tool',
-    tool: 'roboledger.draft_closing_entries',
+    tool: 'create-event-block',
     running: 'posting schedules…',
     result: 'Depreciation + prepaid → 2 drafts, balanced',
   },
   {
     kind: 'tool',
-    tool: 'roboledger.close_period',
+    tool: 'close-period',
     arg: '2026-05',
     running: 'validating & locking…',
     result: '✓ Rule engine 12/12 · closed through May 2026',
