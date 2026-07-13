@@ -1,17 +1,19 @@
 'use client'
 
 import { LandingFooter } from '@robosystems/core'
+import { HARBINGER_URL } from './constants'
 import ContactModal from './ContactModal'
 
 export default function Footer() {
   return (
     <LandingFooter
-      tagline="Open-source accounting powered by the RoboSystems knowledge graph platform. Build AI-native workflows from business events to validated, XBRL-ready statements."
+      tagline="Open-source, AI-native accounting on the RoboSystems knowledge graph platform — from business events to validated, XBRL-ready statements."
       productLinks={[
+        { label: 'How it works', href: '#how-it-works' },
         { label: 'Features', href: '#features' },
-        { label: 'Workflow', href: '#workflow' },
-        { label: 'AI Reporting', href: '#ai-reporting' },
         { label: 'Platform', href: '#platform' },
+        { label: 'Done for you', href: HARBINGER_URL },
+        { label: 'FAQ', href: '#faq' },
       ]}
       contactModal={ContactModal}
     />

@@ -29,11 +29,9 @@ export const softwareJsonLd = {
   name: 'RoboLedger',
   applicationCategory: 'FinanceApplication',
   operatingSystem: 'Web',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
-  },
+  // No `offers` block: pricing/provisioning lives on the RoboSystems side and the
+  // marketing page is intentionally price-silent, so we don't advertise a price
+  // (a `price: '0'` Offer told search engines the app was free — it isn't).
   description:
     'AI-powered financial reporting platform. Transform natural language requests into complete, validated financial statements powered by Claude AI and RoboSystems.',
   url: 'https://roboledger.ai',

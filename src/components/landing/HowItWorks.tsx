@@ -3,59 +3,51 @@ import FloatingElementsVariant from './FloatingElementsVariant'
 const steps = [
   {
     number: '01',
-    title: 'Connect Your Data',
+    title: 'Connect your sources',
     description:
-      'Sync QuickBooks, link bank accounts via Plaid, and connect SEC EDGAR for XBRL taxonomy data. One-click OAuth flows get you up and running in minutes.',
-    tags: ['QuickBooks', 'Plaid', 'SEC EDGAR'],
+      'Link QuickBooks with one-click OAuth and connect SEC EDGAR by CIK. Customers, vendors, and employees resolve into counterparties automatically.',
+    tags: ['QuickBooks', 'SEC EDGAR', 'Auto-resolve'],
     color: 'violet',
   },
   {
     number: '02',
-    title: 'Triage the Inbox',
+    title: 'Triage the inbox',
     description:
-      'Every transaction arrives as a typed business event, pre-classified by Claude. Approve in one click, reclassify, or let trusted sources commit automatically on autopilot.',
-    tags: ['Event Inbox', 'AI Classify', 'Autopilot'],
+      'Every transaction arrives as a typed business event, pre-classified by Claude. Approve in one click, reject, or preview exactly what would post to the GL first.',
+    tags: ['Event Inbox', 'AI Classify', 'Preview Post'],
     color: 'purple',
   },
   {
     number: '03',
     title: 'Map to US-GAAP',
     description:
-      'AI auto-maps your chart of accounts to US-GAAP taxonomy elements with confidence scores. Review coverage, override mappings inline, and track progress toward full compliance.',
-    tags: ['AI Auto-Map', 'GAAP Taxonomy', 'Confidence Scores'],
+      'AI Auto-Map suggests US-GAAP taxonomy targets for your chart of accounts, tracked by a live coverage bar. Review, override inline, and close the gaps.',
+    tags: ['AI Auto-Map', 'GAAP Taxonomy', 'Coverage'],
     color: 'fuchsia',
   },
   {
     number: '04',
-    title: 'Review Your Ledger',
+    title: 'Review your ledger',
     description:
-      'Explore transactions with rich filters, drill into journal entry line items, validate the trial balance, and watch live Balance Sheet, Income Statement, Cash Flow & Equity update.',
+      'Drill into journal-entry line items, validate the trial balance in CoA or US-GAAP view, and watch Balance Sheet, Income Statement, Cash Flow & Equity take shape as you go — no close required.',
     tags: ['Transactions', 'Trial Balance', 'Live Statements'],
     color: 'pink',
   },
   {
     number: '05',
-    title: 'Close the Period',
+    title: 'Close the period',
     description:
-      'Step through a guided close: manage your fiscal calendar, post depreciation & prepaid schedules, run rule-engine validation over every entry, then lock the period.',
-    tags: ['Schedules', 'Rule Engine', 'Period Close'],
+      'Step through a guided close: bootstrap the fiscal calendar, post depreciation & prepaid schedules to draft, clear rule-engine blockers, then lock — with optional write-back to QuickBooks.',
+    tags: ['Schedules', 'Rule Engine', 'QB Write-back'],
     color: 'green',
   },
   {
     number: '06',
-    title: 'Generate & File Reports',
+    title: 'Generate & file reports',
     description:
-      'Build statements with the Report Creator, then export XBRL 2.1 and JSON-LD bundles or publish to stakeholder lists. Reports carry a generate → review → file lifecycle.',
+      'Build multi-period, comparative statements with the Report Creator, walk the Draft → Filed lifecycle, export XBRL 2.1 and JSON-LD bundles, and share to stakeholder publish lists.',
     tags: ['Report Creator', 'XBRL 2.1', 'Publish Lists'],
     color: 'orange',
-  },
-  {
-    number: '07',
-    title: 'Query with AI',
-    description:
-      'Open the AI Console or connect Claude Desktop over MCP. Ask anything about your books — "show me the trial balance", "what changed this quarter?" — or drive the whole close from your agent.',
-    tags: ['AI Console', 'MCP', 'Claude Desktop'],
-    color: 'violet',
   },
 ]
 
@@ -107,24 +99,24 @@ const colorClasses: Record<
   },
 }
 
-export default function WorkflowSection() {
+export default function HowItWorks() {
   return (
     <section
-      id="workflow"
-      className="relative bg-linear-to-b from-zinc-900 to-black py-16 sm:py-24"
+      id="how-it-works"
+      className="relative bg-linear-to-b from-black to-zinc-900 py-16 sm:py-24"
     >
       <FloatingElementsVariant variant="features" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-16 text-center">
           <div className="bg-primary-500/20 text-primary-400 mb-4 inline-block rounded-full px-4 py-1 text-sm font-semibold">
-            End-to-End Workflow
+            End-to-end workflow
           </div>
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-            From Raw Data to Published Reports
+            From raw data to published reports
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            RoboLedger covers the complete accounting close cycle — connect your
-            sources, triage events, map to GAAP, close the period, and publish
+            RoboLedger covers the whole close cycle — connect your sources,
+            triage events, map to GAAP, close the period, and publish
             statements, all in one place.
           </p>
         </div>
@@ -139,12 +131,11 @@ export default function WorkflowSection() {
               const isLeft = idx % 2 === 0
               return (
                 <div
-                  key={idx}
+                  key={step.number}
                   className={`relative flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-0 ${isLeft ? 'lg:flex-row' : 'lg:flex-row-reverse'}`}
                 >
-                  {/* Card */}
                   <div
-                    className={`w-full rounded-2xl border ${c.border} bg-linear-to-br ${c.bg} hover:border-opacity-60 to-zinc-900 p-6 transition-all duration-300 lg:w-[45%]`}
+                    className={`w-full rounded-2xl border ${c.border} bg-linear-to-br ${c.bg} to-zinc-900 p-6 transition-all duration-300 lg:w-[45%]`}
                   >
                     <div
                       className={`mb-1 text-4xl font-extrabold ${c.number} opacity-40`}
@@ -169,14 +160,12 @@ export default function WorkflowSection() {
                     </div>
                   </div>
 
-                  {/* Center dot (desktop) */}
                   <div className="hidden lg:flex lg:w-[10%] lg:justify-center">
                     <div
                       className={`h-4 w-4 rounded-full ring-4 ring-black ${c.dot}`}
                     ></div>
                   </div>
 
-                  {/* Spacer for alternating layout */}
                   <div className="hidden lg:block lg:w-[45%]"></div>
                 </div>
               )

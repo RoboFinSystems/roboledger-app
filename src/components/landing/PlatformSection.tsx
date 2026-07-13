@@ -10,10 +10,10 @@ export default function PlatformSection() {
             Powered by RoboSystems
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            RoboLedger runs on the RoboSystems knowledge graph platform,
-            integrating your accounting data into a unified three-block model —
-            taxonomy, events, and information — for intelligent financial
-            reporting
+            Your numbers live in a financial knowledge graph — a unified
+            three-block model of taxonomy, events, and information — so every
+            figure is traceable to its source, queryable in plain English, and
+            validated before it's filed
           </p>
         </div>
 
@@ -58,20 +58,24 @@ export default function PlatformSection() {
                   </ul>
                 </div>
 
-                <div className="rounded-lg border border-green-500/30 bg-gradient-to-br from-green-500/10 to-emerald-500/10 p-4">
+                <div className="rounded-lg border border-gray-700/60 bg-gradient-to-br from-zinc-800/40 to-zinc-900/40 p-4">
                   <div className="mb-2 flex items-center gap-2">
-                    <div className="bg-primary-600 flex h-8 w-8 items-center justify-center rounded-lg">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700">
                       <span className="text-xs font-bold text-white">$</span>
                     </div>
-                    <div>
-                      <div className="font-semibold text-white">Plaid</div>
-                      <div className="text-xs text-gray-400">Banking</div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="font-semibold text-white">Plaid</div>
+                        <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400">
+                          Coming soon
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-400">Bank feeds</div>
                     </div>
                   </div>
-                  <ul className="space-y-1 text-xs text-gray-400">
-                    <li>• Bank transactions</li>
+                  <ul className="space-y-1 text-xs text-gray-500">
+                    <li>• Direct bank & card transactions</li>
                     <li>• Account balances</li>
-                    <li>• Credit cards</li>
                   </ul>
                 </div>
               </div>
@@ -266,10 +270,11 @@ export default function PlatformSection() {
               </svg>
             </div>
             <h3 className="mb-2 text-lg font-semibold text-white">
-              Daily Sync
+              Automated Sync
             </h3>
             <p className="text-sm text-gray-400">
-              Automated data synchronization across all connected sources
+              Keep connected sources in step with your ledger — sync on demand
+              or on a schedule
             </p>
           </div>
 
@@ -318,8 +323,8 @@ export default function PlatformSection() {
               Graph Database Performance
             </h3>
             <p className="text-sm text-gray-400">
-              Millisecond queries on complex accounting relationships powered by
-              knowledge graph technology
+              Fast, interactive queries on complex accounting relationships
+              powered by knowledge graph technology
             </p>
           </div>
         </div>
