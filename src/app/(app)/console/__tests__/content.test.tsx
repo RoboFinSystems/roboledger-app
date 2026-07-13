@@ -37,7 +37,7 @@ describe('RoboLedger ConsolePageContent', () => {
     expect(branding.title).toBe('RoboLedger Console')
     expect(branding.consoleName).toBe('RoboLedger Console')
     expect(branding.mcp.serverName).toBe('roboledger')
-    expect(branding.mcp.packageName).toBe('@roboledger/mcp')
+    expect(branding.mcp.packageName).toBe('@robosystems/mcp')
     // Dual-extension graphs should read as ledger graphs in this app.
     expect(branding.preferredKind).toBe('roboledger')
   })
