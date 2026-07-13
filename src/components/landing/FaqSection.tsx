@@ -28,8 +28,8 @@ const faqs: { q: string; a: ReactNode }[] = [
       <>
         No. AI Auto-Map proposes the US-GAAP mapping for your chart of accounts
         with confidence scores, and the rule engine validates every entry before
-        you lock a period. You review and approve — the taxonomy work happens
-        for you.
+        you lock a period. You review and adjust — the taxonomy work happens for
+        you.
       </>
     ),
   },
@@ -41,6 +41,17 @@ const faqs: { q: string; a: ReactNode }[] = [
         and answers questions about your books in natural language. You stay in
         control at every step — one-click approve/reject, dry-run previews of
         what would post, and balanced-entry checks before anything commits.
+      </>
+    ),
+  },
+  {
+    q: 'I keep books for several companies — can I manage them all here?',
+    a: (
+      <>
+        Yes. Each company&apos;s books live in their own isolated graph —
+        connect QuickBooks per company, close each period independently, and
+        switch between them from one account. It&apos;s built for accountants
+        and bookkeepers who run more than one set of books.
       </>
     ),
   },
