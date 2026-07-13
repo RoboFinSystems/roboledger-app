@@ -7,12 +7,11 @@ const stats = [
   {
     stat: 'Every txn triaged',
     label:
-      'Claude pre-classifies each transaction in the inbox — you approve, reject, or run on autopilot',
+      'Claude pre-classifies each transaction in the inbox — you approve or reject, with autopilot for sources you trust',
   },
   {
     stat: 'XBRL 2.1 + JSON-LD',
-    label:
-      'Validated statements export in filing-ready formats, straight from your ledger',
+    label: 'Statements export as validated reports, straight from your ledger',
   },
 ]
 

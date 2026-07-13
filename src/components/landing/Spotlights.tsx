@@ -24,7 +24,7 @@ const spotlights: Spotlight[] = [
     bullets: [
       'AI pre-classifies invoices, bills, payments, and receipts',
       'Preview exactly what would post — matched handler, planned journal entries, validation errors — before it hits the GL',
-      'Approve or reject in one click, or let trusted sources commit on autopilot',
+      'Approve or reject in one click — or enable autopilot for trusted sources',
     ],
     caption: 'Ledger › Inbox',
     preview: <InboxPreview />,
@@ -46,9 +46,9 @@ const spotlights: Spotlight[] = [
   {
     id: 'reporting',
     label: 'Reporting & XBRL',
-    title: 'Live statements, filing-ready output',
+    title: 'Live statements & validated reports',
     description:
-      'Render Balance Sheet, Income Statement, Cash Flow & Equity straight from the ledger — no close required — then generate validated report packages.',
+      'Render Balance Sheet and Income Statement straight from the ledger — no close required — with Cash Flow and Equity as your transactions are classified, then generate validated report packages.',
     bullets: [
       'Multi-period and comparative reports with a Draft → Under Review → Filed lifecycle',
       'Export XBRL 2.1 and JSON-LD bundles; verification view checks US-GAAP concept relations',

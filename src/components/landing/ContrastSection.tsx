@@ -26,7 +26,7 @@ const aiNative = [
   },
   {
     title: 'AI triages',
-    body: 'Claude pre-classifies each event in the inbox — approve in one click, reject, or run on autopilot.',
+    body: 'Claude pre-classifies each event in the inbox — approve in one click, reject, or enable autopilot for trusted sources.',
   },
   {
     title: 'Guided close',
@@ -142,7 +142,7 @@ export default function ContrastSection() {
             </div>
             <div className="mt-6 rounded-lg bg-green-950/50 p-4">
               <div className="text-sm font-semibold text-green-400">
-                Result: minutes to hours
+                Result: hours, not days
               </div>
               <p className="mt-1 text-xs text-gray-400">
                 Automated intelligence, validated accuracy, continuous close

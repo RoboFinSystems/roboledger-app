@@ -51,7 +51,7 @@ const faqs: { q: string; a: ReactNode }[] = [
         Create an account, then provision a graph on the RoboSystems platform —
         enabling RoboLedger gives you access to this app. Plans and provisioning
         live on the RoboSystems side; once you've enabled RoboLedger, connect
-        QuickBooks and you're closing books in minutes.
+        QuickBooks and you're closing your books in hours, not days.
       </>
     ),
   },

@@ -29,7 +29,7 @@ const steps = [
     number: '04',
     title: 'Review your ledger',
     description:
-      'Drill into journal-entry line items, validate the trial balance in CoA or US-GAAP view, and watch Balance Sheet, Income Statement, Cash Flow & Equity render live — no close required.',
+      'Drill into journal-entry line items, validate the trial balance in CoA or US-GAAP view, and watch Balance Sheet, Income Statement, Cash Flow & Equity take shape as you go — no close required.',
     tags: ['Transactions', 'Trial Balance', 'Live Statements'],
     color: 'pink',
   },

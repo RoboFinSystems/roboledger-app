@@ -323,8 +323,8 @@ export default function PlatformSection() {
               Graph Database Performance
             </h3>
             <p className="text-sm text-gray-400">
-              Millisecond queries on complex accounting relationships powered by
-              knowledge graph technology
+              Fast, interactive queries on complex accounting relationships
+              powered by knowledge graph technology
             </p>
           </div>
         </div>
