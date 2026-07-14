@@ -3,6 +3,7 @@
   "permissions": {
     "allow": [
       "Bash(git status:*)",
+      "Bash(git push:*)",
       "Bash(git diff:*)",
       "Bash(git show:*)",
       "Bash(git log:*)",
@@ -88,7 +89,6 @@
       "Bash(npm run sync:push:*)"
     ],
     "deny": [
-      "Bash(git push:*)",
       "Bash(git reset:*)",
       "Bash(git clean:*)",
       "Bash(git branch -D:*)",
