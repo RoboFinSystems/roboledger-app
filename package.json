@@ -14,6 +14,7 @@
     "gha-setup": "./bin/gha-setup.sh"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "start": "next start",
     "dev": "PORT=3001 next dev",
     "dev:webpack": "PORT=3001 next dev --webpack",
