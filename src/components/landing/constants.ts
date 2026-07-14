@@ -17,5 +17,10 @@ export const ROBOSYSTEMS_URL =
 
 export const GITHUB_URL = 'https://github.com/RoboFinSystems/roboledger-app'
 
+// Intuit affiliate/referral link for QuickBooks sign-ups (outbound partner link,
+// mark the anchor rel="sponsored"). Not a RoboSystems app, so it lives here.
+export const QUICKBOOKS_AFFILIATE_URL =
+  'https://quickbooks.intuit.com/partners/affiliates?cid=par_pim_4TcakSEFQs73'
+
 export const REGISTER_PATH = '/register'
 export const LOGIN_PATH = '/login'

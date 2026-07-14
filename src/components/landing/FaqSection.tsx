@@ -1,14 +1,23 @@
 import type { ReactNode } from 'react'
-import { HARBINGER_URL } from './constants'
+import { HARBINGER_URL, QUICKBOOKS_AFFILIATE_URL } from './constants'
 
 const faqs: { q: string; a: ReactNode }[] = [
   {
     q: 'Do I have to leave QuickBooks?',
     a: (
       <>
-        No. RoboLedger syncs your QuickBooks chart of accounts and transactions
-        and can write approved entries back to QuickBooks when you close. It's
-        an AI layer on top of your books, not a replacement for them.
+        No. RoboLedger syncs your{' '}
+        <a
+          href={QUICKBOOKS_AFFILIATE_URL}
+          target="_blank"
+          rel="sponsored noopener noreferrer"
+          className="text-primary-400 hover:text-primary-300 font-medium"
+        >
+          QuickBooks
+        </a>{' '}
+        chart of accounts and transactions and can write approved entries back
+        to QuickBooks when you close. It's an AI layer on top of your books, not
+        a replacement for them.
       </>
     ),
   },
