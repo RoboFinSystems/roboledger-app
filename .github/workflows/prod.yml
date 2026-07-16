@@ -96,6 +96,7 @@ jobs:
       robosystems_app_url: ${{ vars.ROBOSYSTEMS_APP_URL_PROD || 'https://robosystems.ai' }}
       maintenance_mode: ${{ vars.MAINTENANCE_MODE_PROD || 'false' }}
       turnstile_site_key: ${{ vars.TURNSTILE_SITE_KEY || '' }}
+      cf_analytics_token: ${{ vars.CF_ANALYTICS_TOKEN || '' }}
       static_assets_bucket_name: ${{ needs.deploy-s3.outputs.static_assets_bucket_name }}
       # Docker Hub publishing: only when explicitly enabled AND deploying from a version tag or release branch
       # Set DOCKERHUB_PUBLISHING_ENABLED to 'true' in GitHub variables when ready to publish

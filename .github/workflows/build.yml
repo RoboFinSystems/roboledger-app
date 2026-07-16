@@ -35,6 +35,10 @@ on:
         required: false
         type: string
         default: ''
+      cf_analytics_token:
+        required: false
+        type: string
+        default: ''
       static_assets_bucket_name:
         required: false
         type: string
@@ -183,6 +187,7 @@ jobs:
           NEXT_PUBLIC_ROBOSYSTEMS_APP_URL: ${{ inputs.robosystems_app_url }}
           NEXT_PUBLIC_MAINTENANCE_MODE: ${{ inputs.maintenance_mode }}
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ inputs.turnstile_site_key }}
+          NEXT_PUBLIC_CF_ANALYTICS_TOKEN: ${{ inputs.cf_analytics_token }}
         run: |
           npm ci
           npm run build
@@ -444,6 +449,7 @@ jobs:
           NEXT_PUBLIC_ROBOSYSTEMS_APP_URL: '__PLACEHOLDER_ROBOSYSTEMS_APP_URL__'
           NEXT_PUBLIC_MAINTENANCE_MODE: '__PLACEHOLDER_MAINTENANCE_MODE__'
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: '__PLACEHOLDER_TURNSTILE_SITE_KEY__'
+          NEXT_PUBLIC_CF_ANALYTICS_TOKEN: '__PLACEHOLDER_CF_ANALYTICS_TOKEN__'
           NEXT_PUBLIC_S3_ENDPOINT_URL: '__PLACEHOLDER_S3_ENDPOINT_URL__'
         run: |
           npm ci
