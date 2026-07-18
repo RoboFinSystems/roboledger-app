@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
 import { TbBook2 } from 'react-icons/tb'
 import AccountRollupsPanel from './components/AccountRollupsPanel'
+import { NewScheduleModal } from './components/NewScheduleModal'
 import PeriodClosePanel from './components/PeriodClosePanel'
 import SchedulePanel from './components/SchedulePanel'
 import StatementPanel from './components/StatementPanel'
@@ -42,6 +43,9 @@ const CloseContent: FC = function () {
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('rendered')
 
+  // Schedule authoring modal
+  const [newScheduleOpen, setNewScheduleOpen] = useState(false)
+
   // Current graph
   const currentGraph = useMemo(() => {
     const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
@@ -51,45 +55,50 @@ const CloseContent: FC = function () {
     )
   }, [graphState.graphs, graphState.currentGraphId])
 
-  // Load sidebar data — single call to closing book structures endpoint
-  const loadSidebarData = useCallback(async () => {
-    if (!currentGraph) {
-      setIsSidebarLoading(false)
-      return
-    }
-
-    try {
-      setIsSidebarLoading(true)
-      setError(null)
-
-      const [response, entity] = await Promise.all([
-        clients.ledger.getClosingBookStructures(currentGraph.graphId),
-        clients.ledger.getEntity(currentGraph.graphId).catch(() => null),
-      ])
-
-      setCategories(response?.categories ?? [])
-      setEntityName(entity?.name ?? null)
-
-      // Extract mapping ID for report regeneration (find first account_rollups item across all categories)
-      const rollupItem = (response?.categories ?? [])
-        .flatMap((c) => c.items)
-        .find((i) => i.itemType === 'account_rollups')
-      if (rollupItem) {
-        setMappingId(rollupItem.id)
+  // Load sidebar data — single call to closing book structures endpoint.
+  // `select` lets callers land on a specific item after the refresh (e.g.
+  // a freshly created schedule); the default stays the Period Close hub.
+  const loadSidebarData = useCallback(
+    async (select?: SelectedItem) => {
+      if (!currentGraph) {
+        setIsSidebarLoading(false)
+        return
       }
 
-      // Default to the Period Close hub — it's the operational home for
-      // the close workflow (fiscal calendar state, drafts, close button).
-      // Users can still drill into statements, schedules, or rollups from
-      // the sidebar.
-      setSelectedItem({ type: 'period_close' })
-    } catch (err) {
-      console.error('Error loading closing book data:', err)
-      setError('Failed to load closing book data.')
-    } finally {
-      setIsSidebarLoading(false)
-    }
-  }, [currentGraph])
+      try {
+        setIsSidebarLoading(true)
+        setError(null)
+
+        const [response, entity] = await Promise.all([
+          clients.ledger.getClosingBookStructures(currentGraph.graphId),
+          clients.ledger.getEntity(currentGraph.graphId).catch(() => null),
+        ])
+
+        setCategories(response?.categories ?? [])
+        setEntityName(entity?.name ?? null)
+
+        // Extract mapping ID for report regeneration (find first account_rollups item across all categories)
+        const rollupItem = (response?.categories ?? [])
+          .flatMap((c) => c.items)
+          .find((i) => i.itemType === 'account_rollups')
+        if (rollupItem) {
+          setMappingId(rollupItem.id)
+        }
+
+        // Default to the Period Close hub — it's the operational home for
+        // the close workflow (fiscal calendar state, drafts, close button).
+        // Users can still drill into statements, schedules, or rollups from
+        // the sidebar.
+        setSelectedItem(select ?? { type: 'period_close' })
+      } catch (err) {
+        console.error('Error loading closing book data:', err)
+        setError('Failed to load closing book data.')
+      } finally {
+        setIsSidebarLoading(false)
+      }
+    },
+    [currentGraph]
+  )
 
   useEffect(() => {
     loadSidebarData()
@@ -97,6 +106,19 @@ const CloseContent: FC = function () {
 
   // Refresh sidebar data after entry creation
   const handleEntryCreated = useCallback(() => {
+    loadSidebarData()
+  }, [loadSidebarData])
+
+  // A freshly created schedule becomes the selection so its BlockView —
+  // the materialized forward FactSet — serves as the post-commit preview.
+  const handleScheduleCreated = useCallback(
+    (structureId: string) => {
+      loadSidebarData({ type: 'schedule', structureId })
+    },
+    [loadSidebarData]
+  )
+
+  const handleScheduleDeleted = useCallback(() => {
     loadSidebarData()
   }, [loadSidebarData])
 
@@ -157,6 +179,9 @@ const CloseContent: FC = function () {
           selectedItem={selectedItem}
           onSelect={setSelectedItem}
           isLoading={isSidebarLoading}
+          onAddSchedule={
+            currentGraph ? () => setNewScheduleOpen(true) : undefined
+          }
         />
 
         {/* Content Area */}
@@ -181,6 +206,7 @@ const CloseContent: FC = function () {
                 graphId={currentGraph.graphId}
                 structureId={selectedItem.structureId}
                 viewMode={viewMode}
+                onDeleted={handleScheduleDeleted}
               />
             ) : selectedItem.type === 'account_rollups' && currentGraph ? (
               <AccountRollupsPanel
@@ -199,6 +225,15 @@ const CloseContent: FC = function () {
           </Card>
         </div>
       </div>
+
+      {currentGraph && (
+        <NewScheduleModal
+          graphId={currentGraph.graphId}
+          open={newScheduleOpen}
+          onClose={() => setNewScheduleOpen(false)}
+          onCreated={handleScheduleCreated}
+        />
+      )}
     </PageLayout>
   )
 }

@@ -5,7 +5,7 @@ import { LoadingState } from '@robosystems/core'
 import { Button } from 'flowbite-react'
 import type { FC } from 'react'
 import { useState } from 'react'
-import { HiChevronLeft, HiChevronRight } from 'react-icons/hi'
+import { HiChevronLeft, HiChevronRight, HiPlus } from 'react-icons/hi'
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -81,15 +81,27 @@ interface StructureSidebarProps {
   selectedItem: SelectedItem | null
   onSelect: (item: SelectedItem) => void
   isLoading: boolean
+  onAddSchedule?: () => void
 }
+
+const SCHEDULES_LABEL = 'Schedules'
 
 const StructureSidebar: FC<StructureSidebarProps> = ({
   categories,
   selectedItem,
   onSelect,
   isLoading,
+  onAddSchedule,
 }) => {
   const [collapsed, setCollapsed] = useState(false)
+
+  // The server omits the Schedules category entirely when no schedules
+  // exist, but that's exactly when the add action matters most — inject
+  // an empty section so the first schedule can be created from here.
+  const displayCategories =
+    onAddSchedule && !categories.some((c) => c.label === SCHEDULES_LABEL)
+      ? [...categories, { label: SCHEDULES_LABEL, items: [] }]
+      : categories
 
   if (collapsed) {
     return (
@@ -128,7 +140,7 @@ const StructureSidebar: FC<StructureSidebarProps> = ({
         {isLoading ? (
           <LoadingState size="md" className="py-8" />
         ) : (
-          categories.map((cat) => (
+          displayCategories.map((cat) => (
             <div key={cat.label} className="mb-3">
               <div className="px-4 py-1.5">
                 <span className="text-xs font-semibold tracking-wide text-gray-400 uppercase dark:text-gray-500">
@@ -158,6 +170,15 @@ const StructureSidebar: FC<StructureSidebarProps> = ({
                   </button>
                 )
               })}
+              {cat.label === SCHEDULES_LABEL && onAddSchedule && (
+                <button
+                  onClick={onAddSchedule}
+                  className="flex w-full items-center gap-2 border-l-2 border-transparent px-4 py-1.5 text-left text-sm text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200"
+                >
+                  <HiPlus className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">Add schedule</span>
+                </button>
+              )}
             </div>
           ))
         )}
