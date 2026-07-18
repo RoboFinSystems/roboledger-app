@@ -19,6 +19,7 @@ vi.mock('flowbite-react', () => ({
 vi.mock('react-icons/hi', () => ({
   HiChevronLeft: () => <span data-testid="icon-collapse" />,
   HiChevronRight: () => <span data-testid="icon-expand" />,
+  HiPlus: () => <span data-testid="icon-plus" />,
 }))
 
 import type { LedgerClosingBookStructures } from '@robosystems/client/clients'
@@ -282,5 +283,51 @@ describe('StructureSidebar', () => {
       />
     )
     expect(screen.getByText('Closing Book')).toBeInTheDocument()
+  })
+
+  it('renders the add-schedule action and fires onAddSchedule', () => {
+    const onAddSchedule = vi.fn()
+    render(
+      <StructureSidebar
+        categories={makeCategories()}
+        selectedItem={null}
+        onSelect={vi.fn()}
+        isLoading={false}
+        onAddSchedule={onAddSchedule}
+      />
+    )
+    fireEvent.click(screen.getByText('Add schedule'))
+    expect(onAddSchedule).toHaveBeenCalledTimes(1)
+  })
+
+  it('injects a synthetic Schedules section when the server omits it', () => {
+    // The backend drops the Schedules category entirely at zero schedules —
+    // the add action must still be reachable so the first one can be created.
+    const withoutSchedules = makeCategories().filter(
+      (c) => c.label !== 'Schedules'
+    )
+    render(
+      <StructureSidebar
+        categories={withoutSchedules}
+        selectedItem={null}
+        onSelect={vi.fn()}
+        isLoading={false}
+        onAddSchedule={vi.fn()}
+      />
+    )
+    expect(screen.getByText('Schedules')).toBeInTheDocument()
+    expect(screen.getByText('Add schedule')).toBeInTheDocument()
+  })
+
+  it('omits the add action when onAddSchedule is not provided', () => {
+    render(
+      <StructureSidebar
+        categories={makeCategories()}
+        selectedItem={null}
+        onSelect={vi.fn()}
+        isLoading={false}
+      />
+    )
+    expect(screen.queryByText('Add schedule')).not.toBeInTheDocument()
   })
 })

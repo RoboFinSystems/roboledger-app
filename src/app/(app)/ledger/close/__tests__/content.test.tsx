@@ -105,6 +105,11 @@ vi.mock('../components/SchedulePanel', () => ({
   ),
 }))
 
+vi.mock('../components/NewScheduleModal', () => ({
+  NewScheduleModal: ({ open }: any) =>
+    open ? <div data-testid="new-schedule-modal" /> : null,
+}))
+
 vi.mock('../components/AccountRollupsPanel', () => ({
   default: ({ mappingId }: any) => (
     <div data-testid="rollups-panel">{mappingId}</div>
