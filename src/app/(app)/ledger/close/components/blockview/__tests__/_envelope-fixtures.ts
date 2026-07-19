@@ -117,3 +117,46 @@ export const makeEnvelope = (
     view: { rendering: makeRendering() },
     ...overrides,
   }) as EnvelopeBlock
+
+/**
+ * A bound text-block disclosure note: `regulatory_disclosure` block
+ * with a text-block CAP and one narrative rendering row carrying
+ * `textValue` (the server emits one row per Nonnumeric fact).
+ */
+export const makeTextBlockEnvelope = (
+  overrides: Partial<EnvelopeBlock> = {}
+): EnvelopeBlock =>
+  makeEnvelope({
+    id: 'struct_policies',
+    blockType: 'regulatory_disclosure',
+    name: 'Significant Accounting Policies',
+    displayName: 'Significant Accounting Policies',
+    informationModel: {
+      conceptArrangement: 'text_block',
+      memberArrangement: 'whole_part',
+    },
+    elements: [
+      makeElement({
+        id: 'elem_policies',
+        qname: 'driftline:SignificantAccountingPoliciesTextBlock',
+        name: 'Significant Accounting Policies',
+        isMonetary: false,
+      }),
+    ],
+    facts: [],
+    view: {
+      rendering: makeRendering({
+        rows: [
+          {
+            elementId: 'elem_policies',
+            elementQname: 'driftline:SignificantAccountingPoliciesTextBlock',
+            elementName: 'Significant Accounting Policies',
+            textValue:
+              '## Revenue Recognition\n\nRevenue is recognized when control transfers.',
+          },
+        ] as EnvelopeRendering['rows'],
+        periods: [{ start: '2026-01-01', end: '2026-03-31', label: null }],
+      }),
+    },
+    ...overrides,
+  })

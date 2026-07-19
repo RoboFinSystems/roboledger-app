@@ -5,7 +5,10 @@ import { Button } from 'flowbite-react'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi'
-import { isStatementBlockType } from '../../../ledger/close/components/blockview/types'
+import {
+  DISCLOSURE_BLOCK_TYPE,
+  isStatementBlockType,
+} from '../../../ledger/close/components/blockview/types'
 
 type PackageItem = ReportPackage['items'][number]
 
@@ -16,12 +19,14 @@ type SidebarGroup = {
 
 /**
  * Group package items into display sections. Mirrors the §5.1 sketch
- * in `financial-viewer.md` — Financial Statements / Working Papers /
- * Other — without depending on a named-disclosure classification mirror
- * that hasn't shipped yet. Groups omitted when empty.
+ * in `financial-viewer.md` — Financial Statements / Notes / Working
+ * Papers / Other. Group order matches the package's stacked display
+ * order (statements → disclosures → schedules). Groups omitted when
+ * empty.
  */
 function groupItems(items: PackageItem[]): SidebarGroup[] {
   const statements: PackageItem[] = []
+  const notes: PackageItem[] = []
   const workingPapers: PackageItem[] = []
   const other: PackageItem[] = []
 
@@ -29,6 +34,8 @@ function groupItems(items: PackageItem[]): SidebarGroup[] {
     const blockType = item.block?.blockType ?? ''
     if (isStatementBlockType(blockType)) {
       statements.push(item)
+    } else if (blockType === DISCLOSURE_BLOCK_TYPE) {
+      notes.push(item)
     } else if (blockType === 'schedule') {
       workingPapers.push(item)
     } else {
@@ -39,6 +46,9 @@ function groupItems(items: PackageItem[]): SidebarGroup[] {
   const groups: SidebarGroup[] = []
   if (statements.length > 0) {
     groups.push({ label: 'Financial Statements', items: statements })
+  }
+  if (notes.length > 0) {
+    groups.push({ label: 'Notes', items: notes })
   }
   if (workingPapers.length > 0) {
     groups.push({ label: 'Working Papers', items: workingPapers })

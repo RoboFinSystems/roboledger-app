@@ -19,9 +19,14 @@ vi.mock('../projections/ScheduleRendering', () => ({
     <div data-testid="schedule-rendering">{envelope.id}</div>
   ),
 }))
+vi.mock('../projections/TextBlockRendering', () => ({
+  default: ({ envelope }: any) => (
+    <div data-testid="text-block-rendering">{envelope.id}</div>
+  ),
+}))
 
 import BlockView from '../BlockView'
-import { makeEnvelope } from './_envelope-fixtures'
+import { makeEnvelope, makeTextBlockEnvelope } from './_envelope-fixtures'
 
 describe('BlockView dispatcher', () => {
   it('renders FactTable when viewMode is "facts" regardless of block_type', () => {
@@ -66,6 +71,34 @@ describe('BlockView dispatcher', () => {
     expect(screen.getByTestId('schedule-rendering')).toHaveTextContent(
       'struct_dep'
     )
+  })
+
+  it('routes text-block disclosure envelopes to TextBlockRendering', () => {
+    render(<BlockView envelope={makeTextBlockEnvelope()} viewMode="rendered" />)
+    expect(screen.getByTestId('text-block-rendering')).toHaveTextContent(
+      'struct_policies'
+    )
+    expect(screen.queryByTestId('statement-rendering')).toBeNull()
+  })
+
+  it('routes numeric-CAP disclosure envelopes to StatementRendering', () => {
+    render(
+      <BlockView
+        envelope={makeEnvelope({
+          id: 'struct_inv_note',
+          blockType: 'regulatory_disclosure',
+          informationModel: {
+            conceptArrangement: 'roll_up',
+            memberArrangement: 'aggregation',
+          },
+        })}
+        viewMode="rendered"
+      />
+    )
+    expect(screen.getByTestId('statement-rendering')).toHaveTextContent(
+      'struct_inv_note'
+    )
+    expect(screen.queryByTestId('text-block-rendering')).toBeNull()
   })
 
   it('shows an empty state for unsupported (block_type, viewMode) pairs', () => {
