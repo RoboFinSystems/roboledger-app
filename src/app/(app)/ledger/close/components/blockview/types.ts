@@ -46,3 +46,26 @@ export const isStatementBlockType = (
   blockType: string
 ): blockType is StatementBlockType =>
   (STATEMENT_BLOCK_TYPES as readonly string[]).includes(blockType)
+
+/**
+ * Disclosure block type + the text-block concept-arrangement family.
+ * Mirrors `DISCLOSURE_BLOCK_TYPE` and `TEXT_BLOCK_CAPS` server-side
+ * (`robosystems/models/extensions/structure.py`) — the same dispatch
+ * the envelope builder uses: text-block CAPs carry narrative rows
+ * (`textValue`), every other disclosure CAP renders as a numeric grid.
+ */
+export const DISCLOSURE_BLOCK_TYPE = 'regulatory_disclosure'
+
+export const TEXT_BLOCK_CAPS = [
+  'text_block',
+  'level1_textblock',
+  'level2_textblock',
+  'level3_textblock',
+  'table_equivalent_textblock',
+] as const
+
+export const isTextBlockEnvelope = (envelope: EnvelopeBlock): boolean =>
+  envelope.blockType === DISCLOSURE_BLOCK_TYPE &&
+  (TEXT_BLOCK_CAPS as readonly string[]).includes(
+    envelope.informationModel.conceptArrangement ?? ''
+  )

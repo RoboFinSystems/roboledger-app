@@ -7,9 +7,14 @@ import FactTableProjection from './projections/FactTable'
 import ReportElementsProjection from './projections/ReportElements'
 import ScheduleRenderingProjection from './projections/ScheduleRendering'
 import StatementRenderingProjection from './projections/StatementRendering'
+import TextBlockRenderingProjection from './projections/TextBlockRendering'
 import VerificationResultsProjection from './projections/VerificationResults'
 import type { EnvelopeBlock } from './types'
-import { isStatementBlockType } from './types'
+import {
+  DISCLOSURE_BLOCK_TYPE,
+  isStatementBlockType,
+  isTextBlockEnvelope,
+} from './types'
 
 interface BlockViewProps {
   envelope: EnvelopeBlock
@@ -68,6 +73,24 @@ const BlockView: FC<BlockViewProps> = ({ envelope, viewMode, entityName }) => {
 
   if (envelope.blockType === 'schedule') {
     return <ScheduleRenderingProjection envelope={envelope} />
+  }
+
+  // Disclosure notes — text-block CAPs carry narrative (`textValue`
+  // rows); every other CAP (e.g. an inventory-note roll_up) renders
+  // the same numeric grid as the statement family. Mirrors the
+  // server-side dispatch in `information_block/disclosure.py`.
+  if (envelope.blockType === DISCLOSURE_BLOCK_TYPE) {
+    return isTextBlockEnvelope(envelope) ? (
+      <TextBlockRenderingProjection
+        envelope={envelope}
+        entityName={entityName}
+      />
+    ) : (
+      <StatementRenderingProjection
+        envelope={envelope}
+        entityName={entityName}
+      />
+    )
   }
 
   return (
