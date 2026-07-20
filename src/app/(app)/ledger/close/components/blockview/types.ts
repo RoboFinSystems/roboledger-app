@@ -38,6 +38,7 @@ export const STATEMENT_BLOCK_TYPES = [
   'income_statement',
   'cash_flow_statement',
   'equity_statement',
+  'comprehensive_income',
 ] as const
 
 export type StatementBlockType = (typeof STATEMENT_BLOCK_TYPES)[number]

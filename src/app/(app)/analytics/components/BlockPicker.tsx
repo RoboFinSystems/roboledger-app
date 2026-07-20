@@ -20,6 +20,7 @@ const GROUP_BY_BLOCK_TYPE: Record<string, string> = {
   income_statement: 'Statements',
   cash_flow_statement: 'Statements',
   equity_statement: 'Statements',
+  comprehensive_income: 'Statements',
   schedule: 'Schedules',
   regulatory_disclosure: 'Disclosures',
 }
