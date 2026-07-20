@@ -119,6 +119,80 @@ export const makeEnvelope = (
   }) as EnvelopeBlock
 
 /**
+ * A metric block with a 2-period standing time series. Rows mix value
+ * kinds: Working Capital is monetary, Current Ratio is a pure decimal —
+ * the discriminator `MetricRendering` formats per-row from
+ * `elements[].isMonetary`.
+ */
+export const makeMetricEnvelope = (
+  overrides: Partial<EnvelopeBlock> = {}
+): EnvelopeBlock =>
+  makeEnvelope({
+    id: 'struct_metrics',
+    blockType: 'metric',
+    name: 'Key Financial Metrics',
+    displayName: 'Key Financial Metrics',
+    informationModel: {
+      conceptArrangement: 'arithmetic',
+      memberArrangement: 'aggregation',
+    },
+    artifact: {
+      topic: null,
+      rendererNote: null,
+      template: null,
+      mechanics: { kind: 'metric' },
+    },
+    elements: [
+      makeElement({
+        id: 'elem_wc',
+        qname: 'rs-metric:WorkingCapital',
+        name: 'Working Capital',
+        isMonetary: true,
+        periodType: 'instant',
+      }),
+      makeElement({
+        id: 'elem_cr',
+        qname: 'rs-metric:CurrentRatio',
+        name: 'Current Ratio',
+        isMonetary: false,
+        periodType: 'instant',
+      }),
+    ],
+    facts: [],
+    view: {
+      rendering: makeRendering({
+        rows: [
+          {
+            elementId: 'elem_wc',
+            elementQname: 'rs-metric:WorkingCapital',
+            elementName: 'Working Capital',
+            classification: null,
+            balanceType: 'debit',
+            values: [88047.19, 238543.34],
+            isSubtotal: false,
+            depth: 0,
+          },
+          {
+            elementId: 'elem_cr',
+            elementQname: 'rs-metric:CurrentRatio',
+            elementName: 'Current Ratio',
+            classification: null,
+            balanceType: null,
+            values: [3.2727, 5.5905],
+            isSubtotal: false,
+            depth: 0,
+          },
+        ] as EnvelopeRendering['rows'],
+        periods: [
+          { start: null, end: '2025-12-31', label: null },
+          { start: null, end: '2026-06-30', label: null },
+        ],
+      }),
+    },
+    ...overrides,
+  })
+
+/**
  * A bound text-block disclosure note: `regulatory_disclosure` block
  * with a text-block CAP and one narrative rendering row carrying
  * `textValue` (the server emits one row per Nonnumeric fact).

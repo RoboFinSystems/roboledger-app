@@ -4,6 +4,7 @@ import type { FC } from 'react'
 import type { ViewMode } from '../ViewModeToggle'
 import BusinessRulesProjection from './projections/BusinessRules'
 import FactTableProjection from './projections/FactTable'
+import MetricRenderingProjection from './projections/MetricRendering'
 import ReportElementsProjection from './projections/ReportElements'
 import ScheduleRenderingProjection from './projections/ScheduleRendering'
 import StatementRenderingProjection from './projections/StatementRendering'
@@ -73,6 +74,15 @@ const BlockView: FC<BlockViewProps> = ({ envelope, viewMode, entityName }) => {
 
   if (envelope.blockType === 'schedule') {
     return <ScheduleRenderingProjection envelope={envelope} />
+  }
+
+  // Metric blocks — standing multi-period time series with mixed value
+  // kinds (monetary + pure ratios), so cells format per-element rather
+  // than uniformly as currency.
+  if (envelope.blockType === 'metric') {
+    return (
+      <MetricRenderingProjection envelope={envelope} entityName={entityName} />
+    )
   }
 
   // Disclosure notes — text-block CAPs carry narrative (`textValue`

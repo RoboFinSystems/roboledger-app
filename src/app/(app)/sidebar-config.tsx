@@ -3,6 +3,7 @@
 import type { SidebarItemData } from '@robosystems/core'
 import {
   HiBookOpen,
+  HiChartBar,
   HiHome,
   HiOutlineOfficeBuilding,
   HiSearch,
@@ -63,6 +64,11 @@ export const getNavigationItems = (
             { href: '/reports/new', label: 'Create Report' },
             { href: '/reports/publish-lists', label: 'Publish Lists' },
           ],
+        },
+        {
+          icon: HiChartBar,
+          label: 'Analytics',
+          href: '/analytics',
         },
         {
           icon: HiBookOpen,

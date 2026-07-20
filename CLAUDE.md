@@ -113,11 +113,10 @@ These are tracked here so they're not lost; each is small enough that it doesn't
 
 For larger forward-work surfaces tracked in proper specs:
 
-- **Analytics route** (`/analytics` or `/explore` — fact grid + financial-statement-analysis UI): see [`financial-viewer.md`](../../robosystems/local/docs/specs/financial-viewer.md) §7.15.
-- **Event approval workflow UX**: see [`event-driven-ledger.md`](../../robosystems/local/docs/specs/event-driven-ledger.md) §5.10.
-- **AI-suggested handler review page**: see [`event-driven-ledger.md`](../../robosystems/local/docs/specs/event-driven-ledger.md) §5.11.
-- **Verification Results panel restructure**: see [`financial-viewer.md`](../../robosystems/local/docs/specs/financial-viewer.md) §7.12.
-- **Drift reconciliation UX** (QB outbound write conflicts): see [`quickbooks-adapter.md`](../../robosystems/local/docs/specs/quickbooks-adapter.md) §4.3.
+- **Event approval workflow UX**: see `event-driven-ledger.md` §5.10.
+- **AI-suggested handler review page**: see `event-driven-ledger.md` §5.11.
+- **Verification Results panel restructure**: see `financial-viewer.md` §7.12.
+- **Drift reconciliation UX** (QB outbound write conflicts): see `quickbooks-adapter.md` §4.3.
 
 **Ledger Sub-Routes:**
 
