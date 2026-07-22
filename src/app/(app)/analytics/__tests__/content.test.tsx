@@ -116,13 +116,27 @@ const GRAPH = {
 }
 
 // Balance sheet first so the metric-first default preference is what the
-// test asserts, not list order.
+// test asserts, not list order. The fact-less variant (a library-seeded
+// calc/presentation structure) leads the list so a missing filter would
+// win default selection and fail the tests below.
 const BLOCKS = [
-  { id: 'struct_bs', blockType: 'balance_sheet', displayName: 'Balance Sheet' },
+  {
+    id: 'struct_bs_calc',
+    blockType: 'balance_sheet',
+    displayName: 'Balance Sheet',
+    facts: [],
+  },
+  {
+    id: 'struct_bs',
+    blockType: 'balance_sheet',
+    displayName: 'Balance Sheet',
+    facts: [{ id: 'f_bs' }],
+  },
   {
     id: 'struct_metrics',
     blockType: 'metric',
     displayName: 'Key Financial Metrics',
+    facts: [{ id: 'f_m' }],
   },
 ]
 
@@ -168,6 +182,20 @@ describe('AnalyticsContent', () => {
     expect(
       await screen.findByText('struct_metrics:rendered')
     ).toBeInTheDocument()
+  })
+
+  it('excludes fact-less blocks (library structure variants) from the picker', async () => {
+    render(<AnalyticsContent />)
+    expect(await screen.findByTestId('pick-struct_bs')).toBeInTheDocument()
+    expect(screen.getByTestId('pick-struct_metrics')).toBeInTheDocument()
+    // The fact-less calc/presentation variant must not surface — it has
+    // no time series to explore and reads as a duplicate of the real one.
+    expect(screen.queryByTestId('pick-struct_bs_calc')).not.toBeInTheDocument()
+    // Nor may it win default selection despite leading the list.
+    expect(mockGetInformationBlock).not.toHaveBeenCalledWith(
+      'kg1',
+      'struct_bs_calc'
+    )
   })
 
   it('preselects the block from the ?block= URL param over the metric default', async () => {

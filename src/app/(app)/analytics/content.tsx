@@ -109,14 +109,22 @@ const AnalyticsContent: FC = function () {
           clients.ledger.getEntity(currentGraph.graphId).catch(() => null),
         ])
         if (cancelled) return
-        setBlocks(list)
+        // Analytics explores blocks as standing time series, so only
+        // fact-bearing blocks belong here. The list also contains the
+        // library-seeded structure variants (disclosure anchors, calc
+        // structures, presentation umbrellas, per-equity-form clones) —
+        // all fact-less, and near-duplicates of each other by name.
+        const withFacts = list.filter((b) => b.facts.length > 0)
+        setBlocks(withFacts)
         setEntityName(entity?.name ?? null)
         // Default selection: first metric block (the analytics home),
         // else the first block. A URL-seeded selection wins.
         setSelectedId((current) => {
           if (current) return current
           const first =
-            list.find((b) => b.blockType === 'metric') ?? list[0] ?? null
+            withFacts.find((b) => b.blockType === 'metric') ??
+            withFacts[0] ??
+            null
           return first?.id ?? null
         })
       } catch (err) {
