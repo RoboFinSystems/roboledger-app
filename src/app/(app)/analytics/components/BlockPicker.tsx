@@ -58,7 +58,7 @@ const BlockPicker: FC<BlockPickerProps> = ({
     const needle = search.toLowerCase()
     const filtered = needle
       ? blocks.filter((b) =>
-          (b.displayName ?? b.name).toLowerCase().includes(needle)
+          (b.name || (b.displayName ?? '')).toLowerCase().includes(needle)
         )
       : blocks
 
@@ -131,7 +131,7 @@ const BlockPicker: FC<BlockPickerProps> = ({
                       }`}
                     />
                     <span className="truncate">
-                      {block.displayName ?? block.name}
+                      {block.name || block.displayName}
                     </span>
                   </button>
                 )
