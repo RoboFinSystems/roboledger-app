@@ -51,6 +51,11 @@ const nextConfig = {
     },
   },
   allowedDevOrigins,
+  // The Block Explorer shipped at /analytics before it was renamed; keep
+  // old links working.
+  async redirects() {
+    return [{ source: '/analytics', destination: '/explorer', permanent: true }]
+  },
   async rewrites() {
     if (!tunnelDomain) return []
     return [

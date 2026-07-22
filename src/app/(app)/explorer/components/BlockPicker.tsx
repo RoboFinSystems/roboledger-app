@@ -41,8 +41,8 @@ interface BlockPickerProps {
 }
 
 /**
- * Searchable Information Block picker — the left rail of `/analytics`.
- * Groups blocks by family (metrics first: they're the analytics home)
+ * Searchable Information Block picker — the left rail of `/explorer`.
+ * Groups blocks by family (metrics first: they're the explorer home)
  * and filters by name client-side; the block list itself is one
  * `listInformationBlocks` fetch owned by the page.
  */
