@@ -31,8 +31,11 @@ FROM public.ecr.aws/docker/library/node:22.23.1-alpine3.23 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Install git and upgrade system packages for security patches
-RUN apk upgrade --no-cache && apk add --no-cache git
+# Install git and upgrade system packages for security patches.
+# CACHE_DATE (set per-build in build.yml) busts this layer so the upgrade
+# re-runs despite GHA layer caching — a cached layer keeps stale OS packages.
+ARG CACHE_DATE
+RUN echo "os-refresh ${CACHE_DATE}" && apk upgrade --no-cache && apk add --no-cache git
 
 # Upgrade the bundled npm CLI to clear CVEs in npm's vendored deps
 # (picomatch, brace-expansion, tar, minimatch) — this is the stage the prod image scan inspects
