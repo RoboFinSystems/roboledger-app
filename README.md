@@ -1,7 +1,5 @@
 # RoboLedger App
 
-> **Version 0.3 (Beta)** — Core accounting features available, expanding integrations and automation
-
 RoboLedger App is the web interface for AI-native accounting, building semantic knowledge graphs from financial data for intelligent automation and natural language analysis powered by Claude AI.
 
 - **Semantic Financial Intelligence**: Every transaction connected semantically, preserving relationships and context for AI-powered insights
@@ -12,29 +10,24 @@ RoboLedger App is the web interface for AI-native accounting, building semantic 
 
 ## Core Features
 
-### Available Now
-
 - **Dashboard**: Financial overview with quick actions
 - **Ledger**: Chart of accounts, journal entries, trial balance, and account mappings
 - **Period Close**: Fiscal calendar bootstrap, close workflow with gate checks, and rule-based pre-close evaluation
 - **Live Statements**: Render balance sheet, income statement, and cash flow directly from the current ledger — no period close required
 - **Schedules**: Recurring journal entry templates with auto-evaluation on close
 - **Inbox**: Event block review for rule violations and pending obligations
-- **Reports**: Custom report builder with fact grids, templates, publish lists, and multi-format export
+- **Reports**: Custom report builder with fact grids, statement and text-block disclosure rendering, templates, publish lists, and multi-format export
+- **Block Explorer**: Browse Information Blocks and their fact-set views with on-the-fly metric computation
+- **Mapping Workbench**: Configure taxonomy framework mappings with AI suggestions and the automapper operator
 - **Connections**: QuickBooks OAuth sync and SEC XBRL filings
-- **Entity Detail**: Per-entity dashboard with materialize-to-graph workflow
+- **Entity Detail**: Per-entity details and configuration
 - **Agents**: AI agent management with conversation history and tool access
 - **AI Console**: Natural language and Cypher query terminal with streaming results and MCP integration
 - **Document Search**: Full-text and semantic search across uploaded documents and connected sources
 - **Library**: Browse canonical taxonomies, elements, and reference data
 - **Entities**: Multi-entity management across all graphs
-- **API Keys**: Secure programmatic access with `rlap_` bearer tokens
+- **API Keys**: Secure programmatic access with `rfs`-prefixed API keys
 - **Settings**: User profile and password management
-
-### In Development
-
-- **Mapping Workbench**: Interactive CoA → us-gaap mapping with AI suggestions
-- **Disclosure Renderer**: Automated financial statement rendering from XBRL hypercube
 
 ## Quick Start
 
@@ -120,6 +113,7 @@ See the **[Bootstrap Guide](https://github.com/RoboFinSystems/robosystems/wiki/B
 - TypeScript 5 for type safety
 - Flowbite React with Tailwind CSS for UI components
 - RoboSystems Client SDK for API communication
+- Statement and report rendering via [`@robosystems/report-components`](https://www.npmjs.com/package/@robosystems/report-components)
 - Intuit OAuth for QuickBooks integration
 
 **Core Library ([`@robosystems/core`](https://www.npmjs.com/package/@robosystems/core)):**
@@ -143,8 +137,8 @@ Shared modules consumed as an npm package across RoboSystems frontend apps:
 
 - **`prod.yml`**: Production deployment to roboledger.ai
 - **`staging.yml`**: Staging deployment to staging.roboledger.ai
-- **`test.yml`**: Automated testing on pull requests
-- **`build.yml`**: Docker image building for ECR
+- **`test-ci.yml`**: Automated testing on pull requests
+- **`build.yml`**: Reusable Docker image build for ECR, invoked by the deploy workflows
 
 ## Support
 

@@ -39,6 +39,8 @@ npm run format:check # Check code formatting
 
 - `/api/utilities/health` - Health check endpoint for App Runner
 - `/api/contact` - Contact form submission via SNS (with rate limiting and CAPTCHA)
+- `/api/support` - Support request submission via SNS
+- `/api/reports/holon` - Holon JSON-LD validation for report rendering
 - `/api/session/sidebar` - Sidebar state management
 
 **Route Structure:**
@@ -56,15 +58,17 @@ npm run format:check # Check code formatting
 | `/connections`                            | listConnections, syncConnection                                     | shipped                                                                                     |
 | `/connections/qb-callback`                | oauthCallback                                                       | shipped                                                                                     |
 | `/connections/sec/setup`                  | createConnection                                                    | shipped                                                                                     |
-| `/ledger/chart-of-accounts`               | getAccountTree, autoMapElements, mapping ops                        | shipped (auto-map UI live; CoA → US-GAAP mapping pending OLTP migration)                    |
+| `/ledger/chart-of-accounts`               | getAccountTree, autoMapElements, mapping ops                        | shipped (framework mapping config + AI suggestions + auto-map operator)                     |
 | `/ledger/transactions`                    | listTransactions, getTransaction, createJournalEntry (modal)        | shipped (NewJournalEntryModal 2026-05-14)                                                   |
 | `/ledger/trial-balance`                   | getTrialBalance, getMappedTrialBalance                              | shipped                                                                                     |
 | `/ledger/close`                           | getPeriodCloseStatus, closePeriod, reopenPeriod, listPeriodDrafts   | shipped (also renders schedule/statement/rules blocks via BlockView)                        |
+| `/ledger/statements`                      | live-financial-statement                                            | shipped (live render from OLTP ledger, no close required)                                   |
 | `/ledger/inbox`                           | listEventBlocks, getEventBlock, previewEventBlock, updateEventBlock | shipped 2026-05-01                                                                          |
 | `/agents`                                 | listAgents, getAgent                                                | shipped 2026-05-01                                                                          |
 | `/reports` `/reports/new` `/reports/[id]` | listReports, createReport, getReportPackage                         | shipped                                                                                     |
 | `/reports/publish-lists`                  | publishList CRUD                                                    | shipped                                                                                     |
 | `/library`                                | listLibraryTaxonomies, getLibraryElement                            | shipped                                                                                     |
+| `/explorer`                               | information blocks + fact-set views, compute bar                    | shipped (Block Explorer; renamed from Analytics 2026-07)                                    |
 | `/console`                                | MCP-backed                                                          | shipped                                                                                     |
 | `/search`                                 | searchDocuments, listDocuments, getDocumentSection                  | shipped (full-text + semantic document search via core SearchContent)                       |
 | `/settings`                               | auth client                                                         | shipped                                                                                     |
