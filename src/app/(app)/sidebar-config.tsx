@@ -67,8 +67,8 @@ export const getNavigationItems = (
         },
         {
           icon: HiChartBar,
-          label: 'Analytics',
-          href: '/analytics',
+          label: 'Explorer',
+          href: '/explorer',
         },
         {
           icon: HiBookOpen,

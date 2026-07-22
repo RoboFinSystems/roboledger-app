@@ -107,7 +107,7 @@ vi.mock('../components/ComputePanel', () => ({
   ),
 }))
 
-import AnalyticsContent from '../content'
+import BlockExplorerContent from '../content'
 
 const GRAPH = {
   graphId: 'kg1',
@@ -156,7 +156,7 @@ const statementEnvelope = {
   view: { rendering: { rows: [{ elementId: 'e1' }], periods: [] } },
 }
 
-describe('AnalyticsContent', () => {
+describe('BlockExplorerContent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     searchParams = new URLSearchParams()
@@ -172,7 +172,7 @@ describe('AnalyticsContent', () => {
   })
 
   it('defaults selection to the first metric block and renders its envelope', async () => {
-    render(<AnalyticsContent />)
+    render(<BlockExplorerContent />)
     await waitFor(() =>
       expect(mockGetInformationBlock).toHaveBeenCalledWith(
         'kg1',
@@ -185,7 +185,7 @@ describe('AnalyticsContent', () => {
   })
 
   it('excludes fact-less blocks (library structure variants) from the picker', async () => {
-    render(<AnalyticsContent />)
+    render(<BlockExplorerContent />)
     expect(await screen.findByTestId('pick-struct_bs')).toBeInTheDocument()
     expect(screen.getByTestId('pick-struct_metrics')).toBeInTheDocument()
     // The fact-less calc/presentation variant must not surface — it has
@@ -200,7 +200,7 @@ describe('AnalyticsContent', () => {
 
   it('preselects the block from the ?block= URL param over the metric default', async () => {
     searchParams = new URLSearchParams('block=struct_bs')
-    render(<AnalyticsContent />)
+    render(<BlockExplorerContent />)
     await waitFor(() =>
       expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_bs')
     )
@@ -211,7 +211,7 @@ describe('AnalyticsContent', () => {
   })
 
   it('shows the compute panel for metric blocks only', async () => {
-    render(<AnalyticsContent />)
+    render(<BlockExplorerContent />)
     expect(await screen.findByTestId('compute-panel')).toHaveTextContent(
       'struct_metrics'
     )
@@ -226,17 +226,17 @@ describe('AnalyticsContent', () => {
   })
 
   it('encodes selection into the URL on picker click', async () => {
-    render(<AnalyticsContent />)
+    render(<BlockExplorerContent />)
     await screen.findByTestId('block-view')
 
     fireEvent.click(screen.getByTestId('pick-struct_bs'))
-    expect(mockReplace).toHaveBeenCalledWith('/analytics?block=struct_bs', {
+    expect(mockReplace).toHaveBeenCalledWith('/explorer?block=struct_bs', {
       scroll: false,
     })
   })
 
   it('encodes a non-default view mode into the URL', async () => {
-    render(<AnalyticsContent />)
+    render(<BlockExplorerContent />)
     await screen.findByTestId('block-view')
 
     fireEvent.click(screen.getByTestId('view-toggle'))
@@ -246,14 +246,14 @@ describe('AnalyticsContent', () => {
       )
     )
     expect(mockReplace).toHaveBeenCalledWith(
-      '/analytics?block=struct_metrics&view=facts',
+      '/explorer?block=struct_metrics&view=facts',
       { scroll: false }
     )
   })
 
   it('surfaces a list-load failure', async () => {
     mockListInformationBlocks.mockRejectedValue(new Error('boom'))
-    render(<AnalyticsContent />)
+    render(<BlockExplorerContent />)
     expect(
       await screen.findByText('Failed to load information blocks.')
     ).toBeInTheDocument()
@@ -263,7 +263,7 @@ describe('AnalyticsContent', () => {
     mockUseGraphContext.mockReturnValue({
       state: { graphs: [], currentGraphId: null, isLoading: false },
     })
-    render(<AnalyticsContent />)
+    render(<BlockExplorerContent />)
     expect(screen.getByTestId('empty-state')).toBeInTheDocument()
     expect(mockListInformationBlocks).not.toHaveBeenCalled()
   })

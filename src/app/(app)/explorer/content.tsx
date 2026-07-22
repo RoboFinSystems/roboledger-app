@@ -35,13 +35,13 @@ const isViewMode = (value: string | null): value is ViewMode =>
   value !== null && (VIEW_MODES as readonly string[]).includes(value)
 
 /**
- * `/analytics` — the generic Information Block surface. Pick any block
+ * `/explorer` — the Block Explorer, the generic Information Block surface. Pick any block
  * (metrics, statements, schedules, disclosures) and view its envelope
  * through the standard View projections; metric blocks additionally get
  * the compute bar that extends their standing time series. State is
  * URL-encoded (`?block=` / `?view=`) so a view is shareable.
  */
-const AnalyticsContent: FC = function () {
+const BlockExplorerContent: FC = function () {
   const { state: graphState } = useGraphContext()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -81,7 +81,7 @@ const AnalyticsContent: FC = function () {
       if (blockId) params.set('block', blockId)
       if (mode !== 'rendered') params.set('view', mode)
       const query = params.toString()
-      router.replace(query ? `/analytics?${query}` : '/analytics', {
+      router.replace(query ? `/explorer?${query}` : '/explorer', {
         scroll: false,
       })
     },
@@ -109,7 +109,7 @@ const AnalyticsContent: FC = function () {
           clients.ledger.getEntity(currentGraph.graphId).catch(() => null),
         ])
         if (cancelled) return
-        // Analytics explores blocks as standing time series, so only
+        // The explorer shows blocks as standing time series, so only
         // fact-bearing blocks belong here. The list also contains the
         // library-seeded structure variants (disclosure anchors, calc
         // structures, presentation umbrellas, per-equity-form clones) —
@@ -117,7 +117,7 @@ const AnalyticsContent: FC = function () {
         const withFacts = list.filter((b) => b.facts.length > 0)
         setBlocks(withFacts)
         setEntityName(entity?.name ?? null)
-        // Default selection: first metric block (the analytics home),
+        // Default selection: first metric block (the explorer home),
         // else the first block. A URL-seeded selection wins.
         setSelectedId((current) => {
           if (current) return current
@@ -201,7 +201,7 @@ const AnalyticsContent: FC = function () {
   if (!currentGraph && !graphState.isLoading) {
     return (
       <PageLayout>
-        <PageHeader icon={HiChartBar} title="Analytics" />
+        <PageHeader icon={HiChartBar} title="Block Explorer" />
         <Card>
           <EmptyState
             icon={HiChartBar}
@@ -217,7 +217,7 @@ const AnalyticsContent: FC = function () {
     <PageLayout variant="full-width">
       <PageHeader
         icon={HiChartBar}
-        title="Analytics"
+        title="Block Explorer"
         subtitle={
           currentGraph
             ? 'Explore information blocks as standing time series'
@@ -299,4 +299,4 @@ const AnalyticsContent: FC = function () {
   )
 }
 
-export default AnalyticsContent
+export default BlockExplorerContent
