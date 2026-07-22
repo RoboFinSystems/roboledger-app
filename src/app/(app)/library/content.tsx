@@ -62,14 +62,21 @@ export default function LibraryContent() {
   )
 
   // Browse is an element browser, so show only frameworks with browsable
-  // concepts: reporting standards (rs-gaap, fac) + the chart of accounts.
-  // Supporting linkbases (rules, traits, mappings, disclosures, reporting
-  // styles) carry no elements of their own.
+  // concepts: reporting standards (rs-gaap, fac), the chart of accounts,
+  // and tenant-authored reporting extensions (disclosure members, policy
+  // text blocks — authored via the TaxonomyBlock envelope, isShared=false).
+  // Library-seeded extension packages (rs-gaap-disclosures, rs-metric, …)
+  // and supporting linkbases (rules, traits, mappings, reporting styles)
+  // stay hidden: framework plumbing, not tenant content.
   const sidebarTaxonomies = useMemo(() => {
     const order: Record<string, number> = { 'rs-gaap': 0, sfac6: 1, fac: 2 }
     const allowed = new Set(['reporting_standard', 'chart_of_accounts'])
     return taxonomies
-      .filter((t) => allowed.has(t.taxonomyType ?? ''))
+      .filter(
+        (t) =>
+          allowed.has(t.taxonomyType ?? '') ||
+          (t.taxonomyType === 'reporting_extension' && !t.isShared)
+      )
       .sort((a, b) => {
         const ai = order[a.standard ?? ''] ?? 99
         const bi = order[b.standard ?? ''] ?? 99
@@ -120,12 +127,12 @@ export default function LibraryContent() {
         title="Taxonomy Library"
         subtitle={
           <>
-            Library taxonomies and CoA elements for{' '}
+            Library taxonomies, CoA elements, and reporting extensions for{' '}
             <span className="font-mono text-xs">
               {currentGraph?.graphName ?? graphId}
             </span>
-            . Library content is read-only; CoA elements and anchor mappings are
-            tenant-managed.
+            . Library content is read-only; CoA elements, reporting extensions,
+            and anchor mappings are tenant-managed.
           </>
         }
       />
