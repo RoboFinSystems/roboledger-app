@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockListInformationBlocks = vi.fn()
@@ -39,12 +39,26 @@ vi.mock('@robosystems/core', () => ({
       Loading
     </div>
   ),
-  EmptyState: ({ title }: any) => <div data-testid="empty-state">{title}</div>,
+  EmptyState: ({ title, action }: any) => (
+    <div data-testid="empty-state">
+      {title}
+      {action}
+    </div>
+  ),
 }))
 
+// Stable router identity — the content effect lists `router` in its
+// deps (it heals stale ?scenario= URLs), and a fresh object per render
+// would loop the effect forever. The real Next router is stable.
+const mockRouter = { replace: mockReplace }
+
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: mockReplace }),
+  useRouter: () => mockRouter,
   useSearchParams: () => searchParams,
+}))
+
+vi.mock('next/link', () => ({
+  default: ({ href, children }: any) => <a href={href}>{children}</a>,
 }))
 
 vi.mock('flowbite-react', () => ({
@@ -65,6 +79,7 @@ vi.mock('react-icons/hi', () => ({
   HiTable: () => <span />,
   HiDownload: () => <span data-testid="icon-download" />,
   HiExclamationCircle: () => <span data-testid="icon-error" />,
+  HiLockClosed: () => <span data-testid="icon-lock" />,
 }))
 
 import PlanContent from '../content'
@@ -195,6 +210,64 @@ describe('PlanContent', () => {
     expect(
       screen.queryByTestId('plan-section-Assumptions')
     ).not.toBeInTheDocument()
+  })
+
+  it('falls back to the default scenario when the URL id is stale', async () => {
+    searchParams = new URLSearchParams('scenario=struct_deleted')
+    render(<PlanContent />)
+
+    // The stale id never reaches an envelope read; the default scenario
+    // loads instead and the URL heals.
+    await waitFor(() =>
+      expect(mockGetInformationBlock).toHaveBeenCalledWith(
+        'kg1',
+        'struct_budget'
+      )
+    )
+    expect(mockReplace).toHaveBeenCalledWith('/plan?scenario=struct_budget', {
+      scroll: false,
+    })
+    expect(mockGetInformationBlock).not.toHaveBeenCalledWith(
+      'kg1',
+      'struct_deleted'
+    )
+  })
+
+  it('shows the close-first call-to-action when no statement blocks exist', async () => {
+    mockListInformationBlocks.mockResolvedValue([
+      BLOCKS[3], // the forecast block only — no statement family
+    ])
+    render(<PlanContent />)
+
+    expect(await screen.findByText('No Closed Months Yet')).toBeInTheDocument()
+    const link = screen.getByText('Go to Closing Book').closest('a')
+    expect(link).toHaveAttribute('href', '/ledger/close')
+  })
+
+  it('renders an actuals-only hint when the graph has no forecast scenario', async () => {
+    mockListInformationBlocks.mockResolvedValue(BLOCKS.slice(0, 3))
+    render(<PlanContent />)
+
+    expect(await screen.findByTestId('plan-grid')).toBeInTheDocument()
+    expect(screen.getByText(/No forecast scenario yet/)).toBeInTheDocument()
+    // No scenario to bind — statements read actuals series only.
+    expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_is', {
+      series: true,
+    })
+  })
+
+  it('keeps the grid mounted while a scenario switch loads', async () => {
+    render(<PlanContent />)
+    await screen.findByTestId('plan-grid')
+
+    // The next envelope batch hangs — the grid must stay mounted (the
+    // overlay spinner replaces the old full-page blank).
+    mockGetInformationBlock.mockImplementation(() => new Promise(() => {}))
+    fireEvent.change(screen.getByTestId('scenario-select'), {
+      target: { value: '' },
+    })
+
+    expect(screen.getByTestId('plan-grid')).toBeInTheDocument()
   })
 
   it('shows the empty state when no qualifying graph exists', () => {

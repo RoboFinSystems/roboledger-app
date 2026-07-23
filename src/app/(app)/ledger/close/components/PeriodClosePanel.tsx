@@ -25,6 +25,7 @@ import {
   TableRow,
   Textarea,
 } from 'flowbite-react'
+import Link from 'next/link'
 import type { FC, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -36,9 +37,12 @@ import {
   HiLockOpen,
   HiPlay,
   HiRefresh,
+  HiTable,
+  HiX,
 } from 'react-icons/hi'
 import { TbFileInvoice } from 'react-icons/tb'
 import { formatCurrencyDollars } from '../utils'
+import { isStatementBlockType } from './blockview/types'
 
 const STATUS_COLORS: Record<string, string> = {
   posted: 'success',
@@ -110,6 +114,16 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   const [reopenTarget, setReopenTarget] = useState<string | null>(null)
   const [reopenReason, setReopenReason] = useState('')
   const [isReopening, setIsReopening] = useState(false)
+
+  // Last successful close — what the close DID (entries posted, rule
+  // outcomes, statements stamped). `statementsReady: null` = the
+  // confirmation refetch is still in flight.
+  const [closeResult, setCloseResult] = useState<{
+    period: string
+    entriesPosted: number
+    ruleSummary: Record<string, number> | null
+    statementsReady: boolean | null
+  } | null>(null)
 
   // ── Data loaders ─────────────────────────────────────────────────────
   const loadCalendar = useCallback(async () => {
@@ -232,13 +246,44 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
 
   const handleClosePeriod = useCallback(async () => {
     if (!selectedPeriod) return
+    const period = selectedPeriod
     try {
       setIsClosing(true)
       setError(null)
-      const result = await clients.ledger.closePeriod(graphId, selectedPeriod, {
+      const result = await clients.ledger.closePeriod(graphId, period, {
         allowStaleSync,
       })
       setCalendar(result.fiscalCalendar)
+      // Show what the close did — the close is the act that stamps the
+      // month's statements, so an invisible success reads as "nothing
+      // happened".
+      setCloseResult({
+        period,
+        entriesPosted: result.entriesPosted,
+        ruleSummary: result.ruleSummary ?? null,
+        statementsReady: null,
+      })
+      // Confirm the stamped statements exist via a refetch of the
+      // fact-bearing statement blocks. (The typed close response
+      // predates `statements_stamped` — the refetch works on every
+      // client version and proves the read path the Plan grid uses.)
+      void (async () => {
+        try {
+          const list = await clients.ledger.listInformationBlocks(graphId, {
+            limit: 200,
+          })
+          const ready = list.some(
+            (b) => isStatementBlockType(b.blockType) && b.facts.length > 0
+          )
+          setCloseResult((prev) =>
+            prev && prev.period === period
+              ? { ...prev, statementsReady: ready }
+              : prev
+          )
+        } catch {
+          // Leave statementsReady null — the card just omits the line.
+        }
+      })()
       // Advance selection to the next period (or stay on closed_through)
       const next =
         result.fiscalCalendar.catchUpSequence[0] ??
@@ -272,6 +317,9 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       setSelectedPeriod(reopenTarget)
       setReopenTarget(null)
       setReopenReason('')
+      // A reopen retracts the month's stamped statements — a lingering
+      // "closed + statements updated" card would now be a lie.
+      setCloseResult(null)
       onEntryCreated?.()
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -352,6 +400,13 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
           <HiExclamationCircle className="h-5 w-5" />
           <span>{error}</span>
         </div>
+      )}
+
+      {closeResult && (
+        <CloseSuccessCard
+          result={closeResult}
+          onDismiss={() => setCloseResult(null)}
+        />
       )}
 
       <CalendarSummary calendar={calendar} onRefresh={loadCalendar} />
@@ -538,6 +593,79 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
 }
 
 // ── Sub-components ───────────────────────────────────────────────────
+
+interface CloseSuccessCardProps {
+  result: {
+    period: string
+    entriesPosted: number
+    ruleSummary: Record<string, number> | null
+    statementsReady: boolean | null
+  }
+  onDismiss: () => void
+}
+
+/**
+ * What the close DID — closing a month is the act that posts its drafts
+ * and stamps its financial statements, so the success state names both
+ * and hands the user the natural next step (the Plan grid gained a
+ * column).
+ */
+const CloseSuccessCard: FC<CloseSuccessCardProps> = ({ result, onDismiss }) => {
+  const failed = result.ruleSummary?.fail ?? 0
+  const passed = result.ruleSummary?.pass ?? 0
+  return (
+    <div className="rounded-lg border border-green-300 bg-green-50 p-4 dark:border-green-700 dark:bg-green-900/20">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 font-semibold text-green-800 dark:text-green-200">
+            <HiCheck className="h-5 w-5" />
+            Closed {formatPeriod(result.period)}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-green-800 dark:text-green-200">
+            <span>
+              {result.entriesPosted} draft
+              {result.entriesPosted === 1 ? '' : 's'} posted
+            </span>
+            {result.ruleSummary && (
+              <span className="flex items-center gap-1.5">
+                Rules:
+                <Badge color="success" size="sm">
+                  {passed} pass
+                </Badge>
+                {failed > 0 && (
+                  <Badge color="failure" size="sm">
+                    {failed} fail
+                  </Badge>
+                )}
+              </span>
+            )}
+            {result.statementsReady && (
+              <span className="flex items-center gap-1">
+                <HiCheck className="h-4 w-4" />
+                Financial statements stamped
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link href="/plan">
+            <Button size="xs" color="primary">
+              <HiTable className="mr-1 h-4 w-4" />
+              View in Plan
+            </Button>
+          </Link>
+          <button
+            onClick={onDismiss}
+            aria-label="Dismiss"
+            className="rounded p-1 text-green-700 hover:bg-green-100 dark:text-green-300 dark:hover:bg-green-900/40"
+          >
+            <HiX className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 interface CalendarSummaryProps {
   calendar: LedgerFiscalCalendar

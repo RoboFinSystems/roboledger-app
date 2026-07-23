@@ -85,7 +85,7 @@ const ORDERING_BLOCKS = [
 ] as any
 
 describe('BlockPicker ordering', () => {
-  it('renders groups in reading order: statements, disclosures, schedules, metrics, other', () => {
+  it('renders groups in reading order: statements, disclosures, schedules, metrics, scenarios', () => {
     render(
       <BlockPicker
         blocks={ORDERING_BLOCKS}
@@ -95,14 +95,16 @@ describe('BlockPicker ordering', () => {
       />
     )
     const labels = screen
-      .getAllByText(/^(Statements|Disclosures|Schedules|Metrics|Other)$/)
+      .getAllByText(
+        /^(Statements|Disclosures|Schedules|Metrics|Scenarios|Other)$/
+      )
       .map((el) => el.textContent)
     expect(labels).toEqual([
       'Statements',
       'Disclosures',
       'Schedules',
       'Metrics',
-      'Other',
+      'Scenarios',
     ])
   })
 
@@ -125,7 +127,7 @@ describe('BlockPicker ordering', () => {
     ])
   })
 
-  it('lands unregistered block types (forecast) in Other, last', () => {
+  it('groups forecast blocks under Scenarios (not Other), after Metrics', () => {
     render(
       <BlockPicker
         blocks={ORDERING_BLOCKS}
@@ -134,7 +136,30 @@ describe('BlockPicker ordering', () => {
         isLoading={false}
       />
     )
+    expect(screen.getByText('Scenarios')).toBeInTheDocument()
+    expect(screen.queryByText('Other')).not.toBeInTheDocument()
+    // A named scenario is a first-class family member, sorted last in
+    // the reading order — the workbook you consult after the analytics.
     const buttons = screen.getAllByRole('button').map((b) => b.textContent)
     expect(buttons[buttons.length - 1]).toBe('FY27 Operating Budget')
+  })
+
+  it('still lands genuinely unregistered block types in Other, last', () => {
+    render(
+      <BlockPicker
+        blocks={
+          [
+            ...ORDERING_BLOCKS,
+            _ordered('b_new', 'brand_new_type', 'Future Block'),
+          ] as any
+        }
+        selectedId={null}
+        onSelect={() => {}}
+        isLoading={false}
+      />
+    )
+    expect(screen.getByText('Other')).toBeInTheDocument()
+    const buttons = screen.getAllByRole('button').map((b) => b.textContent)
+    expect(buttons[buttons.length - 1]).toBe('Future Block')
   })
 })

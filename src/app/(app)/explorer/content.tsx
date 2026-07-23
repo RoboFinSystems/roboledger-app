@@ -161,21 +161,26 @@ const BlockExplorerContent: FC = function () {
     try {
       setIsEnvelopeLoading(true)
       setEnvelopeError(null)
-      // Statement blocks with a scenario read in SERIES mode — the full
-      // monthly grid across the actuals/forecast seam (the F-4
-      // statement-series projection); the default read stays a single
-      // set, unchanged.
+      // Statement blocks ALWAYS read in SERIES mode — one column per
+      // close-stamped monthly set (plus the scenario's forward months
+      // when one is selected). A fixed shape means toggling
+      // Actuals↔scenario extends the grid instead of collapsing it to a
+      // single period — the explorer is the standing-time-series
+      // surface, and statements are a series like everything else.
       const selected = blocks.find((b) => b.id === selectedId)
       const series =
-        scenarioId !== null &&
-        selected !== undefined &&
-        isStatementBlockType(selected.blockType)
+        selected !== undefined && isStatementBlockType(selected.blockType)
+      const options =
+        scenarioId || series
+          ? {
+              ...(scenarioId ? { scenarioId } : {}),
+              ...(series ? { series: true } : {}),
+            }
+          : undefined
       const block = await clients.ledger.getInformationBlock(
         currentGraph.graphId,
         selectedId,
-        scenarioId
-          ? { scenarioId, ...(series ? { series: true } : {}) }
-          : undefined
+        options
       )
       if (seq !== envelopeSeq.current) return
       setEnvelope(block ?? null)

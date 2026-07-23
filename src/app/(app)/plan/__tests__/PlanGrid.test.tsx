@@ -61,4 +61,15 @@ describe('PlanGrid', () => {
     expect(screen.getByText('3%')).toBeInTheDocument()
     expect(screen.getByText('—')).toBeInTheDocument()
   })
+
+  it('carries the seam tint in BOTH themes (the dark tint must not vanish)', () => {
+    render(<PlanGrid model={MODEL} />)
+    const forecastHeader = screen.getByText(/Jun 2026/).closest('th')
+    // The tint IS the seam story — pin both mode classes so a refactor
+    // can't silently drop the dark side back to invisible (the shipped
+    // /10 opacity disappeared against gray-900).
+    expect(forecastHeader?.className).toContain('bg-primary-50/60')
+    expect(forecastHeader?.className).toContain('dark:bg-primary-900/25')
+    expect(forecastHeader?.className).toContain('border-l-2')
+  })
 })

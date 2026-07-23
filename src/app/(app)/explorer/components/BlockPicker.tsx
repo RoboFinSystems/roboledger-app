@@ -23,16 +23,18 @@ const GROUP_BY_BLOCK_TYPE: Record<string, string> = {
   comprehensive_income: 'Statements',
   schedule: 'Schedules',
   regulatory_disclosure: 'Disclosures',
+  forecast: 'Scenarios',
 }
 
 // The reading order of a financial report: the statements first, their
 // notes next, then the working papers behind them, derived analytics,
-// and everything else.
+// forward scenarios, and everything else.
 const GROUP_ORDER = [
   'Statements',
   'Disclosures',
   'Schedules',
   'Metrics',
+  'Scenarios',
   'Other',
 ]
 

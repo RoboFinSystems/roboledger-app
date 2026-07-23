@@ -38,12 +38,14 @@ const PlanGrid: FC<PlanGridProps> = ({ model }) => {
 
   const columnClasses = (index: number): string => {
     const column = columns[index]
+    // The forecast tint IS the seam story — it must read in dark mode
+    // too (10% opacity vanished against gray-900; ~25% holds up).
     const tint = column.forecast
-      ? 'bg-primary-50/60 dark:bg-primary-900/10'
+      ? 'bg-primary-50/60 dark:bg-primary-900/25'
       : ''
     const seam =
       index === firstForecast && firstForecast > 0
-        ? 'border-l-2 border-primary-300 dark:border-primary-700'
+        ? 'border-l-2 border-primary-300 dark:border-primary-500/60'
         : ''
     return `${tint} ${seam}`.trim()
   }

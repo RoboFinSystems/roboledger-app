@@ -34,9 +34,15 @@ import {
 
 const STATUS_COLORS: Record<string, string> = {
   published: 'success',
+  complete: 'success',
   generating: 'warning',
   pending: 'gray',
   failed: 'failure',
+}
+
+const formatPeriodType = (periodType: string | null): string | null => {
+  if (!periodType) return null
+  return periodType.charAt(0).toUpperCase() + periodType.slice(1)
 }
 
 const formatDate = (dateString: string | null): string => {
@@ -174,8 +180,17 @@ const ReportsContent: FC = function () {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {formatDate(report.periodStart)} —{' '}
-                      {formatDate(report.periodEnd)}
+                      <div className="flex items-center gap-2">
+                        <span>
+                          {formatDate(report.periodStart)} —{' '}
+                          {formatDate(report.periodEnd)}
+                        </span>
+                        {formatPeriodType(report.periodType) && (
+                          <Badge color="indigo" size="sm">
+                            {formatPeriodType(report.periodType)}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge

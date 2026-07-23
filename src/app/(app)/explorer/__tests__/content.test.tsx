@@ -219,12 +219,13 @@ describe('BlockExplorerContent', () => {
   it('preselects the block from the ?block= URL param over the metric default', async () => {
     searchParams = new URLSearchParams('block=struct_bs')
     render(<BlockExplorerContent />)
+    // Statements ALWAYS read in series mode — one column per
+    // close-stamped monthly set — so the table shape doesn't jump when
+    // a scenario is toggled on or off.
     await waitFor(() =>
-      expect(mockGetInformationBlock).toHaveBeenCalledWith(
-        'kg1',
-        'struct_bs',
-        undefined
-      )
+      expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_bs', {
+        series: true,
+      })
     )
     expect(mockGetInformationBlock).not.toHaveBeenCalledWith(
       'kg1',
