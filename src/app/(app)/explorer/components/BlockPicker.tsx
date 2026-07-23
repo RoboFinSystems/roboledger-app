@@ -25,13 +25,34 @@ const GROUP_BY_BLOCK_TYPE: Record<string, string> = {
   regulatory_disclosure: 'Disclosures',
 }
 
+// The reading order of a financial report: the statements first, their
+// notes next, then the working papers behind them, derived analytics,
+// and everything else.
 const GROUP_ORDER = [
-  'Metrics',
   'Statements',
-  'Schedules',
   'Disclosures',
+  'Schedules',
+  'Metrics',
   'Other',
 ]
+
+// Canonical statement presentation order (the report-package order) —
+// the list API sorts alphabetically by block_type, which shuffles the
+// family (BS, CF, Equity, IS). Unlisted types sort last, by name.
+const STATEMENT_TYPE_ORDER: Record<string, number> = {
+  balance_sheet: 0,
+  income_statement: 1,
+  cash_flow_statement: 2,
+  equity_statement: 3,
+  comprehensive_income: 4,
+}
+
+const byName = (a: BlockListItem, b: BlockListItem) =>
+  (a.name || a.displayName || '').localeCompare(b.name || b.displayName || '')
+
+const byStatementOrder = (a: BlockListItem, b: BlockListItem) =>
+  (STATEMENT_TYPE_ORDER[a.blockType] ?? 99) -
+    (STATEMENT_TYPE_ORDER[b.blockType] ?? 99) || byName(a, b)
 
 interface BlockPickerProps {
   blocks: InformationBlockList
@@ -74,7 +95,9 @@ const BlockPicker: FC<BlockPickerProps> = ({
     }
     return GROUP_ORDER.filter((g) => byGroup.has(g)).map((g) => ({
       label: g,
-      items: byGroup.get(g) ?? [],
+      items: (byGroup.get(g) ?? [])
+        .slice()
+        .sort(g === 'Statements' ? byStatementOrder : byName),
     }))
   }, [blocks, search])
 
