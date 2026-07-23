@@ -7,6 +7,7 @@ import {
   HiHome,
   HiOutlineOfficeBuilding,
   HiSearch,
+  HiTable,
   HiTerminal,
   HiUserGroup,
 } from 'react-icons/hi'
@@ -69,6 +70,11 @@ export const getNavigationItems = (
           icon: HiChartBar,
           label: 'Explorer',
           href: '/explorer',
+        },
+        {
+          icon: HiTable,
+          label: 'Plan',
+          href: '/plan',
         },
         {
           icon: HiBookOpen,

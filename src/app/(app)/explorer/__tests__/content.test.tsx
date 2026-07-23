@@ -233,29 +233,47 @@ describe('BlockExplorerContent', () => {
     )
   })
 
-  it('threads the ?scenario= URL param into the envelope read', async () => {
+  it('reads a statement + scenario in series mode (the F-4 grid)', async () => {
     searchParams = new URLSearchParams('block=struct_bs&scenario=struct_budget')
     render(<BlockExplorerContent />)
     await waitFor(() =>
       expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_bs', {
         scenarioId: 'struct_budget',
+        series: true,
       })
     )
   })
 
-  it('shows the scenario picker for metric blocks only', async () => {
+  it('reads a metric + scenario without series (always the full series)', async () => {
+    searchParams = new URLSearchParams(
+      'block=struct_metrics&scenario=struct_budget'
+    )
+    render(<BlockExplorerContent />)
+    await waitFor(() =>
+      expect(mockGetInformationBlock).toHaveBeenCalledWith(
+        'kg1',
+        'struct_metrics',
+        { scenarioId: 'struct_budget' }
+      )
+    )
+  })
+
+  it('shows the scenario picker for metric and statement blocks only', async () => {
     render(<BlockExplorerContent />)
     // Default selection = the metric block → picker visible with the
     // forecast block as an option.
     const select = await screen.findByTestId('scenario-select')
     expect(select).toHaveTextContent('FY27 Operating Budget')
 
-    // Statements: scenario binds only a sparse single forecast month in
-    // F-1 — hidden until the statement-series view lands (F-4).
+    // Statements rejoined with the statement-series projection (F-4) —
+    // a scenario read renders the full monthly grid across the seam.
     fireEvent.click(screen.getByTestId('pick-struct_bs'))
     await waitFor(() =>
-      expect(screen.queryByTestId('scenario-select')).not.toBeInTheDocument()
+      expect(screen.getByTestId('block-view')).toHaveTextContent(
+        'struct_bs:rendered'
+      )
     )
+    expect(screen.getByTestId('scenario-select')).toBeInTheDocument()
 
     // Schedules ignore scenarios entirely — hidden.
     fireEvent.click(screen.getByTestId('pick-struct_sched'))
