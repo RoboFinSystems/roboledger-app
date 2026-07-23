@@ -17,6 +17,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiChartBar, HiDownload, HiExclamationCircle } from 'react-icons/hi'
 import BlockView from '../ledger/close/components/blockview/BlockView'
 import type { EnvelopeBlock } from '../ledger/close/components/blockview/types'
+import { isStatementBlockType } from '../ledger/close/components/blockview/types'
 import type { ViewMode } from '../ledger/close/components/ViewModeToggle'
 import ViewModeToggle from '../ledger/close/components/ViewModeToggle'
 import BlockPicker, { type BlockListItem } from './components/BlockPicker'
@@ -160,10 +161,21 @@ const BlockExplorerContent: FC = function () {
     try {
       setIsEnvelopeLoading(true)
       setEnvelopeError(null)
+      // Statement blocks with a scenario read in SERIES mode — the full
+      // monthly grid across the actuals/forecast seam (the F-4
+      // statement-series projection); the default read stays a single
+      // set, unchanged.
+      const selected = blocks.find((b) => b.id === selectedId)
+      const series =
+        scenarioId !== null &&
+        selected !== undefined &&
+        isStatementBlockType(selected.blockType)
       const block = await clients.ledger.getInformationBlock(
         currentGraph.graphId,
         selectedId,
-        scenarioId ? { scenarioId } : undefined
+        scenarioId
+          ? { scenarioId, ...(series ? { series: true } : {}) }
+          : undefined
       )
       if (seq !== envelopeSeq.current) return
       setEnvelope(block ?? null)
@@ -174,7 +186,7 @@ const BlockExplorerContent: FC = function () {
     } finally {
       if (seq === envelopeSeq.current) setIsEnvelopeLoading(false)
     }
-  }, [currentGraph, selectedId, scenarioId])
+  }, [currentGraph, selectedId, scenarioId, blocks])
 
   useEffect(() => {
     loadEnvelope()
@@ -214,18 +226,19 @@ const BlockExplorerContent: FC = function () {
   )
 
   // The scenario picker renders only where it visibly does something —
-  // metric blocks, whose series extends with the scenario's
-  // "(forecast)"-labeled forward columns (the same only-where-useful
-  // rule the compute bar follows). Statements technically bind a
-  // scenario slice too, but in F-1 that's a single sparse projected
-  // month (the BS slice carries only working-capital instants) — they
-  // rejoin when the statement-series view lands (fpa-operating-plan.md
-  // F-4). Schedules, disclosures, and the forecast container ignore
-  // the filter entirely. The URL param persists across selections, so
+  // metric blocks (series extends with "(forecast)" columns) and, since
+  // the F-4 statement-series projection landed, statement blocks (a
+  // scenario read renders the full monthly grid across the seam).
+  // Schedules, disclosures, and the forecast container ignore the
+  // filter entirely. The URL param persists across selections, so
   // flipping away and back keeps the chosen scenario.
   const scenarioApplicable = useMemo(() => {
     const selected = blocks.find((b) => b.id === selectedId)
-    return selected?.blockType === 'metric'
+    if (!selected) return false
+    return (
+      selected.blockType === 'metric' ||
+      isStatementBlockType(selected.blockType)
+    )
   }, [blocks, selectedId])
 
   const handleExport = useCallback(() => {
