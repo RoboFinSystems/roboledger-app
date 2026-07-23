@@ -7,6 +7,7 @@ import {
   HiChevronDown,
   HiClipboardList,
   HiEye,
+  HiPresentationChartLine,
   HiShieldCheck,
   HiTable,
 } from 'react-icons/hi'
@@ -20,6 +21,7 @@ import {
  */
 export type ViewMode =
   | 'rendered'
+  | 'chart'
   | 'facts'
   | 'elements'
   | 'validation'
@@ -38,6 +40,7 @@ type ModeOption = {
 
 const MODES: readonly ModeOption[] = [
   { value: 'rendered', label: 'Rendered', icon: HiEye },
+  { value: 'chart', label: 'Chart', icon: HiPresentationChartLine },
   { value: 'facts', label: 'Facts', icon: HiTable },
   { value: 'elements', label: 'Elements', icon: HiClipboardList },
   { value: 'validation', label: 'Validation', icon: HiShieldCheck },

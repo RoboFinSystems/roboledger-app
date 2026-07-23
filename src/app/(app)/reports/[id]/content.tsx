@@ -36,6 +36,7 @@ import {
   HiShare,
 } from 'react-icons/hi'
 import BlockView from '../../ledger/close/components/blockview/BlockView'
+import type { EnvelopeBlock } from '../../ledger/close/components/blockview/types'
 import type { ViewMode } from '../../ledger/close/components/ViewModeToggle'
 import ViewModeToggle from '../../ledger/close/components/ViewModeToggle'
 import HolonReportView from './components/HolonReportView'
@@ -513,8 +514,18 @@ const ReportViewerContent: FC = function () {
                 className="scroll-mt-4"
               >
                 <Card>
+                  {/*
+                    The report-package block type comes through the
+                    `@robosystems/core` facade, whose published typings
+                    froze a client snapshot predating the chart view arm;
+                    `BlockView` now expects the chart-bearing envelope.
+                    The runtime shape is identical (same server construct),
+                    so bridge the frozen-copy vs fresh-client identity
+                    split here until `@robosystems/core` is rebuilt against
+                    the chart-arm client.
+                  */}
                   <BlockView
-                    envelope={item.block}
+                    envelope={item.block as unknown as EnvelopeBlock}
                     viewMode={viewMode}
                     entityName={pkg.entityName}
                   />

@@ -28,6 +28,9 @@ export type EnvelopeRenderingRow = EnvelopeRendering['rows'][number]
 export type EnvelopeRenderingPeriod = EnvelopeRendering['periods'][number]
 export type EnvelopeValidation = NonNullable<EnvelopeRendering['validation']>
 
+export type EnvelopeChart = NonNullable<EnvelopeView['chart']>
+export type EnvelopeChartPanel = EnvelopeChart['panels'][number]
+
 /**
  * Block-type discriminator. Mirrors the values registered server-side
  * in `BlockTypeRegistry.REGISTRY` — see

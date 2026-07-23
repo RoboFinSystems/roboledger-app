@@ -3,6 +3,7 @@
 import type { FC } from 'react'
 import type { ViewMode } from '../ViewModeToggle'
 import BusinessRulesProjection from './projections/BusinessRules'
+import ChartRenderingProjection from './projections/ChartRendering'
 import FactTableProjection from './projections/FactTable'
 import MetricRenderingProjection from './projections/MetricRendering'
 import ReportElementsProjection from './projections/ReportElements'
@@ -46,6 +47,12 @@ interface BlockViewProps {
  * Projections" for the full mapping.
  */
 const BlockView: FC<BlockViewProps> = ({ envelope, viewMode, entityName }) => {
+  if (viewMode === 'chart') {
+    return (
+      <ChartRenderingProjection envelope={envelope} entityName={entityName} />
+    )
+  }
+
   if (viewMode === 'facts') {
     return <FactTableProjection envelope={envelope} />
   }

@@ -1,5 +1,6 @@
 'use client'
 
+import { formatMetricValue } from '@robosystems/report-components'
 import {
   Table,
   TableBody,
@@ -11,14 +12,20 @@ import {
   ToggleSwitch,
 } from 'flowbite-react'
 import type { FC } from 'react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { HiSearch } from 'react-icons/hi'
-import { formatCurrencyDollars, formatDate } from '../../../utils'
+import { formatDate } from '../../../utils'
+import PeriodWindowControl from '../PeriodWindowControl'
 import type {
   EnvelopeBlock,
   EnvelopeRenderingPeriod,
   EnvelopeRenderingRow,
 } from '../types'
+import {
+  sliceRendering,
+  usePeriodWindow,
+  windowStartIndex,
+} from '../usePeriodWindow'
 
 interface MetricRenderingProjectionProps {
   envelope: EnvelopeBlock
@@ -33,12 +40,13 @@ interface MetricRenderingProjectionProps {
  * standing FactSet (oldest → newest) and one row per metric concept in
  * presentation-arc order. Unlike the statement family, rows mix value
  * kinds — Working Capital is monetary while Current Ratio is a pure
- * decimal — so cells format per-row from the element's `isMonetary`
- * flag rather than uniformly as currency.
+ * decimal — so cells format per-row from the element's `itemType`
+ * format family (monetary / ratio / percent / multiple / days) rather
+ * than uniformly as currency.
  *
- * Client-side analytics affordances (variance vs. prior period, row
- * filter) live here rather than in a shared table because they only
- * make sense on flat time-series grids.
+ * Client-side analytics affordances (a trailing-period window, variance
+ * vs. prior period, row filter) live here rather than in a shared table
+ * because they only make sense on flat time-series grids.
  */
 const MetricRenderingProjection: FC<MetricRenderingProjectionProps> = ({
   envelope,
@@ -46,14 +54,9 @@ const MetricRenderingProjection: FC<MetricRenderingProjectionProps> = ({
 }) => {
   const [filter, setFilter] = useState('')
   const [showVariance, setShowVariance] = useState(false)
+  const { window, setWindow } = usePeriodWindow('all')
 
   const rendering = envelope.view.rendering
-
-  const monetaryByElement = useMemo(
-    () =>
-      new Map(envelope.elements.map((el) => [el.id, Boolean(el.isMonetary)])),
-    [envelope.elements]
-  )
 
   if (rendering === null || rendering.rows.length === 0) {
     return (
@@ -63,7 +66,12 @@ const MetricRenderingProjection: FC<MetricRenderingProjectionProps> = ({
     )
   }
 
-  const { rows, periods } = rendering
+  const totalPeriods = rendering.periods.length
+  const windowed = sliceRendering(
+    rendering,
+    windowStartIndex(totalPeriods, window)
+  )
+  const { rows, periods } = windowed
 
   // Never-computed catalog skeleton — the block exists with its metric
   // concepts but no standing FactSet has been computed yet.
@@ -101,9 +109,7 @@ const MetricRenderingProjection: FC<MetricRenderingProjectionProps> = ({
     : rows
 
   const formatCell = (row: EnvelopeRenderingRow, value: number): string =>
-    monetaryByElement.get(row.elementId)
-      ? formatCurrencyDollars(value)
-      : formatRatio(value)
+    formatMetricValue(row.itemType, value)
 
   return (
     <div className="overflow-x-auto">
@@ -134,14 +140,19 @@ const MetricRenderingProjection: FC<MetricRenderingProjectionProps> = ({
           onChange={(e) => setFilter(e.target.value)}
           className="w-56"
         />
-        {canShowVariance && (
-          <ToggleSwitch
-            checked={showVariance}
-            onChange={setShowVariance}
-            label="Variance vs. prior"
-            sizing="sm"
-          />
-        )}
+        <div className="flex items-center gap-4">
+          {canShowVariance && (
+            <ToggleSwitch
+              checked={showVariance}
+              onChange={setShowVariance}
+              label="Variance vs. prior"
+              sizing="sm"
+            />
+          )}
+          {totalPeriods > 3 && (
+            <PeriodWindowControl window={window} onChange={setWindow} />
+          )}
+        </div>
       </div>
 
       <Table>
@@ -215,18 +226,6 @@ const MetricRenderingProjection: FC<MetricRenderingProjectionProps> = ({
       </Table>
     </div>
   )
-}
-
-/**
- * Pure (non-monetary) metric values — ratios like 3.27 — in accounting
- * notation: two decimals, negatives in parentheses, no currency symbol.
- */
-const formatRatio = (value: number): string => {
-  const abs = Math.abs(value).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-  return value < 0 ? `(${abs})` : abs
 }
 
 const formatDeltaPct = (pct: number): string => {
