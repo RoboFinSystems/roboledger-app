@@ -143,6 +143,18 @@ const BLOCKS = [
     displayName: 'Key Financial Metrics',
     facts: [{ id: 'f_m' }],
   },
+  {
+    id: 'struct_sched',
+    blockType: 'schedule',
+    displayName: 'Business Insurance Amortization',
+    facts: [{ id: 'f_s' }],
+  },
+  {
+    id: 'struct_budget',
+    blockType: 'forecast',
+    displayName: 'FY27 Operating Budget',
+    facts: [{ id: 'f_lever' }],
+  },
 ]
 
 const metricEnvelope = {
@@ -229,6 +241,31 @@ describe('BlockExplorerContent', () => {
         scenarioId: 'struct_budget',
       })
     )
+  })
+
+  it('shows the scenario picker for metric blocks only', async () => {
+    render(<BlockExplorerContent />)
+    // Default selection = the metric block → picker visible with the
+    // forecast block as an option.
+    const select = await screen.findByTestId('scenario-select')
+    expect(select).toHaveTextContent('FY27 Operating Budget')
+
+    // Statements: scenario binds only a sparse single forecast month in
+    // F-1 — hidden until the statement-series view lands (F-4).
+    fireEvent.click(screen.getByTestId('pick-struct_bs'))
+    await waitFor(() =>
+      expect(screen.queryByTestId('scenario-select')).not.toBeInTheDocument()
+    )
+
+    // Schedules ignore scenarios entirely — hidden.
+    fireEvent.click(screen.getByTestId('pick-struct_sched'))
+    await waitFor(() =>
+      expect(screen.queryByTestId('scenario-select')).not.toBeInTheDocument()
+    )
+
+    // Back to the metric block — the picker returns (URL state kept).
+    fireEvent.click(screen.getByTestId('pick-struct_metrics'))
+    expect(await screen.findByTestId('scenario-select')).toBeInTheDocument()
   })
 
   it('shows the compute panel for metric blocks only', async () => {
