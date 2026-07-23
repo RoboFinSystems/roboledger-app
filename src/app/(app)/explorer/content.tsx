@@ -213,6 +213,21 @@ const BlockExplorerContent: FC = function () {
     [blocks]
   )
 
+  // The scenario picker renders only where it visibly does something —
+  // metric blocks, whose series extends with the scenario's
+  // "(forecast)"-labeled forward columns (the same only-where-useful
+  // rule the compute bar follows). Statements technically bind a
+  // scenario slice too, but in F-1 that's a single sparse projected
+  // month (the BS slice carries only working-capital instants) — they
+  // rejoin when the statement-series view lands (fpa-operating-plan.md
+  // F-4). Schedules, disclosures, and the forecast container ignore
+  // the filter entirely. The URL param persists across selections, so
+  // flipping away and back keeps the chosen scenario.
+  const scenarioApplicable = useMemo(() => {
+    const selected = blocks.find((b) => b.id === selectedId)
+    return selected?.blockType === 'metric'
+  }, [blocks, selectedId])
+
   const handleExport = useCallback(() => {
     if (!envelope) return
     const csv = buildRenderingCsv(envelope)
@@ -252,11 +267,13 @@ const BlockExplorerContent: FC = function () {
         }
         actions={
           <div className="flex items-center gap-2">
-            <ScenarioSelect
-              scenarios={scenarios}
-              selectedId={scenarioId}
-              onChange={handleScenarioChange}
-            />
+            {scenarioApplicable && (
+              <ScenarioSelect
+                scenarios={scenarios}
+                selectedId={scenarioId}
+                onChange={handleScenarioChange}
+              />
+            )}
             <Button
               size="xs"
               color="light"

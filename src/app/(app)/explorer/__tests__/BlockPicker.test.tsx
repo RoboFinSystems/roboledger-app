@@ -67,3 +67,74 @@ describe('BlockPicker', () => {
     expect(screen.queryByText('Key Financial Metrics')).not.toBeInTheDocument()
   })
 })
+
+const _ordered = (id: string, blockType: string, name: string) =>
+  ({ id, blockType, name, displayName: name }) as any
+
+// Deliberately shuffled — the list API sorts alphabetically by
+// block_type, which is exactly the order the picker must NOT mirror.
+const ORDERING_BLOCKS = [
+  _ordered('b_cfs', 'cash_flow_statement', 'rs-gaap — Cash Flow Statement'),
+  _ordered('b_metric', 'metric', 'Key Financial Metrics'),
+  _ordered('b_eq', 'equity_statement', 'rs-gaap — Statement of Changes'),
+  _ordered('b_forecast', 'forecast', 'FY27 Operating Budget'),
+  _ordered('b_sched', 'schedule', 'Business Insurance Amortization'),
+  _ordered('b_bs', 'balance_sheet', 'rs-gaap — Balance Sheet'),
+  _ordered('b_disc', 'regulatory_disclosure', 'Disaggregation of Revenue'),
+  _ordered('b_is', 'income_statement', 'rs-gaap — Income Statement'),
+] as any
+
+describe('BlockPicker ordering', () => {
+  it('renders groups in reading order: statements, disclosures, schedules, metrics, other', () => {
+    render(
+      <BlockPicker
+        blocks={ORDERING_BLOCKS}
+        selectedId={null}
+        onSelect={() => {}}
+        isLoading={false}
+      />
+    )
+    const labels = screen
+      .getAllByText(/^(Statements|Disclosures|Schedules|Metrics|Other)$/)
+      .map((el) => el.textContent)
+    expect(labels).toEqual([
+      'Statements',
+      'Disclosures',
+      'Schedules',
+      'Metrics',
+      'Other',
+    ])
+  })
+
+  it('orders the statement family canonically: BS, IS, CF, Equity', () => {
+    render(
+      <BlockPicker
+        blocks={ORDERING_BLOCKS}
+        selectedId={null}
+        onSelect={() => {}}
+        isLoading={false}
+      />
+    )
+    const buttons = screen.getAllByRole('button').map((b) => b.textContent)
+    const statements = buttons.filter((t) => t?.startsWith('rs-gaap'))
+    expect(statements).toEqual([
+      'rs-gaap — Balance Sheet',
+      'rs-gaap — Income Statement',
+      'rs-gaap — Cash Flow Statement',
+      'rs-gaap — Statement of Changes',
+    ])
+  })
+
+  it('lands unregistered block types (forecast) in Other, last', () => {
+    render(
+      <BlockPicker
+        blocks={ORDERING_BLOCKS}
+        selectedId={null}
+        onSelect={() => {}}
+        isLoading={false}
+      />
+    )
+    const buttons = screen.getAllByRole('button').map((b) => b.textContent)
+    expect(buttons[buttons.length - 1]).toBe('FY27 Operating Budget')
+  })
+})
