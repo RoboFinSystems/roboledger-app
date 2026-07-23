@@ -60,6 +60,11 @@ vi.mock('flowbite-react', () => ({
     </button>
   ),
   Card: ({ children }: any) => <div>{children}</div>,
+  Select: ({ children, onChange, value }: any) => (
+    <select onChange={onChange} value={value} data-testid="scenario-select">
+      {children}
+    </select>
+  ),
 }))
 
 vi.mock('react-icons/hi', () => ({
@@ -176,7 +181,8 @@ describe('BlockExplorerContent', () => {
     await waitFor(() =>
       expect(mockGetInformationBlock).toHaveBeenCalledWith(
         'kg1',
-        'struct_metrics'
+        'struct_metrics',
+        undefined
       )
     )
     expect(
@@ -202,11 +208,26 @@ describe('BlockExplorerContent', () => {
     searchParams = new URLSearchParams('block=struct_bs')
     render(<BlockExplorerContent />)
     await waitFor(() =>
-      expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_bs')
+      expect(mockGetInformationBlock).toHaveBeenCalledWith(
+        'kg1',
+        'struct_bs',
+        undefined
+      )
     )
     expect(mockGetInformationBlock).not.toHaveBeenCalledWith(
       'kg1',
-      'struct_metrics'
+      'struct_metrics',
+      undefined
+    )
+  })
+
+  it('threads the ?scenario= URL param into the envelope read', async () => {
+    searchParams = new URLSearchParams('block=struct_bs&scenario=struct_budget')
+    render(<BlockExplorerContent />)
+    await waitFor(() =>
+      expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_bs', {
+        scenarioId: 'struct_budget',
+      })
     )
   })
 
