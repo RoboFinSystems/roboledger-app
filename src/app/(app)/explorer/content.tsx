@@ -25,6 +25,7 @@ import { buildRenderingCsv, csvFilename, downloadCsv } from './components/csv'
 
 const VIEW_MODES: readonly ViewMode[] = [
   'rendered',
+  'chart',
   'facts',
   'elements',
   'validation',

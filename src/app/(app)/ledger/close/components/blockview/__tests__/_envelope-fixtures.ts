@@ -120,9 +120,8 @@ export const makeEnvelope = (
 
 /**
  * A metric block with a 2-period standing time series. Rows mix value
- * kinds: Working Capital is monetary, Current Ratio is a pure decimal —
- * the discriminator `MetricRendering` formats per-row from
- * `elements[].isMonetary`.
+ * kinds: Working Capital is monetary, Current Ratio is a ratio —
+ * `MetricRendering` formats per-row from the row's `itemType` family.
  */
 export const makeMetricEnvelope = (
   overrides: Partial<EnvelopeBlock> = {}
@@ -168,6 +167,7 @@ export const makeMetricEnvelope = (
             elementName: 'Working Capital',
             classification: null,
             balanceType: 'debit',
+            itemType: 'monetary',
             values: [88047.19, 238543.34],
             isSubtotal: false,
             depth: 0,
@@ -178,6 +178,7 @@ export const makeMetricEnvelope = (
             elementName: 'Current Ratio',
             classification: null,
             balanceType: null,
+            itemType: 'ratio',
             values: [3.2727, 5.5905],
             isSubtotal: false,
             depth: 0,
@@ -188,7 +189,31 @@ export const makeMetricEnvelope = (
           { start: null, end: '2026-06-30', label: null },
         ],
       }),
-    },
+      chart: {
+        panels: [
+          {
+            label: 'Monetary',
+            itemType: 'monetary',
+            kind: 'line',
+            series: [
+              {
+                key: 'elem_wc',
+                elementId: 'elem_wc',
+                label: 'Working Capital',
+              },
+            ],
+          },
+          {
+            label: 'Ratios',
+            itemType: 'ratio',
+            kind: 'line',
+            series: [
+              { key: 'elem_cr', elementId: 'elem_cr', label: 'Current Ratio' },
+            ],
+          },
+        ],
+      },
+    } as EnvelopeBlock['view'],
     ...overrides,
   })
 

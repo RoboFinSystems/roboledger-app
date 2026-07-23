@@ -28,6 +28,7 @@ vi.mock('react-icons/hi', () => ({
   HiChevronDown: () => <span data-testid="chevron-down" />,
   HiClipboardList: () => <span data-testid="clipboard" />,
   HiEye: () => <span data-testid="eye" />,
+  HiPresentationChartLine: () => <span data-testid="chart" />,
   HiShieldCheck: () => <span data-testid="shield" />,
   HiTable: () => <span data-testid="table" />,
 }))
@@ -39,6 +40,7 @@ describe('ViewModeToggle', () => {
     render(<ViewModeToggle viewMode="rendered" onChange={vi.fn()} />)
     // Trigger shows the current mode plus each option is in the menu.
     expect(screen.getAllByText('Rendered').length).toBeGreaterThan(0)
+    expect(screen.getByText('Chart')).toBeInTheDocument()
     expect(screen.getByText('Facts')).toBeInTheDocument()
     expect(screen.getByText('Elements')).toBeInTheDocument()
     expect(screen.getByText('Validation')).toBeInTheDocument()
