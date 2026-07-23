@@ -22,6 +22,7 @@ import ViewModeToggle from '../ledger/close/components/ViewModeToggle'
 import BlockPicker, { type BlockListItem } from './components/BlockPicker'
 import ComputePanel from './components/ComputePanel'
 import { buildRenderingCsv, csvFilename, downloadCsv } from './components/csv'
+import ScenarioSelect from './components/ScenarioSelect'
 
 const VIEW_MODES: readonly ViewMode[] = [
   'rendered',
@@ -40,7 +41,9 @@ const isViewMode = (value: string | null): value is ViewMode =>
  * (metrics, statements, schedules, disclosures) and view its envelope
  * through the standard View projections; metric blocks additionally get
  * the compute bar that extends their standing time series. State is
- * URL-encoded (`?block=` / `?view=`) so a view is shareable.
+ * URL-encoded (`?block=` / `?view=` / `?scenario=`) so a view is
+ * shareable — `?scenario=` binds every envelope read to that forecast
+ * block's FactSet slice (omitted = actuals).
  */
 const BlockExplorerContent: FC = function () {
   const { state: graphState } = useGraphContext()
@@ -61,6 +64,10 @@ const BlockExplorerContent: FC = function () {
     const fromUrl = searchParams.get('view')
     return isViewMode(fromUrl) ? fromUrl : 'rendered'
   })
+  // Scenario filter — a forecast block's structure id; null = actuals.
+  const [scenarioId, setScenarioId] = useState<string | null>(() =>
+    searchParams.get('scenario')
+  )
 
   // Envelope (content area)
   const [envelope, setEnvelope] = useState<EnvelopeBlock | null>(null)
@@ -77,10 +84,11 @@ const BlockExplorerContent: FC = function () {
   }, [graphState.graphs, graphState.currentGraphId])
 
   const updateUrl = useCallback(
-    (blockId: string | null, mode: ViewMode) => {
+    (blockId: string | null, mode: ViewMode, scenario: string | null) => {
       const params = new URLSearchParams()
       if (blockId) params.set('block', blockId)
       if (mode !== 'rendered') params.set('view', mode)
+      if (scenario) params.set('scenario', scenario)
       const query = params.toString()
       router.replace(query ? `/explorer?${query}` : '/explorer', {
         scroll: false,
@@ -154,7 +162,8 @@ const BlockExplorerContent: FC = function () {
       setEnvelopeError(null)
       const block = await clients.ledger.getInformationBlock(
         currentGraph.graphId,
-        selectedId
+        selectedId,
+        scenarioId ? { scenarioId } : undefined
       )
       if (seq !== envelopeSeq.current) return
       setEnvelope(block ?? null)
@@ -165,7 +174,7 @@ const BlockExplorerContent: FC = function () {
     } finally {
       if (seq === envelopeSeq.current) setIsEnvelopeLoading(false)
     }
-  }, [currentGraph, selectedId])
+  }, [currentGraph, selectedId, scenarioId])
 
   useEffect(() => {
     loadEnvelope()
@@ -174,17 +183,34 @@ const BlockExplorerContent: FC = function () {
   const handleSelect = useCallback(
     (block: BlockListItem) => {
       setSelectedId(block.id)
-      updateUrl(block.id, viewMode)
+      updateUrl(block.id, viewMode, scenarioId)
     },
-    [updateUrl, viewMode]
+    [updateUrl, viewMode, scenarioId]
   )
 
   const handleViewModeChange = useCallback(
     (mode: ViewMode) => {
       setViewMode(mode)
-      updateUrl(selectedId, mode)
+      updateUrl(selectedId, mode, scenarioId)
     },
-    [updateUrl, selectedId]
+    [updateUrl, selectedId, scenarioId]
+  )
+
+  const handleScenarioChange = useCallback(
+    (scenario: string | null) => {
+      setScenarioId(scenario)
+      updateUrl(selectedId, viewMode, scenario)
+    },
+    [updateUrl, selectedId, viewMode]
+  )
+
+  // Every forecast block IS a scenario — the picker's option set.
+  const scenarios = useMemo(
+    () =>
+      blocks
+        .filter((b) => b.blockType === 'forecast')
+        .map((b) => ({ id: b.id, name: b.displayName ?? b.name })),
+    [blocks]
   )
 
   const handleExport = useCallback(() => {
@@ -226,6 +252,11 @@ const BlockExplorerContent: FC = function () {
         }
         actions={
           <div className="flex items-center gap-2">
+            <ScenarioSelect
+              scenarios={scenarios}
+              selectedId={scenarioId}
+              onChange={handleScenarioChange}
+            />
             <Button
               size="xs"
               color="light"

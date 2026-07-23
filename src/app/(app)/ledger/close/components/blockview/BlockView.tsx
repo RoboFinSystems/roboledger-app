@@ -92,6 +92,18 @@ const BlockView: FC<BlockViewProps> = ({ envelope, viewMode, entityName }) => {
     )
   }
 
+  // Forecast blocks — the authored scenario container renders its lever
+  // grid (one row per rs-driver lever, one column per horizon month).
+  // The server shapes the rendering metric-style (itemType-driven
+  // percent/days formatting), so the metric projection renders it
+  // unchanged. The scenario's derived months surface on the statement/
+  // metric blocks read with `?scenario=`, not on the container itself.
+  if (envelope.blockType === 'forecast') {
+    return (
+      <MetricRenderingProjection envelope={envelope} entityName={entityName} />
+    )
+  }
+
   // Disclosure notes — text-block CAPs carry narrative (`textValue`
   // rows); every other CAP (e.g. an inventory-note roll_up) renders
   // the same numeric grid as the statement family. Mirrors the
