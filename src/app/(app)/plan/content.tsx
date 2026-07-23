@@ -11,10 +11,16 @@ import {
   useGraphContext,
 } from '@robosystems/core'
 import { Button, Card } from 'flowbite-react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { HiDownload, HiExclamationCircle, HiTable } from 'react-icons/hi'
+import {
+  HiDownload,
+  HiExclamationCircle,
+  HiLockClosed,
+  HiTable,
+} from 'react-icons/hi'
 import { downloadCsv } from '../explorer/components/csv'
 import ScenarioSelect from '../explorer/components/ScenarioSelect'
 import PeriodWindowControl from '../ledger/close/components/blockview/PeriodWindowControl'
@@ -103,11 +109,29 @@ const PlanContent: FC = function () {
         setEntityName(entity?.name ?? null)
         // Scenario-centric default: the first forecast block — unless the
         // URL resolved the selection already (a scenario id or 'actuals').
+        // A URL-seeded id that doesn't match a loaded forecast block (a
+        // deleted scenario, or a link from another graph) falls back to
+        // the default and heals the URL — otherwise every envelope read
+        // would fail against the stale id.
         setScenarioId((current) => {
-          if (current !== undefined) return current
           const firstForecast = withFacts.find(
             (b) => b.blockType === 'forecast'
           )
+          if (current === null) return null
+          if (
+            typeof current === 'string' &&
+            withFacts.some(
+              (b) => b.blockType === 'forecast' && b.id === current
+            )
+          ) {
+            return current
+          }
+          if (typeof current === 'string') {
+            router.replace(
+              firstForecast ? `/plan?scenario=${firstForecast.id}` : '/plan',
+              { scroll: false }
+            )
+          }
           return firstForecast?.id ?? null
         })
       } catch (err) {
@@ -121,7 +145,7 @@ const PlanContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph])
+  }, [currentGraph, router])
 
   const scenarios = useMemo(
     () =>
@@ -194,6 +218,14 @@ const PlanContent: FC = function () {
     [model, window]
   )
 
+  const hasStatements = useMemo(
+    () =>
+      STATEMENT_ORDER.some(({ blockType }) =>
+        blocks.some((b) => b.blockType === blockType)
+      ),
+    [blocks]
+  )
+
   const handleExport = useCallback(() => {
     const csv = buildPlanCsv(windowed)
     if (csv) {
@@ -221,11 +253,16 @@ const PlanContent: FC = function () {
       <PageHeader
         icon={HiTable}
         title="Plan"
-        subtitle={
-          entityName
-            ? `${entityName} — statements and assumptions across the forecast seam`
-            : 'Statements and assumptions across the forecast seam'
-        }
+        subtitle={(() => {
+          // Honest copy: the seam only exists when a scenario is
+          // selected — the actuals view is the closed monthly history.
+          const what = scenarioId
+            ? 'statements and assumptions across the forecast seam'
+            : 'monthly statements from the closed history'
+          return entityName
+            ? `${entityName} — ${what}`
+            : what.charAt(0).toUpperCase() + what.slice(1)
+        })()}
         actions={
           <div className="flex items-center gap-2">
             <ScenarioSelect
@@ -250,19 +287,51 @@ const PlanContent: FC = function () {
       />
 
       <Card>
-        {isListLoading || isGridLoading ? (
+        {isListLoading || (isGridLoading && envelopes.length === 0) ? (
           <LoadingState size="xl" className="py-24" />
         ) : error ? (
           <div className="flex items-center gap-2 py-8 text-red-500">
             <HiExclamationCircle className="h-5 w-5" />
             <span>{error}</span>
           </div>
+        ) : !hasStatements ? (
+          <EmptyState
+            icon={HiTable}
+            title="No Closed Months Yet"
+            description="Closing a month stamps its financial statements — the monthly columns this grid is built from. Close your first month to start the plan."
+            className="py-12"
+            action={
+              <Link href="/ledger/close">
+                <Button color="primary">
+                  <HiLockClosed className="mr-2 h-4 w-4" />
+                  Go to Closing Book
+                </Button>
+              </Link>
+            }
+          />
         ) : windowed.sections.length === 0 ? (
           <div className="py-12 text-center text-gray-500 dark:text-gray-400">
-            No statements to plan yet — generate monthly reports first.
+            Nothing to plan for this selection yet.
           </div>
         ) : (
-          <PlanGrid model={windowed} />
+          // Scenario switches keep the grid mounted under a translucent
+          // overlay — a full-page spinner on every toggle reads as a
+          // reload, not a refinement.
+          <div className="relative">
+            {isGridLoading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded bg-white/60 dark:bg-gray-900/60">
+                <LoadingState size="lg" />
+              </div>
+            )}
+            {scenarios.length === 0 && (
+              <div className="mb-3 rounded border border-gray-200 bg-gray-50 p-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                No forecast scenario yet — this view shows closed actuals only.
+                Author a scenario (via the MCP forecast tools) to light up the
+                forward columns.
+              </div>
+            )}
+            <PlanGrid model={windowed} />
+          </div>
         )}
       </Card>
     </PageLayout>
