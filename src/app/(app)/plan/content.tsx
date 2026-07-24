@@ -147,11 +147,15 @@ const PlanContent: FC = function () {
     }
   }, [currentGraph, router])
 
+  // Instance name FIRST: `displayName` is the block-TYPE label
+  // ("Forecast"), so displayName-first would render every scenario in
+  // the picker with the same word — indistinguishable the moment a
+  // second scenario exists. Same trap the BlockPicker labels solved.
   const scenarios = useMemo(
     () =>
       blocks
         .filter((b) => b.blockType === 'forecast')
-        .map((b) => ({ id: b.id, name: b.displayName ?? b.name })),
+        .map((b) => ({ id: b.id, name: b.name || (b.displayName ?? b.id) })),
     [blocks]
   )
 

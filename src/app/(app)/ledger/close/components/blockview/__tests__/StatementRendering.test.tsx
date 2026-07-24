@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@robosystems/core', () => ({ customTheme: { table: {} } }))
@@ -15,8 +15,10 @@ vi.mock('flowbite-react', () => ({
     </td>
   ),
   TableHead: ({ children }: any) => <thead>{children}</thead>,
-  TableHeadCell: ({ children, className }: any) => (
-    <th className={className}>{children}</th>
+  TableHeadCell: ({ children, className, title }: any) => (
+    <th className={className} title={title}>
+      {children}
+    </th>
   ),
   TableRow: ({ children, className }: any) => (
     <tr className={className}>{children}</tr>
@@ -60,6 +62,87 @@ describe('StatementRenderingProjection', () => {
     expect(screen.getByText('Gross Profit').className).toContain(
       'font-semibold'
     )
+  })
+
+  it('marks forecast columns with the seam tint + marker in a series read', () => {
+    const env = makeEnvelope({
+      view: {
+        rendering: makeRendering({
+          periods: [
+            { start: '2026-04-01', end: '2026-04-30', label: null },
+            { start: '2026-05-01', end: '2026-05-31', label: null },
+            {
+              start: '2026-06-01',
+              end: '2026-06-30',
+              label: 'Jun 2026 (forecast)',
+              forecast: true,
+            },
+          ],
+          rows: [
+            {
+              elementId: 'e_rev',
+              elementName: 'Revenue',
+              depth: 0,
+              isSubtotal: false,
+              values: [100, 110, 120],
+            },
+          ],
+        }),
+      },
+    })
+    render(<StatementRenderingProjection envelope={env} />)
+    const forecastHeader = screen.getByText(/Jun 2026/).closest('th')
+    expect(forecastHeader).toHaveAttribute('title', 'Forecast')
+    // Tint in BOTH themes + the seam border on the first forecast column.
+    expect(forecastHeader?.className).toContain('bg-primary-50/60')
+    expect(forecastHeader?.className).toContain('dark:bg-primary-900/25')
+    expect(forecastHeader?.className).toContain('border-l-2')
+    // Actual columns carry neither (the column label, not the header
+    // paragraph's date-range line, which also mentions April).
+    const actualHeader = screen
+      .getByText('Apr 1, 2026 — Apr 30, 2026')
+      .closest('th')
+    expect(actualHeader?.className).not.toContain('bg-primary-50/60')
+  })
+
+  it('offers the trailing-window control on long series and slices columns', () => {
+    const periods = Array.from({ length: 6 }, (_, i) => ({
+      start: `2026-0${i + 1}-01`,
+      end: `2026-0${i + 1}-28`,
+      label: `M${i + 1}`,
+    }))
+    const env = makeEnvelope({
+      view: {
+        rendering: makeRendering({
+          periods,
+          rows: [
+            {
+              elementId: 'e_rev',
+              elementName: 'Revenue',
+              depth: 0,
+              isSubtotal: false,
+              values: [1, 2, 3, 4, 5, 6],
+            },
+          ],
+        }),
+      },
+    })
+    render(<StatementRenderingProjection envelope={env} />)
+    // All six columns by default...
+    expect(screen.getByText('M1')).toBeInTheDocument()
+    expect(screen.getByText('M6')).toBeInTheDocument()
+    // ...then the 3M window keeps only the trailing three, values in
+    // register (the off-screen-appended-columns fix: the recent slice —
+    // and any seam — comes into view instead of hiding past the scroll).
+    fireEvent.click(screen.getByText('3M'))
+    expect(screen.queryByText('M1')).not.toBeInTheDocument()
+    expect(screen.getByText('M4')).toBeInTheDocument()
+    expect(screen.getByText('M6')).toBeInTheDocument()
+  })
+
+  it('hides the window control on short statements (default reads unchanged)', () => {
+    render(<StatementRenderingProjection envelope={makeEnvelope()} />)
+    expect(screen.queryByRole('group', { name: 'Period range' })).toBeNull()
   })
 
   it('shows the empty state when rendering.rows is empty', () => {

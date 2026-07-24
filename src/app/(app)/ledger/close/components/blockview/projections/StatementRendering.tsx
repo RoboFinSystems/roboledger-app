@@ -12,12 +12,18 @@ import {
 import type { FC } from 'react'
 import { HiCheckCircle, HiExclamationCircle } from 'react-icons/hi'
 import { formatCurrency, formatDate } from '../../../utils'
+import PeriodWindowControl from '../PeriodWindowControl'
 import type {
   EnvelopeBlock,
   EnvelopeRendering,
   EnvelopeRenderingPeriod,
   EnvelopeRenderingRow,
 } from '../types'
+import {
+  sliceRendering,
+  usePeriodWindow,
+  windowStartIndex,
+} from '../usePeriodWindow'
 
 interface StatementRenderingProjectionProps {
   envelope: EnvelopeBlock
@@ -91,7 +97,34 @@ const StatementGrid: FC<StatementGridProps> = ({
   rendering,
   entityName,
 }) => {
-  const { rows, periods } = rendering
+  const { window, setWindow } = usePeriodWindow('all')
+
+  // Series reads make statements wide (one column per close-stamped
+  // month, plus a scenario's forward months) — the same trailing-window
+  // control the metric table uses keeps the recent columns (and the
+  // actuals/forecast seam) in view instead of appended off-screen.
+  const totalPeriods = rendering.periods.length
+  const windowed = sliceRendering(
+    rendering,
+    windowStartIndex(totalPeriods, window)
+  )
+  const { rows, periods } = windowed
+
+  // Seam styling keyed off the machine-readable flag (never the label):
+  // tinted forecast columns + a border on the first one. Absent on
+  // actuals-only reads, so single-set statements render exactly as
+  // before.
+  const firstForecast = periods.findIndex((p) => p.forecast)
+  const columnClasses = (index: number): string => {
+    const tint = periods[index].forecast
+      ? 'bg-primary-50/60 dark:bg-primary-900/25'
+      : ''
+    const seam =
+      index === firstForecast && firstForecast > 0
+        ? 'border-l-2 border-primary-300 dark:border-primary-500/60'
+        : ''
+    return `${tint} ${seam}`.trim()
+  }
 
   return (
     <div className="overflow-x-auto">
@@ -114,13 +147,28 @@ const StatementGrid: FC<StatementGridProps> = ({
         )}
       </div>
 
+      {totalPeriods > 3 && (
+        <div className="flex justify-end py-3">
+          <PeriodWindowControl window={window} onChange={setWindow} />
+        </div>
+      )}
+
       <Table>
         <TableHead>
           <TableHeadCell className="w-1/2" />
           {periods.map((period: EnvelopeRenderingPeriod, i: number) => (
-            <TableHeadCell key={i} className="text-right">
+            <TableHeadCell
+              key={i}
+              className={`text-right whitespace-nowrap ${columnClasses(i)}`}
+              title={period.forecast ? 'Forecast' : 'Actual'}
+            >
               {period.label ||
                 `${formatDate(period.start)} — ${formatDate(period.end)}`}
+              {period.forecast && (
+                <span className="text-primary-500 dark:text-primary-400 ml-1 align-super text-[9px] font-normal uppercase">
+                  f
+                </span>
+              )}
             </TableHeadCell>
           ))}
         </TableHead>
@@ -157,7 +205,7 @@ const StatementGrid: FC<StatementGridProps> = ({
                       (value ?? 0) === 0 && !isBold
                         ? 'text-gray-400 dark:text-gray-500'
                         : ''
-                    } ${isTopLevel ? 'border-b-2 border-double border-gray-400 dark:border-gray-500' : ''}`}
+                    } ${isTopLevel ? 'border-b-2 border-double border-gray-400 dark:border-gray-500' : ''} ${columnClasses(i)}`}
                   >
                     {value !== null ? formatCurrency(value) : '—'}
                   </TableCell>
