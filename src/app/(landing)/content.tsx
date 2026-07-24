@@ -1,5 +1,6 @@
 'use client'
 
+import AgentSurface from '@/components/landing/AgentSurface'
 import ContrastSection from '@/components/landing/ContrastSection'
 import FaqSection from '@/components/landing/FaqSection'
 import FinalCTA from '@/components/landing/FinalCTA'
@@ -24,6 +25,7 @@ export default function LandingPageContent() {
         <ContrastSection />
         <HowItWorks />
         <Spotlights />
+        <AgentSurface />
         <PlatformSection />
         <OpenSourceStrip />
         <HarbingerSection />

@@ -17,7 +17,8 @@ RoboLedger App is the web interface for AI-native accounting, building semantic 
 - **Schedules**: Recurring journal entry templates with auto-evaluation on close
 - **Inbox**: Event block review for rule violations and pending obligations
 - **Reports**: Custom report builder with fact grids, statement and text-block disclosure rendering, templates, publish lists, and multi-format export
-- **Block Explorer**: Browse Information Blocks and their fact-set views with on-the-fly metric computation
+- **Plan**: Monthly statements and a scenario's assumptions in one grid spanning the actuals/forecast seam, with scenario switching, period windowing, and CSV export
+- **Block Explorer**: Browse Information Blocks through rendered, chart, facts, elements, validation, and rules views, with on-the-fly metric computation
 - **Mapping Workbench**: Configure taxonomy framework mappings with AI suggestions and the automapper operator
 - **Connections**: QuickBooks OAuth sync and SEC XBRL filings
 - **Entity Detail**: Per-entity details and configuration

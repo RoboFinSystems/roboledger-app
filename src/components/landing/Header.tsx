@@ -8,6 +8,7 @@ import { GITHUB_URL, LOGIN_PATH, REGISTER_PATH } from './constants'
 const NAV_LINKS = [
   { href: '#how-it-works', label: 'How it works' },
   { href: '#features', label: 'Features' },
+  { href: '#agent-surface', label: 'Agent tools' },
   { href: '#platform', label: 'Platform' },
   { href: '#harbinger', label: 'Done for you' },
   { href: '#faq', label: 'FAQ' },
