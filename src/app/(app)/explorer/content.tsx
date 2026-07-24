@@ -222,11 +222,13 @@ const BlockExplorerContent: FC = function () {
   )
 
   // Every forecast block IS a scenario — the picker's option set.
+  // Instance name FIRST: `displayName` is the block-TYPE label
+  // ("Forecast"), which would render every scenario identically.
   const scenarios = useMemo(
     () =>
       blocks
         .filter((b) => b.blockType === 'forecast')
-        .map((b) => ({ id: b.id, name: b.displayName ?? b.name })),
+        .map((b) => ({ id: b.id, name: b.name || (b.displayName ?? b.id) })),
     [blocks]
   )
 

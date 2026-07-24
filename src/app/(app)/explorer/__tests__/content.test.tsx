@@ -152,7 +152,11 @@ const BLOCKS = [
   {
     id: 'struct_budget',
     blockType: 'forecast',
-    displayName: 'FY27 Operating Budget',
+    // Real list shape: displayName = block-TYPE label, name = instance.
+    // The scenario picker must render the instance name (the existing
+    // 'FY27 Operating Budget' assertion below pins it).
+    displayName: 'Forecast',
+    name: 'FY27 Operating Budget',
     facts: [{ id: 'f_lever' }],
   },
 ]

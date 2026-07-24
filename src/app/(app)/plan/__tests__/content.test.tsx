@@ -115,7 +115,9 @@ const BLOCKS = [
   {
     id: 'struct_budget',
     blockType: 'forecast',
-    displayName: 'FY27 Operating Budget',
+    // The real list shape: displayName is the block-TYPE label, name is
+    // the instance identity — the picker must show the latter.
+    displayName: 'Forecast',
     name: 'FY27 Operating Budget',
     facts: [{ id: 'f_lever' }],
   },
@@ -167,6 +169,13 @@ describe('PlanContent', () => {
     mockGetInformationBlock.mockImplementation(async (_g: string, id: string) =>
       envelopeFor(id)
     )
+  })
+
+  it('labels the scenario picker with the instance name, not the type label', async () => {
+    render(<PlanContent />)
+    const select = await screen.findByTestId('scenario-select')
+    expect(select).toHaveTextContent('FY27 Operating Budget')
+    expect(select).not.toHaveTextContent(/^Forecast$/)
   })
 
   it('defaults to the first forecast scenario and loads every section in series mode', async () => {
