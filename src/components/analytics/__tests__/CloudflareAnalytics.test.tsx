@@ -51,11 +51,23 @@ describe('CloudflareAnalytics', () => {
 
   // Regression guard. beacon.min.js is a classic IIFE bundle, not an ES
   // module. `type="module"` switches the fetch to CORS mode with credentials
-  // mode "same-origin" while Next's injected `<link rel=preload as=script>`
-  // stays no-cors/"include" — the mismatch makes the browser throw away the
-  // preload and fetch the script a second time, with two console warnings.
+  // mode "same-origin" while a no-cors preload stays "include" — the mismatch
+  // makes the browser throw away the preload and fetch the script twice.
   it('loads the beacon as a classic script, never as a module', async () => {
     const { container } = await renderAnalytics()
     expect(container.querySelector('script')).not.toHaveAttribute('type')
+  })
+
+  // Regression guard. next/script preloads the src for `beforeInteractive`
+  // and `afterInteractive` with no opt-out. Preloading a third-party beacon
+  // is wrong on the merits, and when a tracker blocker blocks it nothing
+  // consumes the preload — logging "preloaded using link preload but not
+  // used" on every page view. `lazyOnload` emits no preload.
+  it('uses lazyOnload so next/script emits no preload for the beacon', async () => {
+    const { container } = await renderAnalytics()
+    expect(container.querySelector('script')).toHaveAttribute(
+      'strategy',
+      'lazyOnload'
+    )
   })
 })
