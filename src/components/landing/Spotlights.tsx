@@ -58,6 +58,34 @@ const spotlights: Spotlight[] = [
     preview: <StatementsPreview />,
   },
   {
+    id: 'plan',
+    label: 'Planning & forecast',
+    title: 'Plan forward from the books you just closed',
+    description:
+      'Your closed months and your forecast in one monthly grid. The Plan surface reads statements in series across the actuals/forecast seam, with the scenario’s own assumptions sitting right beneath them.',
+    bullets: [
+      'Income Statement, Balance Sheet, and Cash Flow month by month — actuals and forward columns in the same row',
+      'Switch scenarios in place; the assumption levers driving the forecast render in the same grid',
+      'Trailing-window control, CSV export, and shareable scenario links',
+    ],
+    caption: 'Plan',
+    preview: <PlanPreview />,
+  },
+  {
+    id: 'explorer',
+    label: 'Block Explorer',
+    title: 'Open up any number and see how it was built',
+    description:
+      'Every statement, schedule, metric, and disclosure is an Information Block. The Explorer renders any of them through the same set of view projections — so the rendered figure and the facts behind it are one toggle apart.',
+    bullets: [
+      'Six views per block: rendered, chart, facts, elements, validation, and business rules',
+      'Compute a metric for a new period on the spot and watch its time series extend',
+      'Deep-linkable state (?block= / ?view= / ?scenario=) and CSV export on every view',
+    ],
+    caption: 'Explorer',
+    preview: <ExplorerPreview />,
+  },
+  {
     id: 'console',
     label: 'Natural language',
     title: 'Ask Claude about your books',
@@ -86,8 +114,9 @@ export default function Spotlights() {
             AI on both sides of the ledger
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Four capabilities that make RoboLedger different from a spreadsheet
-            and a bookkeeping app alike.
+            Six capabilities that make RoboLedger different from a spreadsheet
+            and a bookkeeping app alike — from the first transaction through the
+            close, the report, and the forecast that follows it.
           </p>
         </div>
 
@@ -288,6 +317,152 @@ function StatementsPreview() {
         </span>
         <span className="text-primary-300 border-primary-500/30 rounded border px-2 py-1">
           Publish list →
+        </span>
+      </div>
+    </PreviewShell>
+  )
+}
+
+function PlanPreview() {
+  // Four monthly columns: two closed actuals, then the seam, then two
+  // forecast months. The seam is the whole point of the surface, so it
+  // gets the visual break here too.
+  const months = ['Mar', 'Apr', 'May', 'Jun']
+  const rows: [string, string[], boolean][] = [
+    ['Revenue', ['98,200', '104,700', '112,400', '121,000'], false],
+    ['Gross profit', ['61,300', '65,100', '70,600', '76,200'], true],
+    ['Operating income', ['16,900', '18,400', '21,100', '24,300'], true],
+  ]
+  return (
+    <PreviewShell>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-semibold text-white">
+          Income Statement
+        </span>
+        <span className="text-secondary-300 border-secondary-500/30 rounded border px-2 py-0.5 text-[10px]">
+          Base case
+        </span>
+      </div>
+      <div className="rounded-lg border border-gray-800 bg-zinc-900/60 p-3">
+        <div className="mb-1.5 flex text-[10px] text-gray-500">
+          <span className="flex-1" />
+          {months.map((m, i) => (
+            <span
+              key={m}
+              className={`w-14 text-right font-mono ${
+                i === 2 ? 'border-l border-dashed border-amber-500/40 pl-1' : ''
+              } ${i >= 2 ? 'text-amber-300/80' : ''}`}
+            >
+              {m}
+            </span>
+          ))}
+        </div>
+        {rows.map(([label, vals, strong]) => (
+          <div
+            key={label}
+            className={`flex py-1 text-[11px] ${
+              strong
+                ? 'border-t border-gray-800 font-semibold text-white'
+                : 'text-gray-300'
+            }`}
+          >
+            <span className="flex-1">{label}</span>
+            {vals.map((v, i) => (
+              <span
+                key={`${label}-${months[i]}`}
+                className={`w-14 text-right font-mono ${
+                  i === 2
+                    ? 'border-l border-dashed border-amber-500/40 pl-1'
+                    : ''
+                } ${i >= 2 ? 'text-amber-200/90' : ''}`}
+              >
+                {v}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="mt-2 rounded-lg border border-gray-800 bg-zinc-900/60 p-2.5">
+        <div className="text-secondary-300 mb-1 text-[10px] font-semibold">
+          Assumptions
+        </div>
+        {/* Same four columns as the statement above, so the seam line
+            runs straight down the whole preview. */}
+        {[
+          ['Revenue growth', ['6.2%', '6.6%', '+7.5%', '+7.5%']],
+          ['Gross margin', ['62.4%', '62.2%', '63.0%', '63.0%']],
+        ].map(([k, vals]) => (
+          <div
+            key={k as string}
+            className="flex py-0.5 text-[11px] text-gray-300"
+          >
+            <span className="flex-1">{k}</span>
+            {(vals as string[]).map((v, i) => (
+              <span
+                key={`${k}-${months[i]}`}
+                className={`w-14 text-right font-mono ${
+                  i === 2
+                    ? 'border-l border-dashed border-amber-500/40 pl-1'
+                    : ''
+                } ${i >= 2 ? 'text-amber-200/90' : 'text-gray-500'}`}
+              >
+                {v}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="mt-2 text-right text-[10px] text-gray-500">
+        actuals · forecast
+      </div>
+    </PreviewShell>
+  )
+}
+
+function ExplorerPreview() {
+  return (
+    <PreviewShell>
+      <div className="mb-2 flex flex-wrap gap-1">
+        {['Rendered', 'Chart', 'Facts', 'Elements', 'Validation', 'Rules'].map(
+          (v, i) => (
+            <span
+              key={v}
+              className={`rounded px-1.5 py-0.5 text-[10px] ${
+                i === 1
+                  ? 'bg-primary-500/20 text-primary-300'
+                  : 'border border-gray-800 text-gray-500'
+              }`}
+            >
+              {v}
+            </span>
+          )
+        )}
+      </div>
+      <div className="rounded-lg border border-gray-800 bg-zinc-900/60 p-3">
+        <div className="mb-2 text-[10px] font-semibold text-gray-400">
+          Gross Margin % · standing series
+        </div>
+        <div className="flex h-20 items-end gap-1.5">
+          {[34, 46, 41, 58, 67, 62, 81, 95].map((h, i) => (
+            <div
+              key={`bar-${i}`}
+              className="from-primary-500/80 to-secondary-500/40 flex-1 rounded-t bg-linear-to-t"
+              style={{ height: `${h}%` }}
+            />
+          ))}
+        </div>
+        <div className="mt-1.5 flex justify-between font-mono text-[9px] text-gray-600">
+          <span>Nov</span>
+          <span>Jun</span>
+        </div>
+      </div>
+      <div className="mt-2 flex items-center gap-2 rounded-md border border-gray-800 bg-zinc-900/60 px-2.5 py-1.5">
+        <span className="text-[10px] text-gray-500">Compute period</span>
+        <span className="flex-1 rounded border border-gray-800 px-1.5 py-0.5 font-mono text-[10px] text-gray-400">
+          2026-06-30
+        </span>
+        <span className="bg-primary-500/20 text-primary-300 rounded px-2 py-0.5 text-[10px] font-medium">
+          Compute
         </span>
       </div>
     </PreviewShell>

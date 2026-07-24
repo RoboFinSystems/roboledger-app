@@ -54,6 +54,32 @@ const faqs: { q: string; a: ReactNode }[] = [
     ),
   },
   {
+    q: 'Can I forecast, or is this only historical accounting?',
+    a: (
+      <>
+        You can plan forward. Once you&apos;ve closed a month, the Plan surface
+        puts your monthly statements and a scenario&apos;s assumptions in one
+        grid spanning the actuals/forecast seam — so the forecast is driven by
+        the same ledger the close produced, not a spreadsheet copied out of it.
+        Scenarios are authored through Claude over MCP today; the in-app editor
+        is on the way.
+      </>
+    ),
+  },
+  {
+    q: 'Are there things Claude can do that the app cannot?',
+    a: (
+      <>
+        Yes — deliberately. Every write operation on the platform becomes a
+        Claude tool the day it ships, while screens follow where they earn their
+        place. Authoring a forecast scenario, defining a new metric, and writing
+        an event-handler rule all run from Claude today without a dedicated form
+        in the app. Anything you drive that way lands in the same ledger and
+        shows up on the same screens.
+      </>
+    ),
+  },
+  {
     q: 'I keep books for several companies — can I manage them all here?',
     a: (
       <>

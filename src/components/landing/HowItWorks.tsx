@@ -49,6 +49,14 @@ const steps = [
     tags: ['Report Creator', 'XBRL 2.1', 'Publish Lists'],
     color: 'orange',
   },
+  {
+    number: '07',
+    title: 'Plan forward',
+    description:
+      'Roll the closed months into a forecast. The Plan grid puts statements and the scenario’s assumptions side by side across the actuals/forecast seam, and the Block Explorer opens any figure down to the facts behind it.',
+    tags: ['Scenarios', 'Forecast Seam', 'Block Explorer'],
+    color: 'cyan',
+  },
 ]
 
 const colorClasses: Record<
@@ -97,6 +105,13 @@ const colorClasses: Record<
     tag: 'bg-orange-950/50 text-orange-300',
     dot: 'bg-orange-500',
   },
+  cyan: {
+    border: 'border-cyan-500/30',
+    bg: 'from-cyan-500/10',
+    number: 'text-cyan-400',
+    tag: 'bg-cyan-950/50 text-cyan-300',
+    dot: 'bg-cyan-500',
+  },
 }
 
 export default function HowItWorks() {
@@ -112,12 +127,12 @@ export default function HowItWorks() {
             End-to-end workflow
           </div>
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-            From raw data to published reports
+            From raw data to published reports — and the plan after them
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
             RoboLedger covers the whole close cycle — connect your sources,
-            triage events, map to GAAP, close the period, and publish
-            statements, all in one place.
+            triage events, map to GAAP, close the period, publish statements,
+            and plan the months ahead, all in one place.
           </p>
         </div>
 
