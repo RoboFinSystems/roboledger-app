@@ -123,6 +123,45 @@ export function slicePlan(model: PlanModel, start: number): PlanModel {
   }
 }
 
+/**
+ * A plan model sliced by TWO windows split at the seam: the history
+ * window keeps the most recent N actual columns (you look back from
+ * today), the forecast window keeps the FIRST N forecast columns (you
+ * look forward from the seam). A single trailing window over the
+ * composed series gets this wrong the moment a scenario is selected —
+ * "3M" would keep the far tail of the forecast and drop every actual.
+ * 'all' on either side keeps that side whole.
+ */
+export function slicePlanSeam(
+  model: PlanModel,
+  history: 'all' | number,
+  forecast: 'all' | number
+): PlanModel {
+  const historyIdx: number[] = []
+  const forecastIdx: number[] = []
+  model.columns.forEach((column, i) =>
+    (column.forecast ? forecastIdx : historyIdx).push(i)
+  )
+  const keptHistory =
+    history === 'all'
+      ? historyIdx
+      : historyIdx.slice(Math.max(0, historyIdx.length - history))
+  const keptForecast =
+    forecast === 'all' ? forecastIdx : forecastIdx.slice(0, forecast)
+  const kept = [...keptHistory, ...keptForecast].sort((a, b) => a - b)
+  if (kept.length === model.columns.length) return model
+  return {
+    columns: kept.map((i) => model.columns[i]),
+    sections: model.sections.map((section) => ({
+      ...section,
+      rows: section.rows.map((row) => ({
+        ...row,
+        values: kept.map((i) => row.values[i]),
+      })),
+    })),
+  }
+}
+
 /** Serialize the composed grid as CSV — one section-title row per section. */
 export function buildPlanCsv(model: PlanModel): string | null {
   if (model.sections.length === 0 || model.columns.length === 0) return null
