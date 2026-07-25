@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { EnvelopeBlock } from '../../ledger/close/components/blockview/types'
-import { buildPlanCsv, composePlan, slicePlan } from '../planModel'
+import {
+  buildPlanCsv,
+  composePlan,
+  slicePlan,
+  slicePlanSeam,
+} from '../planModel'
 
 const envelope = (
   periods: { end: string; label?: string | null; forecast?: boolean | null }[],
@@ -112,6 +117,85 @@ describe('slicePlan', () => {
     const sliced = slicePlan(model, 2)
     expect(sliced.columns.map((c) => c.end)).toEqual(['2026-07-31'])
     expect(sliced.sections[0].rows[0].values).toEqual([3])
+  })
+})
+
+describe('slicePlanSeam', () => {
+  // Four actuals then three forecast months — the seam mid-series.
+  const seamModel = () =>
+    composePlan([
+      {
+        title: 'Income Statement',
+        envelope: envelope(
+          [
+            { end: '2026-02-28' },
+            { end: '2026-03-31' },
+            { end: '2026-04-30' },
+            { end: '2026-05-31' },
+            { end: '2026-06-30', forecast: true },
+            { end: '2026-07-31', forecast: true },
+            { end: '2026-08-31', forecast: true },
+          ],
+          [
+            {
+              elementId: 'rev',
+              elementName: 'Revenues',
+              values: [1, 2, 3, 4, 5, 6, 7],
+            },
+          ]
+        ),
+      },
+    ])
+
+  it('keeps trailing history and LEADING forecast around the seam', () => {
+    const sliced = slicePlanSeam(seamModel(), 2, 2)
+    expect(sliced.columns.map((c) => c.end)).toEqual([
+      '2026-04-30',
+      '2026-05-31',
+      '2026-06-30',
+      '2026-07-31',
+    ])
+    expect(sliced.sections[0].rows[0].values).toEqual([3, 4, 5, 6])
+  })
+
+  it('windows history while keeping the whole forecast', () => {
+    const sliced = slicePlanSeam(seamModel(), 1, 'all')
+    expect(sliced.columns.map((c) => c.end)).toEqual([
+      '2026-05-31',
+      '2026-06-30',
+      '2026-07-31',
+      '2026-08-31',
+    ])
+    expect(sliced.sections[0].rows[0].values).toEqual([4, 5, 6, 7])
+  })
+
+  it('never drops all actuals the way a trailing window would', () => {
+    // The regression this exists for: trailing "3" over the composed
+    // series would keep only forecast columns. Seam-split "3/3" keeps
+    // three actuals too.
+    const sliced = slicePlanSeam(seamModel(), 3, 3)
+    expect(sliced.columns.filter((c) => !c.forecast).length).toBe(3)
+    expect(sliced.columns.filter((c) => c.forecast).length).toBe(3)
+  })
+
+  it('returns the model unchanged for all/all', () => {
+    const model = seamModel()
+    expect(slicePlanSeam(model, 'all', 'all')).toBe(model)
+  })
+
+  it('handles an actuals-only series (no seam)', () => {
+    const model = composePlan([
+      {
+        title: 'Income Statement',
+        envelope: envelope(
+          [{ end: '2026-04-30' }, { end: '2026-05-31' }],
+          [{ elementId: 'rev', elementName: 'Revenues', values: [1, 2] }]
+        ),
+      },
+    ])
+    const sliced = slicePlanSeam(model, 1, 3)
+    expect(sliced.columns.map((c) => c.end)).toEqual(['2026-05-31'])
+    expect(sliced.sections[0].rows[0].values).toEqual([2])
   })
 })
 

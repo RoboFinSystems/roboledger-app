@@ -23,14 +23,11 @@ import {
 } from 'react-icons/hi'
 import { downloadCsv } from '../explorer/components/csv'
 import ScenarioSelect from '../explorer/components/ScenarioSelect'
-import PeriodWindowControl from '../ledger/close/components/blockview/PeriodWindowControl'
 import type { EnvelopeBlock } from '../ledger/close/components/blockview/types'
-import {
-  usePeriodWindow,
-  windowStartIndex,
-} from '../ledger/close/components/blockview/usePeriodWindow'
+import type { PeriodWindow } from '../ledger/close/components/blockview/usePeriodWindow'
 import PlanGrid from './components/PlanGrid'
-import { buildPlanCsv, composePlan, slicePlan } from './planModel'
+import PlanWindowControl from './components/PlanWindowControl'
+import { buildPlanCsv, composePlan, slicePlanSeam } from './planModel'
 
 /**
  * `/plan` — the Plan surface (the workbook's FOP tab as a page; F-4).
@@ -75,7 +72,12 @@ const PlanContent: FC = function () {
   const [isGridLoading, setIsGridLoading] = useState(false)
   const loadSeq = useRef(0)
 
-  const { window, setWindow } = usePeriodWindow('all')
+  // Two windows split at the seam (history looks back, forecast looks
+  // forward) — a single trailing window would keep the forecast's far
+  // tail and drop every actual. Defaults: a year behind, the whole
+  // horizon ahead.
+  const [historyWindow, setHistoryWindow] = useState<PeriodWindow>('12')
+  const [forecastWindow, setForecastWindow] = useState<PeriodWindow>('all')
 
   const currentGraph = useMemo(() => {
     const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
@@ -218,8 +220,13 @@ const PlanContent: FC = function () {
 
   const model = useMemo(() => composePlan(envelopes), [envelopes])
   const windowed = useMemo(
-    () => slicePlan(model, windowStartIndex(model.columns.length, window)),
-    [model, window]
+    () =>
+      slicePlanSeam(
+        model,
+        historyWindow === 'all' ? 'all' : Number(historyWindow),
+        forecastWindow === 'all' ? 'all' : Number(forecastWindow)
+      ),
+    [model, historyWindow, forecastWindow]
   )
 
   const hasStatements = useMemo(
@@ -284,7 +291,15 @@ const PlanContent: FC = function () {
               CSV
             </Button>
             {model.columns.length > 3 && (
-              <PeriodWindowControl window={window} onChange={setWindow} />
+              <PlanWindowControl
+                history={historyWindow}
+                forecast={forecastWindow}
+                onHistoryChange={setHistoryWindow}
+                onForecastChange={setForecastWindow}
+                forecastEnabled={
+                  scenarioId !== null && scenarioId !== undefined
+                }
+              />
             )}
           </div>
         }
