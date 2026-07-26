@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { makeMetricEnvelope } from '../../ledger/close/components/blockview/__tests__/_envelope-fixtures'
-import { buildRenderingCsv, csvFilename } from '../components/csv'
+import {
+  buildRenderingCsv,
+  buildRenderingJson,
+  csvFilename,
+  exportFilename,
+} from '../components/serialize'
 
 describe('buildRenderingCsv', () => {
   it('emits a label column plus one raw-value column per period', () => {
@@ -44,8 +49,50 @@ describe('buildRenderingCsv', () => {
   })
 })
 
-describe('csvFilename', () => {
-  it('slugs the block name', () => {
+describe('buildRenderingJson', () => {
+  it('carries block identity, periods, and row shape CSV flattens away', () => {
+    const json = JSON.parse(buildRenderingJson(makeMetricEnvelope())!)
+    expect(json.block).toEqual({
+      id: 'struct_metrics',
+      name: 'Key Financial Metrics',
+      blockType: 'metric',
+    })
+    expect(json.periods).toHaveLength(2)
+    expect(json.periods[0].end).toBe('2025-12-31')
+    expect(json.rows[0]).toMatchObject({
+      elementId: 'elem_wc',
+      label: 'Working Capital',
+      itemType: 'monetary',
+      isSubtotal: false,
+      depth: 0,
+      values: [88047.19, 238543.34],
+    })
+  })
+
+  it('marks forecast periods so the seam survives the export', () => {
+    const envelope = makeMetricEnvelope()
+    envelope.view.rendering!.periods[1].forecast = true
+    const json = JSON.parse(buildRenderingJson(envelope)!)
+    expect(json.periods.map((p: { forecast: boolean }) => p.forecast)).toEqual([
+      false,
+      true,
+    ])
+  })
+
+  it('returns null when there is nothing to export', () => {
+    const envelope = makeMetricEnvelope()
+    envelope.view.rendering!.rows = []
+    expect(buildRenderingJson(envelope)).toBeNull()
+    envelope.view.rendering = null
+    expect(buildRenderingJson(envelope)).toBeNull()
+  })
+})
+
+describe('exportFilename', () => {
+  it('slugs the name and applies the extension', () => {
+    expect(exportFilename('Key Financial Metrics', 'json')).toBe(
+      'key-financial-metrics.json'
+    )
     expect(csvFilename('Key Financial Metrics')).toBe(
       'key-financial-metrics.csv'
     )
@@ -53,5 +100,6 @@ describe('csvFilename', () => {
 
   it('falls back when the name has no usable characters', () => {
     expect(csvFilename('—')).toBe('information-block.csv')
+    expect(exportFilename('—', 'json', 'plan')).toBe('plan.json')
   })
 })

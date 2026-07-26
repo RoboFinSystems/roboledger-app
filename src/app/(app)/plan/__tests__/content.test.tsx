@@ -82,6 +82,39 @@ vi.mock('react-icons/hi', () => ({
   HiLockClosed: () => <span data-testid="icon-lock" />,
 }))
 
+// Only the download side is stubbed — the serializers themselves run,
+// so these tests assert the bytes the page hands the browser.
+const mockDownloadCsv = vi.fn()
+const mockDownloadJson = vi.fn()
+
+vi.mock('../../explorer/components/serialize', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  downloadCsv: (...args: any[]) => mockDownloadCsv(...args),
+  downloadJson: (...args: any[]) => mockDownloadJson(...args),
+}))
+
+// Stand-in for the Flowbite Dropdown (covered by ExportMenu's own
+// test): one flat button per format, keyed by the format id the page
+// hands back, so clicks assert the export wiring.
+vi.mock('@/components/ExportMenu', () => ({
+  default: ({ groups, onSelect, disabled }: any) => (
+    <div data-testid="export-menu">
+      {groups.map((group: any) =>
+        group.items.map((item: any) => (
+          <button
+            key={item.key}
+            data-testid={`export-${item.key}`}
+            disabled={disabled}
+            onClick={() => onSelect(item.key)}
+          >
+            {group.header}: {item.label}
+          </button>
+        ))
+      )}
+    </div>
+  ),
+}))
+
 import PlanContent from '../content'
 
 const GRAPH = {
@@ -156,6 +189,25 @@ const envelopeFor = (id: string) => ({
     chart: null,
   },
 })
+
+// 14 monthly actuals — more history than the default 12-month window
+// keeps, so the export menu splits into current-view vs. full-range.
+const wideEnvelopeFor = (id: string) => {
+  const periods = Array.from({ length: 14 }, (_, i) => {
+    const year = 2025 + Math.floor(i / 12)
+    const month = String((i % 12) + 1).padStart(2, '0')
+    return {
+      start: `${year}-${month}-01`,
+      end: `${year}-${month}-28`,
+      label: null,
+      forecast: null,
+    }
+  })
+  const envelope = envelopeFor(id)
+  envelope.view.rendering.periods = periods as any
+  envelope.view.rendering.rows[0].values = periods.map((_, i) => i + 1)
+  return envelope
+}
 
 describe('PlanContent', () => {
   beforeEach(() => {
@@ -277,6 +329,60 @@ describe('PlanContent', () => {
     })
 
     expect(screen.getByTestId('plan-grid')).toBeInTheDocument()
+  })
+
+  it('exports the visible grid as CSV under an entity-slugged filename', async () => {
+    render(<PlanContent />)
+    await screen.findByTestId('plan-grid')
+    fireEvent.click(screen.getByTestId('export-csv:view'))
+
+    expect(mockDownloadCsv).toHaveBeenCalledTimes(1)
+    const [csv, filename] = mockDownloadCsv.mock.calls[0]
+    expect(filename).toBe('operating-plan-driftline-coffee.csv')
+    expect(csv.split('\n')[0]).toContain('Line Item')
+  })
+
+  it('tags the JSON export with the selected scenario', async () => {
+    render(<PlanContent />)
+    await screen.findByTestId('plan-grid')
+    fireEvent.click(screen.getByTestId('export-json:view'))
+
+    const [json, filename] = mockDownloadJson.mock.calls[0]
+    expect(filename).toBe('operating-plan-driftline-coffee.json')
+    const parsed = JSON.parse(json)
+    expect(parsed.entity).toBe('Driftline Coffee')
+    expect(parsed.scenario).toBe('FY27 Operating Budget')
+    // The seam is what JSON exists to carry.
+    expect(
+      parsed.columns.map((c: { forecast: boolean }) => c.forecast)
+    ).toEqual([false, true])
+  })
+
+  it('offers a full-range export only when the window hides columns', async () => {
+    // 14 actual months against the default 12-month history window.
+    mockGetInformationBlock.mockImplementation(async (_g: string, id: string) =>
+      wideEnvelopeFor(id)
+    )
+    render(<PlanContent />)
+    await screen.findByTestId('plan-grid')
+
+    fireEvent.click(screen.getByTestId('export-csv:view'))
+    fireEvent.click(screen.getByTestId('export-csv:full'))
+
+    const [viewCsv, viewName] = mockDownloadCsv.mock.calls[0]
+    const [fullCsv, fullName] = mockDownloadCsv.mock.calls[1]
+    expect(viewName).toBe('operating-plan-driftline-coffee.csv')
+    expect(fullName).toBe('operating-plan-driftline-coffee-full.csv')
+    // Label column + windowed months vs. label column + every month.
+    expect(viewCsv.split('\n')[0].split(',')).toHaveLength(13)
+    expect(fullCsv.split('\n')[0].split(',')).toHaveLength(15)
+  })
+
+  it('collapses to a single export group when nothing is windowed', async () => {
+    render(<PlanContent />)
+    await screen.findByTestId('plan-grid')
+    expect(screen.getByTestId('export-csv:view')).toBeInTheDocument()
+    expect(screen.queryByTestId('export-csv:full')).not.toBeInTheDocument()
   })
 
   it('shows the empty state when no qualifying graph exists', () => {

@@ -1,5 +1,6 @@
 'use client'
 
+import ExportMenu, { type ExportMenuGroup } from '@/components/ExportMenu'
 import type { InformationBlockList } from '@robosystems/client/clients'
 import {
   clients,
@@ -10,11 +11,11 @@ import {
   PageLayout,
   useGraphContext,
 } from '@robosystems/core'
-import { Button, Card } from 'flowbite-react'
+import { Card } from 'flowbite-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { HiChartBar, HiDownload, HiExclamationCircle } from 'react-icons/hi'
+import { HiChartBar, HiExclamationCircle } from 'react-icons/hi'
 import BlockView from '../ledger/close/components/blockview/BlockView'
 import type { EnvelopeBlock } from '../ledger/close/components/blockview/types'
 import { isStatementBlockType } from '../ledger/close/components/blockview/types'
@@ -22,8 +23,14 @@ import type { ViewMode } from '../ledger/close/components/ViewModeToggle'
 import ViewModeToggle from '../ledger/close/components/ViewModeToggle'
 import BlockPicker, { type BlockListItem } from './components/BlockPicker'
 import ComputePanel from './components/ComputePanel'
-import { buildRenderingCsv, csvFilename, downloadCsv } from './components/csv'
 import ScenarioSelect from './components/ScenarioSelect'
+import {
+  buildRenderingCsv,
+  buildRenderingJson,
+  downloadCsv,
+  downloadJson,
+  exportFilename,
+} from './components/serialize'
 
 const VIEW_MODES: readonly ViewMode[] = [
   'rendered',
@@ -248,13 +255,30 @@ const BlockExplorerContent: FC = function () {
     )
   }, [blocks, selectedId])
 
-  const handleExport = useCallback(() => {
-    if (!envelope) return
-    const csv = buildRenderingCsv(envelope)
-    if (csv) {
-      downloadCsv(csv, csvFilename(envelope.displayName ?? envelope.name))
-    }
-  }, [envelope])
+  const handleExport = useCallback(
+    (format: string) => {
+      if (!envelope) return
+      const base = envelope.displayName ?? envelope.name
+      if (format === 'json') {
+        const json = buildRenderingJson(envelope)
+        if (json) downloadJson(json, exportFilename(base, 'json'))
+        return
+      }
+      const csv = buildRenderingCsv(envelope)
+      if (csv) downloadCsv(csv, exportFilename(base, 'csv'))
+    },
+    [envelope]
+  )
+
+  const exportGroups: ExportMenuGroup[] = [
+    {
+      header: 'Download',
+      items: [
+        { key: 'csv', label: 'CSV', hint: 'Spreadsheet grid' },
+        { key: 'json', label: 'JSON', hint: 'Periods, elements, hierarchy' },
+      ],
+    },
+  ]
 
   const canExport =
     (envelope?.view.rendering?.rows.length ?? 0) > 0 && !isEnvelopeLoading
@@ -294,15 +318,11 @@ const BlockExplorerContent: FC = function () {
                 onChange={handleScenarioChange}
               />
             )}
-            <Button
-              size="xs"
-              color="light"
-              onClick={handleExport}
+            <ExportMenu
+              groups={exportGroups}
+              onSelect={handleExport}
               disabled={!canExport}
-            >
-              <HiDownload className="mr-1.5 h-3.5 w-3.5" />
-              CSV
-            </Button>
+            />
             <ViewModeToggle
               viewMode={viewMode}
               onChange={handleViewModeChange}
