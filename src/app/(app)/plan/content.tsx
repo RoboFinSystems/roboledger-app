@@ -75,6 +75,7 @@ const PlanContent: FC = function () {
     { title: string; envelope: EnvelopeBlock | null; forecastOnly?: boolean }[]
   >([])
   const [isGridLoading, setIsGridLoading] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const loadSeq = useRef(0)
 
   // Two windows split at the seam (history looks back, forecast looks
@@ -166,46 +167,83 @@ const PlanContent: FC = function () {
     [blocks]
   )
 
+  // One loader for both consumers: the grid effect (windowed to the
+  // selection) and the full-range export (no window). Statement reads
+  // pass the window as `seriesHistory`/`seriesForecast` so the SERVER
+  // trims the series to the visible columns (robosystems#935) — the
+  // envelope scales with the screen, not the ledger's age. The options
+  // ride a typed variable rather than a literal on purpose: against a
+  // pre-window client package the extra keys typecheck structurally and
+  // are ignored at runtime (the full series comes back and
+  // `slicePlanSeam` still trims it client-side), so this page is
+  // correct on either side of the client/backend upgrade.
+  const loadPlanEnvelopes = useCallback(
+    async (window?: { history?: number; forecast?: number }) => {
+      if (!currentGraph || scenarioId === undefined) return null
+      const statementIds: { title: string; id: string }[] = []
+      for (const { blockType, title } of STATEMENT_ORDER) {
+        const block = blocks.find((b) => b.blockType === blockType)
+        if (block) statementIds.push({ title, id: block.id })
+      }
+      if (statementIds.length === 0 && !scenarioId) return []
+      return Promise.all([
+        ...(scenarioId
+          ? [
+              clients.ledger
+                .getInformationBlock(currentGraph.graphId, scenarioId)
+                .then((envelope) => ({
+                  title: 'Assumptions',
+                  envelope,
+                  forecastOnly: true,
+                })),
+            ]
+          : []),
+        ...statementIds.map(({ title, id }) => {
+          const options: {
+            scenarioId?: string
+            series: boolean
+            seriesHistory?: number
+            seriesForecast?: number
+          } = {
+            ...(scenarioId ? { scenarioId } : {}),
+            series: true,
+          }
+          if (window?.history !== undefined)
+            options.seriesHistory = window.history
+          if (window?.forecast !== undefined)
+            options.seriesForecast = window.forecast
+          return clients.ledger
+            .getInformationBlock(currentGraph.graphId, id, options)
+            .then((envelope) => ({ title, envelope }))
+        }),
+      ])
+    },
+    [currentGraph, blocks, scenarioId]
+  )
+
   // The grid's envelopes: each statement family in series mode, plus
   // the selected scenario's own envelope (the assumptions/lever grid).
+  // Window changes refetch — post-#935 the payload is the visible
+  // window, so a toggle is a small request under the translucent
+  // overlay, not a page reload.
   useEffect(() => {
     if (!currentGraph || isListLoading || scenarioId === undefined) return
-    const statementIds: { title: string; id: string }[] = []
-    for (const { blockType, title } of STATEMENT_ORDER) {
-      const block = blocks.find((b) => b.blockType === blockType)
-      if (block) statementIds.push({ title, id: block.id })
-    }
-    if (statementIds.length === 0 && !scenarioId) {
-      setEnvelopes([])
-      return
-    }
     const seq = ++loadSeq.current
     void (async () => {
       try {
         setIsGridLoading(true)
         setError(null)
-        const loaded = await Promise.all([
-          ...(scenarioId
-            ? [
-                clients.ledger
-                  .getInformationBlock(currentGraph.graphId, scenarioId)
-                  .then((envelope) => ({
-                    title: 'Assumptions',
-                    envelope,
-                    forecastOnly: true,
-                  })),
-              ]
-            : []),
-          ...statementIds.map(({ title, id }) =>
-            clients.ledger
-              .getInformationBlock(currentGraph.graphId, id, {
-                ...(scenarioId ? { scenarioId } : {}),
-                series: true,
-              })
-              .then((envelope) => ({ title, envelope }))
-          ),
-        ])
-        if (seq !== loadSeq.current) return
+        const loaded = await loadPlanEnvelopes({
+          ...(historyWindow !== 'all'
+            ? { history: Number(historyWindow) }
+            : {}),
+          // The forecast group is inert on Actuals — never send its
+          // stale selection without a scenario.
+          ...(scenarioId && forecastWindow !== 'all'
+            ? { forecast: Number(forecastWindow) }
+            : {}),
+        })
+        if (seq !== loadSeq.current || loaded === null) return
         setEnvelopes(loaded)
       } catch (err) {
         if (seq !== loadSeq.current) return
@@ -215,7 +253,14 @@ const PlanContent: FC = function () {
         if (seq === loadSeq.current) setIsGridLoading(false)
       }
     })()
-  }, [currentGraph, blocks, isListLoading, scenarioId])
+  }, [
+    currentGraph,
+    isListLoading,
+    scenarioId,
+    historyWindow,
+    forecastWindow,
+    loadPlanEnvelopes,
+  ])
 
   const handleScenarioChange = useCallback(
     (scenario: string | null) => {
@@ -252,9 +297,19 @@ const PlanContent: FC = function () {
   )
 
   // The window control means what you see is usually a slice of what
-  // was composed, so scope is half the export decision — offer both,
-  // and only mention "full range" when the two actually differ.
-  const isWindowed = windowed.columns.length < model.columns.length
+  // exists, so scope is half the export decision. Post-#935 the fetch
+  // itself is trimmed — the composed model equals the view — so the
+  // column comparison alone would hide "Full range" exactly when server
+  // windowing works; a narrow window selection implies a fuller range
+  // may exist server-side.
+  // The >3 gate matches the window control's visibility: when the
+  // control is hidden, the server returned fewer columns than the
+  // narrowest window asks for — the fetched model provably IS the full
+  // range, and a "Full range" group would just re-download it.
+  const isWindowed =
+    windowed.columns.length < model.columns.length ||
+    (model.columns.length > 3 &&
+      (historyWindow !== 'all' || (!!scenarioId && forecastWindow !== 'all')))
 
   const exportGroups = useMemo<ExportMenuGroup[]>(
     () =>
@@ -292,9 +347,26 @@ const PlanContent: FC = function () {
   )
 
   const handleExport = useCallback(
-    (key: string) => {
+    async (key: string) => {
       const [format, scope] = key.split(':')
-      const source = scope === 'full' ? model : windowed
+      let source = scope === 'full' ? model : windowed
+      // Post-#935 the composed model IS the visible window, so a
+      // full-range export refetches without window args. When the model
+      // already holds more than the view (pre-window client runtime),
+      // it is the full range — export it without a refetch.
+      if (scope === 'full' && windowed.columns.length >= model.columns.length) {
+        try {
+          setIsExporting(true)
+          const full = await loadPlanEnvelopes()
+          if (full === null) return
+          source = composePlan(full)
+        } catch (err) {
+          console.error('Error loading the full plan range for export:', err)
+          return
+        } finally {
+          setIsExporting(false)
+        }
+      }
       const base = `operating-plan-${entityName ?? 'export'}${
         scope === 'full' ? '-full' : ''
       }`
@@ -306,7 +378,7 @@ const PlanContent: FC = function () {
       const csv = buildPlanCsv(source)
       if (csv) downloadCsv(csv, exportFilename(base, 'csv', 'plan'))
     },
-    [model, windowed, entityName, scenarioName]
+    [model, windowed, entityName, scenarioName, loadPlanEnvelopes]
   )
 
   if (!currentGraph && !graphState.isLoading) {
@@ -355,8 +427,10 @@ const PlanContent: FC = function () {
           />
           <ExportMenu
             groups={exportGroups}
-            onSelect={handleExport}
-            disabled={windowed.sections.length === 0 || isGridLoading}
+            onSelect={(key) => void handleExport(key)}
+            disabled={
+              windowed.sections.length === 0 || isGridLoading || isExporting
+            }
           />
         </div>
         {model.columns.length > 3 && (
