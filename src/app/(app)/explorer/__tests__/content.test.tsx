@@ -73,6 +73,28 @@ vi.mock('react-icons/hi', () => ({
   HiExclamationCircle: () => <span data-testid="icon-error" />,
 }))
 
+// The real menu is a Flowbite Dropdown (covered by its own test); here
+// it stands in as one flat button per format so a click asserts the
+// wiring, not the popover.
+vi.mock('@/components/ExportMenu', () => ({
+  default: ({ groups, onSelect, disabled }: any) => (
+    <div data-testid="export-menu">
+      {groups.map((group: any) =>
+        group.items.map((item: any) => (
+          <button
+            key={item.key}
+            data-testid={`export-${item.key}`}
+            disabled={disabled}
+            onClick={() => onSelect(item.key)}
+          >
+            {item.label}
+          </button>
+        ))
+      )}
+    </div>
+  ),
+}))
+
 vi.mock('../../ledger/close/components/blockview/BlockView', () => ({
   default: ({ envelope, viewMode }: any) => (
     <div data-testid="block-view">

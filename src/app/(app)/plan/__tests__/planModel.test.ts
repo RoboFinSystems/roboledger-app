@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { EnvelopeBlock } from '../../ledger/close/components/blockview/types'
 import {
   buildPlanCsv,
+  buildPlanJson,
   composePlan,
   slicePlan,
   slicePlanSeam,
@@ -86,6 +87,128 @@ describe('composePlan', () => {
     // The lever row aligns into master columns: May uncovered → null.
     expect(assumptions.rows[0].values).toEqual([null, 0.03, 0.03])
     expect(incomeStatement.rows[0].values).toEqual([100, 103, 106])
+  })
+
+  it('masks assumption values in columns that are already history', () => {
+    // The scenario's horizon opened in April; April and May have since
+    // closed, so the statements carry actuals there while the lever
+    // grid still holds the assertion that was made for them.
+    const is = envelope(
+      [
+        { end: '2026-04-30' },
+        { end: '2026-05-31' },
+        { end: '2026-06-30', label: 'Jun 2026 (forecast)', forecast: true },
+      ],
+      [{ elementId: 'rev', elementName: 'Revenues', values: [90, 95, 103] }]
+    )
+    const levers = envelope(
+      [{ end: '2026-04-30' }, { end: '2026-05-31' }, { end: '2026-06-30' }],
+      [
+        {
+          elementId: 'growth',
+          elementName: 'RevenueGrowthRate',
+          itemType: 'percent',
+          values: [0.03, 0.03, 0.03],
+        },
+      ]
+    )
+    const model = composePlan([
+      { title: 'Assumptions', envelope: levers, forecastOnly: true },
+      { title: 'Income Statement', envelope: is },
+    ])
+
+    expect(model.columns.map((c) => c.forecast)).toEqual([false, false, true])
+    // Only the forward month keeps its assertion.
+    expect(model.sections[0].rows[0].values).toEqual([null, null, 0.03])
+    // Statements are untouched — actuals still render across the seam.
+    expect(model.sections[1].rows[0].values).toEqual([90, 95, 103])
+  })
+
+  it('treats scenario-only months as forecast before statements are stamped', () => {
+    // Authored but never computed: no statement covers the horizon, so
+    // nothing carries the seam flag. The lever months are still forward
+    // — masking them would blank the whole assumptions block.
+    const is = envelope(
+      [{ end: '2026-05-31' }],
+      [{ elementId: 'rev', elementName: 'Revenues', values: [95] }]
+    )
+    const levers = envelope(
+      [{ end: '2026-06-30' }, { end: '2026-07-31' }],
+      [
+        {
+          elementId: 'growth',
+          elementName: 'RevenueGrowthRate',
+          itemType: 'percent',
+          values: [0.03, 0.03],
+        },
+      ]
+    )
+    const model = composePlan([
+      { title: 'Assumptions', envelope: levers, forecastOnly: true },
+      { title: 'Income Statement', envelope: is },
+    ])
+
+    expect(model.columns.map((c) => c.forecast)).toEqual([false, true, true])
+    expect(model.sections[0].rows[0].values).toEqual([null, 0.03, 0.03])
+  })
+
+  it('keeps historical lever values when the envelope marks its own seam', () => {
+    // The server now back-solves each lever against the closed months
+    // and flags only its forward columns — those historical cells are
+    // realized rates, not stale assertions, so they render as-is.
+    const is = envelope(
+      [
+        { end: '2026-04-30' },
+        { end: '2026-05-31' },
+        { end: '2026-06-30', label: 'Jun 2026 (forecast)', forecast: true },
+      ],
+      [{ elementId: 'rev', elementName: 'Revenues', values: [90, 95, 103] }]
+    )
+    const levers = envelope(
+      [
+        { end: '2026-04-30' },
+        { end: '2026-05-31' },
+        { end: '2026-06-30', forecast: true },
+      ],
+      [
+        {
+          elementId: 'growth',
+          elementName: 'RevenueGrowthRate',
+          itemType: 'percent',
+          values: [0.021, 0.038, 0.03],
+        },
+      ]
+    )
+    const model = composePlan([
+      { title: 'Assumptions', envelope: levers, forecastOnly: true },
+      { title: 'Income Statement', envelope: is },
+    ])
+
+    expect(model.sections[0].rows[0].values).toEqual([0.021, 0.038, 0.03])
+  })
+
+  it('drops a lever row left with nothing to say', () => {
+    // A fully elapsed horizon: every lever month has closed.
+    const is = envelope(
+      [{ end: '2026-04-30' }, { end: '2026-05-31' }],
+      [{ elementId: 'rev', elementName: 'Revenues', values: [90, 95] }]
+    )
+    const levers = envelope(
+      [{ end: '2026-04-30' }, { end: '2026-05-31' }],
+      [
+        {
+          elementId: 'growth',
+          elementName: 'RevenueGrowthRate',
+          itemType: 'percent',
+          values: [0.03, 0.03],
+        },
+      ]
+    )
+    const model = composePlan([
+      { title: 'Assumptions', envelope: levers, forecastOnly: true },
+      { title: 'Income Statement', envelope: is },
+    ])
+    expect(model.sections.map((s) => s.title)).toEqual(['Income Statement'])
   })
 
   it('drops sections with no rendering', () => {
@@ -223,5 +346,89 @@ describe('buildPlanCsv', () => {
 
   it('returns null for an empty model', () => {
     expect(buildPlanCsv(composePlan([]))).toBeNull()
+  })
+})
+
+describe('buildPlanJson', () => {
+  const model = () =>
+    composePlan([
+      {
+        title: 'Assumptions',
+        envelope: envelope(
+          [{ end: '2026-06-30', forecast: true }],
+          [
+            {
+              elementId: 'growth',
+              elementName: 'RevenueGrowthRate',
+              itemType: 'percent',
+              values: [0.03],
+            },
+          ]
+        ),
+      },
+      {
+        title: 'Income Statement',
+        envelope: envelope(
+          [
+            { end: '2026-05-31' },
+            { end: '2026-06-30', label: 'Jun 2026 (forecast)', forecast: true },
+          ],
+          [
+            {
+              elementId: 'rev',
+              elementName: 'Revenues',
+              isSubtotal: true,
+              depth: 1,
+              values: [100, 103],
+            },
+          ]
+        ),
+      },
+    ])
+
+  it('keeps the seam, the row shape, and the value domain CSV drops', () => {
+    const json = JSON.parse(
+      buildPlanJson(model(), {
+        entityName: 'Driftline Coffee',
+        scenarioName: 'FY27 Operating Budget',
+      })!
+    )
+    expect(json.entity).toBe('Driftline Coffee')
+    expect(json.scenario).toBe('FY27 Operating Budget')
+    expect(json.columns).toEqual([
+      { end: '2026-05-31', label: null, forecast: false },
+      { end: '2026-06-30', label: 'Jun 2026 (forecast)', forecast: true },
+    ])
+    expect(json.sections.map((s: { title: string }) => s.title)).toEqual([
+      'Assumptions',
+      'Income Statement',
+    ])
+    expect(json.sections[0].rows[0]).toEqual({
+      label: 'RevenueGrowthRate',
+      itemType: 'percent',
+      isSubtotal: false,
+      depth: 0,
+      // Aligned to the master columns — May uncovered by the levers.
+      values: [null, 0.03],
+    })
+    expect(json.sections[1].rows[0]).toMatchObject({
+      isSubtotal: true,
+      depth: 1,
+      values: [100, 103],
+    })
+  })
+
+  it('records the actuals view as a null scenario', () => {
+    const json = JSON.parse(
+      buildPlanJson(model(), { entityName: null, scenarioName: null })!
+    )
+    expect(json.entity).toBeNull()
+    expect(json.scenario).toBeNull()
+  })
+
+  it('returns null for an empty model', () => {
+    expect(
+      buildPlanJson(composePlan([]), { entityName: null, scenarioName: null })
+    ).toBeNull()
   })
 })

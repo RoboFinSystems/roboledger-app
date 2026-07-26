@@ -1,5 +1,6 @@
 'use client'
 
+import ExportMenu, { type ExportMenuGroup } from '@/components/ExportMenu'
 import type { InformationBlockList } from '@robosystems/client/clients'
 import {
   clients,
@@ -15,19 +16,23 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  HiDownload,
-  HiExclamationCircle,
-  HiLockClosed,
-  HiTable,
-} from 'react-icons/hi'
-import { downloadCsv } from '../explorer/components/csv'
+import { HiExclamationCircle, HiLockClosed, HiTable } from 'react-icons/hi'
 import ScenarioSelect from '../explorer/components/ScenarioSelect'
+import {
+  downloadCsv,
+  downloadJson,
+  exportFilename,
+} from '../explorer/components/serialize'
 import type { EnvelopeBlock } from '../ledger/close/components/blockview/types'
 import type { PeriodWindow } from '../ledger/close/components/blockview/usePeriodWindow'
 import PlanGrid from './components/PlanGrid'
 import PlanWindowControl from './components/PlanWindowControl'
-import { buildPlanCsv, composePlan, slicePlanSeam } from './planModel'
+import {
+  buildPlanCsv,
+  buildPlanJson,
+  composePlan,
+  slicePlanSeam,
+} from './planModel'
 
 /**
  * `/plan` — the Plan surface (the workbook's FOP tab as a page; F-4).
@@ -67,7 +72,7 @@ const PlanContent: FC = function () {
   )
 
   const [envelopes, setEnvelopes] = useState<
-    { title: string; envelope: EnvelopeBlock | null }[]
+    { title: string; envelope: EnvelopeBlock | null; forecastOnly?: boolean }[]
   >([])
   const [isGridLoading, setIsGridLoading] = useState(false)
   const loadSeq = useRef(0)
@@ -184,7 +189,11 @@ const PlanContent: FC = function () {
             ? [
                 clients.ledger
                   .getInformationBlock(currentGraph.graphId, scenarioId)
-                  .then((envelope) => ({ title: 'Assumptions', envelope })),
+                  .then((envelope) => ({
+                    title: 'Assumptions',
+                    envelope,
+                    forecastOnly: true,
+                  })),
               ]
             : []),
           ...statementIds.map(({ title, id }) =>
@@ -237,12 +246,68 @@ const PlanContent: FC = function () {
     [blocks]
   )
 
-  const handleExport = useCallback(() => {
-    const csv = buildPlanCsv(windowed)
-    if (csv) {
-      downloadCsv(csv, `operating-plan-${entityName ?? 'export'}.csv`)
-    }
-  }, [windowed, entityName])
+  const scenarioName = useMemo(
+    () => scenarios.find((s) => s.id === scenarioId)?.name ?? null,
+    [scenarios, scenarioId]
+  )
+
+  // The window control means what you see is usually a slice of what
+  // was composed, so scope is half the export decision — offer both,
+  // and only mention "full range" when the two actually differ.
+  const isWindowed = windowed.columns.length < model.columns.length
+
+  const exportGroups = useMemo<ExportMenuGroup[]>(
+    () =>
+      isWindowed
+        ? [
+            {
+              header: 'Current view',
+              items: [
+                { key: 'csv:view', label: 'CSV' },
+                { key: 'json:view', label: 'JSON' },
+              ],
+            },
+            {
+              header: 'Full range',
+              items: [
+                { key: 'csv:full', label: 'CSV' },
+                { key: 'json:full', label: 'JSON' },
+              ],
+            },
+          ]
+        : [
+            {
+              header: 'Download',
+              items: [
+                { key: 'csv:view', label: 'CSV', hint: 'Spreadsheet grid' },
+                {
+                  key: 'json:view',
+                  label: 'JSON',
+                  hint: 'Keeps the forecast seam',
+                },
+              ],
+            },
+          ],
+    [isWindowed]
+  )
+
+  const handleExport = useCallback(
+    (key: string) => {
+      const [format, scope] = key.split(':')
+      const source = scope === 'full' ? model : windowed
+      const base = `operating-plan-${entityName ?? 'export'}${
+        scope === 'full' ? '-full' : ''
+      }`
+      if (format === 'json') {
+        const json = buildPlanJson(source, { entityName, scenarioName })
+        if (json) downloadJson(json, exportFilename(base, 'json', 'plan'))
+        return
+      }
+      const csv = buildPlanCsv(source)
+      if (csv) downloadCsv(csv, exportFilename(base, 'csv', 'plan'))
+    },
+    [model, windowed, entityName, scenarioName]
+  )
 
   if (!currentGraph && !graphState.isLoading) {
     return (
@@ -274,36 +339,36 @@ const PlanContent: FC = function () {
             ? `${entityName} — ${what}`
             : what.charAt(0).toUpperCase() + what.slice(1)
         })()}
-        actions={
-          <div className="flex items-center gap-2">
-            <ScenarioSelect
-              scenarios={scenarios}
-              selectedId={scenarioId ?? null}
-              onChange={handleScenarioChange}
-            />
-            <Button
-              size="xs"
-              color="light"
-              onClick={handleExport}
-              disabled={windowed.sections.length === 0 || isGridLoading}
-            >
-              <HiDownload className="mr-1.5 h-3.5 w-3.5" />
-              CSV
-            </Button>
-            {model.columns.length > 3 && (
-              <PlanWindowControl
-                history={historyWindow}
-                forecast={forecastWindow}
-                onHistoryChange={setHistoryWindow}
-                onForecastChange={setForecastWindow}
-                forecastEnabled={
-                  scenarioId !== null && scenarioId !== undefined
-                }
-              />
-            )}
-          </div>
-        }
       />
+
+      {/* Toolbar under the header rather than in `actions`: the scenario
+          picker, the export, and TWO four-button window groups don't fit
+          a header row beside the title — they squeezed the subtitle into
+          a sliver on anything but a very wide screen. Its own row wraps
+          instead of crowding. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div className="flex items-center gap-2">
+          <ScenarioSelect
+            scenarios={scenarios}
+            selectedId={scenarioId ?? null}
+            onChange={handleScenarioChange}
+          />
+          <ExportMenu
+            groups={exportGroups}
+            onSelect={handleExport}
+            disabled={windowed.sections.length === 0 || isGridLoading}
+          />
+        </div>
+        {model.columns.length > 3 && (
+          <PlanWindowControl
+            history={historyWindow}
+            forecast={forecastWindow}
+            onHistoryChange={setHistoryWindow}
+            onForecastChange={setForecastWindow}
+            forecastEnabled={scenarioId !== null && scenarioId !== undefined}
+          />
+        )}
+      </div>
 
       <Card>
         {isListLoading || (isGridLoading && envelopes.length === 0) ? (
