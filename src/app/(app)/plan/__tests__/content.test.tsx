@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockListInformationBlocks = vi.fn()
@@ -240,11 +246,14 @@ describe('PlanContent', () => {
         'struct_budget'
       )
     )
-    // Every statement family reads in series mode with the scenario.
+    // Every statement family reads in series mode with the scenario,
+    // windowed server-side to the default 12-month history (forecast
+    // defaults to 'all' — no seriesForecast sent).
     for (const id of ['struct_is', 'struct_bs', 'struct_cf']) {
       expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', id, {
         scenarioId: 'struct_budget',
         series: true,
+        seriesHistory: 12,
       })
     }
     expect(await screen.findByTestId('plan-grid')).toBeInTheDocument()
@@ -261,6 +270,7 @@ describe('PlanContent', () => {
     await waitFor(() =>
       expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_is', {
         series: true,
+        seriesHistory: 12,
       })
     )
     expect(mockGetInformationBlock).not.toHaveBeenCalledWith(
@@ -311,9 +321,11 @@ describe('PlanContent', () => {
 
     expect(await screen.findByTestId('plan-grid')).toBeInTheDocument()
     expect(screen.getByText(/No forecast scenario yet/)).toBeInTheDocument()
-    // No scenario to bind — statements read actuals series only.
+    // No scenario to bind — statements read actuals series only (the
+    // default 12-month history window still applies).
     expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_is', {
       series: true,
+      seriesHistory: 12,
     })
   })
 
@@ -375,6 +387,58 @@ describe('PlanContent', () => {
     expect(fullName).toBe('operating-plan-driftline-coffee-full.csv')
     // Label column + windowed months vs. label column + every month.
     expect(viewCsv.split('\n')[0].split(',')).toHaveLength(13)
+    expect(fullCsv.split('\n')[0].split(',')).toHaveLength(15)
+  })
+
+  it('refetches with the selected server window when a window changes', async () => {
+    // 14 actual months so the window control renders at all.
+    mockGetInformationBlock.mockImplementation(async (_g: string, id: string) =>
+      wideEnvelopeFor(id)
+    )
+    render(<PlanContent />)
+    await screen.findByTestId('plan-grid')
+    mockGetInformationBlock.mockClear()
+
+    fireEvent.click(
+      within(screen.getByTestId('plan-window-history')).getByText('3M')
+    )
+
+    // The statement reads carry the narrowed history window server-side;
+    // forecast stays 'all' → no seriesForecast argument.
+    await waitFor(() =>
+      expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_is', {
+        scenarioId: 'struct_budget',
+        series: true,
+        seriesHistory: 3,
+      })
+    )
+  })
+
+  it('full-range export refetches unwindowed when the model is server-trimmed', async () => {
+    // The mock honors the window like a #935 backend: the returned
+    // series is exactly the requested history depth, so the composed
+    // model equals the view and a full export MUST refetch.
+    mockGetInformationBlock.mockImplementation(
+      async (_g: string, id: string, options?: { seriesHistory?: number }) => {
+        if (options?.seriesHistory === undefined) return wideEnvelopeFor(id)
+        const envelope = wideEnvelopeFor(id)
+        const rendering = envelope.view.rendering
+        rendering.periods = rendering.periods.slice(-options.seriesHistory)
+        rendering.rows[0].values = rendering.rows[0].values.slice(
+          -options.seriesHistory
+        )
+        return envelope
+      }
+    )
+    render(<PlanContent />)
+    await screen.findByTestId('plan-grid')
+
+    fireEvent.click(screen.getByTestId('export-csv:full'))
+    await waitFor(() => expect(mockDownloadCsv).toHaveBeenCalled())
+
+    // Label column + all 14 months — the unwindowed refetch, not the
+    // 12 the grid holds.
+    const [fullCsv] = mockDownloadCsv.mock.calls[0]
     expect(fullCsv.split('\n')[0].split(',')).toHaveLength(15)
   })
 
