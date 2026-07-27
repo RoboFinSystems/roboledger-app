@@ -106,9 +106,19 @@ export function composePlan(inputs: SectionInput[]): PlanModel {
   }
   // A column with no actual behind it is forward even when nothing
   // flagged it — the scenario-only months you get before
-  // compute-forecast has stamped statements for the horizon.
+  // compute-forecast has stamped statements for the horizon. Scoped to
+  // columns PAST the last actual: an envelope whose axis reaches
+  // further back than the (possibly windowed) statement series — the
+  // assumptions grid against a backend that doesn't window it —
+  // contributes columns BEFORE the actual range, and those are
+  // out-of-window history, not forecast. Flagging them forward made
+  // the seam slicer's "first N forecast columns" land on the oldest
+  // history months.
+  const lastActualEnd = [...actualEnds].sort().at(-1) ?? ''
   for (const column of columnByEnd.values()) {
-    column.forecast = column.forecast || !actualEnds.has(column.end)
+    column.forecast =
+      column.forecast ||
+      (!actualEnds.has(column.end) && column.end > lastActualEnd)
   }
   const columns = [...columnByEnd.values()].sort((a, b) =>
     a.end.localeCompare(b.end)

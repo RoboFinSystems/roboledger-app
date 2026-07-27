@@ -186,11 +186,27 @@ const PlanContent: FC = function () {
         if (block) statementIds.push({ title, id: block.id })
       }
       if (statementIds.length === 0 && !scenarioId) return []
+      // The assumptions envelope rides the SAME window as the statements
+      // (robosystems#944): its month axis must land in register with the
+      // windowed statement columns, or the master-column union resurfaces
+      // every trimmed month as a phantom assumptions-only column.
+      const assumptionOptions: {
+        seriesHistory?: number
+        seriesForecast?: number
+      } = {}
+      if (window?.history !== undefined)
+        assumptionOptions.seriesHistory = window.history
+      if (window?.forecast !== undefined)
+        assumptionOptions.seriesForecast = window.forecast
       return Promise.all([
         ...(scenarioId
           ? [
               clients.ledger
-                .getInformationBlock(currentGraph.graphId, scenarioId)
+                .getInformationBlock(
+                  currentGraph.graphId,
+                  scenarioId,
+                  assumptionOptions
+                )
                 .then((envelope) => ({
                   title: 'Assumptions',
                   envelope,

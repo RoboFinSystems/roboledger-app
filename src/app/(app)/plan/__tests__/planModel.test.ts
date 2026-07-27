@@ -152,6 +152,71 @@ describe('composePlan', () => {
     expect(model.sections[0].rows[0].values).toEqual([null, 0.03, 0.03])
   })
 
+  it('reads assumptions-only columns BEFORE the actual range as history, not forecast', () => {
+    // Windowed statement reads trim the actual columns server-side; an
+    // assumptions envelope whose axis wasn't windowed (an older
+    // backend) still spans the full history. Those extra columns sit
+    // BEFORE the statements' window — flagging them forward made the
+    // seam slicer's "first N forecast columns" land on the OLDEST
+    // history months (the phantom "Jul 24 F" bug).
+    const is = envelope(
+      [
+        { end: '2026-03-31' },
+        { end: '2026-04-30' },
+        { end: '2026-05-31' },
+        { end: '2026-06-30', label: 'Jun 2026 (forecast)', forecast: true },
+      ],
+      [
+        {
+          elementId: 'rev',
+          elementName: 'Revenues',
+          values: [95, 97, 99, 103],
+        },
+      ]
+    )
+    const levers = envelope(
+      [
+        { end: '2024-07-31' },
+        { end: '2024-08-31' },
+        { end: '2026-03-31' },
+        { end: '2026-04-30' },
+        { end: '2026-05-31' },
+        { end: '2026-06-30', forecast: true },
+      ],
+      [
+        {
+          elementId: 'growth',
+          elementName: 'RevenueGrowthRate',
+          itemType: 'percent',
+          values: [0.18, 0.54, 0.01, 0.02, 0.02, 0.03],
+        },
+      ]
+    )
+    const model = composePlan([
+      { title: 'Assumptions', envelope: levers, forecastOnly: true },
+      { title: 'Income Statement', envelope: is },
+    ])
+
+    // Pre-window assumption columns are out-of-window HISTORY.
+    expect(model.columns.map((c) => c.forecast)).toEqual([
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+    ])
+    // The seam slicer therefore keeps seam-adjacent columns, never the
+    // oldest phantoms.
+    const sliced = slicePlanSeam(model, 3, 3)
+    expect(sliced.columns.map((c) => c.end)).toEqual([
+      '2026-03-31',
+      '2026-04-30',
+      '2026-05-31',
+      '2026-06-30',
+    ])
+  })
+
   it('keeps historical lever values when the envelope marks its own seam', () => {
     // The server now back-solves each lever against the closed months
     // and flags only its forward columns — those historical cells are
