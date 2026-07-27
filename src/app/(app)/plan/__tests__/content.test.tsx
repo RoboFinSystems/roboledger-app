@@ -239,11 +239,14 @@ describe('PlanContent', () => {
   it('defaults to the first forecast scenario and loads every section in series mode', async () => {
     render(<PlanContent />)
 
-    // The scenario's own envelope = the assumptions grid (no series).
+    // The scenario's own envelope = the assumptions grid (no series),
+    // windowed like the statements so its month axis lands in register
+    // with the windowed statement columns (robosystems#944).
     await waitFor(() =>
       expect(mockGetInformationBlock).toHaveBeenCalledWith(
         'kg1',
-        'struct_budget'
+        'struct_budget',
+        { seriesHistory: 12 }
       )
     )
     // Every statement family reads in series mode with the scenario,
@@ -292,7 +295,8 @@ describe('PlanContent', () => {
     await waitFor(() =>
       expect(mockGetInformationBlock).toHaveBeenCalledWith(
         'kg1',
-        'struct_budget'
+        'struct_budget',
+        { seriesHistory: 12 }
       )
     )
     expect(mockReplace).toHaveBeenCalledWith('/plan?scenario=struct_budget', {
