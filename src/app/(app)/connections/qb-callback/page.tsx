@@ -86,12 +86,7 @@ export default function QuickBooksCallbackPage() {
           },
         })
 
-        // The backend returns {success, message} but the generated OpenAPI type
-        // for this operation's 200 is `unknown`, so a narrow cast is needed
-        // until the SDK models the response.
-        const result = response.data as { success?: boolean } | undefined
-
-        if (result?.success) {
+        if (response.data?.success) {
           // The authorization code is single-use. Strip it so that refreshing
           // this page during the redirect delay can't resubmit a spent code and
           // turn a connection that already succeeded into "Connection Failed".
@@ -101,7 +96,12 @@ export default function QuickBooksCallbackPage() {
             router.push('/connections?success=quickbooks-connected')
           }, 2000)
         } else {
-          setError('Failed to establish QuickBooks connection')
+          // The response carries a message now that it's typed; prefer it over
+          // a generic string when the server explains what went wrong.
+          setError(
+            response.data?.message ??
+              'Failed to establish QuickBooks connection'
+          )
           setStatus('error')
         }
       } catch (err) {
