@@ -22,6 +22,9 @@ export interface FactRow {
 const formatPeriod = (start: string, end: string | null): string => {
   const fmt = (d: string) => {
     const date = new Date(d + 'T00:00:00')
+    // Not every caller has a real date here — the account-rollups view labels
+    // its rows "Current". Render the label rather than "Invalid Date".
+    if (Number.isNaN(date.getTime())) return d
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',

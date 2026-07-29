@@ -99,6 +99,10 @@ const ReportViewerContent: FC = function () {
   const [isLoadingLists, setIsLoadingLists] = useState(false)
   const [isSharing, setIsSharing] = useState(false)
   const [shareResult, setShareResult] = useState<string | null>(null)
+  // Tracked explicitly rather than sniffed out of the message: a partial
+  // failure reads "… 2 failed: …", which the old `includes('Failed')` check
+  // missed, so partly-failed shares were reported in a green success alert.
+  const [shareOk, setShareOk] = useState(true)
 
   const [isDownloadingBundle, setIsDownloadingBundle] = useState(false)
   const [isDownloadingHolon, setIsDownloadingHolon] = useState(false)
@@ -229,10 +233,12 @@ const ReportViewerContent: FC = function () {
         msg += ` ${failed.length} failed: ${failed.map((f) => f.error || f.target_graph_id).join(', ')}`
       }
       setShareResult(msg)
+      setShareOk(failed.length === 0)
       setSelectedListId(null)
     } catch (err) {
       console.error('Share failed:', err)
       setShareResult('Failed to share report.')
+      setShareOk(false)
     } finally {
       setIsSharing(false)
     }
@@ -534,10 +540,7 @@ const ReportViewerContent: FC = function () {
         <ModalHeader>Share Report</ModalHeader>
         <ModalBody>
           {shareResult && (
-            <Alert
-              color={shareResult.includes('Failed') ? 'failure' : 'success'}
-              className="mb-4"
-            >
+            <Alert color={shareOk ? 'success' : 'failure'} className="mb-4">
               {shareResult}
             </Alert>
           )}

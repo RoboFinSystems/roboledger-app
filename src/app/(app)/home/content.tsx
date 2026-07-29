@@ -244,8 +244,13 @@ const HomePageContent: FC = function () {
         errors.push('reports')
       }
 
+      // Surface partial failures too. Reporting only when all three rejected
+      // left a half-loaded dashboard showing "—" for the failed stats, which
+      // is indistinguishable from a genuinely empty ledger.
       if (errors.length === 3) {
         setLoadError('Failed to load ledger data.')
+      } else if (errors.length > 0) {
+        setLoadError(`Failed to load ${errors.join(' and ')}.`)
       }
 
       setStats(next)
