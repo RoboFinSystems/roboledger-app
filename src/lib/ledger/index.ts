@@ -6,6 +6,3 @@
 
 // Types
 export * from './types'
-
-// US-GAAP Elements
-export * from './us-gaap-elements'
