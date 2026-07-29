@@ -1,15 +1,7 @@
-import { logProxyChainOnce } from '@/lib/client-ip'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 export function proxy(request: NextRequest) {
-  // TEMPORARY: records the forwarded-header chain once per instance so the
-  // rate limiter's TRUSTED_PROXY_HOPS can be confirmed against real traffic.
-  // Placed here rather than in the form routes because this runs on ordinary
-  // page requests, so an observation arrives shortly after deploy instead of
-  // waiting for someone to submit the contact form. Remove with the helper.
-  logProxyChainOnce(request)
-
   const response = NextResponse.next()
   const isDevelopment = process.env.NODE_ENV === 'development'
 
