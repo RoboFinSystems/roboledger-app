@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getClientIp } from '../client-ip'
 
 function requestWith(headers: Record<string, string>): Request {
@@ -81,5 +81,61 @@ describe('getClientIp', () => {
         })
       )
     ).toBe('203.0.113.7')
+  })
+})
+
+describe('logProxyChainOnce', () => {
+  // The once-per-instance guard is module-level state, so each test needs a
+  // freshly imported copy of the module.
+  beforeEach(() => {
+    vi.resetModules()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('records the observed chain, hop count and resolved IP', async () => {
+    const { logProxyChainOnce } = await import('../client-ip')
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {})
+
+    logProxyChainOnce(
+      requestWith({
+        'x-forwarded-for': '1.1.1.1, 203.0.113.7',
+        via: '1.1 abc.cloudfront.net (CloudFront)',
+      })
+    )
+
+    expect(info).toHaveBeenCalledTimes(1)
+    const payload = JSON.parse(info.mock.calls[0][0] as string)
+    expect(payload.event).toBe('proxy_chain_observed')
+    expect(payload.forwardedFor).toEqual(['1.1.1.1', '203.0.113.7'])
+    expect(payload.hopCount).toBe(2)
+    expect(payload.configuredTrustedHops).toBe(1)
+    expect(payload.resolvedClientIp).toBe('203.0.113.7')
+    expect(payload.via).toContain('CloudFront')
+  })
+
+  it('logs only once per instance', async () => {
+    const { logProxyChainOnce } = await import('../client-ip')
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {})
+
+    logProxyChainOnce(requestWith({ 'x-forwarded-for': '203.0.113.7' }))
+    logProxyChainOnce(requestWith({ 'x-forwarded-for': '198.51.100.4' }))
+    logProxyChainOnce(requestWith({ 'x-forwarded-for': '198.51.100.5' }))
+
+    expect(info).toHaveBeenCalledTimes(1)
+  })
+
+  it('stays silent when there is no forwarded chain to learn from', async () => {
+    const { logProxyChainOnce } = await import('../client-ip')
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {})
+
+    logProxyChainOnce(requestWith({}))
+    expect(info).not.toHaveBeenCalled()
+
+    // ...and the guard is not consumed, so a later real request still reports.
+    logProxyChainOnce(requestWith({ 'x-forwarded-for': '203.0.113.7' }))
+    expect(info).toHaveBeenCalledTimes(1)
   })
 })

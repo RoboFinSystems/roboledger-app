@@ -47,3 +47,52 @@ export function getClientIp(request: Request): string | undefined {
 
   return undefined
 }
+
+/**
+ * TEMPORARY DIAGNOSTIC — remove once TRUSTED_PROXY_HOPS is confirmed.
+ *
+ * `getClientIp` counts in from the right by a hop count we have assumed rather
+ * than measured, and being wrong is user-visible in both directions: too low
+ * and the value is caller-controlled again, too high and every viewer behind a
+ * CloudFront edge collapses into one rate-limit bucket and real users start
+ * getting 429s. The position is a constant for this architecture, so a single
+ * observation of a real request settles it permanently.
+ *
+ * Emits one structured line per instance, on the first request that carries a
+ * forwarded chain. Note this records IP addresses to the application log; that
+ * is why it is once-per-instance and why it should be deleted after reading.
+ */
+let proxyChainLogged = false
+
+export function logProxyChainOnce(request: Request): void {
+  if (proxyChainLogged) return
+
+  const forwardedFor = request.headers.get('x-forwarded-for')
+  if (!forwardedFor) return
+
+  const hops = forwardedFor
+    .split(',')
+    .map((hop) => hop.trim())
+    .filter(Boolean)
+  if (hops.length === 0) return
+
+  proxyChainLogged = true
+
+  console.info(
+    JSON.stringify({
+      event: 'proxy_chain_observed',
+      // The chain as received, so the trustworthy position can be read off it.
+      forwardedFor: hops,
+      hopCount: hops.length,
+      configuredTrustedHops: trustedProxyHops(),
+      resolvedClientIp: getClientIp(request),
+      // `via` naming CloudFront confirms the request came through the
+      // distribution rather than straight to the App Runner origin.
+      via: request.headers.get('via'),
+      // If present, this is CloudFront's own view of the viewer address and is
+      // authoritative — it would let us drop hop counting altogether.
+      cloudfrontViewerAddress: request.headers.get('cloudfront-viewer-address'),
+      xRealIp: request.headers.get('x-real-ip'),
+    })
+  )
+}
