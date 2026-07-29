@@ -27,6 +27,30 @@ import TrialBalancePanel from './components/TrialBalancePanel'
 import type { ViewMode } from './components/ViewModeToggle'
 import ViewModeToggle from './components/ViewModeToggle'
 
+type ClosingBookCategories = LedgerClosingBookStructures['categories']
+
+/**
+ * Whether a selection still refers to something in the freshly loaded
+ * structures. Statements, schedules and rollups are identified by an id that is
+ * per-graph, so a selection made before a graph switch must not be carried
+ * over; the hub and trial balance always exist.
+ */
+function selectionExists(
+  selected: SelectedItem,
+  categories: ClosingBookCategories
+): boolean {
+  if (selected.type === 'period_close' || selected.type === 'trial_balance') {
+    return true
+  }
+  const id =
+    selected.type === 'account_rollups'
+      ? selected.mappingId
+      : selected.structureId
+  return categories.some((category) =>
+    category.items.some((item) => item.id === id)
+  )
+}
+
 const CloseContent: FC = function () {
   const { state: graphState } = useGraphContext()
 
@@ -37,6 +61,10 @@ const CloseContent: FC = function () {
   const [entityName, setEntityName] = useState<string | null>(null)
   const [mappingId, setMappingId] = useState<string | null>(null)
   const [isSidebarLoading, setIsSidebarLoading] = useState(true)
+  // The content area may only be swapped for a spinner on the *first* load.
+  // Doing it on every refresh unmounted the active panel, which threw away
+  // PeriodClosePanel's close-result card the instant it was produced.
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Selection state
@@ -88,13 +116,21 @@ const CloseContent: FC = function () {
         // Default to the Period Close hub — it's the operational home for
         // the close workflow (fiscal calendar state, drafts, close button).
         // Users can still drill into statements, schedules, or rollups from
-        // the sidebar.
-        setSelectedItem(select ?? { type: 'period_close' })
+        // the sidebar. An existing selection survives a refresh as long as the
+        // reloaded structures still contain it; without that, every post-close
+        // or post-draft refresh snapped the user back to the hub.
+        const categories = response?.categories ?? []
+        setSelectedItem((current) => {
+          if (select) return select
+          if (current && selectionExists(current, categories)) return current
+          return { type: 'period_close' }
+        })
       } catch (err) {
         console.error('Error loading closing book data:', err)
         setError('Failed to load closing book data.')
       } finally {
         setIsSidebarLoading(false)
+        setHasLoadedOnce(true)
       }
     },
     [currentGraph]
@@ -187,7 +223,7 @@ const CloseContent: FC = function () {
         {/* Content Area */}
         <div className="min-w-0 flex-1">
           <Card>
-            {isSidebarLoading ? (
+            {isSidebarLoading && !hasLoadedOnce ? (
               <LoadingState size="xl" className="py-24" />
             ) : !selectedItem ? (
               <div className="py-12 text-center text-gray-500 dark:text-gray-400">

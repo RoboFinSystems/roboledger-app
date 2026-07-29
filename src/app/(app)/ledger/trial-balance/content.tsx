@@ -253,7 +253,10 @@ const TrialBalanceContent: FC = function () {
     })
   }, [data, searchTerm])
 
-  // Calculate totals
+  // Calculate totals. The displayed sums follow the filter, but whether the
+  // books balance is a property of the whole trial balance — computing it over
+  // the filtered rows made any search (e.g. "cash") trip the red unbalanced
+  // warning, implying the ledger didn't tie.
   const totals = useMemo(() => {
     const totalDebits = filteredData.reduce(
       (sum, row) => sum + row.totalDebits,
@@ -263,10 +266,12 @@ const TrialBalanceContent: FC = function () {
       (sum, row) => sum + row.totalCredits,
       0
     )
-    const isBalanced = Math.abs(totalDebits - totalCredits) < 0.01
+    const allDebits = data.reduce((sum, row) => sum + row.totalDebits, 0)
+    const allCredits = data.reduce((sum, row) => sum + row.totalCredits, 0)
+    const isBalanced = Math.abs(allDebits - allCredits) < 0.01
 
     return { totalDebits, totalCredits, isBalanced }
-  }, [filteredData])
+  }, [filteredData, data])
 
   // Group by classification for summary
   const classificationSummary = useMemo(() => {

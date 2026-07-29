@@ -2,13 +2,25 @@
 // All amount helpers expect cents (the wire format from the GraphQL API)
 // and divide by 100 internally.
 
+/** Matches a date-only value (no time component), e.g. "2026-01-15". */
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
+
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+  // A bare YYYY-MM-DD parses as UTC midnight, so rendering it in the viewer's
+  // local zone shows the previous day anywhere west of Greenwich — a
+  // transaction dated the 15th displayed as the 14th in PST. Pin those to UTC
+  // and leave real timestamps in local time.
+  const dateOnly = DATE_ONLY.test(iso)
+  return new Date(dateOnly ? `${iso}T00:00:00Z` : iso).toLocaleDateString(
+    'en-US',
+    {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      ...(dateOnly ? { timeZone: 'UTC' } : {}),
+    }
+  )
 }
 
 export function formatDateTime(iso: string | null | undefined): string {

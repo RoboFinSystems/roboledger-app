@@ -118,6 +118,8 @@ const TransactionsContent: FC = function () {
 
   // Load transactions from all roboledger graphs
   useEffect(() => {
+    let cancelled = false
+
     const loadTransactions = async () => {
       try {
         setIsLoading(true)
@@ -133,66 +135,58 @@ const TransactionsContent: FC = function () {
           return
         }
 
-        const allTransactions: TransactionRow[] = []
-        let serverTotal: number | null = null
-
-        for (const graph of [currentGraph]) {
-          try {
-            const result = await clients.ledger.listTransactions(
-              graph.graphId,
-              {
-                startDate: startDate || undefined,
-                endDate: endDate || undefined,
-                limit: 500,
-              }
-            )
-
-            if (result) {
-              const rows = result.transactions || []
-              serverTotal =
-                (serverTotal ?? 0) + (result.pagination?.total ?? rows.length)
-              const graphTransactions: TransactionRow[] = rows.map((row) => ({
-                id: row.id,
-                number: row.number ?? null,
-                type: row.type,
-                category: row.category ?? null,
-                amount: row.amount,
-                currency: row.currency,
-                date: row.date,
-                merchant_name: row.merchantName ?? null,
-                description: row.description ?? null,
-                source: row.source,
-                status: row.status,
-                _graphId: graph.graphId,
-                _graphName: graph.graphName,
-              }))
-
-              allTransactions.push(...graphTransactions)
-            }
-          } catch (err) {
-            console.error(
-              `Error loading transactions from graph ${graph.graphName}:`,
-              err
-            )
+        const result = await clients.ledger.listTransactions(
+          currentGraph.graphId,
+          {
+            startDate: startDate || undefined,
+            endDate: endDate || undefined,
+            limit: 500,
           }
-        }
+        )
+        if (cancelled) return
+
+        const rows = result?.transactions ?? []
+        const graphTransactions: TransactionRow[] = rows.map((row) => ({
+          id: row.id,
+          number: row.number ?? null,
+          type: row.type,
+          category: row.category ?? null,
+          amount: row.amount,
+          currency: row.currency,
+          date: row.date,
+          merchant_name: row.merchantName ?? null,
+          description: row.description ?? null,
+          source: row.source,
+          status: row.status,
+          _graphId: currentGraph.graphId,
+          _graphName: currentGraph.graphName,
+        }))
 
         // Sort by date descending
-        allTransactions.sort(
+        graphTransactions.sort(
           (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         )
 
-        setTransactions(allTransactions)
-        setTotalCount(serverTotal)
+        setTransactions(graphTransactions)
+        setTotalCount(result ? (result.pagination?.total ?? rows.length) : null)
       } catch (err) {
+        if (cancelled) return
+        // Previously this sat in an inner try/catch that only logged, so an API
+        // failure rendered the "no transactions yet — import your data" empty
+        // state instead of an error, on a page about the books.
         console.error('Error loading transactions:', err)
         setError('Failed to load transactions. Please try again.')
+        setTransactions([])
+        setTotalCount(null)
       } finally {
-        setIsLoading(false)
+        if (!cancelled) setIsLoading(false)
       }
     }
 
     loadTransactions()
+    return () => {
+      cancelled = true
+    }
   }, [
     graphState.graphs,
     graphState.currentGraphId,

@@ -261,6 +261,15 @@ const StatementPanel: FC<StatementPanelProps> = ({
 
   return (
     <>
+      {/* Once an envelope is loaded the early return above no longer applies,
+          so without this a failed period-preset regeneration left the old
+          statement on screen with no indication anything went wrong. */}
+      {error && (
+        <div className="mb-4 flex items-center gap-2 text-red-500">
+          <HiExclamationCircle className="h-5 w-5" />
+          <span>{error}</span>
+        </div>
+      )}
       {mappingId && (
         <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3 dark:border-gray-700">
           <span className="mr-1 text-xs font-medium text-gray-400">
