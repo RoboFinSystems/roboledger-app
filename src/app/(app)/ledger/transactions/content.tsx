@@ -93,6 +93,7 @@ const formatDate = (dateString: string): string => {
 const TransactionsContent: FC = function () {
   const { state: graphState } = useGraphContext()
   const [transactions, setTransactions] = useState<TransactionRow[]>([])
+  const [totalCount, setTotalCount] = useState<number | null>(null)
   const [lineItemsMap, setLineItemsMap] = useState<
     Record<string, LineItemRow[]>
   >({})
@@ -128,10 +129,12 @@ const TransactionsContent: FC = function () {
 
         if (!currentGraph) {
           setTransactions([])
+          setTotalCount(null)
           return
         }
 
         const allTransactions: TransactionRow[] = []
+        let serverTotal: number | null = null
 
         for (const graph of [currentGraph]) {
           try {
@@ -146,6 +149,8 @@ const TransactionsContent: FC = function () {
 
             if (result) {
               const rows = result.transactions || []
+              serverTotal =
+                (serverTotal ?? 0) + (result.pagination?.total ?? rows.length)
               const graphTransactions: TransactionRow[] = rows.map((row) => ({
                 id: row.id,
                 number: row.number ?? null,
@@ -178,6 +183,7 @@ const TransactionsContent: FC = function () {
         )
 
         setTransactions(allTransactions)
+        setTotalCount(serverTotal)
       } catch (err) {
         console.error('Error loading transactions:', err)
         setError('Failed to load transactions. Please try again.')
@@ -579,8 +585,16 @@ const TransactionsContent: FC = function () {
         {!isLoading && filteredTransactions.length > 0 && (
           <div className="border-t border-gray-200 p-4 dark:border-gray-700">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Showing {filteredTransactions.length} of {transactions.length}{' '}
+              Showing {filteredTransactions.length} of{' '}
+              {(totalCount ?? transactions.length).toLocaleString('en-US')}{' '}
               transactions
+              {totalCount != null && totalCount > transactions.length && (
+                <>
+                  {' '}
+                  (most recent {transactions.length} loaded — narrow the date
+                  range to see older entries)
+                </>
+              )}
             </p>
           </div>
         )}
