@@ -10,7 +10,7 @@ import {
   ModalHeader,
 } from 'flowbite-react'
 import type { FC } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { HiExclamationCircle, HiTrash } from 'react-icons/hi'
 import BlockView from './blockview/BlockView'
 import type { EnvelopeBlock } from './blockview/types'
@@ -45,7 +45,12 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
+  // Sequence guard: drops a response once a newer load has started, so switching
+  // schedules mid-fetch can't render the previous structure's facts.
+  const loadSeq = useRef(0)
+
   const loadEnvelope = useCallback(async () => {
+    const seq = ++loadSeq.current
     try {
       setIsLoading(true)
       setError(null)
@@ -53,12 +58,14 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
         graphId,
         structureId
       )
+      if (seq !== loadSeq.current) return
       setEnvelope(block ?? null)
     } catch (err) {
+      if (seq !== loadSeq.current) return
       console.error('Error loading schedule envelope:', err)
       setError('Failed to load schedule facts.')
     } finally {
-      setIsLoading(false)
+      if (seq === loadSeq.current) setIsLoading(false)
     }
   }, [graphId, structureId])
 

@@ -11,7 +11,14 @@ import {
   TableHeadCell,
   TableRow,
 } from 'flowbite-react'
-import { Fragment, useCallback, useEffect, useState, type FC } from 'react'
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FC,
+} from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
 import { formatCurrency } from '../utils'
 import type { FactRow } from './FactsTable'
@@ -33,19 +40,26 @@ const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Sequence guard: drops a response once a newer load has started, so a slow
+  // request for the previous graph or mapping can't overwrite the current one.
+  const loadSeq = useRef(0)
+
   const loadData = useCallback(async () => {
+    const seq = ++loadSeq.current
     try {
       setIsLoading(true)
       setError(null)
       const response = await clients.ledger.getAccountRollups(graphId, {
         mappingId,
       })
+      if (seq !== loadSeq.current) return
       setData(response)
     } catch (err) {
+      if (seq !== loadSeq.current) return
       console.error('Error loading account rollups:', err)
       setError('Failed to load account rollups.')
     } finally {
-      setIsLoading(false)
+      if (seq === loadSeq.current) setIsLoading(false)
     }
   }, [graphId, mappingId])
 

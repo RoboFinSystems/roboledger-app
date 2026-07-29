@@ -11,7 +11,7 @@ import {
   TableRow,
 } from 'flowbite-react'
 import type { FC } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -102,12 +102,18 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Sequence guard: drops a response once a newer load has started, so a slow
+  // request for the previous graph can't render under the current one.
+  const loadSeq = useRef(0)
+
   const loadData = useCallback(async () => {
+    const seq = ++loadSeq.current
     try {
       setIsLoading(true)
       setError(null)
 
       const result = await clients.ledger.getTrialBalance(graphId)
+      if (seq !== loadSeq.current) return
 
       if (result) {
         const mapped = (result.rows || []).map((row) => ({
@@ -121,12 +127,17 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
         }))
         mapped.sort(compareTrialBalanceRows)
         setRows(mapped)
+      } else {
+        // A graph with no ledger yet returns null; without this the previous
+        // graph's rows stayed on screen under the new selection.
+        setRows([])
       }
     } catch (err) {
+      if (seq !== loadSeq.current) return
       console.error('Error loading trial balance:', err)
       setError('Failed to load trial balance.')
     } finally {
-      setIsLoading(false)
+      if (seq === loadSeq.current) setIsLoading(false)
     }
   }, [graphId])
 
