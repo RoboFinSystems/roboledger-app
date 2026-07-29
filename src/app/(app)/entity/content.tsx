@@ -18,7 +18,7 @@ import {
   Spinner,
   TextInput,
 } from 'flowbite-react'
-import { type FC, useCallback, useEffect, useState } from 'react'
+import { type FC, useEffect, useRef, useState } from 'react'
 import { HiOfficeBuilding, HiPencil, HiSave, HiX } from 'react-icons/hi'
 
 const EntityInfoPageContent: FC = function () {
@@ -34,30 +34,53 @@ const EntityInfoPageContent: FC = function () {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
 
-  const loadEntity = useCallback(async () => {
-    if (!graphId) return
-    setLoading(true)
-    setError(null)
-    try {
-      const loaded = await clients.ledger.getEntity(graphId)
-      if (loaded === null) {
-        setError(
-          'No entity found for this graph. The ledger database may not be initialized yet.'
-        )
-      } else {
-        setEntity(loaded)
-      }
-    } catch (err) {
-      console.error('Error loading entity:', err)
-      setError('Failed to load entity details.')
-    } finally {
-      setLoading(false)
-    }
+  // Tracks the graph a request was issued for, so a response that arrives after
+  // the selection moved on can be discarded instead of applied to another graph.
+  const graphIdRef = useRef(graphId)
+  useEffect(() => {
+    graphIdRef.current = graphId
   }, [graphId])
 
   useEffect(() => {
-    loadEntity()
-  }, [loadEntity])
+    if (!graphId) return
+    let cancelled = false
+
+    // Abandon any edit in progress. formData holds the previous graph's values,
+    // and handleSave diffs it against whichever entity is loaded — so carrying
+    // it across a graph switch would write one graph's details onto another's
+    // entity.
+    setEditing(false)
+    setFormData({})
+    setSaveError(null)
+    setEntity(null)
+    setLoading(true)
+    setError(null)
+
+    const load = async () => {
+      try {
+        const loaded = await clients.ledger.getEntity(graphId)
+        if (cancelled) return
+        if (loaded === null) {
+          setError(
+            'No entity found for this graph. The ledger database may not be initialized yet.'
+          )
+        } else {
+          setEntity(loaded)
+        }
+      } catch (err) {
+        if (cancelled) return
+        console.error('Error loading entity:', err)
+        setError('Failed to load entity details.')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [graphId])
 
   const startEditing = () => {
     if (!entity) return
@@ -140,11 +163,15 @@ const EntityInfoPageContent: FC = function () {
       return
     }
 
+    const requestGraphId = graphId
     try {
       const updated = await clients.ledger.updateEntity(
-        graphId,
+        requestGraphId,
         updates as UpdateEntityRequest
       )
+      // The write itself targeted the right graph, but applying the result
+      // after the user moved on would show it under the new selection.
+      if (graphIdRef.current !== requestGraphId) return
       setEntity(updated)
       // Update the entity context so the dropdown reflects changes
       setCurrentEntity({
@@ -155,11 +182,12 @@ const EntityInfoPageContent: FC = function () {
       })
       setEditing(false)
     } catch (err) {
+      if (graphIdRef.current !== requestGraphId) return
       setSaveError(
         err instanceof Error ? err.message : 'Failed to update entity.'
       )
     } finally {
-      setSaving(false)
+      if (graphIdRef.current === requestGraphId) setSaving(false)
     }
   }
 

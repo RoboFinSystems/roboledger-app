@@ -33,7 +33,7 @@ import {
 } from 'flowbite-react'
 import Link from 'next/link'
 import type { FC } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   HiArrowLeft,
   HiOutlinePlusCircle,
@@ -74,18 +74,28 @@ const PublishListsContent: FC = function () {
 
   const graphId = currentGraph?.graphId
 
+  // Tracks the graph in-flight requests were issued for, so a response that
+  // lands after the selection moved on is discarded rather than rendered under
+  // the new graph.
+  const graphIdRef = useRef(graphId)
+  useEffect(() => {
+    graphIdRef.current = graphId
+  }, [graphId])
+
   const loadLists = useCallback(async () => {
     if (!graphId) return
     try {
       setIsLoading(true)
       setError(null)
       const result = await clients.reports.listPublishLists(graphId)
+      if (graphIdRef.current !== graphId) return
       setLists(result)
     } catch (err) {
+      if (graphIdRef.current !== graphId) return
       console.error('Failed to load publish lists:', err)
       setError('Failed to load publish lists.')
     } finally {
-      setIsLoading(false)
+      if (graphIdRef.current === graphId) setIsLoading(false)
     }
   }, [graphId])
 
@@ -94,8 +104,10 @@ const PublishListsContent: FC = function () {
       if (!graphId) return
       try {
         const detail = await clients.reports.getPublishList(graphId, listId)
+        if (graphIdRef.current !== graphId) return
         setSelectedList(detail)
       } catch (err) {
+        if (graphIdRef.current !== graphId) return
         console.error('Failed to load list detail:', err)
         setError('Failed to load list details.')
       }
@@ -104,6 +116,10 @@ const PublishListsContent: FC = function () {
   )
 
   useEffect(() => {
+    // Close the detail panel on a graph switch. Add/remove-recipient act on
+    // selectedList.id, so a list held over from the previous graph would send
+    // member writes against a list id that doesn't belong to this graph.
+    setSelectedList(null)
     loadLists()
   }, [loadLists])
 

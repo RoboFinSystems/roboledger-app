@@ -75,13 +75,14 @@ const ReportsContent: FC = function () {
   }, [graphState.graphs, graphState.currentGraphId])
 
   useEffect(() => {
-    const loadReports = async () => {
-      if (!currentGraph) {
-        setReports([])
-        setIsLoading(false)
-        return
-      }
+    if (!currentGraph) {
+      setReports([])
+      setIsLoading(false)
+      return
+    }
 
+    let cancelled = false
+    const loadReports = async () => {
       try {
         setIsLoading(true)
         setError(null)
@@ -89,6 +90,7 @@ const ReportsContent: FC = function () {
         const reportList = await clients.reports.listReports(
           currentGraph.graphId
         )
+        if (cancelled) return
 
         const mapped: ReportWithGraph[] = reportList.map((r) => ({
           ...r,
@@ -103,14 +105,18 @@ const ReportsContent: FC = function () {
 
         setReports(mapped)
       } catch (err) {
+        if (cancelled) return
         console.error('Error loading reports:', err)
         setError('Failed to load reports. Please try again.')
       } finally {
-        setIsLoading(false)
+        if (!cancelled) setIsLoading(false)
       }
     }
 
     loadReports()
+    return () => {
+      cancelled = true
+    }
   }, [currentGraph])
 
   return (

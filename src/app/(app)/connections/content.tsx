@@ -121,6 +121,13 @@ export default function ModernConnectionsContent() {
 
   // ── Load connections (all providers) ──
 
+  // Which graph is currently selected, readable from inside an in-flight
+  // request so a response for a previous graph can be dropped.
+  const loadedGraphIdRef = useRef(currentGraphId)
+  useEffect(() => {
+    loadedGraphIdRef.current = currentGraphId
+  }, [currentGraphId])
+
   const loadConnections = useCallback(
     async ({ background = false }: { background?: boolean } = {}) => {
       try {
@@ -134,10 +141,18 @@ export default function ModernConnectionsContent() {
         const list = (
           Array.isArray(response.data) ? response.data : []
         ) as ConnectionData[]
+        // A slow response from the previously selected graph must not render
+        // (or seed the sync-watch poller) under the new one.
+        if (loadedGraphIdRef.current !== currentGraphId) {
+          return [] as ConnectionData[]
+        }
         setConnections(list)
         setError(null)
         return list
       } catch (err) {
+        if (loadedGraphIdRef.current !== currentGraphId) {
+          return [] as ConnectionData[]
+        }
         const errorMsg = 'Failed to load connections'
         if (!background) {
           setError(errorMsg)
@@ -146,7 +161,9 @@ export default function ModernConnectionsContent() {
         console.error('Error loading connections:', err)
         return [] as ConnectionData[]
       } finally {
-        if (!background) setLoading(false)
+        if (!background && loadedGraphIdRef.current === currentGraphId) {
+          setLoading(false)
+        }
       }
     },
     [currentGraphId, showError]
