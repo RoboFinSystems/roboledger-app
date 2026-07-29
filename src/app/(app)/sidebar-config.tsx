@@ -96,6 +96,3 @@ export const getNavigationItems = (
 
   return [...baseItems, ...graphDependentItems]
 }
-
-// Default export for backward compatibility
-export const roboLedgerNavigationItems = getNavigationItems(true)

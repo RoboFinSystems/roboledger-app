@@ -80,9 +80,9 @@ npm run format:check # Check code formatting
 
 **Optimistic mutations.** The Inbox `/ledger/inbox` uses optimistic remove via callbacks on approve/reject. The pattern generalizes to other write surfaces (manual JE creation, materialize, future backup/restore) — favor optimistic UI with rollback-on-failure over spinner-and-wait.
 
-**SDK helpers vs raw `gqlQuery`.** Inbox + Agents established the pattern: hand-written `.gql` files + `LedgerClient` methods mirroring `transactions.ts` / `listTransactions`. Continue this pattern for new SDK additions. **Never bump versions** in `package.json` / `pyproject.toml` — version bumps are owned by the user on publish.
+**SDK helpers vs raw `gqlQuery`.** Inbox + Agents established the pattern: hand-written query modules + `LedgerClient` methods mirroring `transactions.ts` / `listTransactions`. Those live in the `robosystems-typescript-client` repo (`clients/graphql/queries/ledger/*.ts` — plain `.ts`, not `.gql`), not in this app. Continue this pattern for new SDK additions. **Never bump versions** in `package.json` / `pyproject.toml` — version bumps are owned by the user on publish.
 
-**Error mapping.** `friendlyError` helper handles closed-period and element-resolution 422s. Extend the helper as new error classes ship (materialize errors, backup conflicts, outbound-write rejects). Don't surface raw FastAPI 422 detail to users.
+**Error mapping.** `friendlyError` maps closed-period and element-resolution 422s into actionable messages. It is currently a module-local function in `ledger/inbox/EventBlockDetailModal.tsx`, **not** shared infrastructure — most other write surfaces still surface raw `err.message`. Promote it to `src/lib/ledger/` before extending it to new error classes (materialize errors, backup conflicts, outbound-write rejects). Don't surface raw FastAPI 422 detail to users.
 
 **Refresh patterns.** Mutations that change list state use a `refreshKey` bump on the list component (e.g., transactions list after JE submit) rather than full-page reload. SSE operation streams (materialize, long-running ops) use `useOperationMonitoring` from the shared core library.
 
@@ -90,7 +90,7 @@ npm run format:check # Check code formatting
 
 **Code colocation.** Route features live under `src/app/(app)/<route>/` with a sibling `components/` (and `__tests__/`) directory — not under a top-level `src/components/<feature>/` tree. `src/components/` holds only cross-route primitives (`PageHeader`, `EntitySelector`, landing/error pages). When adding a new feature, colocate.
 
-**`page.tsx` vs `content.tsx`.** Each route splits into `page.tsx` (Next.js server-boundary entry) that delegates to a client `content.tsx`. Keep the split — don't inline client logic into `page.tsx`.
+**`page.tsx` vs `content.tsx`.** Each route splits into a thin `page.tsx` entry that delegates to a client `content.tsx`. In practice most `page.tsx` files are themselves `'use client'` wrappers doing `useUser()` auth gating (only `search` and `graphs/new` are true server components exporting `metadata`) — so the split is about keeping route entry separate from route logic, not a server/client boundary. Keep the split — don't inline client logic into `page.tsx`.
 
 **BlockView projections.** Statement / schedule / rules views render through `src/app/(app)/ledger/close/components/blockview/` with one file per projection under `projections/` (FactTable, StatementRendering, ScheduleRendering, BusinessRules, ReportElements, VerificationResults). New view modes land as a new projection file + a ViewModeToggle entry, not as a parallel component tree.
 
@@ -124,16 +124,13 @@ For larger forward-work surfaces tracked in proper specs:
 - **Verification Results panel restructure**: see `financial-viewer.md` §7.12.
 - **Drift reconciliation UX** (QB outbound write conflicts): see `quickbooks-adapter.md` §4.3.
 
-**Ledger Sub-Routes:**
-
-- `/ledger/chart-of-accounts` - Chart of accounts with element classification
-- `/ledger/transactions` - Journal entries with line item detail
-- `/ledger/trial-balance` - Period-based debit/credit totals
-- `/ledger/account-mappings` - CoA to US-GAAP taxonomy mapping (deprecated, pending OLTP migration)
+**Ledger Sub-Routes:** see the Route Inventory table above — it is the single
+source of truth for what ships. (`/ledger/account-mappings` was listed here for
+a long time after the route was deleted; don't reintroduce a second list.)
 
 **Data Integrations:**
 
-- QuickBooks: OAuth 2.0 via `intuit-oauth` for accounting data sync
+- QuickBooks: OAuth 2.0 driven through the `@robosystems/core` SDK (`SDK.initOAuth` / `SDK.oauthCallback`) for accounting data sync
 - SEC XBRL: CIK-based filing connections with US-GAAP taxonomy data
 - Plaid: **not built / not specced** — only scaffolding exists (`plaid` + `react-plaid-link` deps, a `/plaid-connect` route, and landing-page copy). Likely medium-term. It's a distinct product surface (direct bank feeds), not just another connection on top of the QuickBooks layer, so it isn't advertised in the README and isn't a shipped integration.
 
@@ -148,7 +145,7 @@ For larger forward-work surfaces tracked in proper specs:
 
 **App-Specific Libraries:**
 
-- `src/lib/ledger/` - Ledger-specific Cypher queries, types, and US-GAAP element reference
+- `src/lib/ledger/` - Ledger-specific types and shared display formatters (`formatAmount` expects cents; `formatDate` pins date-only values to UTC)
 - `src/lib/rate-limiter.ts` - Rate limiting for contact/forms
 - `src/lib/sns.ts` - AWS SNS integration
 - `src/lib/turnstile-server.ts` - Server-side CAPTCHA validation
