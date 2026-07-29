@@ -87,12 +87,17 @@ export default function LibraryContent() {
 
   useEffect(() => {
     if (!graphId) return
+    let cancelled = false
     setTaxonomiesState('loading')
     setTaxonomies([])
     setSelectedTaxonomyId(null)
+    // Element ids are per-graph rows too, so a selection left over from the
+    // previous graph would have ElementDetail request it against this one.
+    setSelectedElementId(null)
     client
       .listLibraryTaxonomies(graphId, { includeElementCount: true })
       .then((rows) => {
+        if (cancelled) return
         setTaxonomies(rows)
         setTaxonomiesState('ready')
         if (rows.length > 0) {
@@ -104,9 +109,13 @@ export default function LibraryContent() {
         }
       })
       .catch((err: Error) => {
+        if (cancelled) return
         setTaxonomiesError(err.message)
         setTaxonomiesState('error')
       })
+    return () => {
+      cancelled = true
+    }
   }, [client, graphId])
 
   if (!graphId) {

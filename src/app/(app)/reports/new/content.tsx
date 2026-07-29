@@ -282,7 +282,13 @@ const ReportBuilderContent: FC = function () {
 
   // Apply preset on mount and when preset changes
   useEffect(() => {
-    if (selectedPreset === 'custom') return
+    if (selectedPreset === 'custom') {
+      // Drop the previous preset's multi-period spec. The custom form presents
+      // a single start/end pair, so leaving it set would submit periods the
+      // user can no longer see or edit.
+      setPeriods(undefined)
+      return
+    }
     const result = buildPresetPeriods(selectedPreset, new Date())
     setPeriodStart(result.periodStart)
     setPeriodEnd(result.periodEnd)
@@ -292,29 +298,39 @@ const ReportBuilderContent: FC = function () {
 
   // Load mappings
   useEffect(() => {
-    const loadMappings = async () => {
-      if (!currentGraph) {
-        setMappings([])
-        setIsLoadingMappings(false)
-        return
-      }
+    if (!currentGraph) {
+      setMappings([])
+      setSelectedMappingId(null)
+      setIsLoadingMappings(false)
+      return
+    }
 
+    let cancelled = false
+    const loadMappings = async () => {
       try {
         setIsLoadingMappings(true)
         const result = await clients.ledger.listMappings(currentGraph.graphId)
+        if (cancelled) return
         setMappings(result)
-        if (result.length > 0) {
-          setSelectedMappingId(result[0].id)
-        }
+        // Always re-seed from this graph's mappings. Leaving a previous graph's
+        // id in place kept isValid truthy on a graph with no mappings, so
+        // Generate would submit a mapping_id belonging to a different graph.
+        setSelectedMappingId(result[0]?.id ?? null)
       } catch (err) {
+        if (cancelled) return
         console.error('Error loading mappings:', err)
         setError('Failed to load mapping structures.')
+        setMappings([])
+        setSelectedMappingId(null)
       } finally {
-        setIsLoadingMappings(false)
+        if (!cancelled) setIsLoadingMappings(false)
       }
     }
 
     loadMappings()
+    return () => {
+      cancelled = true
+    }
   }, [currentGraph])
 
   // Load coverage when mapping selected

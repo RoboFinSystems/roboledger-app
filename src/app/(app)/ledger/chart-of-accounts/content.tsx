@@ -339,6 +339,11 @@ const ChartOfAccountsContent: FC = function () {
   const [selectedMappingId, setSelectedMappingId] = useState<string | null>(
     null
   )
+  // Which graph the current selectedMappingId came from. Mapping ids are
+  // per-graph, so the detail loader uses this to ignore a selection left over
+  // from the previously active graph rather than requesting it against the new
+  // one.
+  const selectedMappingGraphRef = useRef<string | null>(null)
   const [mappingDetail, setMappingDetail] = useState<LedgerMapping | null>(null)
   const [mappingCoverage, setMappingCoverage] =
     useState<LedgerMappingCoverage | null>(null)
@@ -367,14 +372,23 @@ const ChartOfAccountsContent: FC = function () {
 
   // Load accounts and mappings
   useEffect(() => {
-    const loadData = async () => {
-      if (!currentGraph) {
-        setAccounts([])
-        setMappings([])
-        setIsLoading(false)
-        return
-      }
+    if (!currentGraph) {
+      setAccounts([])
+      setMappings([])
+      setSelectedMappingId(null)
+      selectedMappingGraphRef.current = null
+      setRsGaapElements([])
+      setIsLoading(false)
+      return
+    }
 
+    let cancelled = false
+    // Element ids are per-graph rows, so a cached candidate list from another
+    // graph must not be reused — mapping a concept from it would write a
+    // foreign to_element_id.
+    setRsGaapElements([])
+
+    const loadData = async () => {
       try {
         setIsLoading(true)
         setError(null)
@@ -386,6 +400,7 @@ const ChartOfAccountsContent: FC = function () {
             .listMappings(currentGraph.graphId)
             .catch(() => [] as LedgerMappingInfo[]),
         ])
+        if (cancelled) return
 
         // Process accounts — sort by CoA code first so the list matches
         // the user's CoA numbering scheme (1xxx assets, 2xxx liabilities,
@@ -398,34 +413,50 @@ const ChartOfAccountsContent: FC = function () {
           setAccounts(
             flattenTree(roots, currentGraph.graphId, currentGraph.graphName)
           )
+        } else {
+          // A graph with no ledger yet returns null; without this the previous
+          // graph's accounts stayed on screen under the new selection.
+          setAccounts([])
         }
 
-        // Process mappings
+        // Process mappings. Always re-seed the selection from this graph's own
+        // list — carrying the previous graph's id over pointed getMapping,
+        // auto-map and association writes at a mapping from another graph.
         setMappings(mappingList)
-        if (mappingList.length > 0 && !selectedMappingId) {
-          setSelectedMappingId(mappingList[0].id)
-        }
+        selectedMappingGraphRef.current = currentGraph.graphId
+        setSelectedMappingId(mappingList[0]?.id ?? null)
       } catch (err) {
+        if (cancelled) return
         console.error('Error loading data:', err)
         setError('Failed to load chart of accounts. Please try again.')
       } finally {
-        setIsLoading(false)
+        if (!cancelled) setIsLoading(false)
       }
     }
 
     loadData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- don't re-trigger on selectedMappingId change
+    return () => {
+      cancelled = true
+    }
   }, [currentGraph])
 
   // Load mapping detail, coverage, and elements when selected mapping changes
   useEffect(() => {
-    const loadMappingData = async () => {
-      if (!currentGraph || !selectedMappingId) {
-        setMappingDetail(null)
-        setMappingCoverage(null)
-        return
-      }
+    // Skip while the selection still refers to the previously active graph:
+    // the loader above re-seeds it, and firing now would request this graph's
+    // detail using another graph's mapping id.
+    if (
+      !currentGraph ||
+      !selectedMappingId ||
+      selectedMappingGraphRef.current !== currentGraph.graphId
+    ) {
+      setMappingDetail(null)
+      setMappingCoverage(null)
+      return
+    }
 
+    let cancelled = false
+    const loadMappingData = async () => {
       try {
         const [detail, coverage, rsGaapResult] = await Promise.all([
           clients.ledger.getMapping(currentGraph.graphId, selectedMappingId),
@@ -460,6 +491,7 @@ const ChartOfAccountsContent: FC = function () {
               ).then((lists) => ({ elements: lists.flat() }))
             : null,
         ])
+        if (cancelled) return
 
         setMappingDetail(detail)
         setMappingCoverage(coverage)
@@ -479,6 +511,7 @@ const ChartOfAccountsContent: FC = function () {
         }
         if (rsGaapResult) setRsGaapElements(toGaapElements(rsGaapResult))
       } catch (err) {
+        if (cancelled) return
         console.error('Error loading mapping detail:', err)
         setMappingDetail(null)
         setMappingCoverage(null)
@@ -486,6 +519,9 @@ const ChartOfAccountsContent: FC = function () {
     }
 
     loadMappingData()
+    return () => {
+      cancelled = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rsGaapElements intentionally excluded to avoid re-fetching
   }, [currentGraph, selectedMappingId])
 
@@ -559,6 +595,10 @@ const ChartOfAccountsContent: FC = function () {
       } catch (err) {
         console.error('Failed to save mapping:', err)
         setError('Failed to save mapping.')
+        // A remap is a delete followed by a create. If the create is what
+        // failed, the account is now unmapped server-side — re-read so the row
+        // stops displaying an association that no longer exists.
+        await refreshMappingData()
       } finally {
         setIsSaving(false)
       }

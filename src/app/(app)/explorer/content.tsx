@@ -137,7 +137,10 @@ const BlockExplorerContent: FC = function () {
         // Default selection: first metric block (the explorer home),
         // else the first block. A URL-seeded selection wins.
         setSelectedId((current) => {
-          if (current) return current
+          // Only keep a selection this graph actually contains. A block id
+          // carried over from another graph (or one that no longer bears
+          // facts) made every envelope read fail until the user re-picked.
+          if (current && withFacts.some((b) => b.id === current)) return current
           const first =
             withFacts.find((b) => b.blockType === 'metric') ??
             withFacts[0] ??
