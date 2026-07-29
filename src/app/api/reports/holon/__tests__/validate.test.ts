@@ -10,17 +10,14 @@ const SIG = 'X-Amz-Credential=cred&X-Amz-Signature=sig&X-Amz-Expires=300'
 
 describe('allowedHolonUrl', () => {
   const originalEndpoint = process.env.NEXT_PUBLIC_S3_ENDPOINT_URL
-  const originalHosts = process.env.HOLON_BUNDLE_HOSTS
 
   beforeEach(() => {
     // Development configuration: LocalStack over loopback.
     process.env.NEXT_PUBLIC_S3_ENDPOINT_URL = 'http://localhost:4566'
-    delete process.env.HOLON_BUNDLE_HOSTS
   })
 
   afterEach(() => {
     process.env.NEXT_PUBLIC_S3_ENDPOINT_URL = originalEndpoint
-    process.env.HOLON_BUNDLE_HOSTS = originalHosts
   })
 
   it('accepts a presigned report-bundle holon URL from the configured endpoint', () => {
@@ -136,17 +133,11 @@ describe('allowedHolonUrl', () => {
       ).toBeNull()
     })
 
-    it('honours an explicit HOLON_BUNDLE_HOSTS allowlist', () => {
-      process.env.HOLON_BUNDLE_HOSTS = 'bundles.roboledger.ai'
+    it('rejects a non-AWS host that is not the configured endpoint', () => {
       expect(
         allowedHolonUrl(
           'https://bundles.roboledger.ai/report-bundles/g/r/x.holon.jsonld?' +
             SIG
-        )
-      ).not.toBeNull()
-      expect(
-        allowedHolonUrl(
-          'https://other.roboledger.ai/report-bundles/g/r/x.holon.jsonld?' + SIG
         )
       ).toBeNull()
     })

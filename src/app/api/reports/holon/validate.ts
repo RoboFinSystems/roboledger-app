@@ -11,20 +11,16 @@ function isAwsHost(hostname: string): boolean {
 }
 
 /**
- * Additional hosts this deployment serves bundles from: an explicit
- * `HOLON_BUNDLE_HOSTS` allowlist (comma-separated hostnames — e.g. a CloudFront
- * distribution fronting the bucket) plus the S3 endpoint override used by
- * LocalStack in local development.
+ * Additional hosts this deployment serves bundles from: the S3 endpoint
+ * override used by LocalStack in local development. Presigned URLs in staging
+ * and production are signed against real AWS endpoints, which `isAwsHost`
+ * already covers.
  *
  * Read per call rather than at module load so a runtime env change (and tests)
  * take effect without a rebuild.
  */
 function configuredHosts(): Set<string> {
   const hosts = new Set<string>()
-  for (const raw of (process.env.HOLON_BUNDLE_HOSTS ?? '').split(',')) {
-    const host = raw.trim().toLowerCase()
-    if (host) hosts.add(host)
-  }
   const endpoint = process.env.NEXT_PUBLIC_S3_ENDPOINT_URL
   if (endpoint) {
     try {
