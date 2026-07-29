@@ -177,7 +177,7 @@ const HomePageContent: FC = function () {
       setLoadError(null)
 
       const [txResult, accountResult, reportResult] = await Promise.allSettled([
-        clients.ledger.listTransactions(graphId, { limit: 500 }),
+        clients.ledger.listTransactions(graphId, { limit: 5 }),
         clients.ledger.getAccountTree(graphId),
         clients.ledger.listReports(graphId),
       ])
@@ -189,21 +189,17 @@ const HomePageContent: FC = function () {
 
       if (txResult.status === 'fulfilled' && txResult.value) {
         const rows = txResult.value.transactions ?? []
-        next.transactionCount = rows.length
-        next.recentTransactions = [...rows]
-          .sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-          )
-          .slice(0, 5)
-          .map((row) => ({
-            id: row.id,
-            number: row.number ?? null,
-            type: row.type,
-            amount: row.amount,
-            date: row.date,
-            description: row.description ?? null,
-            merchantName: row.merchantName ?? null,
-          }))
+        next.transactionCount = txResult.value.pagination?.total ?? rows.length
+        // Rows arrive newest-first from the API, so they're already the 5 most recent.
+        next.recentTransactions = rows.map((row) => ({
+          id: row.id,
+          number: row.number ?? null,
+          type: row.type,
+          amount: row.amount,
+          date: row.date,
+          description: row.description ?? null,
+          merchantName: row.merchantName ?? null,
+        }))
       } else if (txResult.status === 'rejected') {
         errors.push('transactions')
       }
