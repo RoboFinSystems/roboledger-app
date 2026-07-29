@@ -1,5 +1,6 @@
 'use client'
 
+import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
 import {
   clients,
   EmptyState,
@@ -28,35 +29,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiExclamationCircle, HiRefresh } from 'react-icons/hi'
 import { TbReportMoney } from 'react-icons/tb'
 
-// ── Response shape (REST op result — snake_case) ──
-// The SDK wrapper already unwraps `envelope.result`, so this is the
-// `LiveFinancialStatementResponse` directly. It's a flat statement —
-// not a BlockView `InformationBlock` envelope — so it's rendered with
-// a dedicated table here (see specs/live-statements.md, Option A).
-interface LivePeriod {
-  start: string
-  end: string
-  label: string
-}
-
-interface LiveFactRow {
-  qname: string
-  name: string
-  trait: string | null
-  values: (number | null)[]
-  depth: number
-  is_subtotal: boolean
-}
-
-interface LiveStatement {
-  graph_id: string
-  statement_type: string
-  periods: LivePeriod[]
-  facts: LiveFactRow[]
-  fact_count: number
-  unmapped_count: number
-  truncated: boolean
-}
+// The SDK types these directly now — liveFinancialStatement returns
+// LiveFinancialStatementResponse rather than Record<string, unknown>, so the
+// hand-maintained mirrors of this shape are gone.
+type LiveStatement = LiveFinancialStatementResponse
+type LivePeriod = LiveFinancialStatementResponse['periods'][number]
+type LiveFactRow = LiveFinancialStatementResponse['facts'][number]
 
 type StatementType =
   | 'balance_sheet'
@@ -172,16 +150,19 @@ const LiveStatementsContent: FC = function () {
     try {
       setIsLoading(true)
       setError(null)
-      const result = (await clients.ledger.liveFinancialStatement(
+      const result = await clients.ledger.liveFinancialStatement(
         currentGraph.graphId,
         {
           statement_type: statementType,
           period_start: range.start,
           period_end: range.end,
         }
-      )) as unknown as LiveStatement
+      )
       if (seq !== loadSeq.current) return // superseded by a newer load
-      setStatement(result && Array.isArray(result.periods) ? result : null)
+      // The SDK now throws on an empty envelope rather than resolving `{}`, so a
+      // missing result surfaces through the catch below instead of rendering as
+      // "no data". The periods check stays as a shape guard.
+      setStatement(Array.isArray(result?.periods) ? result : null)
     } catch (err) {
       if (seq !== loadSeq.current) return
       console.error('Error loading live statement:', err)
