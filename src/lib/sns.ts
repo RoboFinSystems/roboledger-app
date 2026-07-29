@@ -5,6 +5,20 @@ interface SNSConfig {
   contactTopicArn?: string
 }
 
+/**
+ * SNS requires a subject to be single-line printable ASCII of at most 100
+ * characters, and part of ours comes from the request body. Normalise it rather
+ * than trusting it: an invalid subject makes Publish throw, which would drop
+ * the notification altogether.
+ */
+function sanitizeSubject(raw: string): string {
+  const cleaned = raw
+    .replace(/[^ -~]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return cleaned.slice(0, 100) || 'New Contact Form Submission'
+}
+
 class SNSService {
   private client: SNSClient | null = null
   private config: SNSConfig
@@ -34,7 +48,9 @@ class SNSService {
     }
 
     try {
-      const subject = `New Contact Form Submission - ${data.formType}`
+      const subject = sanitizeSubject(
+        `New Contact Form Submission - ${data.formType}`
+      )
       const message = `
 New contact form submission received:
 

@@ -113,28 +113,8 @@ export function isCaptchaRequired(): boolean {
 }
 
 /**
- * Extract client IP from Next.js request headers
- * @param request - Next.js request object
- * @returns Client IP address or undefined
+ * Extract client IP from Next.js request headers. Re-exported from the shared
+ * helper so the CAPTCHA `remoteip` hint and the rate limiter agree on which
+ * proxy hop to trust.
  */
-export function getClientIp(request: Request): string | undefined {
-  const headers = request.headers
-
-  // Try various headers that might contain the client IP
-  const forwardedFor = headers.get('x-forwarded-for')
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim()
-  }
-
-  const realIp = headers.get('x-real-ip')
-  if (realIp) {
-    return realIp
-  }
-
-  const cfConnectingIp = headers.get('cf-connecting-ip')
-  if (cfConnectingIp) {
-    return cfConnectingIp
-  }
-
-  return undefined
-}
+export { getClientIp } from './client-ip'
