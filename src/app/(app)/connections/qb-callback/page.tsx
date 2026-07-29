@@ -1,9 +1,11 @@
-// @ts-nocheck - connections functionality removed from SDK, pending overhaul
 'use client'
 
 import { LoadingState, SDK, useGraphContext } from '@robosystems/core'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+
+/** How long to wait for a graph selection before giving up on the callback. */
+const NO_GRAPH_TIMEOUT_MS = 15_000
 
 export default function QuickBooksCallbackPage() {
   const router = useRouter()
@@ -16,6 +18,39 @@ export default function QuickBooksCallbackPage() {
   )
   const [error, setError] = useState<string>('')
   const attemptedRef = useRef(false)
+
+  // Intuit reports a user-initiated cancel as ?error=access_denied. That isn't
+  // a system failure and needs no graph context, so handle it before the gate
+  // below — otherwise declining at Intuit rendered "Missing authorization code
+  // or realm ID from QuickBooks", which reads as something being broken.
+  useEffect(() => {
+    const oauthError = searchParams.get('error')
+    if (!oauthError || attemptedRef.current) return
+    attemptedRef.current = true
+    setError(
+      oauthError === 'access_denied'
+        ? 'Connection canceled — access was declined at QuickBooks. You can start the connection again whenever you like.'
+        : `QuickBooks reported an error: ${oauthError}`
+    )
+    setStatus('error')
+  }, [searchParams])
+
+  // Without a restorable graph selection (cleared cookies, OAuth started in a
+  // different browser profile) currentGraphId never arrives and the effect
+  // below returns forever, leaving the user on "Connecting to QuickBooks…"
+  // with no way out. Fail with an explanation instead of hanging.
+  useEffect(() => {
+    if (currentGraphId || attemptedRef.current) return
+    const timer = setTimeout(() => {
+      if (attemptedRef.current) return
+      attemptedRef.current = true
+      setError(
+        'No graph is selected, so this connection has nowhere to attach. Open Connections, pick a graph, and start the QuickBooks connection again.'
+      )
+      setStatus('error')
+    }, NO_GRAPH_TIMEOUT_MS)
+    return () => clearTimeout(timer)
+  }, [currentGraphId])
 
   useEffect(() => {
     // Wait for graph context to load
@@ -31,7 +66,9 @@ export default function QuickBooksCallbackPage() {
         const state = searchParams.get('state')
 
         if (!code || !realmId) {
-          setError('Missing authorization code or realm ID from QuickBooks')
+          setError(
+            'This QuickBooks callback link has no authorization code — it was probably already used or opened directly. Start the connection again from Connections.'
+          )
           setStatus('error')
           return
         }
@@ -49,7 +86,16 @@ export default function QuickBooksCallbackPage() {
           },
         })
 
-        if ((response.data as any)?.success) {
+        // The backend returns {success, message} but the generated OpenAPI type
+        // for this operation's 200 is `unknown`, so a narrow cast is needed
+        // until the SDK models the response.
+        const result = response.data as { success?: boolean } | undefined
+
+        if (result?.success) {
+          // The authorization code is single-use. Strip it so that refreshing
+          // this page during the redirect delay can't resubmit a spent code and
+          // turn a connection that already succeeded into "Connection Failed".
+          window.history.replaceState({}, '', '/connections/qb-callback')
           setStatus('success')
           setTimeout(() => {
             router.push('/connections?success=quickbooks-connected')
@@ -58,9 +104,13 @@ export default function QuickBooksCallbackPage() {
           setError('Failed to establish QuickBooks connection')
           setStatus('error')
         }
-      } catch (error: any) {
-        console.error('QuickBooks callback error:', error)
-        setError(error.message || 'Failed to process QuickBooks callback')
+      } catch (err) {
+        console.error('QuickBooks callback error:', err)
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Failed to process QuickBooks callback'
+        )
         setStatus('error')
       }
     }
