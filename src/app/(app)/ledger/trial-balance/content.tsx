@@ -24,7 +24,7 @@ import {
   ToggleSwitch,
 } from 'flowbite-react'
 import type { FC } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   HiCheckCircle,
   HiExclamationCircle,
@@ -99,17 +99,31 @@ const TrialBalanceContent: FC = function () {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('coa')
-  const [mappingId, setMappingId] = useState<string | null>(null)
+  // Tagged with the graph it was resolved in. A mapping id is a row in one
+  // graph, and both effects here list `currentGraphId` in their dependencies —
+  // so on a switch the loader below re-runs in the same commit as this one,
+  // holding the previous graph's id. Without the tag it could not tell that
+  // apart from a mapping legitimately resolved for the graph now selected, and
+  // sent `getMappedTrialBalance(newGraph, previousGraph's mappingId)`.
+  //
+  // `id: null` means "this graph has no active mapping", which is distinct from
+  // the whole value being null — "not resolved yet".
+  const [mapping, setMapping] = useState<{
+    graphId: string
+    id: string | null
+  } | null>(null)
 
   // Resolve the active CoA→GAAP mapping once per graph. We need its
   // structure ID to fetch the aggregated trial balance.
+  const mappingSeq = useRef(0)
   useEffect(() => {
+    const seq = ++mappingSeq.current
     const loadMapping = async () => {
       const currentGraph = graphState.graphs
         .filter(GraphFilters.roboledger)
         .find((g) => g.graphId === graphState.currentGraphId)
       if (!currentGraph) {
-        setMappingId(null)
+        setMapping(null)
         return
       }
       try {
@@ -117,11 +131,13 @@ const TrialBalanceContent: FC = function () {
         const structures = await clients.ledger.listMappings(
           currentGraph.graphId
         )
+        if (seq !== mappingSeq.current) return // superseded by a newer load
         const active = structures.find((s) => s.isActive) ?? structures[0]
-        setMappingId(active?.id ?? null)
+        setMapping({ graphId: currentGraph.graphId, id: active?.id ?? null })
       } catch (err) {
+        if (seq !== mappingSeq.current) return
         console.error('Error loading mappings:', err)
-        setMappingId(null)
+        setMapping({ graphId: currentGraph.graphId, id: null })
       }
     }
     loadMapping()
@@ -133,7 +149,14 @@ const TrialBalanceContent: FC = function () {
   //            ordered to mirror QuickBooks)
   //   usgaap → /trial-balance/mapped — rows aggregated to US-GAAP reporting
   //            elements via the graph's CoA→GAAP mapping. Sorted by qname.
+  const loadSeq = useRef(0)
   useEffect(() => {
+    const seq = ++loadSeq.current
+    // Set when the US-GAAP view is waiting on this graph's mapping to resolve.
+    // The spinner stays up in that case rather than flashing an empty table
+    // between the graph switch and the mapping arriving.
+    let awaitingMapping = false
+
     const loadTrialBalance = async () => {
       try {
         setIsLoading(true)
@@ -154,6 +177,8 @@ const TrialBalanceContent: FC = function () {
           const result = await clients.ledger.getTrialBalance(
             currentGraph.graphId
           )
+
+          if (seq !== loadSeq.current) return // superseded by a newer load
 
           if (result) {
             const rows = result.rows || []
@@ -194,7 +219,14 @@ const TrialBalanceContent: FC = function () {
           })
         } else {
           // usgaap mode
-          if (!mappingId) {
+          if (!mapping || mapping.graphId !== currentGraph.graphId) {
+            // Either nothing has resolved yet, or what we hold belongs to the
+            // graph we just left. Wait for this graph's own mapping rather than
+            // pairing another graph's id with this graph's ledger.
+            awaitingMapping = true
+            return
+          }
+          if (!mapping.id) {
             setData([])
             setError(
               'No active CoA → US-GAAP mapping found for this graph. ' +
@@ -204,8 +236,11 @@ const TrialBalanceContent: FC = function () {
           }
           const mapped = await clients.ledger.getMappedTrialBalance(
             currentGraph.graphId,
-            mappingId
+            mapping.id
           )
+
+          if (seq !== loadSeq.current) return // superseded by a newer load
+
           const rows = mapped?.rows ?? []
           for (const row of rows) {
             // Strip the namespace prefix from the qname for display
@@ -231,15 +266,16 @@ const TrialBalanceContent: FC = function () {
 
         setData(allRows)
       } catch (err) {
+        if (seq !== loadSeq.current) return
         console.error('Error loading trial balance:', err)
         setError('Failed to load trial balance. Please try again.')
       } finally {
-        setIsLoading(false)
+        if (seq === loadSeq.current && !awaitingMapping) setIsLoading(false)
       }
     }
 
     loadTrialBalance()
-  }, [graphState.graphs, graphState.currentGraphId, viewMode, mappingId])
+  }, [graphState.graphs, graphState.currentGraphId, viewMode, mapping])
 
   // Filter data
   const filteredData = useMemo(() => {
