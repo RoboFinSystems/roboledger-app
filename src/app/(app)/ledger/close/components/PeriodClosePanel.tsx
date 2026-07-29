@@ -27,7 +27,7 @@ import {
 } from 'flowbite-react'
 import Link from 'next/link'
 import type { FC, ReactNode } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   HiCalendar,
   HiCheck,
@@ -151,39 +151,55 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     }
   }, [graphId])
 
+  // Sequence guards, one per loader since each can also be re-invoked on its own
+  // after a mutation. Without these, moving between periods quickly can leave
+  // one period's drafts on screen while another is selected — and the Close
+  // button's hasUnbalancedDrafts gate reads exactly that state.
+  const closeStatusSeq = useRef(0)
+  const draftsSeq = useRef(0)
+
   const loadCloseStatus = useCallback(async () => {
     if (!selectedPeriod) return
+    const seq = ++closeStatusSeq.current
     try {
       setIsLoadingStatus(true)
+      // Clear a previous failure so a successful retry doesn't leave the old
+      // error banner sitting above fresh data.
+      setError(null)
       const { start, end } = periodBounds(selectedPeriod)
       const status = await clients.ledger.getPeriodCloseStatus(
         graphId,
         start,
         end
       )
+      if (seq !== closeStatusSeq.current) return
       setCloseStatus(status)
     } catch (err) {
+      if (seq !== closeStatusSeq.current) return
       console.error('Error loading close status:', err)
       setError('Failed to load period close status.')
     } finally {
-      setIsLoadingStatus(false)
+      if (seq === closeStatusSeq.current) setIsLoadingStatus(false)
     }
   }, [graphId, selectedPeriod])
 
   const loadDrafts = useCallback(async () => {
     if (!selectedPeriod) return
+    const seq = ++draftsSeq.current
     try {
       setIsLoadingDrafts(true)
       const result = await clients.ledger.listPeriodDrafts(
         graphId,
         selectedPeriod
       )
+      if (seq !== draftsSeq.current) return
       setDrafts(result)
     } catch (err) {
+      if (seq !== draftsSeq.current) return
       console.error('Error loading drafts:', err)
       setDrafts(null)
     } finally {
-      setIsLoadingDrafts(false)
+      if (seq === draftsSeq.current) setIsLoadingDrafts(false)
     }
   }, [graphId, selectedPeriod])
 
@@ -199,6 +215,12 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       setAllowStaleSync(false)
       loadCloseStatus()
       loadDrafts()
+    } else {
+      // Nothing selected — drop the previous period's data. The schedules and
+      // drafts sections carry no period label of their own, so leaving them
+      // rendered reads as though they belong to the current selection.
+      setCloseStatus(null)
+      setDrafts(null)
     }
   }, [selectedPeriod, loadCloseStatus, loadDrafts])
 
