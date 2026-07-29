@@ -11,9 +11,44 @@ import { allowedHolonUrl, MAX_HOLON_BYTES } from './validate'
  * server fetches it (server→S3 isn't subject to browser CORS) and streams the
  * body back same-origin so `parseJsonld` can consume it.
  *
- * SSRF is bounded by `allowedHolonUrl` (see ./validate). A future hardening
- * could pin the S3 host via env or re-mint the URL server-side.
+ * The proxy is deliberately narrow: `allowedHolonUrl` pins the target to a
+ * bundle host (see ./validate), redirects are not followed so a 3xx cannot
+ * walk the fetch off that host, and the body is capped while streaming. The
+ * presigned signature remains the caller's capability — this endpoint grants
+ * no access to a bundle whose signed URL the caller doesn't already hold.
  */
+
+/**
+ * Read the body while counting bytes, aborting as soon as the cap is exceeded
+ * so an oversized (or endless) upstream can't be buffered into memory. Returns
+ * null when the cap is hit.
+ */
+async function readCapped(
+  upstream: Response,
+  maxBytes: number
+): Promise<string | null> {
+  if (!upstream.body) return ''
+  const reader = upstream.body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > maxBytes) {
+      await reader.cancel()
+      return null
+    }
+    chunks.push(value)
+  }
+  const joined = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) {
+    joined.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return new TextDecoder().decode(joined)
+}
 
 export async function POST(req: NextRequest) {
   let body: { url?: string }
@@ -37,7 +72,9 @@ export async function POST(req: NextRequest) {
 
   let upstream: Response
   try {
-    upstream = await fetch(target.toString())
+    // `manual` keeps a redirect from relocating the fetch to a host that
+    // allowedHolonUrl never vetted; a 3xx simply fails the !ok check below.
+    upstream = await fetch(target.toString(), { redirect: 'manual' })
   } catch (err) {
     return Response.json(
       {
@@ -61,8 +98,8 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'Holon exceeds size limit' }, { status: 413 })
   }
 
-  const text = await upstream.text()
-  if (text.length > MAX_HOLON_BYTES) {
+  const text = await readCapped(upstream, MAX_HOLON_BYTES)
+  if (text === null) {
     return Response.json({ error: 'Holon exceeds size limit' }, { status: 413 })
   }
 

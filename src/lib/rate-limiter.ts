@@ -1,5 +1,6 @@
 import { LRUCache } from 'lru-cache'
 import type { NextRequest } from 'next/server'
+import { getClientIp } from './client-ip'
 
 interface RateLimitOptions {
   uniqueTokenPerInterval?: number // max number of unique tokens per interval
@@ -13,11 +14,22 @@ interface RateLimitResult {
   reset: Date
 }
 
-// Create a new rate limiter instance
+/**
+ * Create a rate limiter.
+ *
+ * Note: state is in-process, so on a multi-instance deployment each instance
+ * keeps its own counters and the effective limit is roughly `limit ×
+ * instances`. That is acceptable for the abuse-deterrence these limits provide;
+ * anything needing a true global limit has to move to a shared store.
+ */
 export function rateLimit(options?: RateLimitOptions) {
-  const tokenCache = new LRUCache({
+  const interval = options?.interval || 60000 // default 1 minute
+  const tokenCache = new LRUCache<string, number[]>({
     max: options?.uniqueTokenPerInterval || 500,
-    ttl: options?.interval || 60000, // default 1 minute
+    ttl: interval,
+    // Keep the window fixed from first request: without this every hit renews
+    // the TTL, so a caller who keeps trying never rolls out of their own block.
+    noUpdateTTL: true,
   })
 
   return {
@@ -26,16 +38,15 @@ export function rateLimit(options?: RateLimitOptions) {
       limit: number
     ): Promise<RateLimitResult> => {
       const token = getClientIdentifier(request)
-      const tokenCount = (tokenCache.get(token) as number[]) || [0]
+      const tokenCount = tokenCache.get(token) || [0]
       const currentUsage = tokenCount[0]
+      const remainingTtl = tokenCache.getRemainingTTL(token)
+      const reset = new Date(
+        Date.now() + (remainingTtl > 0 ? remainingTtl : interval)
+      )
 
       if (currentUsage >= limit) {
-        return {
-          success: false,
-          limit,
-          remaining: 0,
-          reset: new Date(Date.now() + (options?.interval || 60000)),
-        }
+        return { success: false, limit, remaining: 0, reset }
       }
 
       tokenCount[0] = currentUsage + 1
@@ -45,27 +56,19 @@ export function rateLimit(options?: RateLimitOptions) {
         success: true,
         limit,
         remaining: limit - (currentUsage + 1),
-        reset: new Date(Date.now() + (options?.interval || 60000)),
+        reset,
       }
     },
   }
 }
 
-// Get a unique identifier for the client
+/**
+ * Bucket key for a caller. Deliberately the client IP alone — mixing in
+ * `User-Agent` (or any other caller-supplied header) hands the caller a knob
+ * for minting unlimited fresh buckets, which defeats the limit entirely.
+ */
 function getClientIdentifier(request: NextRequest): string {
-  // Try to get IP from various headers (considering proxies/load balancers)
-  const forwardedFor = request.headers.get('x-forwarded-for')
-  const realIp = request.headers.get('x-real-ip')
-  const cfConnectingIp = request.headers.get('cf-connecting-ip')
-
-  // Use the first available IP or fall back to a hash of headers
-  const ip =
-    forwardedFor?.split(',')[0] || realIp || cfConnectingIp || 'unknown'
-
-  // Combine IP with user agent for better uniqueness
-  const userAgent = request.headers.get('user-agent') || 'unknown'
-
-  return `${ip}:${userAgent}`
+  return getClientIp(request) ?? 'unknown'
 }
 
 // Pre-configured rate limiters for different endpoints
