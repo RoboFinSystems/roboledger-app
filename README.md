@@ -11,7 +11,7 @@ RoboLedger App is the web interface for AI-native accounting, building semantic 
 ## Core Features
 
 - **Dashboard**: Financial overview with quick actions
-- **Ledger**: Chart of accounts, journal entries, trial balance, and account mappings
+- **Ledger**: Chart of accounts, journal entries, and trial balance
 - **Period Close**: Fiscal calendar bootstrap, close workflow with gate checks, and rule-based pre-close evaluation
 - **Live Statements**: Render balance sheet, income statement, and cash flow directly from the current ledger — no period close required
 - **Schedules**: Recurring journal entry templates with auto-evaluation on close
@@ -89,7 +89,6 @@ npm install @robosystems/core@latest
 #### System Requirements
 
 - Node.js 24+ (LTS)
-- npm 10+
 - 4GB RAM minimum
 - Modern browser (Chrome, Firefox, Safari, Edge)
 
