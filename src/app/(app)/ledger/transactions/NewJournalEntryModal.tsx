@@ -238,10 +238,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
                 onChange={(e) =>
                   setEntryType(
                     e.target.value as
-                      | 'standard'
-                      | 'adjusting'
-                      | 'closing'
-                      | 'reversing'
+                      'standard' | 'adjusting' | 'closing' | 'reversing'
                   )
                 }
                 disabled={submitting}

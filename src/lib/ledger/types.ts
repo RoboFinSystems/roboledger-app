@@ -10,11 +10,7 @@
 // ============================================================================
 
 export type ElementClassification =
-  | 'asset'
-  | 'liability'
-  | 'equity'
-  | 'revenue'
-  | 'expense'
+  'asset' | 'liability' | 'equity' | 'revenue' | 'expense'
 
 export type BalanceType = 'debit' | 'credit'
 export type PeriodType = 'instant' | 'duration'
@@ -88,12 +84,7 @@ export interface TrialBalanceRow {
 // ============================================================================
 
 export type AggregationMethod =
-  | 'sum'
-  | 'average'
-  | 'weighted_average'
-  | 'first'
-  | 'last'
-  | 'calculated'
+  'sum' | 'average' | 'weighted_average' | 'first' | 'last' | 'calculated'
 
 export interface MappingStructure {
   identifier: string
