@@ -37,10 +37,6 @@ ENV NODE_ENV=production
 ARG CACHE_DATE
 RUN echo "os-refresh ${CACHE_DATE}" && apk upgrade --no-cache && apk add --no-cache git
 
-# Upgrade the bundled npm CLI to clear CVEs in npm's vendored deps
-# (picomatch, brace-expansion, tar, minimatch) — this is the stage the prod image scan inspects
-RUN npm install -g npm@latest
-
 # Create non-root user before copying files (enables --chown)
 RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
 
@@ -49,7 +45,12 @@ RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
 # so devDependencies (jsdom, vitest, eslint, ...) stay out of the scanned
 # runtime image and don't drag in their CVEs (e.g. jsdom's transitive undici).
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+# npm is needed only to install the runtime node_modules — remove it afterwards.
+# The entrypoint starts `next` directly, and npm's vendored deps (brace-expansion,
+# tar) carry known CVEs faster than npm ships fixes; deleting the CLI keeps them
+# out of the scanned image entirely.
+RUN npm ci --omit=dev && \
+  rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
 # Copy built app from builder with proper ownership
 COPY --from=builder --chown=appuser:appgroup /app/.next ./.next
