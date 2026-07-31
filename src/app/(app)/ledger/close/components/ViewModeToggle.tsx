@@ -20,12 +20,7 @@ import {
  * decision settles.
  */
 export type ViewMode =
-  | 'rendered'
-  | 'chart'
-  | 'facts'
-  | 'elements'
-  | 'validation'
-  | 'rules'
+  'rendered' | 'chart' | 'facts' | 'elements' | 'validation' | 'rules'
 
 interface ViewModeToggleProps {
   viewMode: ViewMode
