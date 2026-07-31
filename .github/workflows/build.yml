@@ -175,7 +175,7 @@ jobs:
         if: steps.resolve.outputs.needs_build == 'true'
         uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: '24'
 
       - name: Install dependencies and build Next.js
         if: steps.resolve.outputs.needs_build == 'true'
@@ -439,7 +439,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: '24'
 
       - name: Install dependencies and build Next.js with placeholders
         env:
