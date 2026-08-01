@@ -51,7 +51,7 @@
     "react-dom": "^19",
     "react-icons": "^5",
     "react-markdown": "^10",
-    "react-plaid-link": "^4",
+    "react-plaid-link": "^5",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3"
   },
