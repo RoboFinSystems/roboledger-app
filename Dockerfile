@@ -49,8 +49,12 @@ COPY package.json package-lock.json ./
 # The entrypoint starts `next` directly, and npm's vendored deps (brace-expansion,
 # tar) carry known CVEs faster than npm ships fixes; deleting the CLI keeps them
 # out of the scanned image entirely.
+# Nested lockfiles shipped inside package tarballs (demo/playground dirs) are
+# never read at runtime, but container scanners parse them as installed
+# dependencies and flag phantom CVEs.
 RUN npm ci --omit=dev && \
-  rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
+  rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx && \
+  find node_modules -mindepth 2 -name package-lock.json -delete
 
 # Copy built app from builder with proper ownership
 COPY --from=builder --chown=appuser:appgroup /app/.next ./.next
