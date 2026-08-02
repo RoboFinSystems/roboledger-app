@@ -41,7 +41,7 @@
   "dependencies": {
     "@aws-sdk/client-sns": "^3.1059.0",
     "@robosystems/client": "^0.6.0",
-    "@robosystems/core": "^0.5.5",
+    "@robosystems/core": "^0.5.6",
     "@robosystems/report-components": "^0.3.1",
     "flowbite": "^3.1",
     "flowbite-react": "^0.12.5",
