@@ -1,4 +1,5 @@
 version: 2
+
 updates:
   # npm — package.json and package-lock.json dependencies
   - package-ecosystem: 'npm'
@@ -7,6 +8,35 @@ updates:
       interval: 'monthly'
     labels:
       - 'dependencies'
+    # Routine minor/patch churn arrives as two PRs instead of a dozen.
+    # Majors are deliberately left ungrouped: they need individual triage,
+    # and grouping them would force an all-or-nothing call on unrelated bumps.
+    groups:
+      npm-production:
+        dependency-type: 'production'
+        update-types:
+          - 'minor'
+          - 'patch'
+      npm-development:
+        dependency-type: 'development'
+        update-types:
+          - 'minor'
+          - 'patch'
+    ignore:
+      # Blocked upstream, not by us: eslint-plugin-jsx-a11y (6.10.2, latest)
+      # peers eslint "^3 || ... || ^9" and eslint-plugin-react (7.37.5) caps at
+      # ^9.7, so eslint 10 fails `npm install` with ERESOLVE and can never go
+      # green. Drop this entry once either plugin ships ESLint 10 peer support.
+      - dependency-name: 'eslint'
+        update-types:
+          - 'version-update:semver-major'
+      # Blocked upstream: @typescript-eslint/eslint-plugin (8.65.0, latest)
+      # peers typescript ">=4.8.4 <6.1.0". TypeScript 7 is also the native Go
+      # port, so it is a migration to schedule rather than a bump to take.
+      # Drop this entry once typescript-eslint v9 supports the 7.x line.
+      - dependency-name: 'typescript'
+        update-types:
+          - 'version-update:semver-major'
 
   # GitHub Actions — pinned action versions
   - package-ecosystem: 'github-actions'
@@ -15,3 +45,13 @@ updates:
       interval: 'monthly'
     labels:
       - 'dependencies'
+    # Same split: routine SHA re-pins batch into one PR, majors stay separate
+    # so a wanted major (setup-node v7) is not tied to an unwanted one
+    # (setup-uv v9).
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
