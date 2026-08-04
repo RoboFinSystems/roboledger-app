@@ -167,6 +167,7 @@ a long time after the route was deleted; don't reintroduce a second list.)
 ## Deployment
 
 - Deployed on AWS App Runner behind CloudFront
+- **Release notes**: `tag-release.yml` auto-generates the changelog from changes since the last tag (via the Claude API). For milestone releases, commit curated notes to `.github/release-notes/v<version>.md` _before_ dispatching `create-release.yml` — when that file exists at the tagged ref it replaces the generated changelog (and the stats section is skipped)
 - Environment variables needed:
   - `NEXT_PUBLIC_ROBOSYSTEMS_API_URL` - RoboSystems API endpoint
   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` - CAPTCHA configuration

@@ -62,6 +62,25 @@ jobs:
             echo "Tag v${VERSION} does not exist yet"
           fi
 
+      - name: Check for curated release notes
+        if: steps.check-tag.outputs.tag_exists == 'false'
+        id: curated-notes
+        env:
+          VERSION: ${{ steps.get-version.outputs.version }}
+        run: |
+          # Milestone releases ship hand-written notes committed at
+          # .github/release-notes/v<version>.md; when present they replace
+          # the generated delta changelog below.
+          NOTES_FILE=".github/release-notes/v${VERSION}.md"
+          if [ -f "$NOTES_FILE" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "path=$NOTES_FILE" >> $GITHUB_OUTPUT
+            echo "📝 Curated release notes found: $NOTES_FILE"
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "No curated notes at $NOTES_FILE — generating changelog from changes since last tag"
+          fi
+
       - name: Analyze changes since last release
         if: steps.check-tag.outputs.tag_exists == 'false'
         id: analyze-changes
@@ -134,7 +153,7 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: Generate changelog with Claude
-        if: steps.check-tag.outputs.tag_exists == 'false'
+        if: steps.check-tag.outputs.tag_exists == 'false' && steps.curated-notes.outputs.found != 'true'
         id: generate-changelog
         # SECURITY (H2): pass all git-derived, attacker-influenceable values
         # (commit messages, changed filenames, PR refs) via env instead of
@@ -203,7 +222,7 @@ jobs:
           echo "✅ Changelog prompt created"
 
       - name: Call Claude API for changelog
-        if: steps.check-tag.outputs.tag_exists == 'false'
+        if: steps.check-tag.outputs.tag_exists == 'false' && steps.curated-notes.outputs.found != 'true'
         id: claude-changelog
         run: |
           # Call Claude API with the analysis prompt
@@ -258,6 +277,65 @@ jobs:
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
+      - name: Compose release body
+        if: steps.check-tag.outputs.tag_exists == 'false'
+        # SECURITY (H2): changelog content (generated or curated) is untrusted
+        # relative to the shell — emit it via printf/cat from env and files,
+        # never by splicing ${{ ... }} into the script.
+        env:
+          VERSION: ${{ steps.get-version.outputs.version }}
+          CURATED_FOUND: ${{ steps.curated-notes.outputs.found }}
+          CURATED_PATH: ${{ steps.curated-notes.outputs.path }}
+          CHANGELOG: ${{ steps.claude-changelog.outputs.changelog }}
+          LAST_TAG: ${{ steps.analyze-changes.outputs.last_tag }}
+          COMMITS_COUNT: ${{ steps.analyze-changes.outputs.commits_count }}
+          FILES_CHANGED: ${{ steps.analyze-changes.outputs.files_changed }}
+          COMPONENTS_CHANGED: ${{ steps.analyze-changes.outputs.components_changed }}
+          PAGES_CHANGED: ${{ steps.analyze-changes.outputs.pages_changed }}
+          STYLES_CHANGED: ${{ steps.analyze-changes.outputs.styles_changed }}
+          ADDITIONS: ${{ steps.analyze-changes.outputs.additions }}
+          DELETIONS: ${{ steps.analyze-changes.outputs.deletions }}
+        run: |
+          if [ "$CURATED_FOUND" = "true" ]; then
+            cp "$CURATED_PATH" /tmp/release_changelog.md
+          else
+            printf '%s\n' "$CHANGELOG" > /tmp/release_changelog.md
+          fi
+
+          {
+            echo "# RoboLedger App v${VERSION}"
+            echo ""
+            cat /tmp/release_changelog.md
+            echo ""
+            echo "---"
+            echo ""
+            if [ "$CURATED_FOUND" != "true" ]; then
+              echo "## 📊 Release Statistics"
+              echo ""
+              echo "- **Commits:** ${COMMITS_COUNT}"
+              echo "- **Files Changed:** ${FILES_CHANGED}"
+              echo "- **Components Updated:** ${COMPONENTS_CHANGED}"
+              echo "- **Pages Updated:** ${PAGES_CHANGED}"
+              echo "- **Styles Updated:** ${STYLES_CHANGED}"
+              echo "- **Lines Added:** ${ADDITIONS}"
+              echo "- **Lines Deleted:** ${DELETIONS}"
+              echo "- **Previous Release:** ${LAST_TAG}"
+              echo ""
+            fi
+            echo "## 🔗 Links"
+            echo ""
+            echo "- **Live App:** [roboledger.ai](https://roboledger.ai)"
+            echo "- **Full Changelog:** [${LAST_TAG}...v${VERSION}](https://github.com/${{ github.repository }}/compare/${LAST_TAG}...v${VERSION})"
+            echo "- **All Releases:** [View all releases](https://github.com/${{ github.repository }}/releases)"
+            if [ "$CURATED_FOUND" != "true" ]; then
+              echo ""
+              echo "---"
+              echo "🤖 Generated with [Claude Code](https://claude.ai/code)"
+            fi
+          } > /tmp/release_body.md
+
+          echo "✅ Release body composed ($([ "$CURATED_FOUND" = "true" ] && echo "curated notes" || echo "generated changelog"))"
+
       - name: Create Release Tag
         if: steps.check-tag.outputs.tag_exists == 'false'
         env:
@@ -274,32 +352,7 @@ jobs:
         with:
           tag_name: v${{ steps.get-version.outputs.version }}
           name: Release v${{ steps.get-version.outputs.version }}
-          body: |
-            # RoboLedger App v${{ steps.get-version.outputs.version }}
-
-            ${{ steps.claude-changelog.outputs.changelog }}
-
-            ---
-
-            ## 📊 Release Statistics
-
-            - **Commits:** ${{ steps.analyze-changes.outputs.commits_count }}
-            - **Files Changed:** ${{ steps.analyze-changes.outputs.files_changed }}
-            - **Components Updated:** ${{ steps.analyze-changes.outputs.components_changed }}
-            - **Pages Updated:** ${{ steps.analyze-changes.outputs.pages_changed }}
-            - **Styles Updated:** ${{ steps.analyze-changes.outputs.styles_changed }}
-            - **Lines Added:** ${{ steps.analyze-changes.outputs.additions }}
-            - **Lines Deleted:** ${{ steps.analyze-changes.outputs.deletions }}
-            - **Previous Release:** ${{ steps.analyze-changes.outputs.last_tag }}
-
-            ## 🔗 Links
-
-            - **Live App:** [roboledger.ai](https://roboledger.ai)
-            - **Full Changelog:** [${{ steps.analyze-changes.outputs.last_tag }}...v${{ steps.get-version.outputs.version }}](https://github.com/${{ github.repository }}/compare/${{ steps.analyze-changes.outputs.last_tag }}...v${{ steps.get-version.outputs.version }})
-            - **All Releases:** [View all releases](https://github.com/${{ github.repository }}/releases)
-
-            ---
-            🤖 Generated with [Claude Code](https://claude.ai/code)
+          body_path: /tmp/release_body.md
           draft: false
           prerelease: false
         env:
@@ -308,11 +361,10 @@ jobs:
 
       - name: Create release summary
         if: steps.check-tag.outputs.tag_exists == 'false'
-        # SECURITY (H2): the Claude-generated changelog is influenced by the
-        # untrusted prompt inputs above; pass it via env and echo "$CHANGELOG"
-        # rather than interpolating ${{ ... }} into the shell.
+        # SECURITY (H2): the changelog (generated or curated) is untrusted;
+        # it is read from the file written by the compose step rather than
+        # interpolated with ${{ ... }} into the shell.
         env:
-          CHANGELOG: ${{ steps.claude-changelog.outputs.changelog }}
           VERSION: ${{ steps.get-version.outputs.version }}
         run: |
 
@@ -329,8 +381,8 @@ jobs:
           echo "- **Styles Updated:** ${{ steps.analyze-changes.outputs.styles_changed }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Previous Release:** ${{ steps.analyze-changes.outputs.last_tag }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🤖 Claude-Generated Changelog" >> $GITHUB_STEP_SUMMARY
-          echo "$CHANGELOG" >> $GITHUB_STEP_SUMMARY
+          echo "### 📝 Changelog" >> $GITHUB_STEP_SUMMARY
+          cat /tmp/release_changelog.md >> $GITHUB_STEP_SUMMARY
 
       - name: Set outputs
         id: set-outputs
