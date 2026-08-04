@@ -73,7 +73,6 @@ npm run format:check # Check code formatting
 | `/console`                                | MCP-backed                                                          | shipped                                                                                     |
 | `/search`                                 | searchDocuments, listDocuments, getDocumentSection                  | shipped (full-text + semantic document search via core SearchContent)                       |
 | `/settings`                               | auth client                                                         | shipped                                                                                     |
-| `/plaid-connect`                          | Plaid Link                                                          | scaffold only — not built/specced; medium-term (distinct product surface from the QB layer) |
 | `/graphs/new`                             | graph creation                                                      | shipped                                                                                     |
 
 ## Frontend Conventions
@@ -132,7 +131,7 @@ a long time after the route was deleted; don't reintroduce a second list.)
 
 - QuickBooks: OAuth 2.0 driven through the `@robosystems/core` SDK (`SDK.initOAuth` / `SDK.oauthCallback`) for accounting data sync
 - SEC XBRL: CIK-based filing connections with US-GAAP taxonomy data
-- Plaid: **not built / not specced** — only scaffolding exists (`plaid` + `react-plaid-link` deps, a `/plaid-connect` route, and landing-page copy). Likely medium-term. It's a distinct product surface (direct bank feeds), not just another connection on top of the QuickBooks layer, so it isn't advertised in the README and isn't a shipped integration.
+- Plaid: **not built / not specced** — the `/plaid-connect` scaffold route and `react-plaid-link` dep were removed pre-1.0.0; only the landing page's "Coming soon" card remains. Likely medium-term. It's a distinct product surface (direct bank feeds), not just another connection on top of the QuickBooks layer, so it isn't advertised in the README and isn't a shipped integration. Don't reintroduce the route from old specs — when Plaid actually lands, it also needs Plaid domains added to the CSP in `src/proxy.ts`.
 
 ## Key Development Patterns
 

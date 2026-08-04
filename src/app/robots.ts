@@ -20,7 +20,6 @@ export default function robots(): MetadataRoute.Robots {
         '/ledger/',
         '/library/',
         '/plan/',
-        '/plaid-connect/',
         '/reports/',
         '/search/',
         '/settings/',
