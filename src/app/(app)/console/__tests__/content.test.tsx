@@ -37,7 +37,9 @@ describe('RoboLedger ConsolePageContent', () => {
     expect(branding.title).toBe('RoboLedger Console')
     expect(branding.consoleName).toBe('RoboLedger Console')
     expect(branding.mcp.serverName).toBe('roboledger')
-    expect(branding.mcp.packageName).toBe('@robosystems/mcp')
+    // The connector name is built from serverName + graph id; core's /mcp
+    // serves the remote URL, so there is no npm package to name.
+    expect(branding.mcp.packageName).toBeUndefined()
     // Dual-extension graphs should read as ledger graphs in this app.
     expect(branding.preferredKind).toBe('roboledger')
   })
