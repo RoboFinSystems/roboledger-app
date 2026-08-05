@@ -219,13 +219,13 @@ const ReportViewerContent: FC = function () {
     try {
       setIsSharing(true)
       setShareResult(null)
-      const ack = await clients.reports.shareReport(
+      const share = await clients.reports.shareReport(
         graphId,
         reportId,
         selectedListId
       )
 
-      const shareResults = ack.result?.results ?? []
+      const shareResults = share.results
       const succeeded = shareResults.filter((r) => r.status === 'shared').length
       const failed = shareResults.filter((r) => r.status === 'error')
       let msg = `Shared to ${succeeded} recipient${succeeded !== 1 ? 's' : ''} successfully.`
