@@ -20,7 +20,6 @@ const ROBOLEDGER_BRANDING: ConsoleBranding = {
   closingMessage: 'How can I help you analyze your financial data today?',
   mcp: {
     serverName: 'roboledger',
-    packageName: '@robosystems/mcp',
     contextIdFallback: 'your_graph_id',
   },
   // A graph carrying both entity extensions reads as a ledger graph here.
