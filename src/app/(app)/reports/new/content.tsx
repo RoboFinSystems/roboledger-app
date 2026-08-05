@@ -238,7 +238,7 @@ const ReportBuilderContent: FC = function () {
       setIsGenerating(true)
       setError(null)
 
-      const ack = await clients.reports.createReport(currentGraph.graphId, {
+      const report = await clients.reports.createReport(currentGraph.graphId, {
         name: reportName || `Report ${periodStart} to ${periodEnd}`,
         mappingId: selectedMappingId,
         periodStart,
@@ -247,13 +247,10 @@ const ReportBuilderContent: FC = function () {
         periods,
       })
 
-      // `createReport` runs synchronously — the envelope's `result` is
-      // the freshly-created `ReportResponse` (typed since SDK 0.3.20).
-      const newReportId = ack.result?.id
-      if (!newReportId) {
-        throw new Error('Report creation did not return an id.')
-      }
-      router.push(`/reports/${newReportId}?graph=${currentGraph.graphId}`)
+      // `createReport` is synchronous — the SDK returns the created
+      // `ReportResponse` directly (envelope unwrapped in SDK 1.0; the
+      // SDK itself rejects if the backend returns no result).
+      router.push(`/reports/${report.id}?graph=${currentGraph.graphId}`)
     } catch (err) {
       console.error('Report generation failed:', err)
       setError('Failed to generate report. Please try again.')
