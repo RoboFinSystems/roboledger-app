@@ -49,13 +49,15 @@ This is the whole point — ground the description in what actually happened:
 
 - **Type** — derive from the branch prefix (`feature/` → feat, `bugfix/`/`fix/` → fix, `hotfix/` → fix, `chore/` → chore, `refactor/` → refactor, `release/` → release). Default to `feat` if unprefixed.
 - **Title** — concise (~50–72 chars), conventional-commit style, e.g. `feat(library): order CoA hierarchy by AccountType`. Match the style in `git log`.
-- **Body** — markdown. This repo has **no `.github/PULL_REQUEST_TEMPLATE.md`**, so nothing prefills and nothing is enforced; the convention comes from recent merged PRs (`gh pr list --state merged --limit 10 --json title,body`). Follow it:
+- **Body** — markdown. **Match the headings in `.github/PULL_REQUEST_TEMPLATE.md`**, because `--body-file` bypasses template prefill entirely and a hand-written body silently drops whatever sections it omits:
   - **Summary** — 1–3 sentences: what this PR does and why.
   - **Changes** — bullets grouped by file or route, describing real edits. Name the user-visible surface (route, page, component) — that's what a reader is looking for in a frontend PR. If the change alters a number a bookkeeper reads — a statement line, a close calculation, a chart-of-accounts ordering — say so explicitly and precisely; users reconcile against these.
-  - **Test plan** — state truthfully what was run. The repo gate is `npm run test:all` (vitest → prettier → eslint `--fix` → tsc → cfn-lint); the individual layers (`npm run test`, `typecheck`, `lint`, `format:check`, `cf-lint`) can be run standalone, and `npm run build` catches build-only failures the gate does not. If you ran any of these this session, say which and give the result. If nothing was run, say "Not run" — never claim passing tests that weren't executed.
-  - **Notes / Follow-ups** — optional: deferred items, risks, related issues/specs. `Closes #123` here if it closes one.
+  - **Deploy Notes** — "None" if it's a plain code change, and say so explicitly rather than omitting the section. This is where the cross-repo dependencies below go.
+  - **Testing** — state truthfully what was run. The repo gate is `npm run test:all` (vitest → prettier → eslint `--fix` → tsc → cfn-lint); the individual layers (`npm run test`, `typecheck`, `lint`, `format:check`, `cf-lint`) can be run standalone, and `npm run build` catches build-only failures the gate does not. If you ran any of these this session, say which and give the result. If nothing was run, say "Not run" — never claim passing tests that weren't executed.
 
-- **Cross-repo dependencies.** Call these out explicitly — they change how the PR gets deployed, not just how it reads:
+  The template has no Related Issues section — put `Closes #123` / `Fixes #456` as the last line of the Summary. GitHub links it from anywhere in the body.
+
+- **Cross-repo dependencies — these go under Deploy Notes.** Call them out explicitly; they change how the PR gets deployed, not just how it reads:
   - **Backend API.** If the change consumes API behavior that only exists in a newer service version — the extensions GraphQL surface or the roboledger operations endpoints — say so and name the deploy order (API first, then app). Never describe a capability the deployed API doesn't yet serve.
   - **`@robosystems/core` / `@robosystems/report-components`.** Shared components live in their own repos; a version bump here is an adoption, and if it changes call sites, say which. A `report-components` bump changes how statements render and is user-visible — describe the visual change, not just the version. If the PR patches around a package bug locally, note it as temporary and link the upstream issue.
   - **`@robosystems/client`.** Post-1.0 semver; a major bump lands as real code changes here, not a lockfile refresh. Distinguish the two.
