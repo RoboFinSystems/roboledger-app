@@ -1,8 +1,17 @@
+---
+description: Open a pull request for the current branch, writing the description from the work actually done.
+argument-hint: '[target-branch] [review]'
+---
+
 Create a GitHub pull request for the current branch, writing the title and description from the actual work done in this session — not reconstructed from the diff.
 
 ## Why this command exists
 
 The previous flow outsourced PR-description authoring to a GitHub Action that only saw the diff and commit messages. It could not know _why_ the changes were made, so it frequently described things that weren't true. Those inaccurate descriptions then fed `@claude` reviews, compounding the bad information. This command fixes that at the root: **you author the description here, where the full context of what was done and why is available.**
+
+This is a Next.js 16 frontend (React 19, Tailwind v4, Flowbite) that is a **client of the RoboSystems API** and consumes shared UI from the `@robosystems/core` and `@robosystems/report-components` npm packages. Ground every description in the code that actually changed in _this_ repo.
+
+**This repository is public.** The PR title and body are world-readable the moment they're pushed — routinely _before_ the change is deployed, since deploys are manual `workflow_dispatch` runs. Treat the description as a publication, not a work note.
 
 ## Instructions
 
@@ -16,11 +25,12 @@ CURRENT=$(git branch --show-current)
 TARGET=${1:-main}            # override target via the first argument
 ```
 
-- **Never PR from the default branch.** If `CURRENT` is `main` (or `master`/`staging`), stop and tell the user to switch to a feature branch first.
+- **Never PR from the default branch.** If `CURRENT` is `main` (or `master`/`staging`), stop and tell the user to switch to a feature branch first. New branches are created only via `npm run feature:create` (per `CLAUDE.local.md`) — never by hand.
 - **Source ≠ target.** If `CURRENT == TARGET`, stop.
-- **Uncommitted changes.** Run `git status --porcelain`. If there are uncommitted/staged changes, surface them and ask whether to commit them (respecting the repo's commit rules — never on `main`, no `git add -A`) or proceed without them. The PR description must reflect committed state.
+- **Uncommitted changes.** Run `git status --porcelain`. If there are uncommitted/staged changes, surface them and ask whether to commit them (respecting the repo's commit rules — never on `main`, stage files by name, no `git add -A`) or proceed without them. The PR description must reflect committed state.
 - **Existing PR.** Check `gh pr list --head "$CURRENT" --base "$TARGET" --json url,number`. If a PR already exists, do **not** create a duplicate — offer to update its title/body with `gh pr edit` instead.
-- **Push the branch.** `gh pr create` requires the branch on the remote. Ensure it's pushed: `git push -u origin "$CURRENT"` (the user invoking `/create-pr` is the explicit, in-the-moment request that authorizes pushing _this feature branch_ — this is the one push allowed without a separate ask; never push `main`).
+- **Security fixes — check deployment first.** A security-fix commit discloses the bug through its diff the moment it's pushed, and this app deploys manually, so the window can be long. If this branch carries one, check whether the vulnerable code is still live (`git show <prod-tag>:<file>` against the fix) and tell the user, so they can sequence the deploy with — or ahead of — the public push.
+- **Push the branch.** `gh pr create` requires the branch on the remote. Ensure it's pushed: `git push -u origin "$CURRENT"` (the user invoking `/create-pr` is the explicit, in-the-moment request that authorizes pushing _this feature branch_ — never push `main` or `release/*`; the `.githooks/pre-push` hook blocks those anyway).
 
 ### 2. Gather the real change context
 
@@ -37,13 +47,23 @@ This is the whole point — ground the description in what actually happened:
 
 ### 3. Compose the PR
 
-- **Type** — derive from the branch prefix (`feature/` → feat, `bugfix/`/`fix/` → fix, `hotfix/` → fix, `chore/` → chore, `refactor/` → refactor). Default to `feat` if unprefixed.
+- **Type** — derive from the branch prefix (`feature/` → feat, `bugfix/`/`fix/` → fix, `hotfix/` → fix, `chore/` → chore, `refactor/` → refactor, `release/` → release). Default to `feat` if unprefixed.
 - **Title** — concise (~50–72 chars), conventional-commit style, e.g. `feat(library): order CoA hierarchy by AccountType`. Match the style in `git log`.
-- **Body** — markdown, only sections that apply:
+- **Body** — markdown. This repo has **no `.github/PULL_REQUEST_TEMPLATE.md`**, so nothing prefills and nothing is enforced; the convention comes from recent merged PRs (`gh pr list --state merged --limit 10 --json title,body`). Follow it:
   - **Summary** — 1–3 sentences: what this PR does and why.
-  - **Changes** — bullets grouped by area/file, describing real edits.
-  - **Testing** — state truthfully what was run. If `npm run test:all` (or a subset) was run this session, say so and give the result. If nothing was run, say "Not run" — never claim passing tests that weren't executed.
-  - **Notes / Follow-ups** — optional: deferred items, risks, related issues/specs.
+  - **Changes** — bullets grouped by file or route, describing real edits. Name the user-visible surface (route, page, component) — that's what a reader is looking for in a frontend PR. If the change alters a number a bookkeeper reads — a statement line, a close calculation, a chart-of-accounts ordering — say so explicitly and precisely; users reconcile against these.
+  - **Test plan** — state truthfully what was run. The repo gate is `npm run test:all` (vitest → prettier → eslint `--fix` → tsc → cfn-lint); the individual layers (`npm run test`, `typecheck`, `lint`, `format:check`, `cf-lint`) can be run standalone, and `npm run build` catches build-only failures the gate does not. If you ran any of these this session, say which and give the result. If nothing was run, say "Not run" — never claim passing tests that weren't executed.
+  - **Notes / Follow-ups** — optional: deferred items, risks, related issues/specs. `Closes #123` here if it closes one.
+
+- **Cross-repo dependencies.** Call these out explicitly — they change how the PR gets deployed, not just how it reads:
+  - **Backend API.** If the change consumes API behavior that only exists in a newer service version — the extensions GraphQL surface or the roboledger operations endpoints — say so and name the deploy order (API first, then app). Never describe a capability the deployed API doesn't yet serve.
+  - **`@robosystems/core` / `@robosystems/report-components`.** Shared components live in their own repos; a version bump here is an adoption, and if it changes call sites, say which. A `report-components` bump changes how statements render and is user-visible — describe the visual change, not just the version. If the PR patches around a package bug locally, note it as temporary and link the upstream issue.
+  - **`@robosystems/client`.** Post-1.0 semver; a major bump lands as real code changes here, not a lockfile refresh. Distinguish the two.
+  - **CloudFormation.** Edits to `cloudformation/template.yaml` or `cloudformation/s3.yaml` mean a stack update rides the deploy — note which stack.
+  - **Config surface.** New `NEXT_PUBLIC_*` values are baked at build time from GitHub Actions variables, so a new one needs `npm run setup:gha` (or a bootstrap re-run) **before** the deploy, not after.
+
+- **Security-fix disclosure.** If the PR fixes a security issue, the prose is often _more_ actionable than the diff — keep it terse and non-actionable. Describe the area hardened, never the mechanism: "harden input validation on the contact endpoint", not the how. **No** exploit mechanics, attack scenarios, affected-route enumerations, payloads/regexes, or "previously protected only by X" tells. Detailed root cause and any PoC stay in private notes, referenced by filename only. For coordinated disclosure use a private GitHub Security Advisory, never a public issue.
+
 - **Attribution** — attribute to the user only. Do **not** add a "🤖 Generated with Claude Code" footer or a `Co-Authored-By: Claude` trailer (per `CLAUDE.local.md`). Include such a line only if the user explicitly asks.
 
 ### 4. Create the PR
@@ -68,7 +88,7 @@ Only if the user explicitly asks (e.g. passes `review` / `--review` in arguments
 gh pr comment <number> --body "@claude please review this PR"
 ```
 
-Otherwise leave it off — the description is now accurate, and the user can run `/pr-review` locally (full context) or `@claude` manually when ready. Do not request review by default.
+`claude.yml` only fires on an `@claude` mention from an `OWNER`/`MEMBER`/`COLLABORATOR`, so nothing happens automatically. Leave it off by default — the description is now accurate, and the user can run `/pr-review` locally (full context) or mention `@claude` when ready.
 
 ## Output
 
@@ -78,6 +98,7 @@ After creating the PR, report:
 2. A one-line summary of the title.
 3. Target ← source branches.
 4. Whether a Claude review was requested.
+5. Any cross-repo or deploy-ordering dependency you flagged in the body.
 
 ## Arguments
 
