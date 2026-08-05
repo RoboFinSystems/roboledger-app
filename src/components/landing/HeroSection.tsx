@@ -117,7 +117,7 @@ export default function HeroSection() {
           <div className="mx-auto mt-14 max-w-4xl md:mt-20">
             <ProductShot
               alt="Claude closing the books with a human in the loop — calling RoboLedger tools over MCP"
-              caption="Claude · @robosystems/mcp › roboledger"
+              caption="Claude · MCP › roboledger"
               aspect="aspect-[4/3]"
             >
               <CoworkDemo />

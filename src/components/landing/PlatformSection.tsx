@@ -220,7 +220,7 @@ export default function PlatformSection() {
                     <div className="font-semibold text-white">MCP Tools</div>
                   </div>
                   <p className="text-xs text-gray-400">
-                    Month-end close in Claude Desktop via @robosystems/mcp
+                    Month-end close in Claude — connect your ledger's MCP URL
                   </p>
                 </div>
 

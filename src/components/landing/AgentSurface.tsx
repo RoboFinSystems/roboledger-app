@@ -122,19 +122,20 @@ export default function AgentSurface() {
                 </span>
               </div>
               <p className="text-sm leading-relaxed text-gray-400">
-                Install the MCP server and Claude Desktop can read your ledger
+                Paste your ledger's URL into Claude and it can read your books
                 and drive these tools directly — with you approving each write.
-                The same tools back the in-app AI Console, so nothing is locked
-                behind the desktop app.
+                No install. The same tools back the in-app AI Console, so
+                nothing is locked behind a desktop app.
               </p>
             </div>
             <div className="w-full shrink-0 lg:w-auto">
               <div className="rounded-lg border border-gray-800 bg-black px-4 py-3">
                 <div className="mb-1 text-[10px] tracking-wide text-gray-600 uppercase">
-                  Install
+                  Connect
                 </div>
                 <code className="font-mono text-xs break-all text-gray-300">
-                  npx -y @robosystems/mcp@latest
+                  https://api.robosystems.ai/v1/graphs/
+                  <span className="text-gray-500">{'{your-graph-id}'}</span>/mcp
                 </code>
               </div>
             </div>
