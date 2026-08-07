@@ -69,6 +69,52 @@ const BLOCKER_MESSAGES: Record<string, string> = {
     'Some scheduled entries were promoted but never drafted, so closing now would omit them. Re-run promotion with handler dispatch, or void the obligations.',
 }
 
+/**
+ * The obligation samples the API attaches to an actionable blocker.
+ *
+ * The blocker code says a close is held; the sample says by what. Without it
+ * a user reading "scheduled entries are still pending" has no way to find
+ * which schedules, and the close gate is a dead end rather than a next step.
+ * The API populates each sample only when its code is in `blockers`, and caps
+ * it at 5 — so the count is the real total and the list is a lead, not an
+ * inventory.
+ */
+function obligationDetailFor(
+  code: string,
+  calendar: LedgerFiscalCalendar
+): ReactNode {
+  const detail =
+    code === 'pending_obligations'
+      ? {
+          count: calendar.pendingObligationCount,
+          sample: calendar.pendingObligationSample,
+        }
+      : code === 'stranded_obligations'
+        ? {
+            count: calendar.strandedObligationCount,
+            sample: calendar.strandedObligationSample,
+          }
+        : null
+
+  if (!detail || detail.count === 0) return null
+
+  // Several obligations usually share one schedule — name each schedule once
+  // rather than repeating it per event.
+  const schedules = [
+    ...new Set(
+      detail.sample.map((o) => o.scheduleName ?? o.scheduleId ?? o.eventId)
+    ),
+  ]
+
+  return (
+    <div className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
+      {detail.count} affected
+      {schedules.length > 0 && <> — {schedules.join(', ')}</>}
+      {detail.count > detail.sample.length && <> and others</>}
+    </div>
+  )
+}
+
 interface PeriodClosePanelProps {
   graphId: string
   onEntryCreated?: () => void
@@ -752,7 +798,10 @@ const CalendarSummary: FC<CalendarSummaryProps> = ({ calendar, onRefresh }) => {
           </div>
           <ul className="list-disc space-y-1 pl-6 text-yellow-800 dark:text-yellow-200">
             {calendar.blockers.map((code) => (
-              <li key={code}>{BLOCKER_MESSAGES[code] ?? code}</li>
+              <li key={code}>
+                {BLOCKER_MESSAGES[code] ?? code}
+                {obligationDetailFor(code, calendar)}
+              </li>
             ))}
           </ul>
         </div>

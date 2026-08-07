@@ -231,3 +231,98 @@ describe('PeriodClosePanel — close success', () => {
     expect(screen.getByText(/Closed May 2026/)).toBeInTheDocument()
   })
 })
+
+describe('PeriodClosePanel — blockers name what is holding the close', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetPeriodCloseStatus.mockResolvedValue({
+      schedules: [],
+      totalDraft: 0,
+      totalPosted: 0,
+    })
+    mockListPeriodDrafts.mockResolvedValue({
+      draftCount: 0,
+      totalDebit: 0,
+      totalCredit: 0,
+      allBalanced: true,
+      qbPublishCount: 0,
+      localOnlyCount: 0,
+      drafts: [],
+    })
+  })
+
+  it('names the schedules behind a stranded-obligation blocker', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['stranded_obligations'],
+      strandedObligationCount: 2,
+      strandedObligationSample: [
+        {
+          eventId: 'evt_1',
+          scheduleId: 'str_prepaid',
+          scheduleName: 'Prepaid Insurance',
+          period: '2026-05',
+        },
+        {
+          eventId: 'evt_2',
+          scheduleId: 'str_prepaid',
+          scheduleName: 'Prepaid Insurance',
+          period: '2026-05',
+        },
+      ],
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    // The explanation, not the raw code.
+    expect(
+      await screen.findByText(/promoted but never drafted/)
+    ).toBeInTheDocument()
+    expect(screen.queryByText('stranded_obligations')).not.toBeInTheDocument()
+
+    // Two obligations, one schedule — named once, not per event.
+    expect(
+      screen.getByText(
+        (_, el) => el?.textContent === '2 affected — Prepaid Insurance'
+      )
+    ).toBeInTheDocument()
+  })
+
+  it('marks the sample as partial when the count exceeds it', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['pending_obligations'],
+      pendingObligationCount: 9,
+      pendingObligationSample: [
+        {
+          eventId: 'evt_1',
+          scheduleId: 'str_dep',
+          scheduleName: 'Depreciation',
+          period: '2026-05',
+        },
+      ],
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    // The API caps the sample at 5, so the count is the truth and the list
+    // is a lead — the copy must not read as a complete inventory.
+    expect(
+      await screen.findByText(
+        (_, el) => el?.textContent === '9 affected — Depreciation and others'
+      )
+    ).toBeInTheDocument()
+  })
+
+  it('adds no detail line for a blocker that carries none', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['sync_stale'],
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    expect(await screen.findByText(/hasn't synced through/)).toBeInTheDocument()
+    expect(screen.queryByText(/affected/)).not.toBeInTheDocument()
+  })
+})
