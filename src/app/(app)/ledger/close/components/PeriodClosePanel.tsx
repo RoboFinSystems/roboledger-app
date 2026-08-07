@@ -63,6 +63,10 @@ const BLOCKER_MESSAGES: Record<string, string> = {
     'QuickBooks hasn\'t synced through this period — run a sync before closing (or use "Close with stale sync").',
   calendar_not_initialized: 'Fiscal calendar not initialized for this graph.',
   period_already_closed: 'This period is already closed.',
+  pending_obligations:
+    'Scheduled entries for this period are still pending — promote them so their adjusting entries get drafted, then close.',
+  stranded_obligations:
+    'Some scheduled entries were promoted but never drafted, so closing now would omit them. Re-run promotion with handler dispatch, or void the obligations.',
 }
 
 interface PeriodClosePanelProps {
