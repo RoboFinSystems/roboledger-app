@@ -63,6 +63,68 @@ const BLOCKER_MESSAGES: Record<string, string> = {
     'QuickBooks hasn\'t synced through this period — run a sync before closing (or use "Close with stale sync").',
   calendar_not_initialized: 'Fiscal calendar not initialized for this graph.',
   period_already_closed: 'This period is already closed.',
+  pending_obligations:
+    'Scheduled entries for this period are still pending — promote them so their adjusting entries get drafted, then close.',
+  stranded_obligations:
+    'Some scheduled entries were promoted but never drafted, so closing now would omit them. Re-run promotion with handler dispatch, or void the obligations.',
+}
+
+/**
+ * The obligation samples the API attaches to an actionable blocker.
+ *
+ * The blocker code says a close is held; the sample says by what. Without it
+ * a user reading "scheduled entries are still pending" has no way to find
+ * which schedules, and the close gate is a dead end rather than a next step.
+ * The API populates each sample only when its code is in `blockers`, and caps
+ * it at 5 — so the count is the real total and the list is a lead, not an
+ * inventory.
+ */
+function obligationDetailFor(
+  code: string,
+  calendar: LedgerFiscalCalendar
+): ReactNode {
+  const detail =
+    code === 'pending_obligations'
+      ? {
+          count: calendar.pendingObligationCount,
+          sample: calendar.pendingObligationSample,
+        }
+      : code === 'stranded_obligations'
+        ? {
+            count: calendar.strandedObligationCount,
+            sample: calendar.strandedObligationSample,
+          }
+        : null
+
+  // Not an obligation blocker, but the same idea: say how far behind, not
+  // just that it is behind. Null when there's a connection that has never
+  // synced — "unknown" is different from "0 days".
+  if (code === 'sync_stale') {
+    return calendar.syncStaleDays === null ? null : (
+      <div className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
+        {calendar.syncStaleDays} day
+        {calendar.syncStaleDays === 1 ? '' : 's'} behind this period
+      </div>
+    )
+  }
+
+  if (!detail || detail.count === 0) return null
+
+  // Several obligations usually share one schedule — name each schedule once
+  // rather than repeating it per event.
+  const schedules = [
+    ...new Set(
+      detail.sample.map((o) => o.scheduleName ?? o.scheduleId ?? o.eventId)
+    ),
+  ]
+
+  return (
+    <div className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
+      {detail.count} affected
+      {schedules.length > 0 && <> — {schedules.join(', ')}</>}
+      {detail.count > detail.sample.length && <> and others</>}
+    </div>
+  )
 }
 
 interface PeriodClosePanelProps {
@@ -109,6 +171,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   const [isClosing, setIsClosing] = useState(false)
   const [isInitializing, setIsInitializing] = useState(false)
   const [allowStaleSync, setAllowStaleSync] = useState(false)
+  const [allowStrandedObligations, setAllowStrandedObligations] =
+    useState(false)
 
   // Reopen modal
   const [reopenTarget, setReopenTarget] = useState<string | null>(null)
@@ -121,6 +185,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   const [closeResult, setCloseResult] = useState<{
     period: string
     entriesPosted: number
+    entriesPublishedToQb: number
+    entriesPostedLocally: number
     ruleSummary: Record<string, number> | null
     statementsReady: boolean | null
   } | null>(null)
@@ -209,10 +275,11 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
 
   useEffect(() => {
     if (selectedPeriod) {
-      // Reset the stale-sync override when the user moves between periods.
-      // The override is intentionally opt-in per period so that enabling it
-      // for one close doesn't silently carry over to the next.
+      // Reset both close overrides when the user moves between periods.
+      // They are intentionally opt-in per period so that enabling one for
+      // a close doesn't silently carry over to the next.
       setAllowStaleSync(false)
+      setAllowStrandedObligations(false)
       loadCloseStatus()
       loadDrafts()
     } else {
@@ -274,6 +341,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       setError(null)
       const result = await clients.ledger.closePeriod(graphId, period, {
         allowStaleSync,
+        allowStrandedObligations,
       })
       setCalendar(result.fiscalCalendar)
       // Show what the close did — the close is the act that stamps the
@@ -282,6 +350,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       setCloseResult({
         period,
         entriesPosted: result.entriesPosted,
+        entriesPublishedToQb: result.entriesPublishedToQb,
+        entriesPostedLocally: result.entriesPostedLocally,
         ruleSummary: result.ruleSummary ?? null,
         statementsReady: null,
       })
@@ -318,7 +388,13 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     } finally {
       setIsClosing(false)
     }
-  }, [graphId, selectedPeriod, allowStaleSync, onEntryCreated])
+  }, [
+    graphId,
+    selectedPeriod,
+    allowStaleSync,
+    allowStrandedObligations,
+    onEntryCreated,
+  ])
 
   const openReopenModal = (period: string) => {
     setReopenTarget(period)
@@ -558,6 +634,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
           isClosing={isClosing}
           allowStaleSync={allowStaleSync}
           onToggleStaleSync={setAllowStaleSync}
+          allowStrandedObligations={allowStrandedObligations}
+          onToggleStrandedObligations={setAllowStrandedObligations}
           onClose={handleClosePeriod}
         />
       )}
@@ -620,6 +698,8 @@ interface CloseSuccessCardProps {
   result: {
     period: string
     entriesPosted: number
+    entriesPublishedToQb: number
+    entriesPostedLocally: number
     ruleSummary: Record<string, number> | null
     statementsReady: boolean | null
   }
@@ -647,6 +727,19 @@ const CloseSuccessCard: FC<CloseSuccessCardProps> = ({ result, onDismiss }) => {
             <span>
               {result.entriesPosted} draft
               {result.entriesPosted === 1 ? '' : 's'} posted
+              {/* Drafts leave the period by two different routes — published
+                  to QuickBooks, or posted locally — and which one carries a
+                  close is the difference between "it's in the books upstream"
+                  and "it's only in ours". Shown only when the split is
+                  informative: a close that took one route says nothing extra. */}
+              {result.entriesPublishedToQb > 0 &&
+                result.entriesPostedLocally > 0 && (
+                  <span className="text-green-700 dark:text-green-300">
+                    {' '}
+                    ({result.entriesPublishedToQb} to QuickBooks,{' '}
+                    {result.entriesPostedLocally} local)
+                  </span>
+                )}
             </span>
             {result.ruleSummary && (
               <span className="flex items-center gap-1.5">
@@ -748,7 +841,10 @@ const CalendarSummary: FC<CalendarSummaryProps> = ({ calendar, onRefresh }) => {
           </div>
           <ul className="list-disc space-y-1 pl-6 text-yellow-800 dark:text-yellow-200">
             {calendar.blockers.map((code) => (
-              <li key={code}>{BLOCKER_MESSAGES[code] ?? code}</li>
+              <li key={code}>
+                {BLOCKER_MESSAGES[code] ?? code}
+                {obligationDetailFor(code, calendar)}
+              </li>
             ))}
           </ul>
         </div>
@@ -893,6 +989,8 @@ interface ClosePeriodActionProps {
   isClosing: boolean
   allowStaleSync: boolean
   onToggleStaleSync: (value: boolean) => void
+  allowStrandedObligations: boolean
+  onToggleStrandedObligations: (value: boolean) => void
   onClose: () => void
 }
 
@@ -903,13 +1001,22 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
   isClosing,
   allowStaleSync,
   onToggleStaleSync,
+  allowStrandedObligations,
+  onToggleStrandedObligations,
   onClose,
 }) => {
   const blocked = !calendar.closeableNow
-  const syncStaleOnly =
-    blocked &&
-    calendar.blockers.length === 1 &&
-    calendar.blockers[0] === 'sync_stale'
+  // An override is offered only when its blocker is the *sole* one holding
+  // the close. That keeps a single deliberate exception from doubling as a
+  // way to bypass a pile of unrelated problems, and it's why each override
+  // has to check the whole blocker list rather than just membership.
+  const onlyBlocker = (code: string) =>
+    blocked && calendar.blockers.length === 1 && calendar.blockers[0] === code
+  const syncStaleOnly = onlyBlocker('sync_stale')
+  const strandedOnly = onlyBlocker('stranded_obligations')
+  const overridden =
+    (syncStaleOnly && allowStaleSync) ||
+    (strandedOnly && allowStrandedObligations)
   const hasUnbalancedDrafts = drafts ? !drafts.allBalanced : false
 
   return (
@@ -937,12 +1044,28 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
               Allow stale sync
             </label>
           )}
+          {/* Deliberately blunter than the stale-sync label. Stale sync risks
+              closing without the latest data; this closes while knowingly
+              leaving adjusting entries out of the period, which the books
+              then carry permanently. The API records the override in the
+              close audit note. Drafting the entries — re-running promotion
+              with handler dispatch — is the better path and is why the
+              blocker text names it first. */}
+          {strandedOnly && (
+            <label className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
+              <input
+                type="checkbox"
+                checked={allowStrandedObligations}
+                onChange={(e) => onToggleStrandedObligations(e.target.checked)}
+                className="rounded border-amber-400"
+              />
+              Close without the undrafted entries
+            </label>
+          )}
           <Button
             color="primary"
             disabled={
-              isClosing ||
-              hasUnbalancedDrafts ||
-              (blocked && !(syncStaleOnly && allowStaleSync))
+              isClosing || hasUnbalancedDrafts || (blocked && !overridden)
             }
             onClick={onClose}
           >

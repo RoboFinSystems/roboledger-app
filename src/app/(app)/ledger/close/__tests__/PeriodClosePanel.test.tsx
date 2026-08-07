@@ -126,6 +126,8 @@ const CALENDAR_AFTER = {
 const CLOSE_RESULT = {
   period: '2026-05',
   entriesPosted: 3,
+  entriesPublishedToQb: 0,
+  entriesPostedLocally: 3,
   targetAutoAdvanced: false,
   fiscalCalendar: CALENDAR_AFTER,
   ruleSummary: { pass: 2, fail: 1, error: 0, skipped: 0 },
@@ -177,8 +179,12 @@ describe('PeriodClosePanel — close success', () => {
     const planLink = screen.getByText('View in Plan').closest('a')
     expect(planLink).toHaveAttribute('href', '/plan')
 
+    // Both overrides ride every close, defaulting off — an unchecked box
+    // must send false rather than omitting the flag, so a stale value can
+    // never carry over from a previous close.
     expect(mockClosePeriod).toHaveBeenCalledWith('kg1', '2026-05', {
       allowStaleSync: false,
+      allowStrandedObligations: false,
     })
   })
 
@@ -229,5 +235,200 @@ describe('PeriodClosePanel — close success', () => {
     const select = screen.getByTestId('period-select') as HTMLSelectElement
     await waitFor(() => expect(select.value).toBe('2026-06'))
     expect(screen.getByText(/Closed May 2026/)).toBeInTheDocument()
+  })
+})
+
+describe('PeriodClosePanel — blockers name what is holding the close', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetPeriodCloseStatus.mockResolvedValue({
+      schedules: [],
+      totalDraft: 0,
+      totalPosted: 0,
+    })
+    mockListPeriodDrafts.mockResolvedValue({
+      draftCount: 0,
+      totalDebit: 0,
+      totalCredit: 0,
+      allBalanced: true,
+      qbPublishCount: 0,
+      localOnlyCount: 0,
+      drafts: [],
+    })
+  })
+
+  it('names the schedules behind a stranded-obligation blocker', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['stranded_obligations'],
+      strandedObligationCount: 2,
+      strandedObligationSample: [
+        {
+          eventId: 'evt_1',
+          scheduleId: 'str_prepaid',
+          scheduleName: 'Prepaid Insurance',
+          period: '2026-05',
+        },
+        {
+          eventId: 'evt_2',
+          scheduleId: 'str_prepaid',
+          scheduleName: 'Prepaid Insurance',
+          period: '2026-05',
+        },
+      ],
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    // The explanation, not the raw code.
+    expect(
+      await screen.findByText(/promoted but never drafted/)
+    ).toBeInTheDocument()
+    expect(screen.queryByText('stranded_obligations')).not.toBeInTheDocument()
+
+    // Two obligations, one schedule — named once, not per event.
+    expect(
+      screen.getByText(
+        (_, el) => el?.textContent === '2 affected — Prepaid Insurance'
+      )
+    ).toBeInTheDocument()
+  })
+
+  it('marks the sample as partial when the count exceeds it', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['pending_obligations'],
+      pendingObligationCount: 9,
+      pendingObligationSample: [
+        {
+          eventId: 'evt_1',
+          scheduleId: 'str_dep',
+          scheduleName: 'Depreciation',
+          period: '2026-05',
+        },
+      ],
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    // The API caps the sample at 5, so the count is the truth and the list
+    // is a lead — the copy must not read as a complete inventory.
+    expect(
+      await screen.findByText(
+        (_, el) => el?.textContent === '9 affected — Depreciation and others'
+      )
+    ).toBeInTheDocument()
+  })
+
+  it('adds no detail line for a blocker that carries none', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['sync_stale'],
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    expect(await screen.findByText(/hasn't synced through/)).toBeInTheDocument()
+    expect(screen.queryByText(/affected/)).not.toBeInTheDocument()
+  })
+})
+
+describe('PeriodClosePanel — close overrides', () => {
+  const BLOCKED_ON_STRANDED = {
+    ...CALENDAR,
+    closeableNow: false,
+    blockers: ['stranded_obligations'],
+    strandedObligationCount: 1,
+    strandedObligationSample: [
+      {
+        eventId: 'evt_1',
+        scheduleId: 'str_prepaid',
+        scheduleName: 'Prepaid Insurance',
+        period: '2026-05',
+      },
+    ],
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetPeriodCloseStatus.mockResolvedValue({
+      schedules: [],
+      totalDraft: 0,
+      totalPosted: 0,
+    })
+    mockListPeriodDrafts.mockResolvedValue({
+      draftCount: 0,
+      totalDebit: 0,
+      totalCredit: 0,
+      allBalanced: true,
+      qbPublishCount: 0,
+      localOnlyCount: 0,
+      drafts: [],
+    })
+    mockClosePeriod.mockResolvedValue(CLOSE_RESULT)
+    mockListInformationBlocks.mockResolvedValue([])
+  })
+
+  it('offers an escape hatch for a stranded-obligation block', async () => {
+    mockGetFiscalCalendar.mockResolvedValue(BLOCKED_ON_STRANDED)
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    // Blocked: the button is dead until the user opts in explicitly.
+    const button = (await screen.findByText('Close Period')).closest('button')!
+    expect(button).toBeDisabled()
+
+    const checkbox = screen.getByRole('checkbox')
+    fireEvent.click(checkbox)
+
+    await waitFor(() => expect(button).not.toBeDisabled())
+    fireEvent.click(button)
+
+    await waitFor(() =>
+      expect(mockClosePeriod).toHaveBeenCalledWith('kg1', '2026-05', {
+        allowStaleSync: false,
+        allowStrandedObligations: true,
+      })
+    )
+  })
+
+  it('withholds the override when something else also blocks the close', async () => {
+    // The override clears one deliberate exception, not a pile of unrelated
+    // problems — so it is offered only when its blocker stands alone.
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...BLOCKED_ON_STRANDED,
+      blockers: ['stranded_obligations', 'sequence_violation'],
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    const button = (await screen.findByText('Close Period')).closest('button')!
+    expect(button).toBeDisabled()
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+  })
+
+  it('splits the close receipt when drafts left by both routes', async () => {
+    mockGetFiscalCalendar.mockResolvedValue(CALENDAR)
+    mockClosePeriod.mockResolvedValue({
+      ...CLOSE_RESULT,
+      entriesPosted: 5,
+      entriesPublishedToQb: 2,
+      entriesPostedLocally: 3,
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+    fireEvent.click(await screen.findByText('Close Period'))
+
+    expect(
+      await screen.findByText(/2 to QuickBooks, 3 local/)
+    ).toBeInTheDocument()
+  })
+
+  it('omits the split when every draft took the same route', async () => {
+    // CLOSE_RESULT posts all 3 locally — a split that says "0 to QuickBooks"
+    // is noise, not information.
+    mockGetFiscalCalendar.mockResolvedValue(CALENDAR)
+    render(<PeriodClosePanel graphId="kg1" />)
+    fireEvent.click(await screen.findByText('Close Period'))
+
+    expect(await screen.findByText(/3 drafts posted/)).toBeInTheDocument()
+    expect(screen.queryByText(/to QuickBooks/)).not.toBeInTheDocument()
   })
 })
