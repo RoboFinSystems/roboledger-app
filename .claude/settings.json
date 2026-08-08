@@ -84,9 +84,7 @@
       "Bash(gh variable set:*)",
       "Bash(gh variable delete:*)",
       "Bash(gh secret set:*)",
-      "Bash(gh secret delete:*)",
-      "Bash(npm run core:push:*)",
-      "Bash(npm run sync:push:*)"
+      "Bash(gh secret delete:*)"
     ],
     "deny": [
       "Bash(git reset:*)",
