@@ -460,7 +460,7 @@ export default function ModernConnectionsContent() {
         <PageHeader
           icon={HiLink}
           title="Data Connections"
-          subtitle="Connect external data sources to automatically import transactions and financial data"
+          subtitle="Connect external data sources to import transactions and financial data on demand"
           actions={
             <Button size="sm" color="primary" onClick={openMarketplace}>
               <HiPlus className="mr-2 h-4 w-4" />
@@ -494,7 +494,7 @@ export default function ModernConnectionsContent() {
               <EmptyState
                 icon={HiLink}
                 title="No connections yet"
-                description="Connect your data sources to automatically import transactions, chart of accounts, and other financial data."
+                description="Connect your data sources to import transactions, chart of accounts, and other financial data on demand."
               />
             </Card>
           )}
