@@ -1,5 +1,7 @@
 'use client'
 
+import type { FriendlyError } from '@/lib/ledger/errors'
+import { friendlyError } from '@/lib/ledger/errors'
 import { formatDateTime } from '@/lib/ledger/formatters'
 import type { PreviewEventBlockResponse } from '@robosystems/client'
 import type {
@@ -48,11 +50,6 @@ interface LineItem {
 // interpolated *expression* as a `string`. Use the SDK type directly.
 type PreviewResult = PreviewEventBlockResponse
 
-interface FriendlyError {
-  message: string
-  link?: { href: string; label: string }
-}
-
 interface Props {
   graphId: string
   eventId: string
@@ -73,39 +70,6 @@ const formatCurrency = (
     style: 'currency',
     currency: currency || 'USD',
   }).format(cents / 100)
-}
-
-/**
- * Map backend 422 errors into user-friendly UX. Backend raises
- * ClosedPeriodError and ElementResolutionError as 422s — surface them
- * with actionable links instead of raw messages.
- */
-const friendlyError = (raw: string): FriendlyError => {
-  const lower = raw.toLowerCase()
-  if (lower.includes('closed period')) {
-    return {
-      message:
-        raw +
-        " Reopen it from the close page or change the event's posting_date.",
-      link: { href: '/ledger/close', label: 'Open close page' },
-    }
-  }
-  if (
-    lower.includes('element') &&
-    (lower.includes('unmapped') ||
-      lower.includes('resolve') ||
-      lower.includes('not found'))
-  ) {
-    return {
-      message:
-        "Some accounts in this event aren't mapped. Visit Chart of Accounts to fix mappings, then try again.",
-      link: {
-        href: '/ledger/chart-of-accounts',
-        label: 'Open Chart of Accounts',
-      },
-    }
-  }
-  return { message: raw }
 }
 
 const EventBlockDetailModal: FC<Props> = function ({

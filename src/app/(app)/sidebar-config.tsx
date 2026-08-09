@@ -64,6 +64,7 @@ export const getNavigationItems = (
             { href: '/reports', label: 'View Reports' },
             { href: '/reports/new', label: 'Create Report' },
             { href: '/reports/publish-lists', label: 'Publish Lists' },
+            { href: '/reports/blocked-senders', label: 'Blocked Senders' },
           ],
         },
         {
