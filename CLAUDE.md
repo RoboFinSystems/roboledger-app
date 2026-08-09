@@ -65,8 +65,9 @@ npm run format:check # Check code formatting
 | `/ledger/statements`                      | live-financial-statement                                            | shipped (live render from OLTP ledger, no close required)                                   |
 | `/ledger/inbox`                           | listEventBlocks, getEventBlock, previewEventBlock, updateEventBlock | shipped 2026-05-01                                                                          |
 | `/agents`                                 | listAgents, getAgent                                                | shipped 2026-05-01                                                                          |
-| `/reports` `/reports/new` `/reports/[id]` | listReports, createReport, getReportPackage                         | shipped                                                                                     |
+| `/reports` `/reports/new` `/reports/[id]` | listReports, createReport, getReportPackage, share controls         | shipped (block sender / delete received copy / revoke share 2026-08-09)                     |
 | `/reports/publish-lists`                  | publishList CRUD                                                    | shipped                                                                                     |
+| `/reports/blocked-senders`                | listBlockedSourceGraphs, unblockSourceGraph                         | shipped 2026-08-09 (recipient's exit for cross-graph sharing)                               |
 | `/library`                                | listLibraryTaxonomies, getLibraryElement                            | shipped                                                                                     |
 | `/explorer`                               | information blocks + fact-set views, compute bar                    | shipped (Block Explorer; renamed from Analytics 2026-07)                                    |
 | `/plan`                                   | listInformationBlocks, getInformationBlock (series + scenarioId)    | shipped 2026-07-23 (FP&A grid across the actuals/forecast seam; scenarios authored via MCP) |
@@ -81,7 +82,9 @@ npm run format:check # Check code formatting
 
 **SDK helpers vs raw `gqlQuery`.** Inbox + Agents established the pattern: hand-written query modules + `LedgerClient` methods mirroring `transactions.ts` / `listTransactions`. Those live in the `robosystems-typescript-client` repo (`clients/graphql/queries/ledger/*.ts` — plain `.ts`, not `.gql`), not in this app. Continue this pattern for new SDK additions. **Never bump versions** in `package.json` / `pyproject.toml` — version bumps are owned by the user on publish.
 
-**Error mapping.** `friendlyError` maps closed-period and element-resolution 422s into actionable messages. It is currently a module-local function in `ledger/inbox/EventBlockDetailModal.tsx`, **not** shared infrastructure — most other write surfaces still surface raw `err.message`. Promote it to `src/lib/ledger/` before extending it to new error classes (materialize errors, backup conflicts, outbound-write rejects). Don't surface raw FastAPI 422 detail to users.
+**Error mapping.** `friendlyError` lives in `src/lib/ledger/errors.ts` (promoted out of `ledger/inbox/EventBlockDetailModal.tsx` when the share controls landed). It maps closed-period and element-resolution 422s plus the cross-graph share-control errors into actionable messages. Import it from `@/lib/ledger/errors` on any new write surface rather than re-deriving a local one, and extend it there for new error classes (materialize errors, backup conflicts, outbound-write rejects).
+
+Note the shape it defends against: the SDK facade throws `Error("<label> failed: " + JSON.stringify(error))`, so `err.message` carries a raw `{"detail":"…"}` blob. `extractDetail` unwraps it (including 422 validation lists) before matching. Never surface raw FastAPI detail — or that envelope — to users. Write surfaces predating this still pass raw `err.message` through; convert them as they're touched.
 
 **Refresh patterns.** Mutations that change list state use a `refreshKey` bump on the list component (e.g., transactions list after JE submit) rather than full-page reload. SSE operation streams (materialize, long-running ops) use `useOperationMonitoring` from the shared core library.
 

@@ -1,5 +1,7 @@
 'use client'
 
+import { isGraphAdmin } from '@/lib/graph-role'
+import { friendlyError } from '@/lib/ledger/errors'
 import type { PublishList, ReportPackage } from '@robosystems/client/clients'
 import {
   clients,
@@ -7,6 +9,7 @@ import {
   LoadingState,
   PageHeader,
   PageLayout,
+  useGraphContext,
 } from '@robosystems/core'
 import {
   Alert,
@@ -25,20 +28,25 @@ import {
   Spinner,
 } from 'flowbite-react'
 import Link from 'next/link'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  HiBan,
   HiChevronLeft,
+  HiCog,
   HiDocumentReport,
   HiDotsVertical,
   HiExclamationCircle,
   HiShare,
+  HiTrash,
 } from 'react-icons/hi'
 import BlockView from '../../ledger/close/components/blockview/BlockView'
 import type { ViewMode } from '../../ledger/close/components/ViewModeToggle'
 import ViewModeToggle from '../../ledger/close/components/ViewModeToggle'
+import BlockSenderModal from './components/BlockSenderModal'
 import HolonReportView from './components/HolonReportView'
+import ManageSharesModal from './components/ManageSharesModal'
 import ReportPackageSidebar from './components/ReportPackageSidebar'
 
 const formatDate = (dateString: string | null): string => {
@@ -78,9 +86,15 @@ const PACKAGE_STATUS_BADGE: Record<
  */
 const ReportViewerContent: FC = function () {
   const params = useParams()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const reportId = params.id as string
   const graphId = searchParams.get('graph')
+
+  // Admin gates the destructive halves of the share controls. Client-side
+  // gating is an affordance only — the API re-checks and 403s regardless.
+  const { state: graphState } = useGraphContext()
+  const isAdmin = isGraphAdmin(graphState.graphs, graphId)
 
   const [pkg, setPkg] = useState<ReportPackage | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -108,6 +122,13 @@ const ReportViewerContent: FC = function () {
   const [isDownloadingHolon, setIsDownloadingHolon] = useState(false)
   const [isDownloadingXbrl, setIsDownloadingXbrl] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
+
+  // Cross-graph share controls
+  const [showBlockModal, setShowBlockModal] = useState(false)
+  const [showSharesModal, setShowSharesModal] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const loadPublishLists = useCallback(async () => {
     if (!graphId) return
@@ -244,6 +265,27 @@ const ReportViewerContent: FC = function () {
     }
   }, [graphId, reportId, selectedListId])
 
+  // Removing a copy shared in from another graph. The copy carries the
+  // *sender's* user id in `created_by`, so the ordinary owner rule can never
+  // match anyone here — the receiving graph's admin is who gets to delete it.
+  const handleDeleteCopy = useCallback(async () => {
+    if (!graphId || !reportId) return
+    try {
+      setIsDeleting(true)
+      setActionError(null)
+      await clients.reports.deleteReport(graphId, reportId)
+      router.push('/reports')
+    } catch (err) {
+      console.error('Delete report failed:', err)
+      const message =
+        err instanceof Error ? err.message : 'Failed to delete this report.'
+      setActionError(friendlyError(message).message)
+      setShowDeleteConfirm(false)
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [graphId, reportId, router])
+
   // Load the package — Report metadata + rehydrated envelopes
   useEffect(() => {
     const loadPackage = async () => {
@@ -359,7 +401,12 @@ const ReportViewerContent: FC = function () {
         subtitle={periodLabel}
         actions={
           <>
-            {pkg.generationStatus === 'published' && (
+            {/* Downloads need a published bundle, but a recipient's exit must
+                not — generation status is the sender's property, and a copy
+                that never published would otherwise strand its recipient with
+                no way to block or remove it. So the menu opens for any
+                received report too. */}
+            {(pkg.generationStatus === 'published' || pkg.sourceGraphId) && (
               <Dropdown
                 color="light"
                 size="sm"
@@ -377,30 +424,65 @@ const ReportViewerContent: FC = function () {
                   )
                 }
               >
-                <DropdownHeader>Download</DropdownHeader>
-                <DropdownItem onClick={handleDownloadBundle}>
-                  JSON-LD bundle
-                </DropdownItem>
-                <DropdownItem onClick={handleDownloadHolon}>
-                  Holon (JSON-LD)
-                </DropdownItem>
-                <DropdownItem onClick={handleDownloadXbrl}>
-                  XBRL 2.1 package
-                </DropdownItem>
-                {!pkg.sourceGraphId && (
+                {pkg.generationStatus === 'published' && (
                   <>
-                    <DropdownDivider />
-                    <DropdownItem
-                      icon={HiShare}
-                      onClick={() => {
-                        setShareResult(null)
-                        setSelectedListId(null)
-                        loadPublishLists()
-                        setShowShareModal(true)
-                      }}
-                    >
-                      Share
+                    <DropdownHeader>Download</DropdownHeader>
+                    <DropdownItem onClick={handleDownloadBundle}>
+                      JSON-LD bundle
                     </DropdownItem>
+                    <DropdownItem onClick={handleDownloadHolon}>
+                      Holon (JSON-LD)
+                    </DropdownItem>
+                    <DropdownItem onClick={handleDownloadXbrl}>
+                      XBRL 2.1 package
+                    </DropdownItem>
+                  </>
+                )}
+                {!pkg.sourceGraphId ? (
+                  pkg.generationStatus === 'published' && (
+                    <>
+                      <DropdownDivider />
+                      <DropdownItem
+                        icon={HiShare}
+                        onClick={() => {
+                          setShareResult(null)
+                          setSelectedListId(null)
+                          loadPublishLists()
+                          setShowShareModal(true)
+                        }}
+                      >
+                        Share
+                      </DropdownItem>
+                      <DropdownItem
+                        icon={HiCog}
+                        onClick={() => setShowSharesModal(true)}
+                      >
+                        Manage shares
+                      </DropdownItem>
+                    </>
+                  )
+                ) : (
+                  <>
+                    {pkg.generationStatus === 'published' && (
+                      <DropdownDivider />
+                    )}
+                    <DropdownHeader>
+                      Shared in from another graph
+                    </DropdownHeader>
+                    <DropdownItem
+                      icon={HiBan}
+                      onClick={() => setShowBlockModal(true)}
+                    >
+                      Block sender
+                    </DropdownItem>
+                    {isAdmin && (
+                      <DropdownItem
+                        icon={HiTrash}
+                        onClick={() => setShowDeleteConfirm(true)}
+                      >
+                        Delete this copy
+                      </DropdownItem>
+                    )}
                   </>
                 )}
               </Dropdown>
@@ -416,6 +498,16 @@ const ReportViewerContent: FC = function () {
           onDismiss={() => setDownloadError(null)}
         >
           {downloadError}
+        </Alert>
+      )}
+
+      {actionError && (
+        <Alert
+          color="failure"
+          icon={HiExclamationCircle}
+          onDismiss={() => setActionError(null)}
+        >
+          {actionError}
         </Alert>
       )}
 
@@ -613,6 +705,64 @@ const ReportViewerContent: FC = function () {
           </Button>
           <Button color="gray" onClick={() => setShowShareModal(false)}>
             Close
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {showSharesModal && graphId && (
+        <ManageSharesModal
+          graphId={graphId}
+          reportId={reportId}
+          onClose={() => setShowSharesModal(false)}
+        />
+      )}
+
+      {showBlockModal && graphId && pkg.sourceGraphId && (
+        <BlockSenderModal
+          graphId={graphId}
+          sourceGraphId={pkg.sourceGraphId}
+          sourceLabel={pkg.entityName}
+          isAdmin={isAdmin}
+          onClose={() => setShowBlockModal(false)}
+          onBlocked={() => {}}
+        />
+      )}
+
+      {/* Deleting a received copy is irreversible and the sender is not
+          notified, so it gets an explicit confirm rather than riding the
+          dropdown click. */}
+      <Modal
+        show={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        size="md"
+      >
+        <ModalHeader>Delete this copy?</ModalHeader>
+        <ModalBody>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            This removes the copy of{' '}
+            <span className="font-medium text-gray-900 dark:text-white">
+              {pkg.name}
+            </span>{' '}
+            that was shared into this graph, along with its facts. It cannot be
+            undone, and the sender is not notified. To stop them sending more,
+            block the sender as well.
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            color="failure"
+            onClick={handleDeleteCopy}
+            disabled={isDeleting}
+          >
+            {isDeleting ? <Spinner size="sm" className="mr-2" /> : null}
+            Delete copy
+          </Button>
+          <Button
+            color="gray"
+            onClick={() => setShowDeleteConfirm(false)}
+            disabled={isDeleting}
+          >
+            Cancel
           </Button>
         </ModalFooter>
       </Modal>
