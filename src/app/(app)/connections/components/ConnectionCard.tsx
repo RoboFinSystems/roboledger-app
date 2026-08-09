@@ -13,9 +13,24 @@ import {
 
 import { FiscalCalendarBootstrap } from './FiscalCalendarBootstrap'
 
-const PROVIDER_IMAGES: Record<string, { src: string; alt: string }> = {
-  quickbooks: { src: '/images/qb_connect.png', alt: 'QuickBooks' },
-  sec: { src: '/images/sec_connect.png', alt: 'SEC EDGAR' },
+const PROVIDER_IMAGES: Record<
+  string,
+  { src: string; alt: string; width: number; height: number }
+> = {
+  // Square logo mark — the wide "Connect to QuickBooks" banner is reserved for
+  // the OAuth entry point in QuickBooksSetupForm.
+  quickbooks: {
+    src: '/images/qb_logo.webp',
+    alt: 'QuickBooks',
+    width: 40,
+    height: 40,
+  },
+  sec: {
+    src: '/images/sec_connect.png',
+    alt: 'SEC EDGAR',
+    width: 60,
+    height: 32,
+  },
 }
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -145,9 +160,9 @@ export default function ConnectionCard({
             <Image
               src={image.src}
               alt={image.alt}
-              width={60}
-              height={32}
-              className="rounded"
+              width={image.width}
+              height={image.height}
+              className="rounded object-contain"
             />
           )}
 
