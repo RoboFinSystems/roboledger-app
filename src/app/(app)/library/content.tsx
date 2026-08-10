@@ -134,16 +134,7 @@ export default function LibraryContent() {
       <PageHeader
         icon={HiBookOpen}
         title="Taxonomy Library"
-        subtitle={
-          <>
-            Library taxonomies, CoA elements, and reporting extensions for{' '}
-            <span className="font-mono text-xs">
-              {currentGraph?.graphName ?? graphId}
-            </span>
-            . Library content is read-only; CoA elements, reporting extensions,
-            and anchor mappings are tenant-managed.
-          </>
-        }
+        subtitle="Library taxonomies, CoA elements, and reporting extensions"
       />
 
       {taxonomiesState === 'loading' && (
