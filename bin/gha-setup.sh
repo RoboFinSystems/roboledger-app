@@ -109,8 +109,10 @@ setup_config() {
     echo "🔧 Optional Configuration (press Enter for defaults):"
     echo ""
 
-    read -p "  AWS Region [us-east-1]: " AWS_REGION
-    AWS_REGION=${AWS_REGION:-"us-east-1"}
+    # Default to the region bootstrap.sh exported (or .envrc set), not a literal
+    AWS_REGION_DEFAULT="${AWS_REGION:-us-east-1}"
+    read -p "  AWS Region [${AWS_REGION_DEFAULT}]: " AWS_REGION_INPUT
+    AWS_REGION="${AWS_REGION_INPUT:-$AWS_REGION_DEFAULT}"
 
     read -p "  ECR Repository [roboledger-app]: " ECR_REPOSITORY
     ECR_REPOSITORY=${ECR_REPOSITORY:-"roboledger-app"}

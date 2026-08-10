@@ -13,7 +13,16 @@
 #   - OIDC stack already deployed via robosystems repo (just bootstrap)
 #
 # USAGE:
-#   ./bin/bootstrap.sh
+#   ./bin/bootstrap.sh [profile] [region]
+#
+# ARGUMENTS:
+#   profile: AWS profile name (default: $AWS_PROFILE, else prompted)
+#   region:  AWS region (default: us-east-1)
+#
+# EXAMPLES:
+#   ./bin/bootstrap.sh                           # Use defaults
+#   ./bin/bootstrap.sh my-fork-sso               # Custom profile
+#   ./bin/bootstrap.sh my-fork-sso eu-west-1     # Custom profile and region
 #
 # =============================================================================
 
@@ -27,10 +36,13 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-# Configuration
+# Configuration - positional arguments take priority over environment variables
 OIDC_STACK_NAME="RoboSystemsGitHubOIDC"
-AWS_REGION="${AWS_REGION:-us-east-1}"
-AWS_PROFILE="${AWS_PROFILE:-}"
+AWS_PROFILE="${1:-${AWS_PROFILE:-}}"
+AWS_REGION="${2:-${AWS_REGION:-us-east-1}}"
+
+# Export so gha-setup.sh inherits the region when run from this script
+export AWS_REGION
 
 print_header() {
     echo ""
@@ -87,13 +99,14 @@ setup_direnv() {
         fi
     fi
 
-    # Generate .envrc with the configured profile
+    # Generate .envrc with the configured profile and region
     cat > "$target_file" << EOF
-# Automatically set AWS profile for this project
+# Automatically set AWS profile and region for this project
 export AWS_PROFILE=${profile}
+export AWS_REGION=${AWS_REGION}
 EOF
 
-    print_success "Created .envrc with AWS_PROFILE=${profile}"
+    print_success "Created .envrc with AWS_PROFILE=${profile} and AWS_REGION=${AWS_REGION}"
 
     if command -v direnv &>/dev/null; then
         print_info "Run 'direnv allow' to activate"
