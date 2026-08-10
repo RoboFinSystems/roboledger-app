@@ -87,6 +87,10 @@ setup_direnv() {
         profile="${profile:-robosystems-sso}"
     fi
 
+    # Adopt the resolved profile for this run's aws calls, not just for .envrc
+    # — set before the early return below so the keep-existing path gets it too
+    AWS_PROFILE="$profile"
+
     if [ -f "$target_file" ]; then
         print_info "Existing .envrc found:"
         cat "$target_file"
