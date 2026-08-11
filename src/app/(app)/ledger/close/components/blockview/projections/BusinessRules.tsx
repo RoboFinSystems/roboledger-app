@@ -1,36 +1,47 @@
 'use client'
 
-import { Badge } from 'flowbite-react'
 import type { FC } from 'react'
 import { useMemo } from 'react'
-import {
-  HiBookOpen,
-  HiExclamation,
-  HiInformationCircle,
-  HiXCircle,
-} from 'react-icons/hi'
+import { HiBookOpen } from 'react-icons/hi'
 import type { EnvelopeBlock, EnvelopeRule } from '../types'
 
 type Severity = 'error' | 'warning' | 'info'
 
-const SEVERITY_BADGE: Record<
+/**
+ * How each severity is described in the UI.
+ *
+ * `ruleSeverity` declares *what a failure would be reported as* — it is a
+ * property of the rule, not an observation about the data. Naming the
+ * groups "Error" / "Warning" and painting them red and amber made a
+ * catalog of healthy rules read as a list of live failures: a block whose
+ * every rule passed still announced "10 Error" in alert colours.
+ *
+ * So severity is carried by wording and type weight only. Colour is
+ * reserved for the `VerificationResults` projection, where it reports
+ * something that actually happened.
+ */
+const SEVERITY_COPY: Record<
   Severity,
-  { color: 'failure' | 'warning' | 'info'; label: string }
+  { label: string; note: string; emphasis: string }
 > = {
-  error: { color: 'failure', label: 'Error' },
-  warning: { color: 'warning', label: 'Warning' },
-  info: { color: 'info', label: 'Info' },
+  error: {
+    label: 'Blocking',
+    note: 'a failure here is reported as an error',
+    emphasis: 'font-semibold',
+  },
+  warning: {
+    label: 'Advisory',
+    note: 'a failure here is reported as a warning',
+    emphasis: 'font-medium',
+  },
+  info: {
+    label: 'Informational',
+    note: 'recorded for information only',
+    emphasis: 'italic',
+  },
 }
 
-const SEVERITY_ICON: Record<Severity, typeof HiXCircle> = {
-  error: HiXCircle,
-  warning: HiExclamation,
-  info: HiInformationCircle,
-}
-
-// Display order matches alert priority — error rules first so a quick
-// glance lands on the strict invariants; info rules at the bottom for
-// completeness.
+// Strictest first, so a glance lands on the invariants that would block.
 const SEVERITY_ORDER: Severity[] = ['error', 'warning', 'info']
 
 interface BusinessRulesProjectionProps {
@@ -68,7 +79,11 @@ function normalizeSeverity(s: string): Severity {
  *
  * The companion projection (`VerificationResults`) shows the outcome of
  * evaluating these rules against the block's facts; this one shows the
- * rules themselves regardless of whether they've been evaluated.
+ * rules themselves regardless of whether they've been evaluated. That
+ * distinction is why this projection is deliberately colourless: it
+ * reports coverage, and nothing on it has happened yet. Severity is
+ * conveyed by wording and type weight (see `SEVERITY_COPY`), leaving red
+ * and amber to mean something on the results view.
  */
 const BusinessRulesProjection: FC<BusinessRulesProjectionProps> = ({
   envelope,
@@ -104,16 +119,28 @@ const BusinessRulesProjection: FC<BusinessRulesProjectionProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Severity tally header */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3 dark:border-gray-700">
-        {SEVERITY_ORDER.filter((s) => totals[s] > 0).map((severity) => {
-          const badge = SEVERITY_BADGE[severity]
-          return (
-            <Badge key={severity} color={badge.color} size="sm">
-              {totals[severity]} {badge.label}
-            </Badge>
+      {/* Severity tally — a statement of coverage, not of outcome. */}
+      <div className="border-b border-gray-200 pb-3 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-400">
+        <span className="text-gray-500 dark:text-gray-500">
+          {envelope.rules.length === 1
+            ? '1 rule applies to this block'
+            : `${envelope.rules.length} rules apply to this block`}
+          {': '}
+        </span>
+        {SEVERITY_ORDER.filter((s) => totals[s] > 0).map(
+          (severity, i, shown) => (
+            <span key={severity}>
+              <span
+                className={`text-gray-900 dark:text-gray-100 ${SEVERITY_COPY[severity].emphasis}`}
+              >
+                {totals[severity]} {SEVERITY_COPY[severity].label.toLowerCase()}
+              </span>
+              {i < shown.length - 1 && (
+                <span className="text-gray-400">{' · '}</span>
+              )}
+            </span>
           )
-        })}
+        )}
       </div>
 
       {/* Per-severity sections */}
@@ -134,13 +161,18 @@ interface SeveritySectionProps {
 }
 
 const SeveritySection: FC<SeveritySectionProps> = ({ severity, rules }) => {
-  const SeverityIcon = SEVERITY_ICON[severity]
-  const badge = SEVERITY_BADGE[severity]
+  const copy = SEVERITY_COPY[severity]
   return (
     <div>
-      <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wide text-gray-400 uppercase">
-        <SeverityIcon className="h-4 w-4" />
-        {badge.label} ({rules.length})
+      <div className="mb-3 flex flex-wrap items-baseline gap-x-2 border-b border-gray-100 pb-1.5 dark:border-gray-800">
+        <span
+          className={`text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400 ${copy.emphasis}`}
+        >
+          {copy.label} ({rules.length})
+        </span>
+        <span className="text-xs text-gray-400 italic dark:text-gray-500">
+          {copy.note}
+        </span>
       </div>
       <ul className="space-y-2">
         {rules.map((rule) => (
@@ -157,28 +189,16 @@ interface RuleRowProps {
 }
 
 const RuleRow: FC<RuleRowProps> = ({ rule, severity }) => {
-  const SeverityIcon = SEVERITY_ICON[severity]
   const title = rule.ruleMessage || rule.ruleExpression
-  const tone =
-    severity === 'error'
-      ? 'border-red-200 bg-red-50/40 dark:border-red-900/50 dark:bg-red-900/10'
-      : severity === 'warning'
-        ? 'border-amber-200 bg-amber-50/40 dark:border-amber-900/50 dark:bg-amber-900/10'
-        : 'border-primary-200 bg-primary-50/40 dark:border-primary-900/50 dark:bg-primary-900/10'
-  const iconTone =
-    severity === 'error'
-      ? 'text-red-500 dark:text-red-400'
-      : severity === 'warning'
-        ? 'text-amber-500 dark:text-amber-400'
-        : 'text-primary-500 dark:text-primary-400'
 
   return (
-    <li className={`rounded-lg border p-3 ${tone}`}>
+    <li className="rounded-lg border border-gray-200 bg-gray-50/50 p-3 dark:border-gray-700 dark:bg-gray-800/30">
       <div className="flex gap-3">
-        <SeverityIcon className={`mt-0.5 h-5 w-5 shrink-0 ${iconTone}`} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <span
+              className={`text-sm text-gray-900 dark:text-gray-100 ${SEVERITY_COPY[severity].emphasis}`}
+            >
               {title}
             </span>
             {(rule.rulePattern || rule.ruleCheckKind) && (
