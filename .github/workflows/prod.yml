@@ -95,6 +95,7 @@ jobs:
       roboinvestor_app_url: ${{ vars.ROBOINVESTOR_APP_URL_PROD || 'https://roboinvestor.ai' }}
       robosystems_app_url: ${{ vars.ROBOSYSTEMS_APP_URL_PROD || 'https://robosystems.ai' }}
       maintenance_mode: ${{ vars.MAINTENANCE_MODE_PROD || 'false' }}
+      centralized_login: ${{ vars.CENTRALIZED_LOGIN_PROD || 'false' }}
       turnstile_site_key: ${{ vars.TURNSTILE_SITE_KEY || '' }}
       cf_analytics_token: ${{ vars.CF_ANALYTICS_TOKEN || '' }}
       static_assets_bucket_name: ${{ needs.deploy-s3.outputs.static_assets_bucket_name }}

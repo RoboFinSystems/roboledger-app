@@ -75,6 +75,7 @@ validate_env_vars() {
         echo ""
         echo "Optional variables:"
         echo "  NEXT_PUBLIC_MAINTENANCE_MODE      - Enable maintenance mode (default: false)"
+        echo "  NEXT_PUBLIC_CENTRALIZED_LOGIN     - Redirect login/register to the login home (default: false)"
         echo "  NEXT_PUBLIC_TURNSTILE_SITE_KEY    - Cloudflare Turnstile site key"
         echo "  NEXT_PUBLIC_S3_ENDPOINT_URL       - S3 endpoint URL (for LocalStack)"
         echo ""
@@ -106,6 +107,7 @@ inject_runtime_env() {
         -e "s|__PLACEHOLDER_ROBOLEDGER_APP_URL__|${NEXT_PUBLIC_ROBOLEDGER_APP_URL}|g" \
         -e "s|__PLACEHOLDER_ROBOINVESTOR_APP_URL__|${NEXT_PUBLIC_ROBOINVESTOR_APP_URL}|g" \
         -e "s|__PLACEHOLDER_MAINTENANCE_MODE__|${NEXT_PUBLIC_MAINTENANCE_MODE:-false}|g" \
+        -e "s|__PLACEHOLDER_CENTRALIZED_LOGIN__|${NEXT_PUBLIC_CENTRALIZED_LOGIN:-false}|g" \
         -e "s|__PLACEHOLDER_TURNSTILE_SITE_KEY__|${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}|g" \
         -e "s|__PLACEHOLDER_CF_ANALYTICS_TOKEN__|${NEXT_PUBLIC_CF_ANALYTICS_TOKEN:-}|g" \
         -e "s|__PLACEHOLDER_S3_ENDPOINT_URL__|${NEXT_PUBLIC_S3_ENDPOINT_URL:-}|g" \

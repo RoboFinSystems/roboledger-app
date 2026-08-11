@@ -1,9 +1,10 @@
 import type { MetadataRoute } from 'next'
 
-// RoboLedger's public surface is thin — the marketing homepage and register. Everything
-// else is behind auth in the (app) route group (see robots.ts), and /pages/privacy +
-// /pages/terms are server redirects to the consolidated RoboSystems legal docs, so they're
-// intentionally excluded (listing redirects in a sitemap is an error).
+// RoboLedger's public surface is thin — the marketing homepage. Everything else is
+// behind auth in the (app) route group (see robots.ts); /register redirects to the
+// centralized login home and /pages/privacy + /pages/terms are server redirects to
+// the consolidated RoboSystems legal docs, so they're intentionally excluded
+// (listing redirects in a sitemap is an error).
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://roboledger.ai'
 
@@ -13,12 +14,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 1,
-    },
-    {
-      url: `${baseUrl}/register`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
     },
   ]
 }

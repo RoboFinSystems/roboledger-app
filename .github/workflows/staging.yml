@@ -90,6 +90,7 @@ jobs:
       roboinvestor_app_url: ${{ vars.ROBOINVESTOR_APP_URL_STAGING || 'https://staging.roboinvestor.ai' }}
       robosystems_app_url: ${{ vars.ROBOSYSTEMS_APP_URL_STAGING || 'https://staging.robosystems.ai' }}
       maintenance_mode: ${{ vars.MAINTENANCE_MODE_STAGING || 'false' }}
+      centralized_login: ${{ vars.CENTRALIZED_LOGIN_STAGING || 'false' }}
       turnstile_site_key: ${{ vars.TURNSTILE_SITE_KEY || '' }}
       static_assets_bucket_name: ${{ needs.deploy-s3.outputs.static_assets_bucket_name }}
       # Docker Hub publishing for staging: disabled (staging builds should not go to Docker Hub)
