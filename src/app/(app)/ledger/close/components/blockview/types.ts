@@ -6,8 +6,8 @@
  * The envelope is the molecular exchange format Charlie's ontology
  * refers to: a (Structure, FactSet) pair bundled with elements,
  * connections, facts, rules, verification results, and server-computed
- * view projections. See `local/docs/specs/financial-viewer.md` and
- * `local/docs/specs/information-block.md` for the data model.
+ * view projections. The authoritative shape is the SDK type imported
+ * below, generated from the GraphQL schema.
  */
 
 import type { InformationBlock } from '@robosystems/client/clients'

@@ -86,12 +86,11 @@ interface CategoryGroup {
 }
 
 /**
- * Charlie's `VerificationResults` View projection (financial-viewer.md §4.3,
- * §7.12 restructure).
+ * Charlie's `VerificationResults` View projection.
  *
  * Uniform across every block type — surfaces the outcome of every rule
  * evaluation tied to this block's `(structure, fact_set)` pair. Rules are
- * grouped into per-`rule_category` accordions (the §7.12 two-level layout):
+ * grouped into per-`rule_category` accordions:
  * categories with failures or errors expand by default; clean categories
  * collapse so the eye lands on what needs attention. Each rule's metadata
  * (category, pattern, severity, message) is joined in-memory from
@@ -101,7 +100,7 @@ interface CategoryGroup {
  * The overall tally is driven by the server-computed `verificationSummary`
  * arm when present (it pre-joins category + aggregates), falling back to an
  * in-memory roll-up of `verificationResults` for older envelopes. The rule
- * engine auto-runs on saved-report and period-close mutations (roadmap §3.8),
+ * engine auto-runs on saved-report and period-close mutations,
  * so this reflects the block's current invariants without a manual
  * `POST /evaluate-rules`.
  */

@@ -18,9 +18,8 @@ type SidebarGroup = {
 }
 
 /**
- * Group package items into display sections. Mirrors the §5.1 sketch
- * in `financial-viewer.md` — Financial Statements / Notes / Working
- * Papers / Other. Group order matches the package's stacked display
+ * Group package items into display sections — Financial Statements /
+ * Notes / Working Papers / Other. Group order matches the package's stacked display
  * order (statements → disclosures → schedules). Groups omitted when
  * empty.
  */

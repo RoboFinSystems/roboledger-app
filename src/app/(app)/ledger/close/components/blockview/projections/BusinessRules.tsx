@@ -54,7 +54,7 @@ function normalizeSeverity(s: string): Severity {
 }
 
 /**
- * Charlie's `BusinessRules` View projection (financial-viewer.md §4.3).
+ * Charlie's `BusinessRules` View projection.
  *
  * Uniform across every block type — lists every rule declared against
  * this block's `(structure, fact_set)` pair, grouped by `ruleSeverity`
