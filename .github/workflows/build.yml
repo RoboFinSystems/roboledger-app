@@ -31,6 +31,11 @@ on:
         required: false
         type: string
         default: 'false'
+      centralized_login:
+        required: false
+        type: string
+        default: 'false'
+        description: 'Redirect login/register to the centralized login home'
       turnstile_site_key:
         required: false
         type: string
@@ -186,6 +191,7 @@ jobs:
           NEXT_PUBLIC_ROBOINVESTOR_APP_URL: ${{ inputs.roboinvestor_app_url }}
           NEXT_PUBLIC_ROBOSYSTEMS_APP_URL: ${{ inputs.robosystems_app_url }}
           NEXT_PUBLIC_MAINTENANCE_MODE: ${{ inputs.maintenance_mode }}
+          NEXT_PUBLIC_CENTRALIZED_LOGIN: ${{ inputs.centralized_login }}
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ inputs.turnstile_site_key }}
           NEXT_PUBLIC_CF_ANALYTICS_TOKEN: ${{ inputs.cf_analytics_token }}
         run: |
@@ -443,12 +449,15 @@ jobs:
 
       - name: Install dependencies and build Next.js with placeholders
         env:
-          # Use placeholder values that will be replaced at runtime by entrypoint.sh
+          # Use placeholder values that will be replaced at runtime by entrypoint.sh.
+          # The app name is identity, not configuration — bake the literal.
+          NEXT_PUBLIC_APP_NAME: roboledger
           NEXT_PUBLIC_ROBOSYSTEMS_API_URL: '__PLACEHOLDER_ROBOSYSTEMS_API_URL__'
           NEXT_PUBLIC_ROBOLEDGER_APP_URL: '__PLACEHOLDER_ROBOLEDGER_APP_URL__'
           NEXT_PUBLIC_ROBOINVESTOR_APP_URL: '__PLACEHOLDER_ROBOINVESTOR_APP_URL__'
           NEXT_PUBLIC_ROBOSYSTEMS_APP_URL: '__PLACEHOLDER_ROBOSYSTEMS_APP_URL__'
           NEXT_PUBLIC_MAINTENANCE_MODE: '__PLACEHOLDER_MAINTENANCE_MODE__'
+          NEXT_PUBLIC_CENTRALIZED_LOGIN: '__PLACEHOLDER_CENTRALIZED_LOGIN__'
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: '__PLACEHOLDER_TURNSTILE_SITE_KEY__'
           NEXT_PUBLIC_CF_ANALYTICS_TOKEN: '__PLACEHOLDER_CF_ANALYTICS_TOKEN__'
           NEXT_PUBLIC_S3_ENDPOINT_URL: '__PLACEHOLDER_S3_ENDPOINT_URL__'

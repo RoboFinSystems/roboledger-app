@@ -10,12 +10,6 @@ export function proxy(request: NextRequest) {
     request.nextUrl.hostname === 'localhost' ||
     request.nextUrl.hostname === '127.0.0.1'
 
-  // Check if this is an authentication route that needs relaxed CSP
-  const isAuthRoute =
-    request.nextUrl.pathname === '/login' ||
-    request.nextUrl.pathname === '/register' ||
-    request.nextUrl.pathname.startsWith('/auth/')
-
   // Comprehensive CSP configuration for modern web apps
   const cspDirectives = [
     "default-src 'self'",
