@@ -31,6 +31,9 @@ describe('centralized-login flag', () => {
     expect(redirectorProps).toHaveBeenCalledWith(
       expect.not.objectContaining({ mode: 'register' })
     )
+    expect(redirectorProps).toHaveBeenCalledWith(
+      expect.objectContaining({ apiUrl: 'http://localhost:8000' })
+    )
   })
 
   it('login renders the full form when the flag is off', async () => {
@@ -49,7 +52,10 @@ describe('centralized-login flag', () => {
 
     expect(screen.getByTestId('login-redirector')).toBeInTheDocument()
     expect(redirectorProps).toHaveBeenCalledWith(
-      expect.objectContaining({ mode: 'register' })
+      expect.objectContaining({
+        mode: 'register',
+        apiUrl: 'http://localhost:8000',
+      })
     )
   })
 
