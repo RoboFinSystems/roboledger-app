@@ -13,8 +13,8 @@ import {
 } from 'react-icons/hi'
 
 /**
- * The six `type-of View` arms in Charlie's Seattle Method ontology
- * (financial-viewer.md §4.3). Five ship today (`rendered`, `facts`,
+ * The six `type-of View` arms in Charlie's Seattle Method ontology.
+ * Five ship today (`rendered`, `facts`,
  * `elements`, `validation`, `rules`); the remaining one
  * (`associations` / Model Structure) lands when the depth-spec design
  * decision settles.
@@ -45,9 +45,9 @@ const MODES: readonly ModeOption[] = [
 /**
  * Dropdown picker over the View projections. Was a segmented two-button
  * toggle while only `rendered` and `facts` shipped; switched to a
- * dropdown in §7.6 to absorb the remaining four projections (Model
- * Structure / Verification Results / Report Elements / Business Rules)
- * without UI churn each time one lands.
+ * dropdown to absorb the remaining four projections (Model Structure /
+ * Verification Results / Report Elements / Business Rules) without UI
+ * churn each time one lands.
  *
  * Flowbite's `Dropdown` synthesizes its own trigger button when `label`
  * is a string, so we pass a string label and let the component manage

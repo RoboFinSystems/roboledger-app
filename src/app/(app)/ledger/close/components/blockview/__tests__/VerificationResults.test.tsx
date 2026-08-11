@@ -64,7 +64,7 @@ const envelopeWithVerification = () =>
     },
   } as never)
 
-describe('VerificationResults projection (§7.12 category grouping)', () => {
+describe('VerificationResults projection (category grouping)', () => {
   it('shows the empty state when there are no rule evaluations', () => {
     render(<VerificationResults envelope={makeEnvelope()} />)
     expect(screen.getByText(/no rule evaluations/i)).toBeInTheDocument()

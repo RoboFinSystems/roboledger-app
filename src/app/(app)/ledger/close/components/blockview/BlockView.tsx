@@ -43,8 +43,9 @@ interface BlockViewProps {
  * unsupported (block_type, viewMode) combinations render an empty
  * state without breaking the dispatcher.
  *
- * See `local/docs/specs/financial-viewer.md` §"BlockView and View
- * Projections" for the full mapping.
+ * The dispatch below is the full mapping — `viewMode` selects the
+ * projection, and `rendered` falls through to a block-type-specialized
+ * renderer.
  */
 const BlockView: FC<BlockViewProps> = ({ envelope, viewMode, entityName }) => {
   if (viewMode === 'chart') {

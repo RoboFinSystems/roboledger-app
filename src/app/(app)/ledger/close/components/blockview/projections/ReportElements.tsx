@@ -51,7 +51,7 @@ function toRow(el: EnvelopeElement, factCount: number): Row {
 }
 
 /**
- * Charlie's `ReportElements` View projection (financial-viewer.md §4.3).
+ * Charlie's `ReportElements` View projection.
  *
  * Uniform across every block type — surfaces the elements that make up
  * the block as a flat sortable table, with the fact count per element
