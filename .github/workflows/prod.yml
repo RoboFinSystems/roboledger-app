@@ -12,7 +12,6 @@ concurrency:
 
 on:
   workflow_dispatch: # Manual triggering only
-  workflow_call:
 
 jobs:
   runner:
