@@ -128,7 +128,7 @@ export default function Spotlights() {
                 idx % 2 === 1 ? 'lg:[&>figure]:order-first' : ''
               }`}
             >
-              <div>
+              <div className="min-w-0">
                 <div className="bg-secondary-500/15 text-secondary-300 mb-4 inline-block rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase">
                   {s.label}
                 </div>
