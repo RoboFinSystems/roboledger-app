@@ -34,7 +34,10 @@ export default function ProductShot({
   children,
 }: ProductShotProps) {
   return (
-    <figure className={`group relative ${className}`}>
+    // min-w-0: as a grid/flex item this frame must be allowed to shrink below
+    // the min-content width of the preview it wraps, or it widens the page on
+    // narrow viewports. The inner overflow-hidden clips the preview instead.
+    <figure className={`group relative min-w-0 ${className}`}>
       <div className="from-primary-500/20 to-accent-500/20 absolute -inset-1 rounded-2xl bg-linear-to-br opacity-40 blur-xl transition-opacity duration-500 group-hover:opacity-70"></div>
       <div className="relative overflow-hidden rounded-xl border border-gray-800 bg-zinc-950 shadow-2xl">
         {/* breadcrumb bar */}
