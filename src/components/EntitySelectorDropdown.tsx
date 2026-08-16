@@ -1,5 +1,6 @@
 'use client'
 
+import { useCreateGraphHandoff } from '@/lib/cross-app'
 import type { Entity } from '@robosystems/core'
 import {
   clients,
@@ -7,12 +8,8 @@ import {
   useEntity,
   useGraphContext,
 } from '@robosystems/core'
-import { useSSO } from '@robosystems/core/auth-core/sso'
 import { useEffect, useMemo, useState } from 'react'
 import { HiChevronDown, HiOfficeBuilding } from 'react-icons/hi'
-
-const API_URL =
-  process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL || 'http://localhost:8000'
 
 /**
  * EntitySelectorDropdown for RoboLedger
@@ -23,7 +20,7 @@ const API_URL =
 export function EntitySelectorDropdown() {
   const { state: graphState, setCurrentGraph } = useGraphContext()
   const { currentEntity, setCurrentEntity } = useEntity()
-  const { navigateToApp } = useSSO(API_URL)
+  const { openCreateGraph } = useCreateGraphHandoff()
   const [isOpen, setIsOpen] = useState(false)
   const [entitiesByGraph, setEntitiesByGraph] = useState<Map<string, Entity>>(
     new Map()
@@ -118,7 +115,7 @@ export function EntitySelectorDropdown() {
   if (hasNoGraphs) {
     return (
       <button
-        onClick={() => navigateToApp('robosystems', '/graphs/new')}
+        onClick={() => void openCreateGraph()}
         className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600"
       >
         <HiOfficeBuilding className="h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -208,9 +205,7 @@ export function EntitySelectorDropdown() {
                   {/* Create New Entity — redirects to platform via SSO */}
                   <div className="border-t-2 border-gray-300 dark:border-gray-600">
                     <button
-                      onClick={() =>
-                        navigateToApp('robosystems', '/graphs/new')
-                      }
+                      onClick={() => void openCreateGraph()}
                       className="flex w-full items-center justify-center px-4 py-3 text-sm font-medium text-blue-600 transition-colors hover:bg-gray-50 dark:text-blue-400 dark:hover:bg-gray-700"
                     >
                       + Create New Entity
