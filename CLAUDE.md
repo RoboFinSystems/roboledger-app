@@ -73,10 +73,21 @@ npm run format:check # Check code formatting
 | `/plan`                                   | listInformationBlocks, getInformationBlock (series + scenarioId)    | shipped 2026-07-23 (FP&A grid across the actuals/forecast seam; scenarios authored via MCP) |
 | `/console`                                | MCP-backed                                                          | shipped                                                                                     |
 | `/search`                                 | searchDocuments, listDocuments, getDocumentSection                  | shipped (full-text + semantic document search via core SearchContent)                       |
-| `/settings`                               | auth client                                                         | shipped                                                                                     |
-| `/graphs/new`                             | graph creation                                                      | shipped                                                                                     |
+| `/settings`                               | none (SSO forward)                                                  | shipped — forwards to the login home on mount; deep-link fallback only                      |
+| `/graphs/new`                             | none (SSO forward)                                                  | shipped — forwards to the login home on mount; deep-link fallback only                      |
 
 ## Frontend Conventions
+
+**Cross-app navigation.** Never a plain `<a href>` or `<Link>`: the apps sit on separate registrable domains, and the destination URL doesn't exist until an SSO token is minted and exchanged for a session ID — two round-trips deep. A naked link to `robosystems.ai/...` drops the user on a login screen.
+
+Use core's `useCrossAppLink` (0.8.3+), never `navigateToApp` on a new surface. It claims the tab synchronously inside the click gesture before the first `await` — a `window.open` issued afterwards is outside the gesture stack and popup blockers swallow it — and degrades to same-tab if the open is refused.
+
+Pick the target by intent, not by habit:
+
+- **`_blank` for detours** — account settings, graph creation. The user is coming back, so this app's tab (and any half-filled form on it) must survive. This is the default.
+- **`_self` for departures and forward-only pages** — the app switcher, and the `/settings` / `/graphs/new` routes themselves, which exist only to forward. On-mount forwards _must_ be `_self`: a page load carries no user gesture, so `window.open` is blocked outright.
+
+Route-level forwards (`/settings`, `/graphs/new`) follow one shape: ref-guarded mount effect (StrictMode double-invokes it, which would spend two SSO exchanges on one page load), spinner while in flight, retry card on failure — never a dead spinner. Multi-consumer destinations get a small local hook (`src/lib/cross-app.ts`) so the path and target live in one place, mirroring core's `useAccountSettingsLink`.
 
 **Optimistic mutations.** The Inbox `/ledger/inbox` uses optimistic remove via callbacks on approve/reject. The pattern generalizes to other write surfaces (manual JE creation, materialize, future backup/restore) — favor optimistic UI with rollback-on-failure over spinner-and-wait.
 

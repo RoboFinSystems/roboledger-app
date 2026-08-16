@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockSetCurrentGraph = vi.fn()
 const mockSetCurrentEntity = vi.fn()
-const mockNavigateToApp = vi.fn()
+const mockOpenCreateGraph = vi.fn()
 const mockGetEntity = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
@@ -23,8 +23,11 @@ vi.mock('@robosystems/core', () => ({
   },
 }))
 
-vi.mock('@robosystems/core/auth-core/sso', () => ({
-  useSSO: () => ({ navigateToApp: mockNavigateToApp }),
+vi.mock('@/lib/cross-app', () => ({
+  useCreateGraphHandoff: () => ({
+    openCreateGraph: mockOpenCreateGraph,
+    isOpening: false,
+  }),
 }))
 
 vi.mock('react-icons/hi', () => ({
@@ -67,10 +70,11 @@ describe('EntitySelectorDropdown', () => {
     expect(screen.getByText('Create Graph')).toBeInTheDocument()
   })
 
-  it('redirects to platform when Create Graph is clicked', () => {
+  it('hands off to graph creation in a new tab when Create Graph is clicked', () => {
     render(<EntitySelectorDropdown />)
     fireEvent.click(screen.getByText('Create Graph'))
-    expect(mockNavigateToApp).toHaveBeenCalledWith('robosystems', '/graphs/new')
+    // No argument means the hook's `_blank` default — this app's tab stays put.
+    expect(mockOpenCreateGraph).toHaveBeenCalledWith()
   })
 
   it('loads entities in parallel via Promise.allSettled', async () => {
@@ -313,6 +317,6 @@ describe('EntitySelectorDropdown', () => {
     expect(createButton).toBeInTheDocument()
 
     fireEvent.click(createButton)
-    expect(mockNavigateToApp).toHaveBeenCalledWith('robosystems', '/graphs/new')
+    expect(mockOpenCreateGraph).toHaveBeenCalledWith()
   })
 })

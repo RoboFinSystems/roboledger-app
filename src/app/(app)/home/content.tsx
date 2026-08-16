@@ -1,5 +1,6 @@
 'use client'
 
+import { useCreateGraphHandoff } from '@/lib/cross-app'
 import {
   clients,
   customTheme,
@@ -10,7 +11,6 @@ import {
   StatCard,
   useGraphContext,
 } from '@robosystems/core'
-import { useSSO } from '@robosystems/core/auth-core/sso'
 import { Badge, Button, Card } from 'flowbite-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -76,9 +76,6 @@ const TX_TYPE_COLORS: Record<string, string> = {
   Adjustment: 'warning',
   Opening: 'purple',
 }
-
-const API_URL =
-  process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL || 'http://localhost:8000'
 
 // Override the default card theme's `justify-center` so content anchors
 // to the top when the card is stretched to match a taller sibling.
@@ -146,7 +143,7 @@ const INITIAL_STATS: HomeStats = {
 const HomePageContent: FC = function () {
   const { state: graphState } = useGraphContext()
   const router = useRouter()
-  const { navigateToApp } = useSSO(API_URL)
+  const { openCreateGraph } = useCreateGraphHandoff()
 
   const currentGraph = useMemo(() => {
     const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
@@ -522,7 +519,7 @@ const HomePageContent: FC = function () {
               </ul>
               <Button
                 color="primary"
-                onClick={() => navigateToApp('robosystems', '/graphs/new')}
+                onClick={() => void openCreateGraph()}
                 className="w-full"
                 size="lg"
               >
