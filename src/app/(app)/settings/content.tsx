@@ -1,119 +1,58 @@
 'use client'
 
-import type { User } from '@robosystems/core'
-import {
-  ApiKeysCard,
-  customTheme,
-  GeneralInformationCard,
-  PageHeader,
-  PageLayout,
-  PasswordInformationCard,
-} from '@robosystems/core'
-import { useAuth } from '@robosystems/core/auth-components'
-import { useToast } from '@robosystems/core/hooks/use-toast'
-import { Button } from 'flowbite-react'
-import type { FC } from 'react'
+import { useSSO } from '@robosystems/core/auth-core/sso'
+import { Card } from 'flowbite-react'
 import { useState } from 'react'
-import { HiCog, HiMail } from 'react-icons/hi'
+import { HiExternalLink } from 'react-icons/hi'
 
-export interface UserProps {
-  user: User
-  onRefresh?: () => Promise<void>
-}
+const API_URL =
+  process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL || 'http://localhost:8000'
 
-const UserSettingsPageContent: FC<UserProps> = function ({ user, onRefresh }) {
-  const { resendVerificationEmail } = useAuth()
-  const { showSuccess, showError, ToastContainer } = useToast()
-  const [resendLoading, setResendLoading] = useState(false)
-  const [resendSuccess, setResendSuccess] = useState(false)
-  const [resendError, setResendError] = useState(false)
+/**
+ * Account settings live on the login home, not here.
+ *
+ * Identity, password, passkeys and API keys are account-global — one user
+ * across every product app — and the passkey surface in particular *cannot*
+ * render here: WebAuthn binds credentials to a single Relying Party ID (the
+ * login home's domain), so a ceremony from this origin is rejected by the
+ * browser, not by our code. Rather than ship a settings page that silently
+ * omits half the account surface, forward to the one place all of it works.
+ *
+ * Same pattern as /graphs/new — keep the route so deep links, the sidebar
+ * cog and the navbar menu item all still resolve.
+ */
+export function UserSettingsContent() {
+  const { navigateToApp } = useSSO(API_URL)
+  const [navigating, setNavigating] = useState(false)
 
-  const handleResendVerification = async () => {
-    setResendLoading(true)
-    setResendSuccess(false)
-    setResendError(false)
+  const handleNavigate = async () => {
+    setNavigating(true)
     try {
-      const result = await resendVerificationEmail(user.email)
-      if (result.success) {
-        setResendSuccess(true)
-        setTimeout(() => setResendSuccess(false), 5000)
-      } else {
-        setResendError(true)
-        setTimeout(() => setResendError(false), 5000)
-      }
+      await navigateToApp('robosystems', '/settings')
     } catch {
-      setResendError(true)
-      setTimeout(() => setResendError(false), 5000)
-    } finally {
-      setResendLoading(false)
+      setNavigating(false)
     }
   }
 
   return (
-    <PageLayout>
-      <ToastContainer />
-      <PageHeader
-        icon={HiCog}
-        title="User Settings"
-        subtitle="Manage your account settings and preferences"
-      />
-
-      <div className="space-y-6">
-        {user.emailVerified === false && (
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <HiMail className="h-5 w-5 shrink-0 text-zinc-400 dark:text-zinc-500" />
-                <div>
-                  <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Email not verified
-                  </p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    {resendSuccess
-                      ? 'Verification email sent! Check your inbox.'
-                      : resendError
-                        ? 'Failed to send verification email. Please try again.'
-                        : 'Please verify your email address to secure your account.'}
-                  </p>
-                </div>
-              </div>
-              <Button
-                size="xs"
-                color="light"
-                onClick={handleResendVerification}
-                disabled={resendLoading || resendSuccess}
-              >
-                {resendLoading
-                  ? 'Sending...'
-                  : resendSuccess
-                    ? 'Sent'
-                    : 'Resend Verification'}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        <GeneralInformationCard
-          user={{
-            ...user,
-            name: user.name,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          }}
-          theme={customTheme}
-          onRefresh={onRefresh}
-          onSuccess={showSuccess}
-          onError={showError}
-        />
-        <PasswordInformationCard
-          theme={customTheme}
-          onSuccess={showSuccess}
-          onError={showError}
-        />
-        <ApiKeysCard theme={customTheme} />
-      </div>
-    </PageLayout>
+    <div className="flex min-h-[60vh] items-center justify-center px-4">
+      <Card className="max-w-md text-center">
+        <h2 className="font-heading text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+          Account Settings
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          Your profile, password, passkeys and API keys are managed on the
+          RoboSystems platform. Changes there apply across every app.
+        </p>
+        <button
+          onClick={handleNavigate}
+          disabled={navigating}
+          className="bg-primary-700 hover:bg-primary-800 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 inline-flex w-full items-center justify-center rounded-lg px-5 py-3 text-center text-base font-medium text-white focus:ring-4 disabled:opacity-50"
+        >
+          <HiExternalLink className="mr-2 h-5 w-5" />
+          {navigating ? 'Redirecting...' : 'Go to RoboSystems'}
+        </button>
+      </Card>
+    </div>
   )
 }
-
-export default UserSettingsPageContent
