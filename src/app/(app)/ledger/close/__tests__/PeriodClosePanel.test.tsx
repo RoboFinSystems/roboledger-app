@@ -377,7 +377,9 @@ describe('PeriodClosePanel — close overrides', () => {
     const button = (await screen.findByText('Close Period')).closest('button')!
     expect(button).toBeDisabled()
 
-    const checkbox = screen.getByRole('checkbox')
+    // findBy, not getBy: the checkbox and the button render off the same
+    // fetch but not guaranteed in the same tick, which flaked here once.
+    const checkbox = await screen.findByRole('checkbox')
     fireEvent.click(checkbox)
 
     await waitFor(() => expect(button).not.toBeDisabled())
