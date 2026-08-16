@@ -1,28 +1,18 @@
 'use client'
 
-import { CURRENT_APP, LoginRedirector, SignInForm } from '@robosystems/core'
+import { LoginRedirector } from '@robosystems/core'
 
+/**
+ * Interactive auth is centralized on the login home; this page forwards there
+ * and consumes the `?session_id=` bridge handoff on the way back.
+ *
+ * Not a flag any more — the login home owns the WebAuthn Relying Party ID, so
+ * a passkey login can only ever complete on that domain. Rendering a local
+ * sign-in form here could not finish an `mfa_required` step.
+ */
 export default function LoginContent() {
   const apiUrl =
     process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL || 'http://localhost:8000'
 
-  // Centralized login: this page becomes a redirector to the login home
-  // (still consuming ?session_id= bridge handoffs locally). Flag is
-  // per-app and reversible — off renders the full form exactly as before.
-  if (process.env.NEXT_PUBLIC_CENTRALIZED_LOGIN === 'true') {
-    return <LoginRedirector apiUrl={apiUrl} />
-  }
-
-  return (
-    <SignInForm
-      apiUrl={apiUrl}
-      enableSSO={true}
-      currentApp={CURRENT_APP}
-      redirectTo="/home"
-      onSuccess={() => {}}
-      onRedirect={(url) => {
-        window.location.href = url || '/home'
-      }}
-    />
-  )
+  return <LoginRedirector apiUrl={apiUrl} />
 }

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const redirectorProps = vi.fn()
@@ -16,15 +16,14 @@ vi.mock('@robosystems/core', async (importOriginal) => {
 import LoginContent from '../login/content'
 import RegisterContent from '../register/content'
 
-describe('centralized-login flag', () => {
+// Interactive auth is centralized unconditionally — these pages are pure
+// redirectors, with no local-form fallback to fall back to.
+describe('centralized login redirectors', () => {
   afterEach(() => {
-    vi.unstubAllEnvs()
     vi.clearAllMocks()
   })
 
-  it('login renders the redirector when the flag is on', () => {
-    vi.stubEnv('NEXT_PUBLIC_CENTRALIZED_LOGIN', 'true')
-
+  it('login renders the redirector in login mode', () => {
     render(<LoginContent />)
 
     expect(screen.getByTestId('login-redirector')).toBeInTheDocument()
@@ -36,18 +35,7 @@ describe('centralized-login flag', () => {
     )
   })
 
-  it('login renders the full form when the flag is off', async () => {
-    render(<LoginContent />)
-
-    expect(screen.queryByTestId('login-redirector')).not.toBeInTheDocument()
-    await waitFor(() => {
-      expect(screen.getByText('Sign in to your account')).toBeInTheDocument()
-    })
-  })
-
-  it('register renders the redirector in register mode when the flag is on', () => {
-    vi.stubEnv('NEXT_PUBLIC_CENTRALIZED_LOGIN', 'true')
-
+  it('register renders the redirector in register mode', () => {
     render(<RegisterContent />)
 
     expect(screen.getByTestId('login-redirector')).toBeInTheDocument()
@@ -57,14 +45,5 @@ describe('centralized-login flag', () => {
         apiUrl: 'http://localhost:8000',
       })
     )
-  })
-
-  it('register renders the full form when the flag is off', async () => {
-    render(<RegisterContent />)
-
-    expect(screen.queryByTestId('login-redirector')).not.toBeInTheDocument()
-    await waitFor(() => {
-      expect(screen.getByText('Create your account')).toBeInTheDocument()
-    })
   })
 })
