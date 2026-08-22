@@ -25,17 +25,10 @@ const PROVIDER_IMAGES: Record<
     width: 40,
     height: 40,
   },
-  sec: {
-    src: '/images/sec_connect.png',
-    alt: 'SEC EDGAR',
-    width: 60,
-    height: 32,
-  },
 }
 
 const PROVIDER_LABELS: Record<string, string> = {
   quickbooks: 'QuickBooks',
-  sec: 'SEC EDGAR',
 }
 
 export interface ConnectionStatus {
@@ -142,15 +135,9 @@ export default function ConnectionCard({
   const image = PROVIDER_IMAGES[provider]
   const label = PROVIDER_LABELS[provider] || connection.provider
 
-  // Provider-specific subtitle
-  const subtitle =
-    provider === 'sec'
-      ? connection.metadata?.cik
-        ? `CIK: ${connection.metadata.cik}`
-        : null
-      : connection.metadata?.entity_name
-        ? `Company: ${connection.metadata.entity_name}`
-        : null
+  const subtitle = connection.metadata?.entity_name
+    ? `Company: ${connection.metadata.entity_name}`
+    : null
 
   return (
     <Card>
@@ -184,12 +171,6 @@ export default function ConnectionCard({
             {subtitle && (
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 <p>{subtitle}</p>
-              </div>
-            )}
-
-            {connection.metadata?.entity_name && provider === 'sec' && (
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                <p>Entity: {connection.metadata.entity_name}</p>
               </div>
             )}
 
