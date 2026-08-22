@@ -294,6 +294,23 @@ describe('PeriodClosePanel — blockers name what is holding the close', () => {
     ).toBeInTheDocument()
   })
 
+  it('explains a reconciling-item blocker instead of printing its code', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['reconciling_items'],
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    // Unknown codes fall back to the raw string, which reads as a bug to
+    // the user and offers no next step. This blocker fires the first time
+    // anyone edits a synced transaction in QuickBooks, so it needs copy.
+    expect(
+      await screen.findByText(/edited in QuickBooks after they were synced/)
+    ).toBeInTheDocument()
+    expect(screen.queryByText('reconciling_items')).not.toBeInTheDocument()
+  })
+
   it('marks the sample as partial when the count exceeds it', async () => {
     mockGetFiscalCalendar.mockResolvedValue({
       ...CALENDAR,
