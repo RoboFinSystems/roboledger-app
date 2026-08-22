@@ -29,7 +29,6 @@ import ConnectionCard, {
   type ConnectionStatus,
 } from './components/ConnectionCard'
 import QuickBooksSetupForm from './components/QuickBooksSetupForm'
-import SecSetupForm from './components/SecSetupForm'
 import SyncOptionsModal, {
   type SyncOptions,
 } from './components/SyncOptionsModal'
@@ -511,12 +510,7 @@ export default function ModernConnectionsContent() {
             </div>
           </ModalHeader>
           <ModalBody>
-            {setupProvider === 'sec' ? (
-              <SecSetupForm
-                onSuccess={handleSetupSuccess}
-                onCancel={() => setSetupProvider(null)}
-              />
-            ) : setupProvider === 'quickbooks' ? (
+            {setupProvider === 'quickbooks' ? (
               <QuickBooksSetupForm onCancel={() => setSetupProvider(null)} />
             ) : providersLoading ? (
               <LoadingState />
