@@ -67,6 +67,8 @@ const BLOCKER_MESSAGES: Record<string, string> = {
     'Scheduled entries for this period are still pending — promote them so their adjusting entries get drafted, then close.',
   stranded_obligations:
     'Some scheduled entries were promoted but never drafted, so closing now would omit them. Re-run promotion with handler dispatch, or void the obligations.',
+  reconciling_items:
+    'Transactions edited in QuickBooks after they were synced are still awaiting a decision. Review each one and choose how to treat it — restate the original months, book a catch-up entry, or record that you already handled it — then close.',
 }
 
 /**
