@@ -1,6 +1,7 @@
 'use client'
 
 import ExportMenu, { type ExportMenuGroup } from '@/components/ExportMenu'
+import RefreshControl from '@/components/RefreshControl'
 import type { InformationBlockList } from '@robosystems/client/clients'
 import {
   clients,
@@ -81,7 +82,10 @@ const BlockExplorerContent: FC = function () {
   const [envelope, setEnvelope] = useState<EnvelopeBlock | null>(null)
   const [isEnvelopeLoading, setIsEnvelopeLoading] = useState(false)
   const [envelopeError, setEnvelopeError] = useState<string | null>(null)
+  const [fetchedAt, setFetchedAt] = useState<Date | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
   const envelopeSeq = useRef(0)
+  const refreshForGraphId = useRef<string | null>(null)
 
   const currentGraph = useMemo(() => {
     const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
@@ -105,19 +109,35 @@ const BlockExplorerContent: FC = function () {
     [router]
   )
 
+  const reloadExplorer = useCallback(() => {
+    if (!currentGraph) return
+    refreshForGraphId.current = currentGraph.graphId
+    setReloadKey((k) => k + 1)
+  }, [currentGraph])
+
   // Load the block list. Inlined so the `cancelled` flag is local to each
   // invocation — a stale response can't overwrite a newer graph's list.
+  // `reloadKey` re-runs the same path; a populated envelope stays mounted
+  // under the overlay instead of the full-page spinner.
   useEffect(() => {
     if (!currentGraph) {
       setBlocks([])
       setIsListLoading(false)
+      setFetchedAt(null)
+      refreshForGraphId.current = null
       return
     }
 
+    const silent = refreshForGraphId.current === currentGraph.graphId
     let cancelled = false
     void (async () => {
       try {
-        setIsListLoading(true)
+        if (silent) {
+          setIsEnvelopeLoading(true)
+        } else {
+          setIsListLoading(true)
+          setFetchedAt(null)
+        }
         setListError(null)
         const [list, entity] = await Promise.all([
           clients.ledger.listInformationBlocks(currentGraph.graphId, {
@@ -151,14 +171,18 @@ const BlockExplorerContent: FC = function () {
         if (cancelled) return
         console.error('Error loading information blocks:', err)
         setListError('Failed to load information blocks.')
+        if (silent) setIsEnvelopeLoading(false)
       } finally {
-        if (!cancelled) setIsListLoading(false)
+        if (!cancelled) {
+          if (!silent) setIsListLoading(false)
+          refreshForGraphId.current = null
+        }
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [currentGraph])
+  }, [currentGraph, reloadKey])
 
   // Load the selected block's envelope; sequence guard drops stale
   // responses when the selection changes mid-flight.
@@ -194,6 +218,7 @@ const BlockExplorerContent: FC = function () {
       )
       if (seq !== envelopeSeq.current) return
       setEnvelope(block ?? null)
+      setFetchedAt(new Date())
     } catch (err) {
       if (seq !== envelopeSeq.current) return
       console.error('Error loading information block envelope:', err)
@@ -326,6 +351,12 @@ const BlockExplorerContent: FC = function () {
               onSelect={handleExport}
               disabled={!canExport}
             />
+            <RefreshControl
+              onRefresh={reloadExplorer}
+              isRefreshing={isListLoading || isEnvelopeLoading}
+              fetchedAt={fetchedAt}
+              disabled={!currentGraph}
+            />
             <ViewModeToggle
               viewMode={viewMode}
               onChange={handleViewModeChange}
@@ -353,9 +384,9 @@ const BlockExplorerContent: FC = function () {
 
         <div className="min-w-0 flex-1">
           <Card>
-            {isEnvelopeLoading ? (
+            {isEnvelopeLoading && !envelope ? (
               <LoadingState size="xl" className="py-24" />
-            ) : envelopeError ? (
+            ) : envelopeError && !envelope ? (
               <div className="flex items-center gap-2 py-8 text-red-500">
                 <HiExclamationCircle className="h-5 w-5" />
                 <span>{envelopeError}</span>
@@ -369,7 +400,18 @@ const BlockExplorerContent: FC = function () {
                 Information block not found.
               </div>
             ) : (
-              <>
+              <div className="relative">
+                {envelopeError && (
+                  <div className="mb-3 flex items-center gap-2 text-sm text-red-500">
+                    <HiExclamationCircle className="h-4 w-4" />
+                    <span>{envelopeError}</span>
+                  </div>
+                )}
+                {isEnvelopeLoading && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center rounded bg-white/60 dark:bg-gray-900/60">
+                    <LoadingState size="lg" />
+                  </div>
+                )}
                 {envelope.blockType === 'metric' && currentGraph && (
                   <ComputePanel
                     graphId={currentGraph.graphId}
@@ -382,7 +424,7 @@ const BlockExplorerContent: FC = function () {
                   viewMode={viewMode}
                   entityName={entityName}
                 />
-              </>
+              </div>
             )}
           </Card>
         </div>

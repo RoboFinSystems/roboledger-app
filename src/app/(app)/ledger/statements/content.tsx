@@ -1,5 +1,6 @@
 'use client'
 
+import RefreshControl from '@/components/RefreshControl'
 import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
 import {
   clients,
@@ -26,7 +27,7 @@ import {
 import Link from 'next/link'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { HiExclamationCircle, HiRefresh } from 'react-icons/hi'
+import { HiExclamationCircle } from 'react-icons/hi'
 import { TbReportMoney } from 'react-icons/tb'
 
 // The SDK types these directly now — liveFinancialStatement returns
@@ -124,6 +125,7 @@ const LiveStatementsContent: FC = function () {
   const [statement, setStatement] = useState<LiveStatement | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fetchedAt, setFetchedAt] = useState<Date | null>(null)
 
   // Bumped per load; a stale in-flight response (seq !== current) is
   // discarded, so rapidly cycling statement/period filters can't let an
@@ -133,6 +135,7 @@ const LiveStatementsContent: FC = function () {
   const load = useCallback(async () => {
     if (!currentGraph) {
       setStatement(null)
+      setFetchedAt(null)
       return
     }
     // Resolve the window at call time so presets ("YTD", "This month")
@@ -163,6 +166,7 @@ const LiveStatementsContent: FC = function () {
       // missing result surfaces through the catch below instead of rendering as
       // "no data". The periods check stays as a shape guard.
       setStatement(Array.isArray(result?.periods) ? result : null)
+      setFetchedAt(new Date())
     } catch (err) {
       if (seq !== loadSeq.current) return
       console.error('Error loading live statement:', err)
@@ -275,15 +279,12 @@ const LiveStatementsContent: FC = function () {
             </div>
           )}
 
-          <Button
-            size="sm"
-            color="gray"
-            onClick={() => load()}
-            disabled={isLoading}
-          >
-            <HiRefresh className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
+          <RefreshControl
+            onRefresh={() => void load()}
+            isRefreshing={isLoading}
+            fetchedAt={fetchedAt}
+            disabled={!currentGraph}
+          />
         </div>
       </Card>
 
@@ -295,8 +296,13 @@ const LiveStatementsContent: FC = function () {
       )}
 
       <Card>
-        <div className="overflow-x-auto">
-          {isLoading ? (
+        <div className="relative overflow-x-auto">
+          {isLoading && statement && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded bg-white/60 dark:bg-gray-900/60">
+              <LoadingState size="lg" />
+            </div>
+          )}
+          {isLoading && !statement ? (
             <LoadingState />
           ) : !statement || statement.facts.length === 0 ? (
             <EmptyState

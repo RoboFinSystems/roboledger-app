@@ -68,8 +68,8 @@ vi.mock('next/link', () => ({
 }))
 
 vi.mock('flowbite-react', () => ({
-  Button: ({ children, onClick, disabled }: any) => (
-    <button onClick={onClick} disabled={disabled}>
+  Button: ({ children, onClick, disabled, ...rest }: any) => (
+    <button onClick={onClick} disabled={disabled} {...rest}>
       {children}
     </button>
   ),
@@ -86,6 +86,7 @@ vi.mock('react-icons/hi', () => ({
   HiDownload: () => <span data-testid="icon-download" />,
   HiExclamationCircle: () => <span data-testid="icon-error" />,
   HiLockClosed: () => <span data-testid="icon-lock" />,
+  HiRefresh: () => <span data-testid="icon-refresh" />,
 }))
 
 // Only the download side is stubbed — the serializers themselves run,
@@ -460,6 +461,51 @@ describe('PlanContent', () => {
     render(<PlanContent />)
     expect(screen.getByTestId('empty-state')).toBeInTheDocument()
     expect(mockListInformationBlocks).not.toHaveBeenCalled()
+  })
+
+  it('refreshes the block list and envelopes without changing scenario or window', async () => {
+    render(<PlanContent />)
+    await screen.findByTestId('plan-grid')
+    expect(screen.getByTestId('fetched-at')).toHaveTextContent(
+      'Fetched just now'
+    )
+
+    const listCalls = mockListInformationBlocks.mock.calls.length
+    mockGetInformationBlock.mockClear()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+
+    await waitFor(() =>
+      expect(mockListInformationBlocks.mock.calls.length).toBeGreaterThan(
+        listCalls
+      )
+    )
+    await waitFor(() =>
+      expect(mockGetInformationBlock).toHaveBeenCalledWith(
+        'kg1',
+        'struct_budget',
+        { seriesHistory: 12 }
+      )
+    )
+    for (const id of ['struct_is', 'struct_bs', 'struct_cf']) {
+      expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', id, {
+        scenarioId: 'struct_budget',
+        series: true,
+        seriesHistory: 12,
+      })
+    }
+    expect(screen.getByTestId('plan-grid')).toBeInTheDocument()
+  })
+
+  it('keeps the grid mounted while a refresh loads', async () => {
+    render(<PlanContent />)
+    await screen.findByTestId('plan-grid')
+
+    mockListInformationBlocks.mockImplementation(() => new Promise(() => {}))
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+
+    expect(screen.getByTestId('plan-grid')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Refresh' })).toBeDisabled()
   })
 
   it('surfaces a list-load failure', async () => {

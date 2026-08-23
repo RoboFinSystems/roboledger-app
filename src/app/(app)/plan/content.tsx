@@ -1,6 +1,7 @@
 'use client'
 
 import ExportMenu, { type ExportMenuGroup } from '@/components/ExportMenu'
+import RefreshControl from '@/components/RefreshControl'
 import type { InformationBlockList } from '@robosystems/client/clients'
 import {
   clients,
@@ -76,7 +77,13 @@ const PlanContent: FC = function () {
   >([])
   const [isGridLoading, setIsGridLoading] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [fetchedAt, setFetchedAt] = useState<Date | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
   const loadSeq = useRef(0)
+  // Set to the graph id Refresh was clicked for so a silent list reload
+  // keeps the grid mounted (overlay, not the full-page spinner). Cleared
+  // when that load finishes; StrictMode remounts still see the same id.
+  const refreshForGraphId = useRef<string | null>(null)
 
   // Two windows split at the seam (history looks back, forecast looks
   // forward) — a single trailing window would keep the forecast's far
@@ -93,17 +100,32 @@ const PlanContent: FC = function () {
     )
   }, [graphState.graphs, graphState.currentGraphId])
 
+  const reloadPlan = useCallback(() => {
+    if (!currentGraph) return
+    refreshForGraphId.current = currentGraph.graphId
+    setReloadKey((k) => k + 1)
+  }, [currentGraph])
+
   // Block list — statement blocks (fact-bearing) + forecast scenarios.
+  // `reloadKey` re-runs the same path without unmounting a populated grid.
   useEffect(() => {
     if (!currentGraph) {
       setBlocks([])
       setIsListLoading(false)
+      setFetchedAt(null)
+      refreshForGraphId.current = null
       return
     }
+    const silent = refreshForGraphId.current === currentGraph.graphId
     let cancelled = false
     void (async () => {
       try {
-        setIsListLoading(true)
+        if (silent) {
+          setIsGridLoading(true)
+        } else {
+          setIsListLoading(true)
+          setFetchedAt(null)
+        }
         setError(null)
         const [list, entity] = await Promise.all([
           clients.ledger.listInformationBlocks(currentGraph.graphId, {
@@ -146,14 +168,18 @@ const PlanContent: FC = function () {
         if (cancelled) return
         console.error('Error loading information blocks:', err)
         setError('Failed to load information blocks.')
+        if (silent) setIsGridLoading(false)
       } finally {
-        if (!cancelled) setIsListLoading(false)
+        if (!cancelled) {
+          if (!silent) setIsListLoading(false)
+          refreshForGraphId.current = null
+        }
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [currentGraph, router])
+  }, [currentGraph, router, reloadKey])
 
   // Instance name FIRST: `displayName` is the block-TYPE label
   // ("Forecast"), so displayName-first would render every scenario in
@@ -261,6 +287,7 @@ const PlanContent: FC = function () {
         })
         if (seq !== loadSeq.current || loaded === null) return
         setEnvelopes(loaded)
+        setFetchedAt(new Date())
       } catch (err) {
         if (seq !== loadSeq.current) return
         console.error('Error loading plan envelopes:', err)
@@ -448,6 +475,12 @@ const PlanContent: FC = function () {
               windowed.sections.length === 0 || isGridLoading || isExporting
             }
           />
+          <RefreshControl
+            onRefresh={reloadPlan}
+            isRefreshing={isListLoading || isGridLoading}
+            fetchedAt={fetchedAt}
+            disabled={!currentGraph}
+          />
         </div>
         {model.columns.length > 3 && (
           <PlanWindowControl
@@ -463,7 +496,7 @@ const PlanContent: FC = function () {
       <Card>
         {isListLoading || (isGridLoading && envelopes.length === 0) ? (
           <LoadingState size="xl" className="py-24" />
-        ) : error ? (
+        ) : error && envelopes.length === 0 ? (
           <div className="flex items-center gap-2 py-8 text-red-500">
             <HiExclamationCircle className="h-5 w-5" />
             <span>{error}</span>
@@ -492,6 +525,12 @@ const PlanContent: FC = function () {
           // overlay — a full-page spinner on every toggle reads as a
           // reload, not a refinement.
           <div className="relative">
+            {error && (
+              <div className="mb-3 flex items-center gap-2 text-sm text-red-500">
+                <HiExclamationCircle className="h-4 w-4" />
+                <span>{error}</span>
+              </div>
+            )}
             {isGridLoading && (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded bg-white/60 dark:bg-gray-900/60">
                 <LoadingState size="lg" />
