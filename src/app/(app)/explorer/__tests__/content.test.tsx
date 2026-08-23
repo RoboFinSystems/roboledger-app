@@ -54,8 +54,8 @@ vi.mock('next/navigation', () => ({
 }))
 
 vi.mock('flowbite-react', () => ({
-  Button: ({ children, onClick, disabled }: any) => (
-    <button onClick={onClick} disabled={disabled}>
+  Button: ({ children, onClick, disabled, ...rest }: any) => (
+    <button onClick={onClick} disabled={disabled} {...rest}>
       {children}
     </button>
   ),
@@ -71,6 +71,7 @@ vi.mock('react-icons/hi', () => ({
   HiChartBar: () => <span />,
   HiDownload: () => <span data-testid="icon-download" />,
   HiExclamationCircle: () => <span data-testid="icon-error" />,
+  HiRefresh: () => <span data-testid="icon-refresh" />,
 }))
 
 // The real menu is a Flowbite Dropdown (covered by its own test); here
@@ -352,6 +353,44 @@ describe('BlockExplorerContent', () => {
       '/explorer?block=struct_metrics&view=facts',
       { scroll: false }
     )
+  })
+
+  it('refreshes the block list and selected envelope', async () => {
+    render(<BlockExplorerContent />)
+    await screen.findByTestId('block-view')
+    expect(screen.getByTestId('fetched-at')).toHaveTextContent(
+      'Fetched just now'
+    )
+
+    const listCalls = mockListInformationBlocks.mock.calls.length
+    mockGetInformationBlock.mockClear()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+
+    await waitFor(() =>
+      expect(mockListInformationBlocks.mock.calls.length).toBeGreaterThan(
+        listCalls
+      )
+    )
+    await waitFor(() =>
+      expect(mockGetInformationBlock).toHaveBeenCalledWith(
+        'kg1',
+        'struct_metrics',
+        undefined
+      )
+    )
+    expect(screen.getByTestId('block-view')).toBeInTheDocument()
+  })
+
+  it('keeps the envelope mounted while a refresh loads', async () => {
+    render(<BlockExplorerContent />)
+    await screen.findByTestId('block-view')
+
+    mockListInformationBlocks.mockImplementation(() => new Promise(() => {}))
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+
+    expect(screen.getByTestId('block-view')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Refresh' })).toBeDisabled()
   })
 
   it('surfaces a list-load failure', async () => {
