@@ -27,8 +27,6 @@ RoboLedger App is the web interface for AI-native accounting, building semantic 
 - **Document Search**: Full-text and semantic search across uploaded documents and connected sources
 - **Library**: Browse canonical taxonomies, elements, and reference data
 - **Entities**: Multi-entity management across all graphs
-- **API Keys**: Secure programmatic access with `rfs`-prefixed API keys
-- **Settings**: User profile and password management
 
 ## Quick Start
 
