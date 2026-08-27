@@ -44,13 +44,14 @@ jobs:
     secrets: inherit
 
   create-deployment:
-    needs: [runner, test]
+    needs: [runner]
     runs-on: ${{ fromJSON(needs.runner.outputs.runner_config) }}
     # SECURITY (M8): gate the entire prod pipeline behind the "production" GitHub
     # Environment. deploy-s3, build, and deploy-app all depend (transitively) on
     # this job, so adding required reviewers to the "production" environment
     # (Settings → Environments → production) forces a manual approval before any
     # prod AWS mutation. With no protection rules configured this is a no-op.
+    # Runs first so approval is immediate; tests run during the wait.
     environment: production
     outputs:
       deployment_id: ${{ steps.deployment.outputs.deployment_id }}
@@ -137,7 +138,7 @@ jobs:
     secrets: inherit
 
   deployment-successful:
-    needs: [runner, create-deployment, build, deploy-app]
+    needs: [runner, test, create-deployment, build, deploy-app]
     runs-on: ${{ fromJSON(needs.runner.outputs.runner_config) }}
     outputs:
       deployment_id: ${{ needs.create-deployment.outputs.deployment_id }}
@@ -151,7 +152,7 @@ jobs:
           description: 'Production Deployment Succeeded'
 
   handle-deployment-failure:
-    needs: [runner, create-deployment, build, deploy-app]
+    needs: [runner, test, create-deployment, build, deploy-app]
     if: always() && contains(needs.*.result, 'failure')
     runs-on: ${{ fromJSON(needs.runner.outputs.runner_config) }}
     steps:
