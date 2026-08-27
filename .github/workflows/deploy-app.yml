@@ -161,12 +161,44 @@ jobs:
             echo "Skipping hosted zone lookup for ${{ inputs.app_access_mode }} mode"
           fi
 
-          if aws cloudformation describe-stacks --stack-name ${{ inputs.stack_name }} 2>&1 | grep -q 'Stack with id ${{ inputs.stack_name }} does not exist'; then
-            STACK_ACTION="create-stack"
+          # Pick the stack action from the stack's actual state. A first create
+          # that failed leaves an empty ROLLBACK_COMPLETE stack that cannot be
+          # updated; a failed update whose rollback also failed cannot be
+          # updated until that rollback is continued.
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.stack_name }} \
+            --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+          echo "Stack ${{ inputs.stack_name }} status: $STACK_STATUS"
+
+          case "$STACK_STATUS" in
+            DOES_NOT_EXIST)
+              STACK_ACTION="create-stack"
+              ;;
+            ROLLBACK_COMPLETE)
+              echo "Failed initial create left an empty stack - deleting it so it can be created again"
+              aws cloudformation delete-stack --stack-name ${{ inputs.stack_name }}
+              aws cloudformation wait stack-delete-complete --stack-name ${{ inputs.stack_name }}
+              STACK_ACTION="create-stack"
+              ;;
+            UPDATE_ROLLBACK_FAILED)
+              echo "Previous update's rollback did not finish - continuing it before updating"
+              aws cloudformation continue-update-rollback --stack-name ${{ inputs.stack_name }}
+              aws cloudformation wait stack-rollback-complete --stack-name ${{ inputs.stack_name }}
+              STACK_ACTION="update-stack"
+              ;;
+            *_IN_PROGRESS)
+              echo "ERROR: stack is busy ($STACK_STATUS) - wait for the current operation to finish, then rerun"
+              exit 1
+              ;;
+            *)
+              STACK_ACTION="update-stack"
+              ;;
+          esac
+
+          if [ "$STACK_ACTION" = "create-stack" ]; then
             echo "Creating new stack ${{ inputs.stack_name }}"
             echo "is_new_stack=true" >> $GITHUB_OUTPUT
           else
-            STACK_ACTION="update-stack"
             echo "Updating existing stack ${{ inputs.stack_name }}"
             echo "is_new_stack=false" >> $GITHUB_OUTPUT
           fi
