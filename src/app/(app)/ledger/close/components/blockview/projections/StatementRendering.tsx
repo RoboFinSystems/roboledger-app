@@ -1,7 +1,7 @@
 'use client'
 
+import ValidationBanner from '@/components/ValidationBanner'
 import {
-  Badge,
   Table,
   TableBody,
   TableCell,
@@ -10,7 +10,6 @@ import {
   TableRow,
 } from 'flowbite-react'
 import type { FC } from 'react'
-import { HiCheckCircle, HiExclamationCircle } from 'react-icons/hi'
 import { formatCurrency, formatDate } from '../../../utils'
 import PeriodWindowControl from '../PeriodWindowControl'
 import type {
@@ -39,8 +38,9 @@ interface StatementRenderingProjectionProps {
  * component is a pure presentation of that pre-computed grid.
  *
  * Replaces the legacy StatementTable + getStatement(reportId, type)
- * fetch path. The validation badge mirrors what StatementPanel
- * rendered before the envelope migration.
+ * fetch path. The validation banner is the shared `ValidationBanner`
+ * (three states — an unchecked statement of equity renders neutral, not
+ * green).
  */
 const StatementRenderingProjection: FC<StatementRenderingProjectionProps> = ({
   envelope,
@@ -215,45 +215,6 @@ const StatementGrid: FC<StatementGridProps> = ({
           })}
         </TableBody>
       </Table>
-    </div>
-  )
-}
-
-// ── Validation banner ────────────────────────────────────────────────
-
-interface ValidationBannerProps {
-  validation: NonNullable<EnvelopeRendering['validation']>
-}
-
-const ValidationBanner: FC<ValidationBannerProps> = ({ validation }) => {
-  return (
-    <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
-      <div className="flex items-center gap-2 text-sm">
-        {validation.passed ? (
-          <Badge color="success" size="sm">
-            <HiCheckCircle className="mr-1 inline h-3 w-3" />
-            Validation Passed
-          </Badge>
-        ) : (
-          <Badge color="failure" size="sm">
-            <HiExclamationCircle className="mr-1 inline h-3 w-3" />
-            Validation Failed
-          </Badge>
-        )}
-        {validation.warnings.length > 0 && (
-          <Badge color="warning" size="sm">
-            {validation.warnings.length} warning
-            {validation.warnings.length !== 1 ? 's' : ''}
-          </Badge>
-        )}
-      </div>
-      {validation.failures.length > 0 && (
-        <ul className="mt-2 text-sm text-red-400">
-          {validation.failures.map((f, i) => (
-            <li key={i}>{f}</li>
-          ))}
-        </ul>
-      )}
     </div>
   )
 }
