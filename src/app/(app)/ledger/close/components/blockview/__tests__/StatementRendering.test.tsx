@@ -28,6 +28,7 @@ vi.mock('flowbite-react', () => ({
 vi.mock('react-icons/hi', () => ({
   HiCheckCircle: () => <span data-testid="icon-check" />,
   HiExclamationCircle: () => <span data-testid="icon-warn" />,
+  HiMinusCircle: () => <span data-testid="icon-neutral" />,
 }))
 
 import StatementRenderingProjection from '../projections/StatementRendering'
@@ -165,6 +166,7 @@ describe('StatementRenderingProjection', () => {
         rendering: makeRendering({
           validation: {
             passed: true,
+            status: 'passed',
             checks: ['accounting equation'],
             failures: [],
             warnings: [],
@@ -184,6 +186,7 @@ describe('StatementRenderingProjection', () => {
         rendering: makeRendering({
           validation: {
             passed: false,
+            status: 'failed',
             checks: [],
             failures: ['Assets ≠ Liabilities + Equity'],
             warnings: [],
@@ -204,6 +207,7 @@ describe('StatementRenderingProjection', () => {
         rendering: makeRendering({
           validation: {
             passed: true,
+            status: 'passed',
             checks: [],
             failures: [],
             warnings: ['drift > 1%'],
@@ -214,6 +218,33 @@ describe('StatementRenderingProjection', () => {
     render(<StatementRenderingProjection envelope={env} />)
     const warn = screen.getByTestId('badge-warning')
     expect(within(warn).getByText('1 warning')).toBeInTheDocument()
+  })
+
+  it('renders a neutral badge, not a green one, when nothing was checked', () => {
+    // A statement of equity has no validation rules yet: the backend returns
+    // status=inconclusive with passed=false. That is "not validated", not
+    // "failed" and never "passed".
+    const env = makeEnvelope({
+      view: {
+        rendering: makeRendering({
+          validation: {
+            passed: false,
+            status: 'inconclusive',
+            checks: ['no_validation_rules'],
+            failures: [],
+            warnings: [
+              "No validation rules exist for 'equity_statement' — nothing was checked.",
+            ],
+          },
+        }),
+      },
+    })
+    render(<StatementRenderingProjection envelope={env} />)
+    const neutral = screen.getByTestId('badge-gray')
+    expect(within(neutral).getByText(/Not validated/)).toBeInTheDocument()
+    expect(screen.queryByTestId('badge-success')).toBeNull()
+    expect(screen.queryByTestId('badge-failure')).toBeNull()
+    expect(screen.getByText(/nothing was checked/)).toBeInTheDocument()
   })
 
   it('shows the unmapped count footnote when > 0', () => {

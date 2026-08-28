@@ -1,6 +1,7 @@
 'use client'
 
 import RefreshControl from '@/components/RefreshControl'
+import ValidationBanner from '@/components/ValidationBanner'
 import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
 import {
   clients,
@@ -321,6 +322,15 @@ const LiveStatementsContent: FC = function () {
 
         {!isLoading && statement && statement.facts.length > 0 && (
           <div className="border-t border-gray-200 p-4 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+            {/* Guard rails ran on exactly the rendered columns — a plug that
+                foots the cash flow by construction, or a column that does
+                not balance, is reported here rather than hidden. */}
+            {statement.validation && (
+              <ValidationBanner
+                validation={statement.validation}
+                className="mb-3"
+              />
+            )}
             {statement.fact_count} concept
             {statement.fact_count === 1 ? '' : 's'}
             {statement.unmapped_count > 0 &&
