@@ -9,7 +9,9 @@ RUN apk add --no-cache git
 
 # Upgrade the bundled npm CLI to clear CVEs in npm's vendored deps
 # (picomatch, brace-expansion, tar, minimatch) — build-time only
-RUN npm install -g npm@latest
+# Pinned: the node image bundles npm 11.17.0 but `npm@latest` silently crossed into
+# npm 12 on 2026-07-08, so image builds have been changing major versions unattended.
+RUN npm install -g npm@12.0.2
 
 # Install dependencies
 COPY package.json package-lock.json ./
