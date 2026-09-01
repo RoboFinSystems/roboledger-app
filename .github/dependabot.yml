@@ -11,7 +11,21 @@ updates:
     # Routine minor/patch churn arrives as two PRs instead of a dozen.
     # Majors are deliberately left ungrouped: they need individual triage,
     # and grouping them would force an all-or-nothing call on unrelated bumps.
+    # vite-toolchain is the exception and is listed first (a dependency joins
+    # the first group it matches): those packages are peer-locked to each
+    # other, so they are already one decision, and splitting them produces
+    # PRs that cannot go green alone.
     groups:
+      # vitest peers vite, @vitest/coverage-v8 peers vitest at an exact
+      # version, and @vitejs/plugin-react peers vite. No update-types filter,
+      # so majors travel together too — @vitejs/plugin-react 6 requires
+      # vite ^8, and the two arriving as separate PRs deadlocks both.
+      vite-toolchain:
+        patterns:
+          - 'vite'
+          - 'vitest'
+          - '@vitejs/*'
+          - '@vitest/*'
       npm-production:
         dependency-type: 'production'
         update-types:
@@ -37,6 +51,15 @@ updates:
       - dependency-name: 'typescript'
         update-types:
           - 'version-update:semver-major'
+      # @types/node tracks the runtime, not npm's cadence. Everything here runs
+      # Node 24 (engines >=24.0.0, node-version: '24' in every workflow), and
+      # Node 26 types describe APIs the runtime does not have — typecheck keeps
+      # passing precisely because the guardrail is gone. Offered and declined
+      # three times across the frontends (Aug and Sep 2026). Drop this entry
+      # when the workflows move off Node 24.
+      - dependency-name: '@types/node'
+        update-types:
+          - 'version-update:semver-major'
 
   # GitHub Actions — pinned action versions
   - package-ecosystem: 'github-actions'
@@ -46,8 +69,7 @@ updates:
     labels:
       - 'dependencies'
     # Same split: routine SHA re-pins batch into one PR, majors stay separate
-    # so a wanted major (setup-node v7) is not tied to an unwanted one
-    # (setup-uv v9).
+    # so a wanted major (setup-node v7) is not tied to an unwanted one.
     groups:
       github-actions:
         patterns:
@@ -55,3 +77,15 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
+    ignore:
+      # Held for fleet consistency with the robosystems backend, which pins
+      # v8.3.2 and ignores majors because v9 flipped `prune-cache` to false and
+      # would grow its uv cache. That reasoning does not apply here — this app
+      # sets `enable-cache: false` and only needs `uvx` on PATH for cfn-lint,
+      # so v9's and v10's breaking changes are both inert. The hold is about
+      # one rule across the fleet rather than a per-repo risk assessment, and
+      # about not re-triaging the same declined PR every month. Drop this entry
+      # when the backend takes a setup-uv major, and move in step with it.
+      - dependency-name: 'astral-sh/setup-uv'
+        update-types:
+          - 'version-update:semver-major'

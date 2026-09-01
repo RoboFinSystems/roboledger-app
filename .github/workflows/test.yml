@@ -15,23 +15,6 @@ jobs:
     permissions:
       contents: read
       security-events: write # Required for Trivy SARIF upload
-    env:
-      # Use fixed port for roboledger-app (port 5434)
-      DATABASE_URL: postgres://postgres:postgres@localhost:5434/robosystems_test
-    services:
-      postgres:
-        image: postgres:14
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: robosystems_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5434:5432
     steps:
       - name: Checkout
         uses: actions/checkout@v7
