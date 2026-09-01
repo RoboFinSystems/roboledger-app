@@ -179,6 +179,34 @@ export default {
         dark: {
           css: {
             color: '#D1D5DB',
+            // The typography plugin styles several elements off its own
+            // `--tw-prose-*` variables rather than off element rules, and its
+            // variable selectors win on specificity: `thead th` reads
+            // `--tw-prose-headings`, so an element rule can never recolor a
+            // header cell, and the light-mode default (near-black) leaves
+            // table headers invisible on dark — search results render SEC
+            // narrative and XBRL text blocks, which are full of tables.
+            // Override the variables themselves — the way `prose-invert` does
+            // — so every variable-driven element (headers, captions, kbd,
+            // markers, borders) follows the dark palette.
+            '--tw-prose-body': '#D1D5DB',
+            '--tw-prose-headings': '#F9FAFB',
+            '--tw-prose-lead': '#9CA3AF',
+            '--tw-prose-links': '#6098FA',
+            '--tw-prose-bold': '#F9FAFB',
+            '--tw-prose-counters': '#9CA3AF',
+            '--tw-prose-bullets': '#9CA3AF',
+            '--tw-prose-hr': '#374151',
+            '--tw-prose-quotes': '#9CA3AF',
+            '--tw-prose-quote-borders': '#00D4AA',
+            '--tw-prose-captions': '#9CA3AF',
+            '--tw-prose-kbd': '#F9FAFB',
+            '--tw-prose-kbd-shadows': 'rgb(249 250 251 / 10%)',
+            '--tw-prose-code': '#1AFFD1',
+            '--tw-prose-pre-code': '#E5E7EB',
+            '--tw-prose-pre-bg': '#111827',
+            '--tw-prose-th-borders': '#4B5563',
+            '--tw-prose-td-borders': '#374151',
             h1: {
               color: '#F9FAFB',
             },
