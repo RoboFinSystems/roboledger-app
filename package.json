@@ -54,11 +54,8 @@
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3"
   },
+  "//overrides": "deepmerge-ts is forced to ^8 to clear GHSA-ggr8-5vv4-36mx. It reaches us only through flowbite-react, which pins 7.1.5 exactly; npm's only other remedy is downgrading flowbite-react. REMOVE once flowbite-react ships a release depending on deepmerge-ts 8.",
   "overrides": {
-    "sharp": "^0.35.0",
-    "next": {
-      "postcss": "^8.5.10"
-    },
     "deepmerge-ts": "^8.0.1"
   },
   "devDependencies": {
