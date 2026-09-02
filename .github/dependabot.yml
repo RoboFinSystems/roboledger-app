@@ -89,3 +89,21 @@ updates:
       - dependency-name: 'astral-sh/setup-uv'
         update-types:
           - 'version-update:semver-major'
+
+  # Docker — the Node base image in the Dockerfile
+  # OpenSSL is statically linked into the Node binary, so OpenSSL fixes reach
+  # this image only through a new base tag; without this ecosystem nothing
+  # watches that tag and the bump has to be remembered by hand.
+  - package-ecosystem: 'docker'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    labels:
+      - 'dependencies'
+    ignore:
+      # Node majors are runtime migrations: engines >=24.0.0, node-version: '24'
+      # in every workflow, and @types/node held at 24 above. Take them
+      # deliberately and in step with the workflows, not as a tag bump.
+      - dependency-name: 'public.ecr.aws/docker/library/node'
+        update-types:
+          - 'version-update:semver-major'
