@@ -41,3 +41,25 @@ jobs:
     with:
       runner_config: ${{ needs.runner.outputs.runner_config }}
     secrets: inherit
+
+  # Records the change class on every pull request, whoever opened it, and for
+  # code changes requests the automated review and waits for it. Standard
+  # changes (dependency bumps, manifests, docs) ride the test gate alone. The
+  # action is shared from the platform repository; see its action.yml for the
+  # path rule. This is the documented second reader that stands in for a human
+  # approver in a single-maintainer repository.
+  change-classification:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Classify the change and request the review
+        uses: RoboFinSystems/robosystems/.github/actions/classify-change@main
+        with:
+          pr_number: ${{ github.event.pull_request.number }}
+          github_token: ${{ github.token }}
+          review_token: ${{ secrets.ACTIONS_TOKEN }}

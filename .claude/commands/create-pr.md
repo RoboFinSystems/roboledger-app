@@ -82,15 +82,16 @@ gh pr create \
 
 Print the resulting PR URL.
 
-### 5. Optional Claude review
+### 5. The Claude review — requested by the workflow, not by you
 
-Only if the user explicitly asks (e.g. passes `review` / `--review` in arguments), request a review:
+Every pull request that changes code gets a `@claude` review. This is a change-management control: this is a single-maintainer repository where GitHub forbids self-approval, so an automated second reader on every code change is the compensating control that stands in for independent human review.
 
-```bash
-gh pr comment <number> --body "@claude please review this PR"
-```
+**Do not post the review request yourself.** The test workflow's `change-classification` job runs on every pull request, whoever opened it, and does this deterministically:
 
-`claude.yml` only fires on an `@claude` mention from an `OWNER`/`MEMBER`/`COLLABORATOR`, so nothing happens automatically. Leave it off by default — the description is now accurate, and the user can run `/pr-review` locally (full context) or mention `@claude` when ready.
+- It records the change class on the PR: `change:standard` for dependency bumps, manifests and lockfiles, documentation and release notes (test gate only, no review); `change:normal` for anything that touches application code.
+- For a normal change it posts `@claude please review this PR` **once**, if no such request exists, and waits for the review before the job passes.
+
+Posting the request here as well would trigger a second review of the same change, which doubles the cost for nothing. After creating the PR, confirm the job ran and applied a label; that is the whole of your part. Post the request by hand only if the job failed before requesting. `/pr-review` remains the deeper local pass and is unaffected.
 
 ## Output
 
@@ -99,7 +100,7 @@ After creating the PR, report:
 1. The PR URL.
 2. A one-line summary of the title.
 3. Target ← source branches.
-4. Whether a Claude review was requested.
+4. The change class the workflow applied (`change:standard` or `change:normal`), and for a normal change that the review request is on the PR.
 5. Any cross-repo or deploy-ordering dependency you flagged in the body.
 
 ## Arguments
@@ -107,7 +108,7 @@ After creating the PR, report:
 `$ARGUMENTS` may contain:
 
 - A target branch (default `main`).
-- `review` / `--review` to auto-request a `@claude` review.
+- `review` / `--review` is accepted and ignored — the review is requested by the workflow (§5).
 - Freeform guidance on what to emphasize in the description.
 
 $ARGUMENTS
