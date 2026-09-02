@@ -14,6 +14,7 @@ export default function Footer() {
         { label: 'Platform', href: '#platform' },
         { label: 'Done for you', href: HARBINGER_URL },
         { label: 'FAQ', href: '#faq' },
+        { label: 'Blog', href: '/blog' },
       ]}
       contactModal={ContactModal}
     />
