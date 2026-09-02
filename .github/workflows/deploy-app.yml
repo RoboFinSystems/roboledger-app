@@ -281,7 +281,7 @@ jobs:
           fi
 
       - name: Monitor Stack Deployment
-        uses: ./.github/actions/monitor-stack-deployment
+        uses: RoboFinSystems/robosystems/.github/actions/monitor-stack-deployment@main
         with:
           stack-name: ${{ inputs.stack_name }}
           timeout: '1800'

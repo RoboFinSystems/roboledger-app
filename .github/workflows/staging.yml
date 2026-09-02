@@ -31,7 +31,7 @@ jobs:
 
       - name: Check runner availability
         id: check
-        uses: ./.github/actions/runner-availability
+        uses: RoboFinSystems/robosystems/.github/actions/select-runner@main
         with:
           runner_labels: ${{ vars.RUNNER_LABELS || 'github-hosted' }}
           runner_scope: ${{ vars.RUNNER_SCOPE || 'both' }}
@@ -155,7 +155,7 @@ jobs:
           token: ${{ github.token }}
 
       - name: Handle Deployment Failure
-        uses: ./.github/actions/handle-deployment-failure
+        uses: RoboFinSystems/robosystems/.github/actions/handle-deployment-failure@main
         with:
           deployment-id: ${{ needs.create-deployment.outputs.deployment_id }}
           environment: staging
