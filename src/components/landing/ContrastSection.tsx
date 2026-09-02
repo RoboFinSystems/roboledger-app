@@ -1,36 +1,40 @@
 import FloatingElementsVariant from './FloatingElementsVariant'
 
+// The contrast is the export chain against the ledger (the argument of the first
+// roboledger.ai post): every spreadsheet step starts from an export that keeps the numbers
+// and throws away the accounting. The right column follows the arc, with the close as one
+// step near the end, not the headline.
 const traditional = [
   {
+    title: 'Export the trial balance',
+    body: 'Every question starts with a fresh export. The numbers come across; the accounts, periods and provenance do not.',
+  },
+  {
     title: 'Build mapping tables',
-    body: 'VLOOKUP hell: manual account-to-line-item mapping in Excel that breaks every time the chart of accounts changes.',
+    body: 'Manual account-to-line-item mapping in Excel that breaks every time the chart of accounts changes.',
   },
   {
-    title: 'Extract & transform',
-    body: 'Export the trial balance, copy/paste into templates, and pray the formulas still work.',
+    title: 'Reconcile the formulas',
+    body: 'Hunt for #REF! errors, fix broken links, reconcile totals, adjust for every new account.',
   },
   {
-    title: 'Manual reconciliation',
-    body: 'Hunt for #REF! errors, fix broken formulas, reconcile totals, adjust for every new account.',
-  },
-  {
-    title: 'Publish & pray',
-    body: 'Lock cells, save as PDF, and hope nothing changed since you started.',
+    title: 'Publish a snapshot',
+    body: 'Lock cells, save as PDF, and hope nothing changed since you started. Next month, start over.',
   },
 ]
 
 const aiNative = [
   {
     title: 'Events flow in',
-    body: 'QuickBooks syncs and manual entries arrive as typed business events — no spreadsheet plumbing.',
+    body: 'QuickBooks syncs and manual entries arrive as typed business events, on a graph Claude can query. No spreadsheet plumbing.',
   },
   {
-    title: 'AI triages',
-    body: 'Claude pre-classifies each event in the inbox — approve in one click, reject, or enable autopilot for trusted sources.',
+    title: 'Ask, share, plan',
+    body: 'Ask why gross margin moved, share a statement that ties, roll a plan off your actuals, and compare your numbers to public filers.',
   },
   {
-    title: 'Guided close',
-    body: 'Schedules post depreciation & prepaid entries to draft; the rule engine validates before you lock.',
+    title: 'Approve, then close',
+    body: 'Claude triages each event in the inbox; nothing writes back until you post an entry. When you trust it, schedules and the rule engine carry the close.',
   },
   {
     title: 'Publish & file',
@@ -48,14 +52,14 @@ export default function ContrastSection() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12 text-center">
           <div className="bg-primary-500/20 text-primary-400 mb-4 inline-block rounded-full px-4 py-1 text-sm font-semibold">
-            A new way to close the books
+            Off the export chain
           </div>
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
             The end of spreadsheet hell
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Move from manual, error-prone bookkeeping to an event-driven,
-            AI-assisted close — the same job, a fraction of the time.
+            Every export keeps the numbers and throws away the accounting. Put
+            the books on a ledger Claude can query and the exports stop.
           </p>
         </div>
 
@@ -79,7 +83,7 @@ export default function ContrastSection() {
                 </svg>
               </div>
               <h3 className="text-2xl font-bold text-white">
-                Traditional close
+                The export chain
               </h3>
             </div>
             <div className="space-y-4">
@@ -97,10 +101,11 @@ export default function ContrastSection() {
             </div>
             <div className="mt-6 rounded-lg bg-red-950/50 p-4">
               <div className="text-sm font-semibold text-red-400">
-                Result: 5–10 days
+                Result: a photograph of your books
               </div>
               <p className="mt-1 text-xs text-gray-400">
-                Manual work, error-prone, time-consuming
+                Every answer is a snapshot, and the next question starts from a
+                new export
               </p>
             </div>
           </div>
@@ -142,10 +147,11 @@ export default function ContrastSection() {
             </div>
             <div className="mt-6 rounded-lg bg-green-950/50 p-4">
               <div className="text-sm font-semibold text-green-400">
-                Result: hours, not days
+                Result: a ledger you can ask
               </div>
               <p className="mt-1 text-xs text-gray-400">
-                Automated intelligence, validated accuracy, continuous close
+                Every statement, plan and comparison runs off the same synced
+                events, validated before it ships
               </p>
             </div>
           </div>
@@ -166,7 +172,8 @@ export default function ContrastSection() {
                 d="M13 10V3L4 14h7v7l9-11h-7z"
               />
             </svg>
-            10x faster close — validated every step of the way
+            Validated every step of the way, and nothing writes back until you
+            post an entry
           </div>
         </div>
       </div>

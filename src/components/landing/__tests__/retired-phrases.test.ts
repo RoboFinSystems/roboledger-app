@@ -6,7 +6,13 @@ import { describe, expect, it } from 'vitest'
 // the close last (specs/roboledger/landing-hero-arc.md). These phrases carried the old
 // frame, close first and a speed claim, and a later copy edit must not bring them back.
 // Case-insensitive on purpose: the H1 and the last band used different capitalisation.
-const RETIRED = ['close your books with ai', 'in hours, not days']
+// "hours, not days" is the bare form: the contrast section carried it without the "in".
+const RETIRED = [
+  'close your books with ai',
+  'a new way to close the books',
+  'hours, not days',
+  'faster close',
+]
 
 const landingDir = path.resolve(__dirname, '..')
 const files = [
