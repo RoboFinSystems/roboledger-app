@@ -22,26 +22,27 @@ export default function HeroSection() {
         <div className="text-center">
           <div className="border-primary-500/30 bg-primary-950/40 text-primary-300 mx-auto mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium sm:text-sm">
             <span className="bg-primary-400 h-1.5 w-1.5 rounded-full"></span>
-            AI-native accounting, built on a financial knowledge graph
+            Your books, in the chat you already use
           </div>
 
           <h1 className="font-heading mb-6 text-4xl leading-tight font-extrabold sm:text-5xl md:mb-8 md:text-7xl lg:text-8xl">
             <span className="animate-pulsate-gradient-subtle block text-transparent">
-              Close your books
+              Connect your books.
             </span>
             <span className="from-primary-400 via-secondary-400 to-accent-400 mt-2 block bg-linear-to-r bg-clip-text pb-2 text-transparent">
-              with AI
+              Ask Claude.
             </span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-gray-300 sm:text-lg md:mt-8 md:text-2xl">
-            Connect QuickBooks, let{' '}
-            <strong className="text-primary-400">Claude</strong> triage every
-            transaction in an inbox, close the period with built-in guard rails,
-            and publish validated, XBRL-ready statements —{' '}
-            <span className="whitespace-nowrap text-white">
-              in hours, not days.
-            </span>
+            Sync QuickBooks into a graph{' '}
+            <strong className="text-primary-400">Claude</strong> can reason
+            over. Statements that tie, a plan that rolls off your actuals, and
+            your numbers beside public companies.{' '}
+            <span className="text-white">
+              Nothing writes back until you post an entry.
+            </span>{' '}
+            When you trust it, it drafts the close.
           </p>
 
           {/* CTAs */}
@@ -111,12 +112,16 @@ export default function HeroSection() {
               </svg>
               <span>Open source</span>
             </a>
+            <div className="flex items-center gap-2">
+              <span className="bg-primary-400 h-1.5 w-1.5 rounded-full"></span>
+              <span>We close our own books with it</span>
+            </div>
           </div>
 
           {/* Product preview */}
           <div className="mx-auto mt-14 max-w-4xl md:mt-20">
             <ProductShot
-              alt="Claude closing the books with a human in the loop — calling RoboLedger tools over MCP"
+              alt="Claude working the books with a human in the loop, calling RoboLedger tools over MCP"
               caption="Claude · MCP › roboledger"
               aspect="aspect-[4/3]"
             >

@@ -1,17 +1,20 @@
+// The first band under the hero, in the arc's order: nothing writes back (connect and
+// analyze with no trust), the comparison (the wedge), then the statements. Each line is
+// true at HEAD; the close is further down the page, where the story puts it.
 const stats = [
   {
-    stat: 'Hours, not days',
+    stat: 'Nothing writes back',
     label:
-      'Close the period on an event-driven ledger instead of a 5–10 day spreadsheet grind',
+      'Nothing reaches QuickBooks until you post an entry. Read, analyze and plan first.',
   },
   {
-    stat: 'Every txn triaged',
+    stat: 'Beside the filers',
     label:
-      'Claude pre-classifies each transaction in the inbox — you approve or reject, with autopilot for sources you trust',
+      'Add the SEC graph next to your books and ask how your margins compare to public companies in your niche.',
   },
   {
     stat: 'XBRL 2.1 + JSON-LD',
-    label: 'Statements export as validated reports, straight from your ledger',
+    label: 'Statements export as validated reports, straight from your ledger.',
   },
 ]
 
