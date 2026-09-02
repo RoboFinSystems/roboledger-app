@@ -137,9 +137,13 @@ jobs:
     needs: create-branch
     permissions:
       contents: write
-    uses: ./.github/workflows/tag-release.yml
+    uses: RoboFinSystems/robosystems/.github/workflows/tag-release.yml@main
     with:
       branch_ref: ${{ needs.create-branch.outputs.branch_name }}
+      product_name: 'RoboLedger App'
+      product_description: 'Financial reporting & accounting web application'
+      project_kind: 'Next.js frontend application'
+      live_url: 'https://roboledger.ai'
     secrets: inherit
 
   # ============================================================================
