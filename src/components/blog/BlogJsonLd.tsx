@@ -8,7 +8,7 @@ import type { BlogPost } from '@/lib/blog'
 const ORG = {
   name: 'RoboLedger',
   url: 'https://roboledger.ai',
-  logo: 'https://roboledger.ai/images/logos/roboledger.png',
+  logo: 'https://roboledger.ai/images/logos/roboledger-icon.png',
 }
 
 export const BLOG_DESCRIPTION =

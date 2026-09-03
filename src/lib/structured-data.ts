@@ -8,7 +8,7 @@ export const organizationJsonLd = {
   '@type': 'Organization',
   name: 'RoboLedger',
   url: 'https://roboledger.ai',
-  logo: 'https://roboledger.ai/images/logos/roboledger.png',
+  logo: 'https://roboledger.ai/images/logos/roboledger-icon.png',
   description:
     'AI-native financial reporting — turn natural language into complete, validated financial statements.',
   sameAs: [
