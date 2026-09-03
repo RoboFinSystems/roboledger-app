@@ -14,8 +14,9 @@ export default function Footer() {
         { label: 'Platform', href: '#platform' },
         { label: 'Done for you', href: HARBINGER_URL },
         { label: 'FAQ', href: '#faq' },
-        { label: 'Blog', href: '/blog' },
       ]}
+      // The Company column's Blog link goes to this site's own lane (core 0.8.8).
+      blogHref="/blog"
       contactModal={ContactModal}
     />
   )
