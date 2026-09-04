@@ -12,7 +12,8 @@
 #
 # Prerequisites:
 #   - GitHub CLI installed and authenticated
-#   - Run ./bin/bootstrap.sh first (sets AWS_ROLE_ARN for OIDC)
+#   - Run `just bootstrap` in the robosystems backend repo first — it sets
+#     AWS_ROLE_ARN / AWS_ACCOUNT_ID / AWS_REGION on this repository for OIDC
 #
 # =============================================================================
 
@@ -63,7 +64,7 @@ check_prerequisites() {
 
     # Check if bootstrap was run (AWS_ROLE_ARN should exist)
     if ! gh variable get AWS_ROLE_ARN >/dev/null 2>&1; then
-        print_warning "AWS_ROLE_ARN not set - run ./bin/bootstrap.sh first"
+        print_warning "AWS_ROLE_ARN not set - run \`just bootstrap\` in the robosystems backend repo first"
     fi
 
     print_success "Prerequisites check passed"
@@ -109,7 +110,7 @@ setup_config() {
     echo "🔧 Optional Configuration (press Enter for defaults):"
     echo ""
 
-    # Default to the region bootstrap.sh exported (or .envrc set), not a literal
+    # Default to whatever region the environment already carries, not a literal
     AWS_REGION_DEFAULT="${AWS_REGION:-us-east-1}"
     read -p "  AWS Region [${AWS_REGION_DEFAULT}]: " AWS_REGION_INPUT
     AWS_REGION="${AWS_REGION_INPUT:-$AWS_REGION_DEFAULT}"
