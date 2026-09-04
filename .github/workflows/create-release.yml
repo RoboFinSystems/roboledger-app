@@ -108,11 +108,10 @@ jobs:
 
           echo "Updating main branch version from $CURRENT_VERSION to $NEW_VERSION"
 
-          # Update version in package.json
+          # Update version in package.json and package-lock.json. npm version
+          # writes both, so no install runs here and the registry is off the
+          # release path.
           npm version "$NEW_VERSION" --no-git-tag-version
-
-          # Install dependencies to update lock file
-          npm install
 
           # Commit and push to main
           git add package.json package-lock.json
