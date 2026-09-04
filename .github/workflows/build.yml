@@ -44,11 +44,6 @@ on:
         type: string
         description: 'S3 bucket name for static assets (from deploy-s3 outputs). If not provided, uses legacy naming pattern.'
         default: ''
-      publish_to_dockerhub:
-        required: false
-        type: boolean
-        default: false
-        description: 'Whether to publish images to Docker Hub'
     outputs:
       image:
         description: 'Full image reference with tag'
@@ -65,11 +60,6 @@ on:
       is_release:
         description: 'Whether this is a release build'
         value: ${{ jobs.ecr-build.outputs.is_release }}
-    secrets:
-      DOCKERHUB_USERNAME:
-        required: false
-      DOCKERHUB_TOKEN:
-        required: false
 
 jobs:
   # ===========================================================================
@@ -389,137 +379,3 @@ jobs:
           category: 'container-scan'
 
   # ===========================================================================
-  # Docker Hub Build - Configurable image with runtime environment injection
-  # ===========================================================================
-  # This job builds a separate image with placeholder values that get replaced
-  # at container startup via entrypoint.sh. This allows users to configure
-  # the image for any environment (local dev, self-hosted, etc.)
-  # ===========================================================================
-  dockerhub-build:
-    if: ${{ inputs.publish_to_dockerhub == true }}
-    runs-on: ${{ fromJSON(inputs.runner_config) }}
-    timeout-minutes: 45
-    permissions:
-      contents: read
-    steps:
-      - name: Free disk space
-        run: |
-          echo "Disk space before cleanup:"
-          df -h /
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          echo "Disk space after cleanup:"
-          df -h /
-
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          repository: ${{ github.repository }}
-          ref: ${{ github.ref }}
-          token: ${{ github.token }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
-        with:
-          driver-opts: |
-            image=moby/buildkit:master
-            network=host
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: '24'
-
-      - name: Install dependencies and build Next.js with placeholders
-        env:
-          # Use placeholder values that will be replaced at runtime by entrypoint.sh.
-          # The app name is identity, not configuration — bake the literal.
-          NEXT_PUBLIC_APP_NAME: roboledger
-          NEXT_PUBLIC_ROBOSYSTEMS_API_URL: '__PLACEHOLDER_ROBOSYSTEMS_API_URL__'
-          NEXT_PUBLIC_ROBOLEDGER_APP_URL: '__PLACEHOLDER_ROBOLEDGER_APP_URL__'
-          NEXT_PUBLIC_ROBOINVESTOR_APP_URL: '__PLACEHOLDER_ROBOINVESTOR_APP_URL__'
-          NEXT_PUBLIC_ROBOSYSTEMS_APP_URL: '__PLACEHOLDER_ROBOSYSTEMS_APP_URL__'
-          NEXT_PUBLIC_MAINTENANCE_MODE: '__PLACEHOLDER_MAINTENANCE_MODE__'
-          NEXT_PUBLIC_TURNSTILE_SITE_KEY: '__PLACEHOLDER_TURNSTILE_SITE_KEY__'
-          NEXT_PUBLIC_CF_ANALYTICS_TOKEN: '__PLACEHOLDER_CF_ANALYTICS_TOKEN__'
-          NEXT_PUBLIC_S3_ENDPOINT_URL: '__PLACEHOLDER_S3_ENDPOINT_URL__'
-        run: |
-          npm ci
-          npm run build
-
-          # Create a tarball of the build output for Docker to use
-          tar -czf next-build.tar.gz .next
-
-      - name: Determine version tag
-        id: version
-        run: |
-          VERSION_TAG=""
-          IS_RELEASE="false"
-
-          # Check if this is a version tag (v*.*.*)
-          if [[ "$GITHUB_REF" == refs/tags/v*.*.* ]]; then
-            VERSION_TAG=${GITHUB_REF#refs/tags/}
-            IS_RELEASE="true"
-            echo "📦 Release version: $VERSION_TAG"
-          # Check if this is a release branch (release/*)
-          elif [[ "$GITHUB_REF" == refs/heads/release/* ]]; then
-            BRANCH_VERSION=${GITHUB_REF#refs/heads/release/}
-            VERSION_TAG="v${BRANCH_VERSION}-hotfix.${GITHUB_SHA:0:8}"
-            IS_RELEASE="true"
-            echo "🔥 Hotfix version: $VERSION_TAG"
-          else
-            VERSION_TAG="git-${GITHUB_SHA:0:8}"
-            echo "🔧 Development version: $VERSION_TAG"
-          fi
-
-          echo "version_tag=$VERSION_TAG" >> $GITHUB_OUTPUT
-          echo "is_release=$IS_RELEASE" >> $GITHUB_OUTPUT
-
-      - name: Build and push to Docker Hub
-        if: steps.version.outputs.is_release == 'true'
-        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4
-        env:
-          VERSION_TAG: ${{ steps.version.outputs.version_tag }}
-        with:
-          timeout_minutes: 18
-          max_attempts: 2
-          retry_on: any
-          command: |
-            export DOCKER_BUILDKIT=1
-            export COMPOSE_DOCKER_CLI_BUILD=1
-
-            # Prepare Docker Hub tags
-            TAGS="-t robofinsystems/roboledger-app:latest"
-            TAGS="$TAGS -t robofinsystems/roboledger-app:$VERSION_TAG"
-
-            echo "🚀 Publishing configurable image to Docker Hub"
-
-            # Build for both amd64 and arm64 (for Mac M1/M2 users)
-            # SBOM and provenance attestations improve Docker Hub security score
-            docker buildx build \
-              --platform linux/amd64,linux/arm64 \
-              --push \
-              --sbom=true \
-              --provenance=mode=max \
-              $TAGS \
-              -f Dockerfile .
-
-            echo "📋 Docker Hub image tags created:"
-            echo "$TAGS" | tr ' ' '\n' | grep -E '^-t' | sed 's/-t /  - /'
-
-      - name: Skip non-release build
-        if: steps.version.outputs.is_release != 'true'
-        run: |
-          echo "⏭️ Skipping Docker Hub publication (non-release build)"
-          echo "Docker Hub images are only published for version tags (v*.*.*) and release branches"

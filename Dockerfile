@@ -1,7 +1,14 @@
 # syntax=docker/dockerfile:1
 
+# Multi-arch note: the Docker Hub image is built for linux/amd64 and linux/arm64
+# on one x86 runner. Every stage that runs Node is pinned to the build platform
+# (--platform=$BUILDPLATFORM) so nothing executes under QEMU emulation: an
+# emulated `npm ci` crashed intermittently with SIGILL and then hung the build
+# for the full retry window. Only the runtime stage is the target platform, and
+# it never runs Node at build time.
+
 # --- Build Stage ---
-FROM public.ecr.aws/docker/library/node:24.19.0-alpine3.24 AS builder
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/node:24.19.0-alpine3.24 AS builder
 WORKDIR /app
 
 # Install git for private repository access
@@ -28,6 +35,31 @@ RUN if [ -f next-build.tar.gz ]; then \
   npm run build; \
   fi
 
+# --- Runtime Dependencies Stage ---
+# Production node_modules for the TARGET platform, resolved on the build
+# platform: npm's cpu/os/libc flags select the target's optional native packages
+# (@next/swc-*, @img/sharp-*, ...) without executing any of them. Nothing in
+# this lockfile has an install script that runs on Linux (only fsevents, which is
+# macOS-only), so the cross-install is exact.
+# This is the authoritative runtime node_modules — we deliberately do NOT copy
+# node_modules from the builder, so devDependencies (jsdom, vitest, eslint, ...)
+# stay out of the scanned runtime image and don't drag in their CVEs.
+# Nested lockfiles shipped inside package tarballs (demo/playground dirs) are
+# never read at runtime, but container scanners parse them as installed
+# dependencies and flag phantom CVEs.
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/node:24.19.0-alpine3.24 AS deps
+ARG TARGETARCH
+WORKDIR /app
+RUN npm install -g npm@12.0.2
+COPY package.json package-lock.json ./
+RUN case "$TARGETARCH" in \
+    amd64) NPM_CPU=x64 ;; \
+    arm64) NPM_CPU=arm64 ;; \
+    *) echo "unsupported TARGETARCH: $TARGETARCH" && exit 1 ;; \
+  esac && \
+  npm ci --omit=dev --cpu="$NPM_CPU" --os=linux --libc=musl && \
+  find node_modules -mindepth 2 -name package-lock.json -delete
+
 # --- Production Stage ---
 FROM public.ecr.aws/docker/library/node:24.19.0-alpine3.24 AS runner
 WORKDIR /app
@@ -42,21 +74,16 @@ RUN echo "os-refresh ${CACHE_DATE}" && apk upgrade --no-cache && apk add --no-ca
 # Create non-root user before copying files (enables --chown)
 RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
 
-# Install only production dependencies. This is the authoritative runtime
-# node_modules — we deliberately do NOT copy node_modules from the builder,
-# so devDependencies (jsdom, vitest, eslint, ...) stay out of the scanned
-# runtime image and don't drag in their CVEs (e.g. jsdom's transitive undici).
-COPY package.json package-lock.json ./
-# npm is needed only to install the runtime node_modules — remove it afterwards.
-# The entrypoint starts `next` directly, and npm's vendored deps (brace-expansion,
-# tar) carry known CVEs faster than npm ships fixes; deleting the CLI keeps them
-# out of the scanned image entirely.
-# Nested lockfiles shipped inside package tarballs (demo/playground dirs) are
-# never read at runtime, but container scanners parse them as installed
-# dependencies and flag phantom CVEs.
-RUN npm ci --omit=dev && \
-  rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx && \
-  find node_modules -mindepth 2 -name package-lock.json -delete
+# npm never runs in this stage: the runtime node_modules are copied in from the
+# deps stage below. The entrypoint starts `next` directly, and npm's vendored
+# deps (brace-expansion, tar) carry known CVEs faster than npm ships fixes;
+# deleting the CLI keeps them out of the scanned image entirely.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
+
+# Production node_modules for this platform (see the deps stage). The lockfile
+# rides along so container scanners keep resolving the same dependency set.
+COPY --from=deps /app/package-lock.json ./package-lock.json
+COPY --from=deps /app/node_modules ./node_modules
 
 # Copy built app from builder with proper ownership
 COPY --from=builder --chown=appuser:appgroup /app/.next ./.next
