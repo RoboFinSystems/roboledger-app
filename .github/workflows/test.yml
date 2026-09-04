@@ -11,7 +11,9 @@ on:
 jobs:
   test:
     runs-on: ${{ fromJSON(inputs.runner_config) }}
-    timeout-minutes: 10
+    # Has to cover the sum of the step budgets below, or a slow-but-healthy
+    # run is killed at the job ceiling with no step having exceeded its own.
+    timeout-minutes: 20
     permissions:
       contents: read
       security-events: write # Required for Trivy SARIF upload
@@ -37,7 +39,7 @@ jobs:
           enable-cache: false # No Python deps to cache in this Node.js app
 
       - name: Install Dependencies
-        timeout-minutes: 5
+        timeout-minutes: 8
         # npm ci installs from the lockfile instead of re-resolving it, and
         # fails loudly if the two ever disagree rather than quietly rewriting
         # package-lock.json mid-run.
