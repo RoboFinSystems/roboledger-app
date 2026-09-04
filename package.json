@@ -8,7 +8,6 @@
     "node": ">=24.0.0"
   },
   "bin": {
-    "bootstrap": "./bin/bootstrap.sh",
     "create-feature": "./bin/create-feature.sh",
     "create-release": "./bin/create-release.sh",
     "gha-setup": "./bin/gha-setup.sh"
@@ -35,8 +34,7 @@
     "deploy:prod": "./bin/deploy.sh prod",
     "feature:create": "./bin/create-feature.sh",
     "release:create": "./bin/create-release.sh",
-    "setup:gha": "./bin/gha-setup.sh",
-    "setup:bootstrap": "./bin/bootstrap.sh"
+    "setup:gha": "./bin/gha-setup.sh"
   },
   "dependencies": {
     "@aws-sdk/client-sns": "^3.1121.0",
