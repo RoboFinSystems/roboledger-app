@@ -62,7 +62,7 @@ This is the whole point — ground the description in what actually happened:
   - **`@robosystems/core` / `@robosystems/report-components`.** Shared components live in their own repos; a version bump here is an adoption, and if it changes call sites, say which. A `report-components` bump changes how statements render and is user-visible — describe the visual change, not just the version. If the PR patches around a package bug locally, note it as temporary and link the upstream issue.
   - **`@robosystems/client`.** Post-1.0 semver; a major bump lands as real code changes here, not a lockfile refresh. Distinguish the two.
   - **CloudFormation.** Edits to `cloudformation/template.yaml` or `cloudformation/s3.yaml` mean a stack update rides the deploy — note which stack.
-  - **Config surface.** New `NEXT_PUBLIC_*` values are baked at build time from GitHub Actions variables, so a new one needs `npm run setup:gha` (or a bootstrap re-run) **before** the deploy, not after.
+  - **Config surface.** New `NEXT_PUBLIC_*` values are baked at build time from GitHub Actions variables, so a new one needs `npm run setup:gha` **before** the deploy, not after.
 
 - **Security-fix disclosure.** If the PR fixes a security issue, the prose is often _more_ actionable than the diff — keep it terse and non-actionable. Describe the area hardened, never the mechanism: "harden input validation on the contact endpoint", not the how. **No** exploit mechanics, attack scenarios, affected-route enumerations, payloads/regexes, or "previously protected only by X" tells. Detailed root cause and any PoC stay in private notes, referenced by filename only. For coordinated disclosure use a private GitHub Security Advisory, never a public issue.
 

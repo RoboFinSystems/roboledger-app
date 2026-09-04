@@ -99,7 +99,9 @@ npm install @robosystems/core@latest
 
 - Fork this repo (and the [robosystems](https://github.com/RoboFinSystems/robosystems) backend)
 - AWS account with IAM Identity Center (SSO)
-- Run `npm run setup:bootstrap` to configure OIDC and GitHub variables
+- Run `just bootstrap` in the backend repo — it deploys OIDC and sets this
+  repository's `AWS_ROLE_ARN`, `AWS_ACCOUNT_ID` and `AWS_REGION`
+- Run `npm run setup:gha` here to configure the remaining deployment variables
 
 See the **[Bootstrap Guide](https://github.com/RoboFinSystems/robosystems/wiki/Bootstrap-Guide)** for complete instructions including access modes (internal, public).
 

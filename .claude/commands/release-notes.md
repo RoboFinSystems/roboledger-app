@@ -37,7 +37,7 @@ Do not write notes from commit subjects alone. Read the PR bodies (`gh pr view <
 - **Backend dependency.** RoboLedger is a client of the RoboSystems API — the extensions GraphQL surface and the roboledger operations endpoints. If the release needs API behavior that only exists in a newer service version, the notes must say so; deploy order matters (API first, then app). Never describe a capability the deployed API doesn't yet serve.
 - **SDK and component bumps.** `@robosystems/client` / `@robosystems/client-extensions` are consumed directly at call sites, so a client major lands as real code changes here. A `@robosystems/report-components` bump changes how statements render and is user-visible — worth a line. A lockfile-only refresh is not.
 - **CloudFormation changes.** Edits to `cloudformation/template.yaml` or `cloudformation/s3.yaml` mean a stack update rides the deploy — note which stack.
-- **Config surface.** New GitHub Actions variables or environment variables need `npm run setup:gha` (or a bootstrap re-run) before the deploy, not after. Call that out.
+- **Config surface.** New GitHub Actions variables or environment variables need `npm run setup:gha` before the deploy, not after. Call that out.
 - **Accounting-visible behavior.** Changes to close, chart-of-accounts, statement rendering, or anything that alters numbers a bookkeeper sees deserve their own line and precise wording. Users reconcile against these.
 
 ### 4. Security disclosure review
