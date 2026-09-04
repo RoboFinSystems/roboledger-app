@@ -91,8 +91,6 @@ jobs:
       maintenance_mode: ${{ vars.MAINTENANCE_MODE_STAGING || 'false' }}
       turnstile_site_key: ${{ vars.TURNSTILE_SITE_KEY || '' }}
       static_assets_bucket_name: ${{ needs.deploy-s3.outputs.static_assets_bucket_name }}
-      # Docker Hub publishing for staging: disabled (staging builds should not go to Docker Hub)
-      publish_to_dockerhub: false
     secrets: inherit
 
   deploy-app:
