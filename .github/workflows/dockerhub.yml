@@ -1,7 +1,7 @@
 name: Docker Hub
 
 # Publishes the self-host image (linux/amd64 + linux/arm64) to Docker Hub.
-# Called by prod.yml AFTER the production deploy; nothing depends on this
+# Called by prod.yml alongside the production deploy; nothing depends on this
 # workflow, so a Docker Hub failure shows red here without blocking a release.
 # The caller gates it on DOCKERHUB_PUBLISHING_ENABLED and a release ref.
 
