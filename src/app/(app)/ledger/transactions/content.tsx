@@ -315,40 +315,6 @@ const TransactionsContent: FC = function () {
             />
           </div>
 
-          {/* Transactions list transactions and expand entries underneath, so
-          they cannot show an entry with no parent transaction — which is
-          every entry a period close posts. The Journal Entries tab reads
-          entries directly. */}
-          <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
-            <nav className="-mb-px flex gap-6" aria-label="Ledger views">
-              <button
-                type="button"
-                onClick={() => setActiveTab('transactions')}
-                className={`flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${
-                  activeTab === 'transactions'
-                    ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-                aria-current={activeTab === 'transactions' ? 'page' : undefined}
-              >
-                <TbReceipt className="h-4 w-4" />
-                Transactions
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('entries')}
-                className={`flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${
-                  activeTab === 'entries'
-                    ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-                aria-current={activeTab === 'entries' ? 'page' : undefined}
-              >
-                <TbBook2 className="h-4 w-4" />
-                Journal Entries
-              </button>
-            </nav>
-          </div>
           <div>
             <label
               htmlFor="endDate"
@@ -371,6 +337,41 @@ const TransactionsContent: FC = function () {
           </Button>
         )}
       </div>
+      {/* Transactions list transactions and expand entries underneath, so
+      they cannot show an entry with no parent transaction — which is
+      every entry a period close posts. The Journal Entries tab reads
+      entries directly. */}
+      <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
+        <nav className="-mb-px flex gap-6" aria-label="Ledger views">
+          <button
+            type="button"
+            onClick={() => setActiveTab('transactions')}
+            className={`flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${
+              activeTab === 'transactions'
+                ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+            aria-current={activeTab === 'transactions' ? 'page' : undefined}
+          >
+            <TbReceipt className="h-4 w-4" />
+            Transactions
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('entries')}
+            className={`flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${
+              activeTab === 'entries'
+                ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+            aria-current={activeTab === 'entries' ? 'page' : undefined}
+          >
+            <TbBook2 className="h-4 w-4" />
+            Journal Entries
+          </button>
+        </nav>
+      </div>
+
       {graphState.currentGraphId && (
         <NewJournalEntryModal
           graphId={graphState.currentGraphId}

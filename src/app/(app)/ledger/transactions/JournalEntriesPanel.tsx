@@ -1,5 +1,6 @@
 'use client'
 
+import { formatDate } from '@/lib/ledger/formatters'
 import { clients, EmptyState, LoadingState } from '@robosystems/core'
 import {
   Alert,
@@ -70,18 +71,24 @@ interface JournalEntryRow {
   lineItems: JournalLineItem[]
 }
 
-const formatCurrency = (amount: number): string =>
+/**
+ * These amounts are already DOLLARS, not cents.
+ *
+ * The ledger surfaces carry two unit conventions on identically-named
+ * fields, and the schema is the only place that says which is which:
+ *   `LedgerJournalEntry.totalDebit`  / `LedgerLineItem.debitAmount` → Float, dollars  (this panel)
+ *   `DraftEntry.totalDebit`          / `DraftLineItem.debitAmount`  → Int,   cents    (PeriodClosePanel, which divides by 100)
+ *
+ * So `formatAmount` from `lib/ledger/formatters` — which takes cents and
+ * divides — must NOT be used here; it would render $42.41 as $0.42. Named
+ * `formatDollars` rather than `formatCurrency` so the unit is stated at
+ * every call site instead of inferred.
+ */
+const formatDollars = (amount: number): string =>
   new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
   }).format(amount)
-
-const formatDate = (dateString: string): string =>
-  new Date(dateString + 'T00:00:00').toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
 
 interface JournalEntriesPanelProps {
   graphId: string
@@ -394,7 +401,12 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-mono font-medium">
-                          {formatCurrency(entry.totalDebit)}
+                          {/* Balanced entries have equal sides; an unbalanced
+                              all-credit entry has totalDebit 0 and would
+                              otherwise render $0.00 despite real amounts. */}
+                          {formatDollars(
+                            Math.max(entry.totalDebit, entry.totalCredit)
+                          )}
                         </TableCell>
                       </TableRow>
 
@@ -439,12 +451,12 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                                       </td>
                                       <td className="text-primary-600 dark:text-primary-400 py-2 text-right font-mono">
                                         {li.debitAmount
-                                          ? formatCurrency(li.debitAmount)
+                                          ? formatDollars(li.debitAmount)
                                           : '-'}
                                       </td>
                                       <td className="py-2 text-right font-mono text-green-600 dark:text-green-400">
                                         {li.creditAmount
-                                          ? formatCurrency(li.creditAmount)
+                                          ? formatDollars(li.creditAmount)
                                           : '-'}
                                       </td>
                                     </tr>
@@ -457,10 +469,10 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                                       Total
                                     </td>
                                     <td className="text-primary-600 dark:text-primary-400 py-2 text-right font-mono">
-                                      {formatCurrency(entry.totalDebit)}
+                                      {formatDollars(entry.totalDebit)}
                                     </td>
                                     <td className="py-2 text-right font-mono text-green-600 dark:text-green-400">
-                                      {formatCurrency(entry.totalCredit)}
+                                      {formatDollars(entry.totalCredit)}
                                     </td>
                                   </tr>
                                 </tbody>
