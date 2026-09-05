@@ -38,7 +38,8 @@ import {
   HiPlus,
   HiSearch,
 } from 'react-icons/hi'
-import { TbReceipt } from 'react-icons/tb'
+import { TbBook2, TbReceipt } from 'react-icons/tb'
+import { JournalEntriesPanel } from './JournalEntriesPanel'
 import { NewJournalEntryModal } from './NewJournalEntryModal'
 
 const TRANSACTION_TYPE_COLORS: Record<string, string> = {
@@ -109,6 +110,9 @@ const TransactionsContent: FC = function () {
   const [refreshKey, setRefreshKey] = useState(0)
   const [startDate, setStartDate] = useState<string | null>(null)
   const [endDate, setEndDate] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'transactions' | 'entries'>(
+    'transactions'
+  )
 
   // Get unique transaction types
   const transactionTypes = useMemo(() => {
@@ -292,15 +296,81 @@ const TransactionsContent: FC = function () {
         subtitle="View transaction journal with line item details"
       />
 
-      {/* §3.10 — New manual journal entry */}
-      {graphState.currentGraphId && (
-        <div className="mb-4 flex justify-end">
+      {/* Date range is page-level — it scopes both tabs, so it sits above
+          them rather than inside either view's own filters. */}
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <div>
+            <label
+              htmlFor="startDate"
+              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
+            >
+              Start Date
+            </label>
+            <TextInput
+              id="startDate"
+              type="date"
+              value={startDate || ''}
+              onChange={(e) => setStartDate(e.target.value || null)}
+            />
+          </div>
+
+          {/* Transactions list transactions and expand entries underneath, so
+          they cannot show an entry with no parent transaction — which is
+          every entry a period close posts. The Journal Entries tab reads
+          entries directly. */}
+          <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
+            <nav className="-mb-px flex gap-6" aria-label="Ledger views">
+              <button
+                type="button"
+                onClick={() => setActiveTab('transactions')}
+                className={`flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${
+                  activeTab === 'transactions'
+                    ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+                aria-current={activeTab === 'transactions' ? 'page' : undefined}
+              >
+                <TbReceipt className="h-4 w-4" />
+                Transactions
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('entries')}
+                className={`flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${
+                  activeTab === 'entries'
+                    ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+                aria-current={activeTab === 'entries' ? 'page' : undefined}
+              >
+                <TbBook2 className="h-4 w-4" />
+                Journal Entries
+              </button>
+            </nav>
+          </div>
+          <div>
+            <label
+              htmlFor="endDate"
+              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
+            >
+              End Date
+            </label>
+            <TextInput
+              id="endDate"
+              type="date"
+              value={endDate || ''}
+              onChange={(e) => setEndDate(e.target.value || null)}
+            />
+          </div>
+        </div>
+        {graphState.currentGraphId && (
           <Button color="primary" onClick={() => setNewEntryOpen(true)}>
             <HiPlus className="mr-2 h-4 w-4" />
             New Entry
           </Button>
-        </div>
-      )}
+        )}
+      </div>
       {graphState.currentGraphId && (
         <NewJournalEntryModal
           graphId={graphState.currentGraphId}
@@ -310,289 +380,276 @@ const TransactionsContent: FC = function () {
         />
       )}
 
-      {/* Filters */}
-      <Card>
-        <div className="flex flex-wrap items-end gap-4 p-4">
-          {/* Search */}
-          <div className="w-full sm:w-64">
-            <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+      {activeTab === 'entries' && graphState.currentGraphId ? (
+        <JournalEntriesPanel
+          graphId={graphState.currentGraphId}
+          startDate={startDate}
+          endDate={endDate}
+          refreshKey={refreshKey}
+        />
+      ) : (
+        <>
+          {/* Filters */}
+          <Card>
+            <div className="flex flex-wrap items-end gap-4 p-4">
+              {/* Search */}
+              <div className="w-full sm:w-64">
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  </div>
+                  <TextInput
+                    id="search"
+                    placeholder="Search transactions..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
-              <TextInput
-                id="search"
-                placeholder="Search transactions..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+
+              {/* Type Filter */}
+              <div className="w-full sm:w-48">
+                <label
+                  htmlFor="typeFilter"
+                  className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
+                >
+                  Type
+                </label>
+                <Select
+                  id="typeFilter"
+                  value={transactionTypeFilter}
+                  onChange={(e) => setTransactionTypeFilter(e.target.value)}
+                >
+                  <option value="">All Types</option>
+                  {transactionTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </Select>
+              </div>
             </div>
-          </div>
+          </Card>
 
-          {/* Date Range */}
-          <div className="flex items-center gap-2">
-            <div>
-              <label
-                htmlFor="startDate"
-                className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-              >
-                Start Date
-              </label>
-              <TextInput
-                id="startDate"
-                type="date"
-                value={startDate || ''}
-                onChange={(e) => setStartDate(e.target.value || null)}
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="endDate"
-                className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-              >
-                End Date
-              </label>
-              <TextInput
-                id="endDate"
-                type="date"
-                value={endDate || ''}
-                onChange={(e) => setEndDate(e.target.value || null)}
-              />
-            </div>
-          </div>
-
-          {/* Type Filter */}
-          <div className="w-full sm:w-48">
-            <label
-              htmlFor="typeFilter"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Type
-            </label>
-            <Select
-              id="typeFilter"
-              value={transactionTypeFilter}
-              onChange={(e) => setTransactionTypeFilter(e.target.value)}
-            >
-              <option value="">All Types</option>
-              {transactionTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
-      </Card>
-
-      {error && (
-        <Alert color="failure">
-          <HiExclamationCircle className="h-4 w-4" />
-          <span className="font-medium">Error!</span> {error}
-        </Alert>
-      )}
-
-      <Card>
-        <div className="overflow-x-auto">
-          {isLoading ? (
-            <LoadingState />
-          ) : transactions.length === 0 ? (
-            <EmptyState
-              icon={TbReceipt}
-              title="No Transactions Found"
-              description={
-                <>
-                  No transactions found in your roboledger graphs. Import
-                  accounting data to see transactions here.
-                </>
-              }
-              className="p-8"
-            />
-          ) : filteredTransactions.length === 0 ? (
-            <EmptyState
-              icon={HiSearch}
-              title="No Matching Transactions"
-              description="Try adjusting your search or filters."
-              className="p-8"
-            />
-          ) : (
-            <Table>
-              <TableHead>
-                <TableHeadCell className="w-10"></TableHeadCell>
-                <TableHeadCell>Date</TableHeadCell>
-                <TableHeadCell>Description</TableHeadCell>
-                <TableHeadCell>Type</TableHeadCell>
-                <TableHeadCell className="text-right">Amount</TableHeadCell>
-              </TableHead>
-              <TableBody>
-                {filteredTransactions.map((tx) => {
-                  const key = `${tx._graphId}-${tx.id}`
-                  const isExpanded = expandedIds.has(key)
-                  const isLoadingItems = loadingLineItems.has(key)
-                  const lineItems = lineItemsMap[key] || []
-
-                  return (
-                    <Fragment key={key}>
-                      <TableRow
-                        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
-                        onClick={() => toggleExpand(tx)}
-                      >
-                        <TableCell className="w-10">
-                          {isExpanded ? (
-                            <HiChevronDown className="h-5 w-5 text-gray-500" />
-                          ) : (
-                            <HiChevronRight className="h-5 w-5 text-gray-500" />
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium whitespace-nowrap text-gray-900 dark:text-white">
-                          {formatDate(tx.date)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {tx.description || tx.merchant_name || '-'}
-                            </span>
-                            <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
-                              {tx.number || tx.id}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            color={TRANSACTION_TYPE_COLORS[tx.type] || 'gray'}
-                            size="sm"
-                          >
-                            {tx.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-medium">
-                          {tx.amount ? formatCurrency(tx.amount) : '-'}
-                        </TableCell>
-                      </TableRow>
-
-                      {/* Expanded line items */}
-                      {isExpanded && (
-                        <TableRow
-                          key={`${key}-details`}
-                          className="bg-gray-50 dark:bg-gray-800"
-                        >
-                          <TableCell colSpan={5} className="p-0">
-                            <div className="px-8 py-4">
-                              {isLoadingItems ? (
-                                <LoadingState size="sm" className="py-4" />
-                              ) : lineItems.length === 0 ? (
-                                <p className="py-2 text-center text-sm text-gray-500 dark:text-gray-400">
-                                  No line items found
-                                </p>
-                              ) : (
-                                <table className="w-full text-sm">
-                                  <thead>
-                                    <tr className="border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase dark:border-gray-600 dark:text-gray-400">
-                                      <th className="py-2">Account</th>
-                                      <th className="py-2">Description</th>
-                                      <th className="py-2 text-right">Debit</th>
-                                      <th className="py-2 text-right">
-                                        Credit
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {lineItems.map((li, idx) => (
-                                      <tr
-                                        key={li.id}
-                                        className={
-                                          idx < lineItems.length - 1
-                                            ? 'border-b border-gray-100 dark:border-gray-700'
-                                            : ''
-                                        }
-                                      >
-                                        <td className="py-2 font-medium text-gray-900 dark:text-white">
-                                          <div className="flex flex-col">
-                                            <span>
-                                              {li.account_name || '-'}
-                                            </span>
-                                            {li.account_code && (
-                                              <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
-                                                {li.account_code}
-                                              </span>
-                                            )}
-                                          </div>
-                                        </td>
-                                        <td className="py-2 text-gray-600 dark:text-gray-400">
-                                          {li.description || '-'}
-                                        </td>
-                                        <td className="text-primary-600 dark:text-primary-400 py-2 text-right font-mono">
-                                          {li.debit_amount
-                                            ? formatCurrency(li.debit_amount)
-                                            : '-'}
-                                        </td>
-                                        <td className="py-2 text-right font-mono text-green-600 dark:text-green-400">
-                                          {li.credit_amount
-                                            ? formatCurrency(li.credit_amount)
-                                            : '-'}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                    {/* Totals row */}
-                                    <tr className="border-t-2 border-gray-300 font-medium dark:border-gray-500">
-                                      <td
-                                        className="py-2 text-gray-900 dark:text-white"
-                                        colSpan={2}
-                                      >
-                                        Total
-                                      </td>
-                                      <td className="text-primary-600 dark:text-primary-400 py-2 text-right font-mono">
-                                        {formatCurrency(
-                                          lineItems.reduce(
-                                            (sum, li) =>
-                                              sum + (li.debit_amount || 0),
-                                            0
-                                          )
-                                        )}
-                                      </td>
-                                      <td className="py-2 text-right font-mono text-green-600 dark:text-green-400">
-                                        {formatCurrency(
-                                          lineItems.reduce(
-                                            (sum, li) =>
-                                              sum + (li.credit_amount || 0),
-                                            0
-                                          )
-                                        )}
-                                      </td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </Fragment>
-                  )
-                })}
-              </TableBody>
-            </Table>
+          {error && (
+            <Alert color="failure">
+              <HiExclamationCircle className="h-4 w-4" />
+              <span className="font-medium">Error!</span> {error}
+            </Alert>
           )}
-        </div>
 
-        {/* Summary Footer */}
-        {!isLoading && filteredTransactions.length > 0 && (
-          <div className="border-t border-gray-200 p-4 dark:border-gray-700">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Showing {filteredTransactions.length} of{' '}
-              {(totalCount ?? transactions.length).toLocaleString('en-US')}{' '}
-              transactions
-              {totalCount != null && totalCount > transactions.length && (
-                <>
-                  {' '}
-                  (most recent {transactions.length} loaded — narrow the date
-                  range to see older entries)
-                </>
+          <Card>
+            <div className="overflow-x-auto">
+              {isLoading ? (
+                <LoadingState />
+              ) : transactions.length === 0 ? (
+                <EmptyState
+                  icon={TbReceipt}
+                  title="No Transactions Found"
+                  description={
+                    <>
+                      No transactions found in your roboledger graphs. Import
+                      accounting data to see transactions here.
+                    </>
+                  }
+                  className="p-8"
+                />
+              ) : filteredTransactions.length === 0 ? (
+                <EmptyState
+                  icon={HiSearch}
+                  title="No Matching Transactions"
+                  description="Try adjusting your search or filters."
+                  className="p-8"
+                />
+              ) : (
+                <Table>
+                  <TableHead>
+                    <TableHeadCell className="w-10"></TableHeadCell>
+                    <TableHeadCell>Date</TableHeadCell>
+                    <TableHeadCell>Description</TableHeadCell>
+                    <TableHeadCell>Type</TableHeadCell>
+                    <TableHeadCell className="text-right">Amount</TableHeadCell>
+                  </TableHead>
+                  <TableBody>
+                    {filteredTransactions.map((tx) => {
+                      const key = `${tx._graphId}-${tx.id}`
+                      const isExpanded = expandedIds.has(key)
+                      const isLoadingItems = loadingLineItems.has(key)
+                      const lineItems = lineItemsMap[key] || []
+
+                      return (
+                        <Fragment key={key}>
+                          <TableRow
+                            className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+                            onClick={() => toggleExpand(tx)}
+                          >
+                            <TableCell className="w-10">
+                              {isExpanded ? (
+                                <HiChevronDown className="h-5 w-5 text-gray-500" />
+                              ) : (
+                                <HiChevronRight className="h-5 w-5 text-gray-500" />
+                              )}
+                            </TableCell>
+                            <TableCell className="font-medium whitespace-nowrap text-gray-900 dark:text-white">
+                              {formatDate(tx.date)}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {tx.description || tx.merchant_name || '-'}
+                                </span>
+                                <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
+                                  {tx.number || tx.id}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                color={
+                                  TRANSACTION_TYPE_COLORS[tx.type] || 'gray'
+                                }
+                                size="sm"
+                              >
+                                {tx.type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-mono font-medium">
+                              {tx.amount ? formatCurrency(tx.amount) : '-'}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Expanded line items */}
+                          {isExpanded && (
+                            <TableRow
+                              key={`${key}-details`}
+                              className="bg-gray-50 dark:bg-gray-800"
+                            >
+                              <TableCell colSpan={5} className="p-0">
+                                <div className="px-8 py-4">
+                                  {isLoadingItems ? (
+                                    <LoadingState size="sm" className="py-4" />
+                                  ) : lineItems.length === 0 ? (
+                                    <p className="py-2 text-center text-sm text-gray-500 dark:text-gray-400">
+                                      No line items found
+                                    </p>
+                                  ) : (
+                                    <table className="w-full text-sm">
+                                      <thead>
+                                        <tr className="border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase dark:border-gray-600 dark:text-gray-400">
+                                          <th className="py-2">Account</th>
+                                          <th className="py-2">Description</th>
+                                          <th className="py-2 text-right">
+                                            Debit
+                                          </th>
+                                          <th className="py-2 text-right">
+                                            Credit
+                                          </th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {lineItems.map((li, idx) => (
+                                          <tr
+                                            key={li.id}
+                                            className={
+                                              idx < lineItems.length - 1
+                                                ? 'border-b border-gray-100 dark:border-gray-700'
+                                                : ''
+                                            }
+                                          >
+                                            <td className="py-2 font-medium text-gray-900 dark:text-white">
+                                              <div className="flex flex-col">
+                                                <span>
+                                                  {li.account_name || '-'}
+                                                </span>
+                                                {li.account_code && (
+                                                  <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
+                                                    {li.account_code}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </td>
+                                            <td className="py-2 text-gray-600 dark:text-gray-400">
+                                              {li.description || '-'}
+                                            </td>
+                                            <td className="text-primary-600 dark:text-primary-400 py-2 text-right font-mono">
+                                              {li.debit_amount
+                                                ? formatCurrency(
+                                                    li.debit_amount
+                                                  )
+                                                : '-'}
+                                            </td>
+                                            <td className="py-2 text-right font-mono text-green-600 dark:text-green-400">
+                                              {li.credit_amount
+                                                ? formatCurrency(
+                                                    li.credit_amount
+                                                  )
+                                                : '-'}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                        {/* Totals row */}
+                                        <tr className="border-t-2 border-gray-300 font-medium dark:border-gray-500">
+                                          <td
+                                            className="py-2 text-gray-900 dark:text-white"
+                                            colSpan={2}
+                                          >
+                                            Total
+                                          </td>
+                                          <td className="text-primary-600 dark:text-primary-400 py-2 text-right font-mono">
+                                            {formatCurrency(
+                                              lineItems.reduce(
+                                                (sum, li) =>
+                                                  sum + (li.debit_amount || 0),
+                                                0
+                                              )
+                                            )}
+                                          </td>
+                                          <td className="py-2 text-right font-mono text-green-600 dark:text-green-400">
+                                            {formatCurrency(
+                                              lineItems.reduce(
+                                                (sum, li) =>
+                                                  sum + (li.credit_amount || 0),
+                                                0
+                                              )
+                                            )}
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </Fragment>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
               )}
-            </p>
-          </div>
-        )}
-      </Card>
+            </div>
+
+            {/* Summary Footer */}
+            {!isLoading && filteredTransactions.length > 0 && (
+              <div className="border-t border-gray-200 p-4 dark:border-gray-700">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Showing {filteredTransactions.length} of{' '}
+                  {(totalCount ?? transactions.length).toLocaleString('en-US')}{' '}
+                  transactions
+                  {totalCount != null && totalCount > transactions.length && (
+                    <>
+                      {' '}
+                      (most recent {transactions.length} loaded — narrow the
+                      date range to see older entries)
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+          </Card>
+        </>
+      )}
     </PageLayout>
   )
 }
