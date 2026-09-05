@@ -29,10 +29,10 @@ import { TbReceipt } from 'react-icons/tb'
 
 const quickActions = [
   {
-    title: 'Transactions',
+    title: 'Journal',
     description: 'Journal entries',
     icon: TbReceipt,
-    href: '/ledger/transactions',
+    href: '/ledger/journal',
     iconBg: 'bg-green-100 dark:bg-green-900',
     iconColor: 'text-green-600 dark:text-green-400',
   },
@@ -316,7 +316,9 @@ const HomePageContent: FC = function () {
                   <Button
                     size="xs"
                     color="gray"
-                    onClick={() => router.push('/ledger/transactions')}
+                    onClick={() =>
+                      router.push('/ledger/journal?view=transactions')
+                    }
                   >
                     View all
                     <HiArrowRight className="ml-1 h-3 w-3" />
