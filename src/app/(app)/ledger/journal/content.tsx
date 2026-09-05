@@ -91,7 +91,22 @@ const formatDate = (dateString: string): string => {
   })
 }
 
-const TransactionsContent: FC = function () {
+export type JournalView = 'entries' | 'transactions'
+
+/**
+ * Which tab a visit opens on.
+ *
+ * Entries is the default: the journal is the complete accounting record,
+ * while the transaction list is partial — it holds only rows a source
+ * system had. `?view=transactions` opens the other tab so a link that
+ * means transactions (home's Recent Transactions) lands where it meant to.
+ */
+export const initialViewFromSearch = (search: string): JournalView =>
+  new URLSearchParams(search).get('view') === 'transactions'
+    ? 'transactions'
+    : 'entries'
+
+const JournalContent: FC = function () {
   const { state: graphState } = useGraphContext()
   const [transactions, setTransactions] = useState<TransactionRow[]>([])
   const [totalCount, setTotalCount] = useState<number | null>(null)
@@ -110,8 +125,12 @@ const TransactionsContent: FC = function () {
   const [refreshKey, setRefreshKey] = useState(0)
   const [startDate, setStartDate] = useState<string | null>(null)
   const [endDate, setEndDate] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'transactions' | 'entries'>(
-    'transactions'
+  // Read once from the URL rather than via useSearchParams, which would
+  // pull this subtree into a Suspense boundary for a first-render default.
+  const [activeTab, setActiveTab] = useState<JournalView>(() =>
+    initialViewFromSearch(
+      typeof window !== 'undefined' ? window.location.search : ''
+    )
   )
 
   // Get unique transaction types
@@ -291,9 +310,9 @@ const TransactionsContent: FC = function () {
   return (
     <PageLayout>
       <PageHeader
-        icon={TbReceipt}
-        title="Transactions"
-        subtitle="View transaction journal with line item details"
+        icon={TbBook2}
+        title="Journal"
+        subtitle="Every journal entry with its line items, in posting order"
       />
 
       {/* Date range is page-level — it scopes both tabs, so it sits above
@@ -337,25 +356,14 @@ const TransactionsContent: FC = function () {
           </Button>
         )}
       </div>
-      {/* Transactions list transactions and expand entries underneath, so
-      they cannot show an entry with no parent transaction — which is
-      every entry a period close posts. The Journal Entries tab reads
-      entries directly. */}
+      {/* Two views, deliberately not merged. Entries is the journal — the
+      complete accounting record, every posted amount. Source Transactions
+      is the adapter mirror: it exists only where a source system had a
+      record, so it cannot show an entry with no parent transaction, which
+      is every entry a period close posts. Merging them would double-count
+      every parented entry. */}
       <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex gap-6" aria-label="Ledger views">
-          <button
-            type="button"
-            onClick={() => setActiveTab('transactions')}
-            className={`flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${
-              activeTab === 'transactions'
-                ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-            aria-current={activeTab === 'transactions' ? 'page' : undefined}
-          >
-            <TbReceipt className="h-4 w-4" />
-            Transactions
-          </button>
           <button
             type="button"
             onClick={() => setActiveTab('entries')}
@@ -367,7 +375,20 @@ const TransactionsContent: FC = function () {
             aria-current={activeTab === 'entries' ? 'page' : undefined}
           >
             <TbBook2 className="h-4 w-4" />
-            Journal Entries
+            Entries
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('transactions')}
+            className={`flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${
+              activeTab === 'transactions'
+                ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+            aria-current={activeTab === 'transactions' ? 'page' : undefined}
+          >
+            <TbReceipt className="h-4 w-4" />
+            Source Transactions
           </button>
         </nav>
       </div>
@@ -655,4 +676,4 @@ const TransactionsContent: FC = function () {
   )
 }
 
-export default TransactionsContent
+export default JournalContent
