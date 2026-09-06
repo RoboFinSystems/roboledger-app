@@ -49,6 +49,12 @@ import HolonReportView from './components/HolonReportView'
 import ManageSharesModal from './components/ManageSharesModal'
 import ReportPackageSidebar from './components/ReportPackageSidebar'
 
+/** The download flavors the menu offers — the SDK's `ReportDownloadFormat`. */
+type DownloadFormat = NonNullable<
+  Parameters<typeof clients.reports.getReportDownloadUrl>[2]
+>['format'] &
+  string
+
 const formatDate = (dateString: string | null): string => {
   if (!dateString) return 'N/A'
   const date = new Date(dateString + 'T00:00:00')
@@ -118,9 +124,8 @@ const ReportViewerContent: FC = function () {
   // missed, so partly-failed shares were reported in a green success alert.
   const [shareOk, setShareOk] = useState(true)
 
-  const [isDownloadingBundle, setIsDownloadingBundle] = useState(false)
-  const [isDownloadingHolon, setIsDownloadingHolon] = useState(false)
-  const [isDownloadingXbrl, setIsDownloadingXbrl] = useState(false)
+  // The flavor being fetched, or null — one download at a time.
+  const [downloading, setDownloading] = useState<DownloadFormat | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
 
   // Cross-graph share controls
@@ -143,96 +148,45 @@ const ReportViewerContent: FC = function () {
     }
   }, [graphId])
 
-  // Both flavors resolve to a presigned S3 URL via the GraphQL
-  // `reportDownloadUrl` read. window.location.href (not <a download>)
-  // because the URL is cross-origin — the download attribute is ignored
-  // cross-origin, but the backend signs Content-Disposition: attachment
-  // so the file still saves with a versioned filename.
-  const handleDownloadBundle = useCallback(async () => {
-    if (!graphId || !reportId) return
-    try {
-      setIsDownloadingBundle(true)
-      setDownloadError(null)
-      const resp = await clients.reports.getReportDownloadUrl(graphId, reportId)
-      if (!resp) {
-        setDownloadError('Report not found.')
-        return
-      }
-      window.location.href = resp.downloadUrl
-    } catch (err) {
-      console.error('Bundle download failed:', err)
-      // The REPORT_BUNDLE_NOT_AVAILABLE error ("publish or regenerate to
-      // produce a bundle") is the most actionable failure mode for users
-      // viewing an unpublished Report, so surface the server detail when
-      // available rather than a generic string.
-      const message =
-        err instanceof Error ? err.message : 'Failed to start download.'
-      setDownloadError(message)
-    } finally {
-      setIsDownloadingBundle(false)
-    }
-  }, [graphId, reportId])
-
-  // The holon is the same report as dataset-form JSON-LD — scene / boundary /
-  // projection named graphs — materialized + cached server-side on first
-  // request, then the same presigned-redirect path. It's what the holon viewer
-  // and report-components library consume.
-  const handleDownloadHolon = useCallback(async () => {
-    if (!graphId || !reportId) return
-    try {
-      setIsDownloadingHolon(true)
-      setDownloadError(null)
-      const resp = await clients.reports.getReportDownloadUrl(
-        graphId,
-        reportId,
-        {
-          format: 'HOLON_JSONLD',
+  // Every flavor resolves to a presigned S3 URL via the GraphQL
+  // `reportDownloadUrl` read: the flat JSON-LD is stamped at publish; the
+  // holon (dataset-form JSON-LD), the Tavi compiled model and the XBRL 2.1
+  // package are materialized + cached server-side on first request.
+  // window.location.href (not <a download>) because the URL is cross-origin —
+  // the download attribute is ignored cross-origin, but the backend signs
+  // Content-Disposition: attachment so the file still saves with a versioned
+  // filename.
+  const handleDownload = useCallback(
+    async (format: DownloadFormat) => {
+      if (!graphId || !reportId) return
+      try {
+        setDownloading(format)
+        setDownloadError(null)
+        const resp = await clients.reports.getReportDownloadUrl(
+          graphId,
+          reportId,
+          { format }
+        )
+        if (!resp) {
+          setDownloadError('Report not found.')
+          return
         }
-      )
-      if (!resp) {
-        setDownloadError('Report not found.')
-        return
+        window.location.href = resp.downloadUrl
+      } catch (err) {
+        console.error(`${format} download failed:`, err)
+        // The REPORT_BUNDLE_NOT_AVAILABLE error ("publish or regenerate to
+        // produce a bundle") is the most actionable failure mode for users
+        // viewing an unpublished Report, so surface the server detail when
+        // available rather than a generic string.
+        const message =
+          err instanceof Error ? err.message : 'Failed to start download.'
+        setDownloadError(message)
+      } finally {
+        setDownloading(null)
       }
-      window.location.href = resp.downloadUrl
-    } catch (err) {
-      console.error('Holon download failed:', err)
-      const message =
-        err instanceof Error ? err.message : 'Failed to download holon bundle.'
-      setDownloadError(message)
-    } finally {
-      setIsDownloadingHolon(false)
-    }
-  }, [graphId, reportId])
-
-  // XBRL is now a presigned S3 URL too (materialized + cached server-side
-  // on first request), so it follows the same redirect path as JSON-LD —
-  // no more client-side blob assembly.
-  const handleDownloadXbrl = useCallback(async () => {
-    if (!graphId || !reportId) return
-    try {
-      setIsDownloadingXbrl(true)
-      setDownloadError(null)
-      const resp = await clients.reports.getReportDownloadUrl(
-        graphId,
-        reportId,
-        {
-          format: 'XBRL_2_1',
-        }
-      )
-      if (!resp) {
-        setDownloadError('Report not found.')
-        return
-      }
-      window.location.href = resp.downloadUrl
-    } catch (err) {
-      console.error('XBRL download failed:', err)
-      const message =
-        err instanceof Error ? err.message : 'Failed to download XBRL bundle.'
-      setDownloadError(message)
-    } finally {
-      setIsDownloadingXbrl(false)
-    }
-  }, [graphId, reportId])
+    },
+    [graphId, reportId]
+  )
 
   const handleShare = useCallback(async () => {
     if (!graphId || !reportId || !selectedListId) return
@@ -411,13 +365,9 @@ const ReportViewerContent: FC = function () {
                 color="light"
                 size="sm"
                 arrowIcon={false}
-                disabled={
-                  isDownloadingBundle || isDownloadingHolon || isDownloadingXbrl
-                }
+                disabled={downloading !== null}
                 label={
-                  isDownloadingBundle ||
-                  isDownloadingHolon ||
-                  isDownloadingXbrl ? (
+                  downloading !== null ? (
                     <Spinner size="sm" />
                   ) : (
                     <HiDotsVertical className="h-5 w-5" />
@@ -427,13 +377,18 @@ const ReportViewerContent: FC = function () {
                 {pkg.generationStatus === 'published' && (
                   <>
                     <DropdownHeader>Download</DropdownHeader>
-                    <DropdownItem onClick={handleDownloadBundle}>
+                    <DropdownItem onClick={() => handleDownload('JSONLD')}>
                       JSON-LD bundle
                     </DropdownItem>
-                    <DropdownItem onClick={handleDownloadHolon}>
+                    <DropdownItem
+                      onClick={() => handleDownload('HOLON_JSONLD')}
+                    >
                       Holon (JSON-LD)
                     </DropdownItem>
-                    <DropdownItem onClick={handleDownloadXbrl}>
+                    <DropdownItem onClick={() => handleDownload('TAVI')}>
+                      Tavi (JSON)
+                    </DropdownItem>
+                    <DropdownItem onClick={() => handleDownload('XBRL_2_1')}>
                       XBRL 2.1 package
                     </DropdownItem>
                   </>

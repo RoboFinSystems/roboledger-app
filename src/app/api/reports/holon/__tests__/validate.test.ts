@@ -73,6 +73,18 @@ describe('allowedHolonUrl', () => {
     ).toBeNull()
   })
 
+  it('accepts a presigned Tavi model URL beside the holon', () => {
+    const tavi = allowedHolonUrl(VALID.replace('.holon.jsonld', '.tavi.json'))
+    expect(tavi).not.toBeNull()
+    expect(tavi?.pathname.endsWith('.tavi.json')).toBe(true)
+  })
+
+  it('rejects the other bundle artifacts — downloads, not renderables', () => {
+    for (const file of ['g1.jsonld', 'g1.zip', 'g1.tavi.gaps.json']) {
+      expect(allowedHolonUrl(VALID.replace('g1.holon.jsonld', file))).toBeNull()
+    }
+  })
+
   it('rejects a non-holon file extension', () => {
     expect(
       allowedHolonUrl(
