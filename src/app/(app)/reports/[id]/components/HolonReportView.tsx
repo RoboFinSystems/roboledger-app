@@ -103,10 +103,13 @@ export default function HolonReportView({
     setIsLoading(true)
     setError(null)
     try {
-      // The Tavi first; the holon only when the Tavi is not available. Any
-      // failure on the Tavi (the REPORT_BUNDLE_NOT_AVAILABLE answer for a
-      // received copy without one, or a transient fault) moves on to the
-      // holon, whose own failure is the one reported.
+      // The Tavi first; the holon only when the Tavi is not available. The SDK
+      // resolves to null only when the report itself does not exist, so that
+      // ends the search; a flavor that is not materialized (the
+      // REPORT_BUNDLE_NOT_AVAILABLE answer for a received copy whose sender
+      // shared it before the Tavi existed) arrives as a thrown GraphQL error,
+      // and any failure on the Tavi — that one, or a transient fault — moves
+      // on to the holon, whose own failure is the one reported.
       let text: string | null = null
       let missing = false
       for (const [index, format] of RENDER_FORMATS.entries()) {
