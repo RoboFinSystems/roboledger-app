@@ -10,6 +10,11 @@ export function proxy(request: NextRequest) {
     request.nextUrl.hostname === 'localhost' ||
     request.nextUrl.hostname === '127.0.0.1'
 
+  // CloudFront CDN serving the blog's audio narration and images (published by
+  // robosystems-content-machine alongside the post body). Named because two directives
+  // need it; robosystems-app's proxy.ts carries the same constant for the same reason.
+  const BLOG_ASSETS = 'https://assets.robosystems.ai'
+
   // Comprehensive CSP configuration for modern web apps
   const cspDirectives = [
     "default-src 'self'",
@@ -39,7 +44,8 @@ export function proxy(request: NextRequest) {
       'https://cdnjs.cloudflare.com https://github.com https://avatars.githubusercontent.com ' +
       'https://raw.githubusercontent.com ' +
       'https://www.google-analytics.com https://www.googletagmanager.com ' +
-      'https://ssl.gstatic.com https://www.gstatic.com',
+      'https://ssl.gstatic.com https://www.gstatic.com ' +
+      BLOG_ASSETS,
 
     // Font sources - Allow Google Fonts and common CDNs
     "font-src 'self' data: " +
@@ -66,9 +72,13 @@ export function proxy(request: NextRequest) {
       'https://challenges.cloudflare.com https://www.youtube.com https://player.vimeo.com ' +
       'https://www.google.com https://docs.google.com',
 
-    // Media sources - Allow video and audio from common hosts
+    // Media sources - Allow video and audio from common hosts.
+    // BLOG_ASSETS is what lets the post page's "Listen to this story" player load its
+    // narration mp3: without it Chrome fails the <audio> element with a code-4
+    // "Media load rejected by URL safety check" and the player renders but never plays.
     "media-src 'self' data: blob: " +
-      'https://cdn.jsdelivr.net https://unpkg.com',
+      'https://cdn.jsdelivr.net https://unpkg.com ' +
+      BLOG_ASSETS,
 
     // Object sources - Restrict to self for security
     "object-src 'none'",
