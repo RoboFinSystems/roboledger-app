@@ -2,14 +2,16 @@ import type { NextRequest } from 'next/server'
 import { allowedHolonUrl, MAX_HOLON_BYTES } from './validate'
 
 /**
- * Same-origin proxy for a Report's holon JSON-LD bundle.
+ * Same-origin proxy for a Report's renderable artifact: the Tavi compiled
+ * model or the holon JSON-LD bundle.
  *
- * The holon is served only as a presigned S3 *attachment* URL from a bucket
- * with no CORS, so a browser `fetch()` of it is blocked cross-origin. The
- * client obtains that presigned URL via the authenticated SDK
- * (`getReportDownloadUrl`, format `HOLON_JSONLD`) and hands it here; the
- * server fetches it (server→S3 isn't subject to browser CORS) and streams the
- * body back same-origin so `parseJsonld` can consume it.
+ * Both are served only as presigned S3 *attachment* URLs from a bucket with
+ * no CORS, so a browser `fetch()` of either is blocked cross-origin. The
+ * client obtains the presigned URL via the authenticated SDK
+ * (`getReportDownloadUrl`, format `TAVI` or `HOLON_JSONLD`) and hands it
+ * here; the server fetches it (server→S3 isn't subject to browser CORS) and
+ * streams the body back same-origin, with the upstream content type, so
+ * `parseReportDocument` can consume it.
  *
  * The proxy is deliberately narrow: `allowedHolonUrl` pins the target to a
  * bundle host (see ./validate), redirects are not followed so a 3xx cannot
@@ -65,7 +67,7 @@ export async function POST(req: NextRequest) {
   const target = allowedHolonUrl(body.url)
   if (!target) {
     return Response.json(
-      { error: 'URL is not an allowed holon bundle URL' },
+      { error: 'URL is not an allowed report artifact URL' },
       { status: 400 }
     )
   }
@@ -95,18 +97,31 @@ export async function POST(req: NextRequest) {
 
   const declaredLen = Number(upstream.headers.get('content-length') ?? '0')
   if (declaredLen > MAX_HOLON_BYTES) {
-    return Response.json({ error: 'Holon exceeds size limit' }, { status: 413 })
+    return Response.json(
+      { error: 'Report artifact exceeds size limit' },
+      { status: 413 }
+    )
   }
 
   const text = await readCapped(upstream, MAX_HOLON_BYTES)
   if (text === null) {
-    return Response.json({ error: 'Holon exceeds size limit' }, { status: 413 })
+    return Response.json(
+      { error: 'Report artifact exceeds size limit' },
+      { status: 413 }
+    )
   }
+
+  // The presigned URL carries the response content type the backend signed
+  // (`application/ld+json` for a holon, `application/json` for a Tavi); pass
+  // it through so a reader can tell the two apart from the header as well as
+  // the body.
+  const contentType =
+    upstream.headers.get('content-type') ?? 'application/json; charset=utf-8'
 
   return new Response(text, {
     status: 200,
     headers: {
-      'content-type': 'application/ld+json; charset=utf-8',
+      'content-type': contentType,
       'cache-control': 'private, no-store',
     },
   })

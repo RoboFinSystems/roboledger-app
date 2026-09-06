@@ -1,5 +1,13 @@
-/** 25 MB — holons are well under this; a hard cap bounds the proxy. */
+/** 25 MB — holons and Tavi models are well under this; a hard cap bounds the proxy. */
 export const MAX_HOLON_BYTES = 25 * 1024 * 1024
+
+/**
+ * The report artifacts the proxy will fetch, by the suffix of their bundle
+ * key: the holon (dataset-form JSON-LD) and the Tavi compiled model (compact
+ * JSON). Anything else under the same prefix — the flat JSON-LD, the XBRL zip
+ * — is a download, not something the page renders.
+ */
+export const RENDERABLE_SUFFIXES = ['.holon.jsonld', '.tavi.json'] as const
 
 /**
  * AWS-owned hostnames are always acceptable targets: AWS controls the whole
@@ -33,12 +41,12 @@ function configuredHosts(): Set<string> {
 }
 
 /**
- * Guard for the holon proxy: accept a URL only if it points at a bundle host we
- * serve from AND looks like a presigned report-bundle holon (path shape + a
- * non-empty AWS signature). The host check is what keeps this from being an
- * SSRF vector — without it the proxy would fetch any URL an unauthenticated
- * caller supplied, including internal addresses. Returns the parsed URL when
- * allowed, else null.
+ * Guard for the report-artifact proxy: accept a URL only if it points at a
+ * bundle host we serve from AND looks like a presigned report-bundle holon or
+ * Tavi model (path shape + a non-empty AWS signature). The host check is what
+ * keeps this from being an SSRF vector — without it the proxy would fetch any
+ * URL an unauthenticated caller supplied, including internal addresses.
+ * Returns the parsed URL when allowed, else null.
  */
 export function allowedHolonUrl(raw: string): URL | null {
   let u: URL
@@ -60,9 +68,11 @@ export function allowedHolonUrl(raw: string): URL | null {
   // practice means LocalStack over loopback in development.
   if (u.protocol === 'http:' && !isConfigured) return null
 
-  // .../report-bundles/<graph>/<report>/*.holon.jsonld
+  // .../report-bundles/<graph>/<report>/*.holon.jsonld or *.tavi.json
   if (!u.pathname.includes('/report-bundles/')) return null
-  if (!u.pathname.endsWith('.holon.jsonld')) return null
+  if (!RENDERABLE_SUFFIXES.some((suffix) => u.pathname.endsWith(suffix))) {
+    return null
+  }
 
   // The signature is the caller's actual capability, so require real values —
   // `?X-Amz-Signature=` with an empty value must not count as signed.
