@@ -18,7 +18,7 @@ import { HiExclamationCircle } from 'react-icons/hi'
  * ``BlockView``. The report's Tavi compiled model (compact JSON, the same
  * file the SEC surface renders) is normalized by ``parseReportDocument`` and
  * ``<ReportView>`` reconstructs the statement tables + fact inspector,
- * identically to the standalone Holon Viewer and RoboInvestor's SEC path. A
+ * identically to the standalone xbrlkit viewer and RoboInvestor's SEC path. A
  * section sidebar (``reportSections`` / ``sliceReportSection``) renders one
  * statement at a time.
  *
