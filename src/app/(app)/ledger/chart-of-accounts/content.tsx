@@ -42,6 +42,8 @@ import {
 } from 'react-icons/hi'
 import { MdOutlineAccountBalanceWallet } from 'react-icons/md'
 
+import { ChartTemplatePicker } from './components/ChartTemplatePicker'
+
 const CLASSIFICATION_COLORS: Record<ElementClassification, string> = {
   asset: 'success',
   liability: 'failure',
@@ -328,6 +330,9 @@ function GaapDropdown({
 const ChartOfAccountsContent: FC = function () {
   const { state: graphState } = useGraphContext()
   const [accounts, setAccounts] = useState<AccountRow[]>([])
+  // Bumped after `initialize-chart-of-accounts` so the loader below re-runs
+  // for the same graph and the new chart replaces the empty state.
+  const [reloadKey, setReloadKey] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -438,7 +443,7 @@ const ChartOfAccountsContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph])
+  }, [currentGraph, reloadKey])
 
   // Load mapping detail, coverage, and elements when selected mapping changes
   useEffect(() => {
@@ -853,17 +858,20 @@ const ChartOfAccountsContent: FC = function () {
           {isLoading ? (
             <LoadingState />
           ) : accounts.length === 0 ? (
-            <EmptyState
-              icon={MdOutlineAccountBalanceWallet}
-              title="No Accounts Found"
-              description={
-                <>
-                  No chart of accounts found in your roboledger graphs. Import
-                  accounting data to see accounts here.
-                </>
-              }
-              className="p-8"
-            />
+            currentGraph ? (
+              <ChartTemplatePicker
+                key={currentGraph.graphId}
+                graphId={currentGraph.graphId}
+                onInitialized={() => setReloadKey((k) => k + 1)}
+              />
+            ) : (
+              <EmptyState
+                icon={MdOutlineAccountBalanceWallet}
+                title="No Accounts Found"
+                description="Select a graph to see its chart of accounts."
+                className="p-8"
+              />
+            )
           ) : filteredAccounts.length === 0 ? (
             <EmptyState
               icon={HiViewList}

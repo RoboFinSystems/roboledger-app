@@ -27,7 +27,7 @@ const PROVIDER_IMAGES: Record<
   },
 }
 
-const PROVIDER_LABELS: Record<string, string> = {
+export const PROVIDER_LABELS: Record<string, string> = {
   quickbooks: 'QuickBooks',
 }
 

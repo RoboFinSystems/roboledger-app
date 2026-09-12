@@ -1,7 +1,6 @@
 'use client'
 
 import {
-  ConfirmModal,
   EmptyState,
   PageHeader,
   PageLayout,
@@ -28,6 +27,9 @@ import ConnectionCard, {
   type ConnectionData,
   type ConnectionStatus,
 } from './components/ConnectionCard'
+import DeleteConnectionModal, {
+  type DeleteDisposition,
+} from './components/DeleteConnectionModal'
 import QuickBooksSetupForm from './components/QuickBooksSetupForm'
 import SyncOptionsModal, {
   type SyncOptions,
@@ -340,7 +342,10 @@ export default function ModernConnectionsContent() {
 
   // ── Delete ──
 
-  const handleDeleteConnection = async () => {
+  // `sever` is the native-accounting cutover (QuickBooks only): the chart
+  // QuickBooks created stays as the graph's own and the connection can never
+  // be revived. `disconnect` keeps it reconnectable.
+  const handleDeleteConnection = async (disposition: DeleteDisposition) => {
     if (!connectionToDelete || !currentGraphId) return
 
     try {
@@ -349,8 +354,13 @@ export default function ModernConnectionsContent() {
           graph_id: currentGraphId,
           connection_id: connectionToDelete.connection_id,
         },
+        query: { disposition },
       })
-      showSuccess('Connection deleted successfully')
+      showSuccess(
+        disposition === 'sever'
+          ? 'Connection severed — this graph now keeps its books natively'
+          : 'Connection deleted successfully'
+      )
       void loadConnections()
     } catch (err) {
       console.error('Delete connection error:', err)
@@ -549,19 +559,12 @@ export default function ModernConnectionsContent() {
         />
 
         {/* ── Delete Confirmation Modal ── */}
-        <ConfirmModal
+        <DeleteConnectionModal
           show={deleteModalOpen}
+          connection={connectionToDelete}
           onClose={() => setDeleteModalOpen(false)}
-          onConfirm={handleDeleteConnection}
-          title="Delete Connection"
-          confirmLabel="Delete Connection"
-        >
-          <p className="text-gray-700 dark:text-gray-300">
-            Are you sure you want to delete the{' '}
-            <strong>{connectionToDelete?.provider}</strong> connection? This
-            action cannot be undone.
-          </p>
-        </ConfirmModal>
+          onConfirm={(disposition) => void handleDeleteConnection(disposition)}
+        />
       </PageLayout>
     </>
   )
