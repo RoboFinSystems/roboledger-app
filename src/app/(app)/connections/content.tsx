@@ -30,6 +30,9 @@ import ConnectionCard, {
 import DeleteConnectionModal, {
   type DeleteDisposition,
 } from './components/DeleteConnectionModal'
+import MercurySetupForm, {
+  MERCURY_PARTNER_URL,
+} from './components/MercurySetupForm'
 import QuickBooksSetupForm from './components/QuickBooksSetupForm'
 import SyncOptionsModal, {
   type SyncOptions,
@@ -67,6 +70,10 @@ interface ConnectionProviderInfo {
   auth_type: 'none' | 'oauth' | 'link' | 'api_key'
   features: string[]
   data_types: string[]
+  /** Optional setup fields the deployment accepts — `api_key` here means
+   *  the provider takes a pasted token in place of OAuth (Mercury on
+   *  self-hosted deployments). */
+  optional_config?: string[]
 }
 
 const AUTH_TYPE_LABELS: Record<string, string> = {
@@ -522,6 +529,14 @@ export default function ModernConnectionsContent() {
           <ModalBody>
             {setupProvider === 'quickbooks' ? (
               <QuickBooksSetupForm onCancel={() => setSetupProvider(null)} />
+            ) : setupProvider === 'mercury' ? (
+              <MercurySetupForm
+                apiKeyMode={availableProviders
+                  .find((p) => p.provider === 'mercury')
+                  ?.optional_config?.includes('api_key')}
+                onCancel={() => setSetupProvider(null)}
+                onConnected={handleSetupSuccess}
+              />
             ) : providersLoading ? (
               <LoadingState />
             ) : availableProviders.length === 0 ? (
@@ -600,6 +615,20 @@ function ProviderRow({ provider, onConnect }: ProviderRowProps) {
               </Badge>
             ))}
           </div>
+        )}
+        {provider.provider === 'mercury' && (
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            Not banking with Mercury yet?{' '}
+            <a
+              href={MERCURY_PARTNER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-600 dark:text-primary-400 underline"
+            >
+              Open an account through our partner page
+            </a>
+            .
+          </p>
         )}
       </div>
       <div className="ml-4 shrink-0">

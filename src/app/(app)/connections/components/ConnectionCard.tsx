@@ -29,7 +29,13 @@ const PROVIDER_IMAGES: Record<
 
 export const PROVIDER_LABELS: Record<string, string> = {
   quickbooks: 'QuickBooks',
+  mercury: 'Mercury',
+  external: 'External',
 }
+
+/** Providers whose first sync initializes the fiscal calendar, and whose
+ *  card therefore surfaces the bootstrap state when that could not happen. */
+const CALENDAR_BOOTSTRAP_PROVIDERS = new Set(['quickbooks', 'mercury'])
 
 export interface ConnectionStatus {
   status: string
@@ -136,7 +142,7 @@ export default function ConnectionCard({
   const label = PROVIDER_LABELS[provider] || connection.provider
 
   const subtitle = connection.metadata?.entity_name
-    ? `Company: ${connection.metadata.entity_name}`
+    ? `${provider === 'mercury' ? 'Organization' : 'Company'}: ${connection.metadata.entity_name}`
     : null
 
   return (
@@ -204,8 +210,8 @@ export default function ConnectionCard({
               </Alert>
             )}
 
-            {/* §3.0 — QB fiscal-calendar bootstrap state */}
-            {provider === 'quickbooks' && graphId && (
+            {/* §3.0 — fiscal-calendar bootstrap state (QuickBooks, Mercury) */}
+            {CALENDAR_BOOTSTRAP_PROVIDERS.has(provider) && graphId && (
               <div className="mt-3">
                 <FiscalCalendarBootstrap graphId={graphId} />
               </div>
