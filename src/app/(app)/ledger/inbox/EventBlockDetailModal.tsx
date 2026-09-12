@@ -13,18 +13,21 @@ import {
   Alert,
   Badge,
   Button,
+  Label,
   Modal,
   ModalBody,
   ModalFooter,
   ModalHeader,
+  Select,
 } from 'flowbite-react'
 import Link from 'next/link'
-import { type FC, useCallback, useEffect, useState } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   HiArrowRight,
   HiCheck,
   HiExclamationCircle,
   HiEye,
+  HiTag,
   HiX,
 } from 'react-icons/hi'
 
@@ -49,6 +52,53 @@ interface LineItem {
 // and `interpolated_credit_amount` as `number` when the server returns the
 // interpolated *expression* as a `string`. Use the SDK type directly.
 type PreviewResult = PreviewEventBlockResponse
+
+/** Bank-feed lines that post from an account choice. An internal transfer
+ *  carries both bank legs already and needs no choice. */
+const CLASSIFIABLE_EVENT_TYPES = new Set([
+  'bank_transaction',
+  'bank_fee',
+  'external_transfer',
+])
+
+interface AccountOption {
+  id: string
+  code: string | null
+  name: string
+}
+
+interface AccountTreeNode {
+  id: string
+  code: string | null
+  name: string
+  isActive: boolean
+  children?: AccountTreeNode[] | null
+}
+
+/** Every active account in the tree, depth-first, as picker options. */
+export const flattenAccountTree = (
+  nodes: AccountTreeNode[] | null | undefined
+): AccountOption[] => {
+  const out: AccountOption[] = []
+  const walk = (list: AccountTreeNode[]) => {
+    for (const node of list) {
+      if (node.isActive) {
+        out.push({ id: node.id, code: node.code ?? null, name: node.name })
+      }
+      if (node.children?.length) walk(node.children)
+    }
+  }
+  walk(nodes ?? [])
+  return out.sort(
+    (a, b) =>
+      (a.code ?? '').localeCompare(b.code ?? '', undefined, {
+        numeric: true,
+      }) || a.name.localeCompare(b.name)
+  )
+}
+
+const accountLabel = (account: AccountOption): string =>
+  account.code ? `${account.code} — ${account.name}` : account.name
 
 interface Props {
   graphId: string
@@ -83,11 +133,15 @@ const EventBlockDetailModal: FC<Props> = function ({
   const [event, setEvent] = useState<LedgerEventBlockDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionInFlight, setActionInFlight] = useState<
-    'preview' | 'approve' | 'reject' | null
+    'preview' | 'approve' | 'reject' | 'classify' | null
   >(null)
   const [error, setError] = useState<FriendlyError | null>(null)
   const [preview, setPreview] = useState<PreviewResult | null>(null)
   const [confirmReject, setConfirmReject] = useState(false)
+  // Bank-feed classification: the account the line posts against. Seeded
+  // from an earlier classification, then the feed's suggestion.
+  const [accounts, setAccounts] = useState<AccountOption[] | null>(null)
+  const [classifiedElementId, setClassifiedElementId] = useState('')
 
   const loadEvent = useCallback(async () => {
     try {
@@ -105,6 +159,74 @@ const EventBlockDetailModal: FC<Props> = function ({
   useEffect(() => {
     void loadEvent()
   }, [loadEvent])
+
+  const eventMetadata = (event?.metadata ?? {}) as Record<string, unknown>
+  const isClassifiable =
+    !!event &&
+    CLASSIFIABLE_EVENT_TYPES.has(event.eventType) &&
+    ['captured', 'classified'].includes(event.status)
+  const hasSplit = Array.isArray(eventMetadata.classified_allocations)
+  const suggestedElementId =
+    typeof eventMetadata.suggested_element_id === 'string'
+      ? eventMetadata.suggested_element_id
+      : ''
+  const suggestedAccountName =
+    typeof eventMetadata.suggested_account_name === 'string'
+      ? eventMetadata.suggested_account_name
+      : null
+  const classificationSource =
+    typeof eventMetadata.classification_source === 'string'
+      ? eventMetadata.classification_source
+      : null
+
+  useEffect(() => {
+    if (!isClassifiable) return
+    const prior =
+      typeof eventMetadata.classified_element_id === 'string'
+        ? eventMetadata.classified_element_id
+        : ''
+    setClassifiedElementId(prior || suggestedElementId)
+    let cancelled = false
+    clients.ledger
+      .getAccountTree(graphId)
+      .then((tree) => {
+        if (cancelled) return
+        const options = flattenAccountTree(
+          (tree?.roots ?? []) as unknown as AccountTreeNode[]
+        ).filter((account) => account.id !== event?.resourceElementId)
+        setAccounts(options)
+        // A seeded choice that is no longer on the chart (retired since, or
+        // the bank leg itself) must read as unclassified, not post blind.
+        setClassifiedElementId((current) =>
+          options.some((account) => account.id === current) ? current : ''
+        )
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return
+        console.error('Error loading chart of accounts:', err)
+        setAccounts([])
+      })
+    return () => {
+      cancelled = true
+    }
+    // The event id is what changes; the derived strings follow from it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphId, event?.id, isClassifiable])
+
+  /** The classification patch a commit or classify call carries, or null
+   *  when this event does not take one (a split set over MCP, a non-bank
+   *  event, an internal transfer). */
+  const classificationPatch = useMemo(() => {
+    if (!isClassifiable || hasSplit) return null
+    if (!classifiedElementId) return null
+    return {
+      classified_element_id: classifiedElementId,
+      classified_by: 'user',
+    }
+  }, [isClassifiable, hasSplit, classifiedElementId])
+
+  const needsClassification =
+    isClassifiable && !hasSplit && !classifiedElementId
 
   const buildPreviewBody = useCallback(
     (e: LedgerEventBlockDetail) => ({
@@ -131,10 +253,13 @@ const EventBlockDetailModal: FC<Props> = function ({
       amount: e.amount ?? null,
       currency: e.currency,
       description: e.description ?? null,
-      metadata: (e.metadata ?? {}) as Record<string, unknown>,
+      metadata: {
+        ...((e.metadata ?? {}) as Record<string, unknown>),
+        ...(classificationPatch ?? {}),
+      },
       apply_handlers: false,
     }),
-    []
+    [classificationPatch]
   )
 
   const handlePreview = useCallback(async () => {
@@ -157,12 +282,20 @@ const EventBlockDetailModal: FC<Props> = function ({
 
   const handleApprove = useCallback(async () => {
     if (!event) return
+    if (needsClassification) {
+      setError({
+        message:
+          'Choose the account this bank line posts to before approving it.',
+      })
+      return
+    }
     setError(null)
     setActionInFlight('approve')
     try {
       await clients.ledger.updateEventBlock(graphId, {
         event_id: event.id,
         transition_to: 'committed',
+        ...(classificationPatch ? { metadata_patch: classificationPatch } : {}),
       })
       onApproved(event.id)
     } catch (err) {
@@ -171,7 +304,28 @@ const EventBlockDetailModal: FC<Props> = function ({
     } finally {
       setActionInFlight(null)
     }
-  }, [event, graphId, onApproved])
+  }, [event, graphId, onApproved, classificationPatch, needsClassification])
+
+  // Record the account choice without posting — for a review pass that
+  // batches the posting later, or a second pair of eyes before commit.
+  const handleClassify = useCallback(async () => {
+    if (!event || !classificationPatch) return
+    setError(null)
+    setActionInFlight('classify')
+    try {
+      await clients.ledger.updateEventBlock(graphId, {
+        event_id: event.id,
+        ...(event.status === 'captured' ? { transition_to: 'classified' } : {}),
+        metadata_patch: classificationPatch,
+      })
+      await loadEvent()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setError(friendlyError(message))
+    } finally {
+      setActionInFlight(null)
+    }
+  }, [event, graphId, classificationPatch, loadEvent])
 
   const handleReject = useCallback(async () => {
     if (!event) return
@@ -292,6 +446,69 @@ const EventBlockDetailModal: FC<Props> = function ({
                 </span>
               </div>
             </div>
+
+            {/* Bank-feed classification — the account this line posts to */}
+            {isClassifiable && (
+              <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                <div className="mb-2 flex items-center gap-2">
+                  <HiTag className="h-4 w-4 text-gray-400" />
+                  <h4 className="font-heading text-sm font-bold text-gray-900 dark:text-white">
+                    Post to account
+                  </h4>
+                </div>
+                {hasSplit ? (
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Split across{' '}
+                    {(eventMetadata.classified_allocations as unknown[]).length}{' '}
+                    accounts (set over MCP). Approve posts the split as
+                    recorded.
+                  </p>
+                ) : (
+                  <>
+                    <Label
+                      htmlFor="bank-classified-element"
+                      className="sr-only"
+                    >
+                      Post to account
+                    </Label>
+                    <Select
+                      id="bank-classified-element"
+                      value={classifiedElementId}
+                      onChange={(e) => {
+                        setClassifiedElementId(e.target.value)
+                        setPreview(null)
+                      }}
+                      disabled={accounts === null || actionInFlight !== null}
+                    >
+                      <option value="">
+                        {accounts === null
+                          ? 'Loading chart of accounts…'
+                          : 'Choose an account…'}
+                      </option>
+                      {(accounts ?? []).map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {accountLabel(account)}
+                          {account.id === suggestedElementId
+                            ? ' (suggested)'
+                            : ''}
+                        </option>
+                      ))}
+                    </Select>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {suggestedAccountName
+                        ? `Suggested: ${suggestedAccountName}` +
+                          (classificationSource
+                            ? ` (from ${classificationSource.replace(/_/g, ' ')})`
+                            : '') +
+                          (suggestedElementId
+                            ? ''
+                            : ' — no matching account on this chart; choose one.')
+                        : 'No suggestion for this line; choose the account it posts to.'}
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Entries */}
             {entries && entries.length > 0 ? (
@@ -522,6 +739,17 @@ const EventBlockDetailModal: FC<Props> = function ({
               <HiX className="mr-2 h-4 w-4" />
               Reject
             </Button>
+            {isClassifiable && !hasSplit && (
+              <Button
+                color="light"
+                onClick={handleClassify}
+                disabled={actionInFlight !== null || !classificationPatch}
+                title="Record the account without posting"
+              >
+                <HiTag className="mr-2 h-4 w-4" />
+                {actionInFlight === 'classify' ? 'Saving…' : 'Classify'}
+              </Button>
+            )}
             <Button
               color="success"
               onClick={handleApprove}
