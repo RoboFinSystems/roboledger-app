@@ -151,3 +151,15 @@ describe('friendlyError — cross-graph share controls', () => {
     expect(result.message).toBe('Something unexpected.')
   })
 })
+
+describe('friendlyError — chart of accounts', () => {
+  it('explains the one-time initialize refusal from the raw SDK envelope', () => {
+    const raw =
+      'Initialize chart of accounts failed: {"detail":"This graph already has a chart of accounts; a chart is never replaced. Customize it with update-taxonomy-block."}'
+    const result = friendlyError(raw)
+    expect(result.message).toContain('already has a chart of accounts')
+    expect(result.message).toContain('Reload the page')
+    expect(result.message).not.toContain('{"detail"')
+    expect(result.link).toBeUndefined()
+  })
+})
