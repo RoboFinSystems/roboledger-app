@@ -1,5 +1,6 @@
 'use client'
 
+import { friendlyError } from '@/lib/ledger/errors'
 import { LoadingState, SDK, useGraphContext } from '@robosystems/core'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
@@ -91,9 +92,10 @@ export default function MercuryCallbackPage() {
         }
       } catch (err) {
         console.error('Mercury callback error:', err)
+        // The SDK's error carries FastAPI's JSON envelope; never show it raw.
         setError(
           err instanceof Error
-            ? err.message
+            ? friendlyError(err.message).message
             : 'Failed to process Mercury callback'
         )
         setStatus('error')

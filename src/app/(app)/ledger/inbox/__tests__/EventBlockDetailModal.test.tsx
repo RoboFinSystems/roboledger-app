@@ -171,6 +171,30 @@ describe('EventBlockDetailModal — bank-feed classification', () => {
     })
   })
 
+  it('a suggestion no longer on the chart reads as unclassified', async () => {
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({
+        metadata: {
+          suggested_element_id: 'elem_retired',
+          suggested_account_name: 'Old account',
+        },
+      })
+    )
+    renderModal()
+    const select = (await screen.findByLabelText(
+      'Post to account'
+    )) as HTMLSelectElement
+    await waitFor(() =>
+      expect(Array.from(select.options).length).toBeGreaterThan(1)
+    )
+    expect(select.value).toBe('')
+    fireEvent.click(screen.getByText('Approve'))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Choose the account'
+    )
+    expect(mockUpdateEventBlock).not.toHaveBeenCalled()
+  })
+
   it('refuses to approve an unclassified line', async () => {
     mockGetEventBlock.mockResolvedValue(
       bankEvent({ metadata: { connection_id: 'conn_1' } })

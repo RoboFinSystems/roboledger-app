@@ -195,6 +195,11 @@ const EventBlockDetailModal: FC<Props> = function ({
           (tree?.roots ?? []) as unknown as AccountTreeNode[]
         ).filter((account) => account.id !== event?.resourceElementId)
         setAccounts(options)
+        // A seeded choice that is no longer on the chart (retired since, or
+        // the bank leg itself) must read as unclassified, not post blind.
+        setClassifiedElementId((current) =>
+          options.some((account) => account.id === current) ? current : ''
+        )
       })
       .catch((err: unknown) => {
         if (cancelled) return
