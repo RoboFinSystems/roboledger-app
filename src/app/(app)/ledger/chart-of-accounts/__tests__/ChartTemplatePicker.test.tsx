@@ -48,6 +48,11 @@ const TEMPLATES = [
   },
 ]
 
+// The SDK facade throws `Error("<label> failed: " + JSON.stringify(error))`;
+// the picker must unwrap that envelope rather than show it.
+const sdkError = (label: string, detail: string) =>
+  new Error(`${label} failed: ${JSON.stringify({ detail })}`)
+
 describe('ChartTemplatePicker', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -59,9 +64,10 @@ describe('ChartTemplatePicker', () => {
 
     expect(await screen.findByText('Professional services')).toBeInTheDocument()
     expect(mockListChartTemplates).toHaveBeenCalledWith('kg_test')
-    const [saas, services] = screen.getAllByRole('radio')
-    expect(saas).toHaveAttribute('aria-checked', 'true')
-    expect(services).toHaveAttribute('aria-checked', 'false')
+    expect(screen.getByRole('radio', { name: /SaaS/ })).toBeChecked()
+    expect(
+      screen.getByRole('radio', { name: /Professional services/ })
+    ).not.toBeChecked()
     expect(screen.getByText('27 accounts')).toBeInTheDocument()
   })
 
@@ -78,7 +84,9 @@ describe('ChartTemplatePicker', () => {
       <ChartTemplatePicker graphId="kg_test" onInitialized={onInitialized} />
     )
 
-    fireEvent.click(await screen.findByText('Professional services'))
+    fireEvent.click(
+      await screen.findByRole('radio', { name: /Professional services/ })
+    )
     fireEvent.change(screen.getByLabelText('Equity mapping'), {
       target: { value: 'llc' },
     })
@@ -109,9 +117,12 @@ describe('ChartTemplatePicker', () => {
     )
   })
 
-  it('surfaces the refusal when a chart already exists', async () => {
+  it('unwraps the SDK envelope and explains the one-time refusal', async () => {
     mockInitializeChartOfAccounts.mockRejectedValue(
-      new Error('This graph already has a chart of accounts')
+      sdkError(
+        'Initialize chart of accounts',
+        'This graph already has a chart of accounts; a chart is never replaced.'
+      )
     )
     const onInitialized = vi.fn()
     render(
@@ -120,14 +131,17 @@ describe('ChartTemplatePicker', () => {
 
     fireEvent.click(await screen.findByText('Create chart of accounts'))
 
-    expect(
-      await screen.findByText('This graph already has a chart of accounts')
-    ).toBeInTheDocument()
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('already has a chart of accounts')
+    expect(alert).toHaveTextContent('Reload the page')
+    expect(alert).not.toHaveTextContent('{"detail"')
     expect(onInitialized).not.toHaveBeenCalled()
   })
 
   it('shows a warning when the templates cannot be loaded', async () => {
-    mockListChartTemplates.mockRejectedValue(new Error('boom'))
+    mockListChartTemplates.mockRejectedValue(
+      sdkError('List chart templates', 'boom')
+    )
     render(<ChartTemplatePicker graphId="kg_test" onInitialized={vi.fn()} />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent(

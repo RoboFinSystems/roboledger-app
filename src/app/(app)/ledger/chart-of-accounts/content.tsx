@@ -858,7 +858,10 @@ const ChartOfAccountsContent: FC = function () {
           {isLoading ? (
             <LoadingState />
           ) : accounts.length === 0 ? (
-            currentGraph ? (
+            // A load failure also leaves `accounts` empty; the red card above
+            // already says so, and inviting a new chart under it would be
+            // wrong for a graph whose chart merely failed to load.
+            currentGraph && !error ? (
               <ChartTemplatePicker
                 key={currentGraph.graphId}
                 graphId={currentGraph.graphId}

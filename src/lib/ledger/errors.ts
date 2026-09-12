@@ -103,6 +103,18 @@ export const friendlyError = (raw: string): FriendlyError => {
     }
   }
 
+  // --- Chart of accounts -----------------------------------------------
+
+  // initialize-chart-of-accounts is one-time: the 409 means a chart exists
+  // (QuickBooks-synced, authored, or already initialized) and the page just
+  // has not loaded it.
+  if (lower.includes('already has a chart of accounts')) {
+    return {
+      message:
+        'This graph already has a chart of accounts, so nothing was created. Reload the page to see it; customize it from here rather than starting over.',
+    }
+  }
+
   // --- Cross-graph share controls -------------------------------------
 
   if (lower.includes('cannot block itself')) {

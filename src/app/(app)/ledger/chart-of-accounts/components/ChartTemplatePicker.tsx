@@ -1,5 +1,7 @@
 'use client'
 
+import type { FriendlyError } from '@/lib/ledger/errors'
+import { friendlyError } from '@/lib/ledger/errors'
 import type {
   ChartTemplateKey,
   InitializeChartOfAccountsResult,
@@ -28,6 +30,9 @@ const ENTITY_TYPES: ReadonlyArray<{ value: string; label: string }> = [
   { value: 'partnership', label: 'Partnership' },
 ]
 
+const toFriendly = (err: unknown, fallback: string): FriendlyError =>
+  friendlyError(err instanceof Error ? err.message : fallback)
+
 // The chart-of-accounts empty state for a graph keeping native books. One
 // explicit, one-time action: pick a shipped template and the chart is created
 // with its reporting mappings already in place. A QuickBooks-synced graph never
@@ -39,11 +44,11 @@ export const ChartTemplatePicker: FC<ChartTemplatePickerProps> = ({
   const [templates, setTemplates] = useState<LedgerChartTemplate[] | undefined>(
     undefined
   )
-  const [loadError, setLoadError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<FriendlyError | null>(null)
   const [selectedKey, setSelectedKey] = useState<ChartTemplateKey | null>(null)
   const [entityType, setEntityType] = useState('')
   const [initializing, setInitializing] = useState(false)
-  const [initError, setInitError] = useState<string | null>(null)
+  const [initError, setInitError] = useState<FriendlyError | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -60,9 +65,7 @@ export const ChartTemplatePicker: FC<ChartTemplatePickerProps> = ({
       })
       .catch((err: unknown) => {
         if (cancelled) return
-        setLoadError(
-          err instanceof Error ? err.message : 'Failed to load chart templates.'
-        )
+        setLoadError(toFriendly(err, 'Failed to load chart templates.'))
         setTemplates([])
       })
     return () => {
@@ -83,9 +86,7 @@ export const ChartTemplatePicker: FC<ChartTemplatePickerProps> = ({
       onInitialized(result)
     } catch (err) {
       setInitError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to initialize the chart of accounts.'
+        toFriendly(err, 'Failed to initialize the chart of accounts.')
       )
     } finally {
       setInitializing(false)
@@ -116,53 +117,57 @@ export const ChartTemplatePicker: FC<ChartTemplatePickerProps> = ({
 
         {loadError && (
           <Alert color="warning" icon={HiExclamationCircle} className="mt-4">
-            Could not load chart templates: {loadError}
+            Could not load chart templates: {loadError.message}
           </Alert>
         )}
 
         {templates.length > 0 && (
           <>
-            <div
-              role="radiogroup"
-              aria-label="Chart template"
+            <fieldset
               className="mt-5 grid gap-3 sm:grid-cols-3"
+              disabled={initializing}
             >
+              <legend className="sr-only">Chart template</legend>
               {templates.map((template) => {
                 const selected = template.key === selectedKey
+                const inputId = `chart-template-${template.key}`
                 return (
-                  <button
+                  <label
                     key={template.key}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() =>
-                      setSelectedKey(template.key as ChartTemplateKey)
-                    }
-                    disabled={initializing}
-                    className={`rounded-lg border p-4 text-left transition ${
+                    htmlFor={inputId}
+                    className={`block cursor-pointer rounded-lg border p-4 transition ${
                       selected
                         ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500 dark:border-blue-400 dark:bg-blue-900/20'
                         : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {template.displayName}
-                      </span>
+                    <input
+                      id={inputId}
+                      type="radio"
+                      name="chart-template"
+                      value={template.key}
+                      checked={selected}
+                      onChange={() =>
+                        setSelectedKey(template.key as ChartTemplateKey)
+                      }
+                      className="sr-only"
+                    />
+                    <span className="flex items-center justify-between gap-2 font-medium text-gray-900 dark:text-white">
+                      {template.displayName}
                       {selected && (
                         <HiCheckCircle className="h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
                       )}
-                    </div>
-                    <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                    </span>
+                    <span className="mt-1 block text-xs text-gray-600 dark:text-gray-400">
                       {template.description}
-                    </p>
-                    <p className="mt-2 text-xs text-gray-500">
+                    </span>
+                    <span className="mt-2 block text-xs text-gray-500">
                       {template.accountCount} accounts
-                    </p>
-                  </button>
+                    </span>
+                  </label>
                 )
               })}
-            </div>
+            </fieldset>
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div className="sm:w-72">
@@ -197,7 +202,15 @@ export const ChartTemplatePicker: FC<ChartTemplatePickerProps> = ({
 
         {initError && (
           <Alert color="failure" className="mt-4">
-            {initError}
+            {initError.message}
+            {initError.link && (
+              <>
+                {' '}
+                <a href={initError.link.href} className="underline">
+                  {initError.link.label} →
+                </a>
+              </>
+            )}
           </Alert>
         )}
       </div>
