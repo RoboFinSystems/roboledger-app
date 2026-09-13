@@ -8,6 +8,7 @@ import {
   HiCheckCircle,
   HiClock,
   HiExclamationCircle,
+  HiExternalLink,
   HiRefresh,
 } from 'react-icons/hi'
 
@@ -79,6 +80,12 @@ interface ConnectionCardProps {
    * bootstrap state (§3.0). Optional because non-QB providers ignore it.
    */
   graphId?: string | null
+  /**
+   * Resume an OAuth sign-in the user never finished: re-initialize the
+   * flow for this connection and send them to the provider. Rendered in
+   * place of Sync while the connection is `pending_oauth`.
+   */
+  onContinueOAuth?: () => void | Promise<void>
 }
 
 function getStatusColor(status: string) {
@@ -127,6 +134,7 @@ export default function ConnectionCard({
   onDelete,
   onSetWritePolicy,
   graphId,
+  onContinueOAuth,
 }: ConnectionCardProps) {
   // Optimistic write-policy value: reflects the user's pick immediately
   // (no revert-flicker while the mutation is in flight), reverts on
@@ -140,6 +148,9 @@ export default function ConnectionCard({
   const provider = connection.provider.toLowerCase()
   const image = PROVIDER_IMAGES[provider]
   const label = PROVIDER_LABELS[provider] || connection.provider
+  // The provider has not granted access yet: nothing can sync, and the
+  // first sync is what initializes the fiscal calendar.
+  const awaitingConsent = connection.status === 'pending_oauth'
 
   const subtitle = connection.metadata?.entity_name
     ? `${provider === 'mercury' ? 'Organization' : 'Company'}: ${connection.metadata.entity_name}`
@@ -211,11 +222,13 @@ export default function ConnectionCard({
             )}
 
             {/* §3.0 — fiscal-calendar bootstrap state (QuickBooks, Mercury) */}
-            {CALENDAR_BOOTSTRAP_PROVIDERS.has(provider) && graphId && (
-              <div className="mt-3">
-                <FiscalCalendarBootstrap graphId={graphId} />
-              </div>
-            )}
+            {CALENDAR_BOOTSTRAP_PROVIDERS.has(provider) &&
+              graphId &&
+              !awaitingConsent && (
+                <div className="mt-3">
+                  <FiscalCalendarBootstrap graphId={graphId} />
+                </div>
+              )}
 
             {/* Write-back policy — outbound only; governs whether
                 close-period publishes RL-originated entries to QuickBooks. */}
@@ -264,15 +277,27 @@ export default function ConnectionCard({
         </div>
 
         <div className="flex gap-2">
-          <Button
-            size="sm"
-            color="primary"
-            onClick={onSync}
-            disabled={isSyncing(status.status)}
-          >
-            <HiRefresh className="mr-2 h-4 w-4" />
-            {isSyncing(status.status) ? 'Syncing...' : 'Sync Now'}
-          </Button>
+          {awaitingConsent ? (
+            <Button
+              size="sm"
+              color="primary"
+              onClick={onContinueOAuth}
+              disabled={!onContinueOAuth}
+            >
+              <HiExternalLink className="mr-2 h-4 w-4" />
+              Continue sign-in
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              color="primary"
+              onClick={onSync}
+              disabled={isSyncing(status.status)}
+            >
+              <HiRefresh className="mr-2 h-4 w-4" />
+              {isSyncing(status.status) ? 'Syncing...' : 'Sync Now'}
+            </Button>
+          )}
           <Button
             size="sm"
             color="failure"
