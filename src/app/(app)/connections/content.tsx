@@ -19,7 +19,7 @@ import {
   ModalFooter,
   ModalHeader,
 } from 'flowbite-react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { HiLink, HiPlus } from 'react-icons/hi'
 
@@ -43,6 +43,13 @@ import SyncOptionsModal, {
 // syncs typically complete in well under a minute.
 const SYNC_POLL_INTERVAL_MS = 3000
 const SYNC_POLL_TIMEOUT_MS = 300_000
+
+// Where each OAuth provider sends the user back; the setup forms use the
+// same paths when they start the flow.
+const OAUTH_CALLBACK_PATHS: Record<string, string> = {
+  quickbooks: '/connections/qb-callback',
+  mercury: '/connections/mercury-callback',
+}
 
 interface SyncWatch {
   // ms-since-epoch when we started watching this connection. We treat the
@@ -110,6 +117,7 @@ export default function ModernConnectionsContent() {
   const { state: graphState } = useGraphContext()
   const { currentGraphId } = graphState
   const searchParams = useSearchParams()
+  const router = useRouter()
   const shownSuccessRef = useRef(false)
   const oauthWatchSeededRef = useRef(false)
 
@@ -300,6 +308,37 @@ export default function ModernConnectionsContent() {
     void loadConnections()
   }, [showSuccess, closeMarketplace, loadConnections])
 
+  // A connection left `pending_oauth` (the user closed the provider's
+  // consent page) resumes from the same row: re-initialize the flow and
+  // send them back to the provider.
+  const handleContinueOAuth = async (connection: ConnectionData) => {
+    const callbackPath = OAUTH_CALLBACK_PATHS[connection.provider.toLowerCase()]
+    if (!currentGraphId || !callbackPath) {
+      showError('This connection cannot resume sign-in')
+      return
+    }
+    try {
+      const response = await SDK.initOAuth({
+        path: { graph_id: currentGraphId },
+        body: {
+          connection_id: connection.connection_id,
+          redirect_uri: `${window.location.origin}${callbackPath}`,
+        },
+        throwOnError: true,
+      })
+      const authUrl = response.data?.auth_url
+      if (!authUrl) {
+        throw new Error('No authorization URL returned')
+      }
+      router.push(authUrl)
+    } catch (err) {
+      console.error('Continue OAuth error:', err)
+      showError(
+        'Failed to resume sign-in — delete the connection and add it again'
+      )
+    }
+  }
+
   // ── Sync ──
 
   const openSyncOptions = (connection: ConnectionData) => {
@@ -434,7 +473,7 @@ export default function ModernConnectionsContent() {
       case 'pending_oauth':
         return {
           status: connection.status,
-          message: 'Awaiting OAuth completion',
+          message: 'Sign-in not finished — continue to grant access',
         }
       case 'pending':
       case 'in_progress':
@@ -502,6 +541,7 @@ export default function ModernConnectionsContent() {
                 handleSetWritePolicy(connection.connection_id, wp)
               }
               graphId={currentGraphId}
+              onContinueOAuth={() => handleContinueOAuth(connection)}
             />
           ))}
 
