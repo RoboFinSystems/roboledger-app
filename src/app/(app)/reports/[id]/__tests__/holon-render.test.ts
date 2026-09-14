@@ -53,6 +53,22 @@ describe('holon render pipeline', () => {
     expect(sections.length).toBe(4)
     expect(sections.every((s) => typeof s.title === 'string')).toBe(true)
   })
+
+  it("does not repeat a section title as that section's own first row", async () => {
+    // rs-gaap gives the income statement a root `IncomeStatementAbstract` and
+    // the other three primaries none, so a report printed "Income Statement"
+    // directly under the heading "Income Statement" — and only there.
+    // report-components 0.6.0 hides a root abstract that only restates the
+    // title, so this fails on 0.5.3 and is what the pin is for.
+    const report = await parseJsonld(fixture)
+
+    for (const table of buildPivots(report)) {
+      const echoes = table.rows.filter(
+        (r) => r.header && (r.label ?? r.element.label) === table.title
+      )
+      expect(echoes, table.title).toHaveLength(0)
+    }
+  })
 })
 
 describe('tavi render pipeline', () => {

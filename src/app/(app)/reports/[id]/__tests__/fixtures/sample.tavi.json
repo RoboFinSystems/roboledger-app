@@ -8,19 +8,19 @@
       "xs": "http://www.w3.org/2001/XMLSchema",
       "iso4217": "http://www.xbrl.org/2003/iso4217",
       "utr": "https://xbrl.org/PWD/2026-09-01/utr",
-      "rpt": "https://robosystems.ai/tavi/report/rpt_01M1W53MH34MX5EN2BY9W653TW",
+      "rpt": "https://robosystems.ai/tavi/report/rpt_01M2ESPDWQJJTYQSSHVC11D0ZE",
       "entity": "http://robosystems.ai/entity",
       "rs-gaap": "https://robosystems.ai/taxonomy/rs-gaap/v1/"
     },
-    "description": "RoboLedger report rpt_01M1W53MH34MX5EN2BY9W653TW g1 (Cascade Advisory Group LLC) projected from its StatementBundle by robosystems"
+    "description": "RoboLedger report rpt_01M2ESPDWQJJTYQSSHVC11D0ZE g1 (Cascade Advisory Group LLC) projected from its StatementBundle by robosystems"
   },
   "xbrlModel": {
     "name": "rpt:Report",
     "modelType": "xbrl:report",
     "properties": [
-      { "property": "xbrl:reportFilingDate", "value": "2026-09-06" }
+      { "property": "xbrl:reportFilingDate", "value": "2026-09-14" }
     ],
-    "entities": [{ "name": "entity:entity_kg1a078514c0dd31349d58" }],
+    "entities": [{ "name": "entity:entity_kg1a09d9aaf9b587b4cc5c" }],
     "units": [{ "name": "iso4217:USD", "dataType": "xbrlr:monetary" }],
     "concepts": [
       {
@@ -1241,7 +1241,7 @@
         "language": "en"
       },
       {
-        "forObject": "entity:entity_kg1a078514c0dd31349d58",
+        "forObject": "entity:entity_kg1a09d9aaf9b587b4cc5c",
         "labelType": "xbrl:label",
         "value": "Cascade Advisory Group LLC",
         "language": "en"
@@ -2291,414 +2291,414 @@
     ],
     "facts": [
       {
-        "name": "rpt:f-0",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VFZ",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:AccountsPayableCurrent",
           "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "0" }]
       },
       {
-        "name": "rpt:f-1",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VG0",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:AccruedLiabilitiesCurrent",
           "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "800" }]
       },
       {
-        "name": "rpt:f-2",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VG1",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:AdditionalPaidInCapital",
           "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "49800" }]
       },
       {
-        "name": "rpt:f-3",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VG2",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:CashAndCashEquivalentsAtCarryingValue",
           "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "51085" }]
       },
       {
-        "name": "rpt:f-4",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VG3",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:DepreciationDepletionAndAmortization",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "899.98" }]
       },
       {
-        "name": "rpt:f-5",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VG4",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:DepreciationDepletionAndAmortization",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "899.98" }]
       },
       {
-        "name": "rpt:f-6",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VG5",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:GeneralAndAdministrativeExpense",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "92215" }]
       },
       {
-        "name": "rpt:f-7",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VG6",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:PrepaidExpenseCurrent",
           "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "1500" }]
       },
       {
-        "name": "rpt:f-8",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VG7",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:ReceivablesNetCurrent",
           "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "0" }]
       },
       {
-        "name": "rpt:f-9",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VG8",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "100500" }]
       },
       {
-        "name": "rpt:f-10",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VG9",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:RetainedEarningsAccumulatedDeficit",
           "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
-        "factValues": [{ "value": "7385.020000000004" }]
+        "factValues": [{ "value": "7385.02" }]
       },
       {
-        "name": "rpt:f-11",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGA",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:AdditionalPaidInCapital",
           "xbrl:period": "2025-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "0" }]
       },
       {
-        "name": "rpt:f-12",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGB",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:RetainedEarningsAccumulatedDeficit",
           "xbrl:period": "2025-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "0" }]
       },
       {
-        "name": "rpt:f-13",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGC",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:NetIncomeLoss",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
-        "factValues": [{ "value": "7385.020000000004" }]
+        "factValues": [{ "value": "7385.02" }]
       },
       {
-        "name": "rpt:f-14",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGD",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:NetIncomeLoss",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
-        "factValues": [{ "value": "7385.020000000004" }]
+        "factValues": [{ "value": "7385.02" }]
       },
       {
-        "name": "rpt:f-15",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGE",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:NetIncomeLoss",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
-        "factValues": [{ "value": "7385.020000000004" }]
+        "factValues": [{ "value": "7385.02" }]
       },
       {
-        "name": "rpt:f-16",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGF",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:PropertyPlantAndEquipmentNet",
           "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "5400.02" }]
       },
       {
-        "name": "rpt:f-17",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGG",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:ProceedsFromIssuanceOfCommonStock",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "49800" }]
       },
       {
-        "name": "rpt:f-18",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGH",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:ProceedsFromIssuanceOfCommonStock",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "49800" }]
       },
       {
-        "name": "rpt:f-19",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGJ",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "-4800" }]
       },
       {
-        "name": "rpt:f-20",
-        "factDimensions": {
-          "xbrl:concept": "rs-gaap:IncreaseDecreaseInPrepaidExpense",
-          "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
-          "xbrl:unit": "iso4217:USD"
-        },
-        "factValues": [{ "value": "-1500" }]
-      },
-      {
-        "name": "rpt:f-21",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGK",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:IncreaseDecreaseInAccruedLiabilities",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "800" }]
       },
       {
-        "name": "rpt:f-22",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGM",
         "factDimensions": {
-          "xbrl:concept": "rs-gaap:IncreaseDecreaseInOtherOperatingCapitalNet",
+          "xbrl:concept": "rs-gaap:IncreaseDecreaseInPrepaidExpense",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "-1500" }]
       },
       {
-        "name": "rpt:f-23",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGN",
         "factDimensions": {
-          "xbrl:concept": "rs-gaap:IncomeLossFromContinuingOperations",
+          "xbrl:concept": "rs-gaap:IncreaseDecreaseInOtherOperatingCapitalNet",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
-        "factValues": [{ "value": "7385.020000000004" }]
+        "factValues": [{ "value": "-1500" }]
       },
       {
-        "name": "rpt:f-24",
-        "factDimensions": {
-          "xbrl:concept": "rs-gaap:Revenues",
-          "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
-          "xbrl:unit": "iso4217:USD"
-        },
-        "factValues": [{ "value": "100500" }]
-      },
-      {
-        "name": "rpt:f-25",
-        "factDimensions": {
-          "xbrl:concept": "rs-gaap:NetCashProvidedByUsedInOperatingActivities",
-          "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
-          "xbrl:unit": "iso4217:USD"
-        },
-        "factValues": [{ "value": "6085.000000000004" }]
-      },
-      {
-        "name": "rpt:f-26",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGP",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:CashAndCashEquivalentsPeriodIncreaseDecrease",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "51085" }]
       },
       {
-        "name": "rpt:f-27",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGQ",
         "factDimensions": {
-          "xbrl:concept": "rs-gaap:NetCashProvidedByUsedInFinancingActivities",
-          "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
-          "xbrl:unit": "iso4217:USD"
-        },
-        "factValues": [{ "value": "49800" }]
-      },
-      {
-        "name": "rpt:f-28",
-        "factDimensions": {
-          "xbrl:concept": "rs-gaap:AssetsCurrent",
+          "xbrl:concept": "rs-gaap:StockholdersEquity",
           "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
-        "factValues": [{ "value": "52585" }]
+        "factValues": [{ "value": "57185.02" }]
       },
       {
-        "name": "rpt:f-29",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGR",
         "factDimensions": {
-          "xbrl:concept": "rs-gaap:NetCashProvidedByUsedInInvestingActivities",
-          "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:concept": "rs-gaap:StockholdersEquity",
+          "xbrl:period": "2026-01-01T00:00:00",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
-        "factValues": [{ "value": "-4800" }]
+        "factValues": [{ "value": "57185.02" }]
       },
       {
-        "name": "rpt:f-30",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGS",
+        "factDimensions": {
+          "xbrl:concept": "rs-gaap:LiabilitiesAndStockholdersEquity",
+          "xbrl:period": "2026-01-01T00:00:00",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
+          "xbrl:unit": "iso4217:USD"
+        },
+        "factValues": [{ "value": "57985.02" }]
+      },
+      {
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGT",
+        "factDimensions": {
+          "xbrl:concept": "rs-gaap:Assets",
+          "xbrl:period": "2026-01-01T00:00:00",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
+          "xbrl:unit": "iso4217:USD"
+        },
+        "factValues": [{ "value": "57985.02" }]
+      },
+      {
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGV",
+        "factDimensions": {
+          "xbrl:concept": "rs-gaap:Liabilities",
+          "xbrl:period": "2026-01-01T00:00:00",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
+          "xbrl:unit": "iso4217:USD"
+        },
+        "factValues": [{ "value": "800" }]
+      },
+      {
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGW",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:AssetsNoncurrent",
           "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "5400.02" }]
       },
       {
-        "name": "rpt:f-31",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGX",
         "factDimensions": {
-          "xbrl:concept": "rs-gaap:LiabilitiesAndStockholdersEquity",
+          "xbrl:concept": "rs-gaap:AssetsCurrent",
           "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
-        "factValues": [{ "value": "57985.020000000004" }]
+        "factValues": [{ "value": "52585" }]
       },
       {
-        "name": "rpt:f-32",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGY",
         "factDimensions": {
           "xbrl:concept": "rs-gaap:LiabilitiesCurrent",
           "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "800" }]
       },
       {
-        "name": "rpt:f-33",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VGZ",
         "factDimensions": {
-          "xbrl:concept": "rs-gaap:StockholdersEquity",
-          "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
-          "xbrl:unit": "iso4217:USD"
-        },
-        "factValues": [{ "value": "57185.020000000004" }]
-      },
-      {
-        "name": "rpt:f-34",
-        "factDimensions": {
-          "xbrl:concept": "rs-gaap:StockholdersEquity",
-          "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
-          "xbrl:unit": "iso4217:USD"
-        },
-        "factValues": [{ "value": "57185.020000000004" }]
-      },
-      {
-        "name": "rpt:f-35",
-        "factDimensions": {
-          "xbrl:concept": "rs-gaap:Assets",
-          "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
-          "xbrl:unit": "iso4217:USD"
-        },
-        "factValues": [{ "value": "57985.020000000004" }]
-      },
-      {
-        "name": "rpt:f-36",
-        "factDimensions": {
-          "xbrl:concept": "rs-gaap:Liabilities",
-          "xbrl:period": "2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
-          "xbrl:unit": "iso4217:USD"
-        },
-        "factValues": [{ "value": "800" }]
-      },
-      {
-        "name": "rpt:f-37",
-        "factDimensions": {
-          "xbrl:concept": "rs-gaap:OperatingExpenses",
+          "xbrl:concept": "rs-gaap:IncomeLossFromContinuingOperations",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
-        "factValues": [{ "value": "93114.98" }]
+        "factValues": [{ "value": "7385.02" }]
       },
       {
-        "name": "rpt:f-38",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VH0",
         "factDimensions": {
-          "xbrl:concept": "rs-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest",
+          "xbrl:concept": "rs-gaap:OperatingIncomeLoss",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
-        "factValues": [{ "value": "7385.020000000004" }]
+        "factValues": [{ "value": "7385.02" }]
       },
       {
-        "name": "rpt:f-39",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VH1",
         "factDimensions": {
-          "xbrl:concept": "rs-gaap:GrossProfit",
+          "xbrl:concept": "rs-gaap:Revenues",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
         "factValues": [{ "value": "100500" }]
       },
       {
-        "name": "rpt:f-40",
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VH2",
         "factDimensions": {
-          "xbrl:concept": "rs-gaap:OperatingIncomeLoss",
+          "xbrl:concept": "rs-gaap:OperatingExpenses",
           "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
-          "xbrl:entity": "entity:entity_kg1a078514c0dd31349d58",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
           "xbrl:unit": "iso4217:USD"
         },
-        "factValues": [{ "value": "7385.020000000004" }]
+        "factValues": [{ "value": "93114.98" }]
+      },
+      {
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VH3",
+        "factDimensions": {
+          "xbrl:concept": "rs-gaap:GrossProfit",
+          "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
+          "xbrl:unit": "iso4217:USD"
+        },
+        "factValues": [{ "value": "100500" }]
+      },
+      {
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VH4",
+        "factDimensions": {
+          "xbrl:concept": "rs-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest",
+          "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
+          "xbrl:unit": "iso4217:USD"
+        },
+        "factValues": [{ "value": "7385.02" }]
+      },
+      {
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VH5",
+        "factDimensions": {
+          "xbrl:concept": "rs-gaap:NetCashProvidedByUsedInFinancingActivities",
+          "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
+          "xbrl:unit": "iso4217:USD"
+        },
+        "factValues": [{ "value": "49800" }]
+      },
+      {
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VH6",
+        "factDimensions": {
+          "xbrl:concept": "rs-gaap:NetCashProvidedByUsedInOperatingActivities",
+          "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
+          "xbrl:unit": "iso4217:USD"
+        },
+        "factValues": [{ "value": "6085" }]
+      },
+      {
+        "name": "rpt:fact_01M2ESPDYTQFS032510E858VH7",
+        "factDimensions": {
+          "xbrl:concept": "rs-gaap:NetCashProvidedByUsedInInvestingActivities",
+          "xbrl:period": "2025-01-01T00:00:00/2026-01-01T00:00:00",
+          "xbrl:entity": "entity:entity_kg1a09d9aaf9b587b4cc5c",
+          "xbrl:unit": "iso4217:USD"
+        },
+        "factValues": [{ "value": "-4800" }]
       }
     ]
   }
