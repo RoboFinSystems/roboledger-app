@@ -2,6 +2,11 @@
 
 import { isGraphAdmin } from '@/lib/graph-role'
 import { friendlyError } from '@/lib/ledger/errors'
+import {
+  reportAnchorNote,
+  reportExampleQuestions,
+  reportFocus,
+} from '@/lib/reports/chat'
 import type { PublishList, ReportPackage } from '@robosystems/client/clients'
 import {
   clients,
@@ -9,6 +14,7 @@ import {
   LoadingState,
   PageHeader,
   PageLayout,
+  ReportChat,
   useGraphContext,
 } from '@robosystems/core'
 import {
@@ -525,6 +531,36 @@ const ReportViewerContent: FC = function () {
           </div>
         </div>
       </Card>
+
+      {/* Ask about this report: the operator on this graph, anchored on the
+          report by its identifier and period. It spends the graph's credits;
+          the report itself stays free to read. Keyed per report so a
+          different report starts a fresh thread. */}
+      {graphId ? (
+        <ReportChat
+          key={reportId}
+          graphId={graphId}
+          title="Ask about this report"
+          hint="Answers from your books. Uses credits."
+          anchorNote={reportAnchorNote({
+            reportId,
+            name: pkg.name,
+            entityName: pkg.entityName,
+            periodStart: pkg.periodStart,
+            periodEnd: pkg.periodEnd,
+          })}
+          focus={reportFocus({
+            reportId,
+            name: pkg.name,
+            entityName: pkg.entityName,
+            periodStart: pkg.periodStart,
+            periodEnd: pkg.periodEnd,
+          })}
+          intro={`Ask anything about ${pkg.name}. The operator reads this graph — the report, its periods, and the ledger behind it — and answers from the numbers.`}
+          examples={reportExampleQuestions({ reportId, name: pkg.name })}
+          placeholder="Ask about this report…"
+        />
+      ) : null}
 
       {/* Package items — sidebar + stacked BlockViews, one per FactSet.
           The 'holon' renderer swaps in the shared ReportView for comparison. */}
