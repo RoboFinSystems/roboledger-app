@@ -6,7 +6,7 @@ Thank you for your interest in contributing to RoboLedger App! This is the accou
 
 - **[Discussions](https://github.com/orgs/RoboFinSystems/discussions)** - Questions, ideas, and general conversation
 - **[Project Board](https://github.com/orgs/RoboFinSystems/projects/3)** - Track work across all RoboSystems repositories
-- **[Wiki](https://github.com/RoboFinSystems/robosystems/wiki)** - Architecture docs and guides
+- **[Documentation](https://robosystems.ai/docs/technical)** - Architecture docs and guides
 
 ## Table of Contents
 
