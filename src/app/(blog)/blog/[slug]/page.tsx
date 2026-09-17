@@ -1,4 +1,4 @@
-import { BlogJsonLd } from '@/components/blog/BlogJsonLd'
+import { BLOG_FEED, BlogJsonLd } from '@/components/blog/BlogJsonLd'
 import { LOGIN_PATH, REGISTER_PATH } from '@/components/landing/constants'
 import {
   formatPostDate,
@@ -32,10 +32,13 @@ export async function generateMetadata({
 
   const url = `https://roboledger.ai/blog/${slug}`
   return {
-    title: `${post.title} | RoboLedger Blog`,
+    title: `${post.title} | RoboLedger`,
     description: post.metaDescription || post.excerpt,
     // Self-referencing canonical, unless the post declares an external one (syndication).
-    alternates: { canonical: post.canonicalUrl || url },
+    alternates: {
+      canonical: post.canonicalUrl || url,
+      types: { 'application/rss+xml': BLOG_FEED },
+    },
     openGraph: {
       title: post.title,
       description: post.metaDescription || post.excerpt,

@@ -5,13 +5,15 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { GITHUB_URL, LOGIN_PATH, REGISTER_PATH } from './constants'
 
+// Section links carry the root path so they resolve from the blog too, where the header
+// also renders.
 const NAV_LINKS = [
-  { href: '#how-it-works', label: 'How it works' },
-  { href: '#features', label: 'Features' },
-  { href: '#agent-surface', label: 'Agent tools' },
-  { href: '#platform', label: 'Platform' },
-  { href: '#harbinger', label: 'Done for you' },
-  { href: '#faq', label: 'FAQ' },
+  { href: '/#how-it-works', label: 'How it works' },
+  { href: '/#features', label: 'Features' },
+  { href: '/#agent-surface', label: 'Agent tools' },
+  { href: '/#platform', label: 'Platform' },
+  { href: '/#harbinger', label: 'Done for you' },
+  { href: '/#faq', label: 'FAQ' },
   { href: '/blog', label: 'Blog' },
 ]
 

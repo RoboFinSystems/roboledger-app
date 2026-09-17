@@ -1,17 +1,24 @@
-import { BLOG_DESCRIPTION, BlogListJsonLd } from '@/components/blog/BlogJsonLd'
+import {
+  BLOG_DESCRIPTION,
+  BLOG_FEED,
+  BlogListJsonLd,
+} from '@/components/blog/BlogJsonLd'
 import { REGISTER_PATH } from '@/components/landing/constants'
 import { formatPostDate, getAllPosts } from '@/lib/blog'
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import Link from 'next/link'
 
-const TITLE = 'Blog | RoboLedger'
+// The hub's title says what the lane is about; "Blog | RoboLedger" told a searcher nothing.
+const TITLE = 'AI Accounting on QuickBooks, with Claude | RoboLedger Blog'
 const URL = 'https://roboledger.ai/blog'
 
 export const metadata: Metadata = {
   title: TITLE,
   description: BLOG_DESCRIPTION,
-  alternates: { canonical: URL },
+  alternates: {
+    canonical: URL,
+    types: { 'application/rss+xml': BLOG_FEED },
+  },
   openGraph: {
     type: 'website',
     url: URL,
@@ -41,21 +48,6 @@ export default async function BlogPage() {
         </div>
 
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-          <div className="mb-6 flex items-center justify-center">
-            <Link href="/" className="flex items-center">
-              <Image
-                src="/images/logos/roboledger.png"
-                alt="RoboLedger Logo"
-                width={60}
-                height={60}
-                className="mr-3"
-              />
-              <span className="font-heading text-4xl font-bold whitespace-nowrap text-white">
-                RoboLedger
-              </span>
-            </Link>
-          </div>
-
           <h1 className="font-heading text-center text-5xl font-bold md:text-6xl">
             <span className="from-primary-400 via-secondary-400 to-accent-400 bg-linear-to-r bg-clip-text text-transparent">
               Blog

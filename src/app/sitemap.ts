@@ -1,13 +1,17 @@
 import { getAllPosts } from '@/lib/blog'
 import type { MetadataRoute } from 'next'
 
-/** Newest valid date in a list, or `now` when none, so the hub `lastmod` stays honest. */
-function latestDate(dates: (string | undefined)[]): Date {
+/**
+ * Newest valid date in a list, or none. A `lastmod` is a real date or absent: a date
+ * stamped at request time teaches Bing and Google to ignore the field on every entry,
+ * including the posts whose dates are true.
+ */
+function latestDate(dates: (string | undefined)[]): Date | undefined {
   const ts = dates
     .filter((d): d is string => !!d)
     .map((d) => new Date(d).getTime())
     .filter((n) => !Number.isNaN(n))
-  return ts.length ? new Date(Math.max(...ts)) : new Date()
+  return ts.length ? new Date(Math.max(...ts)) : undefined
 }
 
 // RoboLedger's public surface is the marketing homepage and the blog. Everything else is
@@ -28,9 +32,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   return [
+    // No lastModified: the homepage changes on deploys, and nothing here knows when.
     {
       url: baseUrl,
-      lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 1,
     },
