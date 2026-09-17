@@ -4,7 +4,6 @@ import type { SidebarItemData } from '@robosystems/core'
 import {
   HiBookOpen,
   HiChartBar,
-  HiDocumentText,
   HiHome,
   HiOutlineOfficeBuilding,
   HiSearch,
@@ -96,19 +95,10 @@ export const getNavigationItems = (
       ]
     : []
 
-  // The docs wear the public site's chrome, so they open in a new tab and the
-  // app keeps its place. A signed-in visitor to / is sent to /home and never
-  // sees the public header's links, so this is the way in from here. Docs takes
-  // HiDocumentText because Library already wears HiBookOpen. The blog is
-  // marketing, not product surface, so it stays off the signed-in sidebar.
-  const tailItems: SidebarItemData[] = [
-    {
-      icon: HiDocumentText,
-      label: 'Docs',
-      href: '/docs',
-      target: '_blank',
-    },
-  ]
+  // The docs are reached from the user menu (core's CoreNavbar) and from the page
+  // each guide explains, not from here: the sidebar is the ledger's workspace. The
+  // blog is marketing and is read on the public site.
+  const tailItems: SidebarItemData[] = []
 
   return [...baseItems, ...graphDependentItems, ...tailItems]
 }
