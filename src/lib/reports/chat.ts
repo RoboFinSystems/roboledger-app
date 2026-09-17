@@ -23,6 +23,23 @@ export function reportFocus(anchor: ReportAnchor): Record<string, unknown> {
   }
 }
 
+/**
+ * The report's own text, flattened before it reaches the operator.
+ *
+ * This viewer serves received reports as well as the graph's own: a copy
+ * shared in from another graph carries the *sender's* name and entity name,
+ * which is text this graph does not control. What the operator can reach is
+ * fixed by the graph in the request URL and re-checked server-side, so
+ * crafted text cannot read anything the reader could not; but a name carrying
+ * newlines could still dress itself up as another line of the note.
+ * Collapsing whitespace and clamping the length takes the disguise away and
+ * leaves every honest report reading the same.
+ */
+function flatten(value: string, max = 200): string {
+  const oneLine = value.replace(/\s+/g, ' ').trim()
+  return oneLine.length > max ? `${oneLine.slice(0, max)}…` : oneLine
+}
+
 function periodOf(anchor: ReportAnchor): string {
   if (anchor.periodStart && anchor.periodEnd)
     return `${anchor.periodStart} to ${anchor.periodEnd}`
@@ -34,8 +51,8 @@ export function reportAnchorNote(anchor: ReportAnchor): string {
   const period = periodOf(anchor)
   return [
     'REPORT IN CONTEXT — the user is reading this report:',
-    ...(anchor.entityName ? [`  Entity: ${anchor.entityName}`] : []),
-    `  Report: ${anchor.name}${period ? ` (${period})` : ''}`,
+    ...(anchor.entityName ? [`  Entity: ${flatten(anchor.entityName)}`] : []),
+    `  Report: ${flatten(anchor.name)}${period ? ` (${period})` : ''}`,
     `  Report identifier: ${anchor.reportId}`,
     'Anchor on this report and its period. When the question is about "this report", read it by its identifier; when it is about why a figure moved, the ledger behind it is on the same graph. If the user clearly asks about another period or the books at large, answer that instead.',
   ].join('\n')
@@ -43,8 +60,10 @@ export function reportAnchorNote(anchor: ReportAnchor): string {
 
 /** Questions offered on the empty state, worded for the report on screen. */
 export function reportExampleQuestions(anchor: ReportAnchor): string[] {
+  // Tapping an example sends it as the reader's own question, so the report's
+  // text is flattened here too rather than riding into the thread unchanged.
   return [
-    `Summarize ${anchor.name}`,
+    `Summarize ${flatten(anchor.name)}`,
     'What drove the change in cash this period?',
     'Which accounts moved most against the prior period?',
   ]
