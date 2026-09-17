@@ -9,8 +9,11 @@ import Link from 'next/link'
 import { DocsJsonLd, type Crumb } from './DocsJsonLd'
 import { DocsMarkdown } from './DocsMarkdown'
 
+// Inline code sets its own dark background: the app's typography theme gives `code` a light
+// mint one, and prose-invert only swaps colors, so on the black page it rendered as a pale box.
+// Code inside a block drops that background and padding again.
 const PROSE =
-  'prose prose-invert max-w-none prose-headings:font-heading prose-headings:scroll-mt-28 prose-headings:text-white prose-p:text-gray-300 prose-a:text-primary-400 prose-a:no-underline hover:prose-a:text-primary-300 prose-strong:text-white prose-code:text-primary-300 prose-code:before:content-none prose-code:after:content-none prose-pre:border prose-pre:border-gray-800 prose-pre:bg-gray-900 prose-li:text-gray-300 prose-li:marker:text-primary-500 prose-th:text-white prose-td:text-gray-300 prose-blockquote:border-l-primary-500 prose-blockquote:text-gray-400'
+  'prose prose-invert max-w-none prose-headings:font-heading prose-headings:scroll-mt-28 prose-headings:text-white prose-p:text-gray-300 prose-a:text-primary-400 prose-a:no-underline hover:prose-a:text-primary-300 prose-strong:text-white prose-li:text-gray-300 prose-li:marker:text-primary-500 prose-th:text-white prose-td:text-gray-300 prose-blockquote:border-l-primary-500 prose-blockquote:text-gray-400 prose-code:text-primary-300 prose-code:bg-gray-800 prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:font-normal prose-code:before:content-none prose-code:after:content-none prose-pre:border prose-pre:border-gray-800 prose-pre:bg-gray-900 prose-pre:text-gray-200 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-inherit'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
