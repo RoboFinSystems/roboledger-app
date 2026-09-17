@@ -1,7 +1,9 @@
 // Schema.org JSON-LD for the blog: a per-post BlogPosting (plus AudioObject when a
 // narration exists) with a BreadcrumbList, and an ItemList for the index hub. Mirrors
 // robosystems-app's component so the two lanes stay aligned; the publisher is RoboLedger.
-// There is no per-post image in the blog catalog yet, so the org logo stands in.
+// The BlogPosting image is the post's own 1200×630 card, served at a stable path
+// (`/blog/{slug}/og.png`) because the opengraph-image convention's URL carries a
+// build-generated suffix that structured data cannot name.
 
 import type { BlogPost } from '@/lib/blog'
 
@@ -10,6 +12,11 @@ const ORG = {
   url: 'https://roboledger.ai',
   logo: 'https://roboledger.ai/images/logos/roboledger-icon.png',
 }
+
+/** The RSS feed, advertised from the blog's pages with `<link rel="alternate">`. */
+export const BLOG_FEED = [
+  { url: `${ORG.url}/blog/feed.xml`, title: 'RoboLedger Blog' },
+]
 
 export const BLOG_DESCRIPTION =
   'Connect QuickBooks, ask Claude the first question, share the statement, plan the quarter, compare against public filers. The close comes last.'
@@ -54,7 +61,12 @@ export function BlogJsonLd({
       logo: { '@type': 'ImageObject', url: ORG.logo },
     },
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
-    image: ORG.logo,
+    image: {
+      '@type': 'ImageObject',
+      url: `${url}/og.png`,
+      width: 1200,
+      height: 630,
+    },
     keywords: keywords || undefined,
     audio: post.narrationUrl
       ? {

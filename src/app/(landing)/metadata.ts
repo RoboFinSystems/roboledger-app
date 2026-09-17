@@ -1,12 +1,9 @@
+import { SITE_DESCRIPTION, SITE_TITLE } from '@/lib/site'
 import type { Metadata } from 'next'
 
-const TITLE = 'RoboLedger | Connect Your Books. Ask Claude.'
-const DESCRIPTION =
-  'Sync QuickBooks into a graph Claude can reason over. Analyze, share statements that tie, plan off your actuals, and compare your numbers to public companies. Nothing writes back until you post an entry.'
-
 export const landingMetadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
   // The long tail behind the head terms Intuit owns (2026-09-02 SERP sample); the close
   // terms left with the old hero.
   keywords: [

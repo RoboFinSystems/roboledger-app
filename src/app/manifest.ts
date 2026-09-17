@@ -1,11 +1,11 @@
+import { SITE_DESCRIPTION, SITE_TITLE } from '@/lib/site'
 import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'RoboLedger | AI-Native Financial Reporting',
+    name: SITE_TITLE,
     short_name: 'RoboLedger',
-    description:
-      'AI-native financial reporting — turn natural language into complete, validated financial statements.',
+    description: SITE_DESCRIPTION,
     start_url: '/',
     display: 'standalone',
     background_color: '#000000',
