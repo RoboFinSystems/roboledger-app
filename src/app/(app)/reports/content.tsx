@@ -1,5 +1,6 @@
 'use client'
 
+import DocsLink from '@/components/DocsLink'
 import type { Report } from '@robosystems/client/clients'
 import {
   clients,
@@ -124,7 +125,12 @@ const ReportsContent: FC = function () {
       <PageHeader
         icon={HiDocumentReport}
         title="Reports"
-        subtitle="View and manage financial reports"
+        subtitle={
+          <>
+            View and manage financial reports.{' '}
+            <DocsLink href="/docs/reports-and-sharing" />
+          </>
+        }
         actions={
           <div className="flex gap-2">
             <Link href="/reports/publish-lists">
