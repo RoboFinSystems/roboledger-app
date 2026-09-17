@@ -23,6 +23,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { HiLink, HiPlus } from 'react-icons/hi'
 
+import DocsLink from '@/components/DocsLink'
 import ConnectionCard, {
   type ConnectionData,
   type ConnectionStatus,
@@ -515,7 +516,12 @@ export default function ModernConnectionsContent() {
         <PageHeader
           icon={HiLink}
           title="Data Connections"
-          subtitle="Connect external data sources to import transactions and financial data on demand"
+          subtitle={
+            <>
+              Connect external data sources to import transactions and financial
+              data on demand. <DocsLink href="/docs/connect-your-books" />
+            </>
+          }
           actions={
             <Button size="sm" color="primary" onClick={openMarketplace}>
               <HiPlus className="mr-2 h-4 w-4" />

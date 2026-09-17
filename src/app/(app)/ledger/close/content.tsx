@@ -1,5 +1,6 @@
 'use client'
 
+import DocsLink from '@/components/DocsLink'
 import type { LedgerClosingBookStructures } from '@robosystems/client/clients'
 import {
   clients,
@@ -188,9 +189,12 @@ const CloseContent: FC = function () {
         icon={TbBook2}
         title="Closing Book"
         subtitle={
-          currentGraph
-            ? 'Financial statements, schedules, and period close'
-            : undefined
+          currentGraph ? (
+            <>
+              Financial statements, schedules, and period close.{' '}
+              <DocsLink href="/docs/month-end-close" />
+            </>
+          ) : undefined
         }
         actions={
           showViewToggle ? (

@@ -6,7 +6,6 @@ import {
   HiChartBar,
   HiDocumentText,
   HiHome,
-  HiNewspaper,
   HiOutlineOfficeBuilding,
   HiSearch,
   HiTable,
@@ -97,21 +96,16 @@ export const getNavigationItems = (
       ]
     : []
 
-  // The docs and blog wear the public site's chrome, so they open in a new tab
-  // and the app keeps its place. A signed-in visitor to / is sent to /home and
-  // never sees the public header's links, so these are the way in from here.
-  // Docs takes HiDocumentText because Library already wears HiBookOpen.
+  // The docs wear the public site's chrome, so they open in a new tab and the
+  // app keeps its place. A signed-in visitor to / is sent to /home and never
+  // sees the public header's links, so this is the way in from here. Docs takes
+  // HiDocumentText because Library already wears HiBookOpen. The blog is
+  // marketing, not product surface, so it stays off the signed-in sidebar.
   const tailItems: SidebarItemData[] = [
     {
       icon: HiDocumentText,
       label: 'Docs',
       href: '/docs',
-      target: '_blank',
-    },
-    {
-      icon: HiNewspaper,
-      label: 'Blog',
-      href: '/blog',
       target: '_blank',
     },
   ]

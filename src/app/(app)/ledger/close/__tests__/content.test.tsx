@@ -23,9 +23,13 @@ vi.mock('@robosystems/core', () => ({
     <div>{children}</div>
   ),
   useGraphContext: () => mockUseGraphContext(),
-  PageHeader: ({ title, actions }: any) => (
+  // Title and subtitle sit in separate elements, as the real PageHeader puts
+  // them — a single flat node makes an exact getByText('Closing Book') fail
+  // once the subtitle carries content.
+  PageHeader: ({ title, subtitle, actions }: any) => (
     <div data-testid="page-header">
-      {title}
+      <h1>{title}</h1>
+      {subtitle ? <p>{subtitle}</p> : null}
       {actions}
     </div>
   ),
@@ -280,6 +284,24 @@ describe('CloseContent', () => {
     await waitFor(() => {
       expect(screen.getByText('Closing Book')).toBeInTheDocument()
     })
+  })
+
+  it('links the month-end-close guide from the header subtitle', async () => {
+    const graph = makeGraph('kg_test')
+    mockUseGraphContext.mockReturnValue(makeGraphState([graph], 'kg_test'))
+    mockGetClosingBookStructures.mockResolvedValue({
+      categories: [],
+      has_data: false,
+    })
+    mockGetEntity.mockResolvedValue(null)
+
+    render(<CloseContent />)
+
+    const link = await waitFor(() =>
+      screen.getByRole('link', { name: 'Read the guide →' })
+    )
+    expect(link).toHaveAttribute('href', '/docs/month-end-close')
+    expect(link).toHaveAttribute('target', '_blank')
   })
 
   it('hides view mode toggle on period_close (toggle is only relevant to statement / schedule / account_rollups panels)', async () => {
