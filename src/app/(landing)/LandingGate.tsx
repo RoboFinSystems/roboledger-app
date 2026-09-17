@@ -2,9 +2,11 @@
 import { useAuth } from '@robosystems/core/auth-components'
 import { BrandSpinner } from '@robosystems/core/ui-components'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import LandingPageContent from './content'
 import MaintenancePage from './maintenance'
+
+const subscribeNever = () => () => {}
 
 // Client gate: redirects authed users to /home, honors maintenance mode, and otherwise
 // renders the public landing content. Split out so the route's page.tsx can be a server
@@ -18,6 +20,12 @@ export default function LandingGate() {
   const router = useRouter()
   const { isAuthenticated, isLoading } = useAuth()
   const [isRedirecting, setIsRedirecting] = useState(false)
+  // False on the server and through hydration, true once the page is live in a browser.
+  const hydrated = useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false
+  )
 
   // Check if this is an SSO login attempt
   const isSSO =
@@ -43,9 +51,17 @@ export default function LandingGate() {
   // lands, so they never see the marketing page flash.
   const covered = isLoading || isRedirecting || isAuthenticated
 
+  // While covered, the page underneath is out of the tab order and hidden from screen
+  // readers, so nobody can reach a page they cannot see. Only once hydrated: the server
+  // HTML is what crawlers read, and it must carry the content with nothing marking it
+  // hidden.
+  const shielded = covered && hydrated
+
   return (
     <>
-      <LandingPageContent />
+      <div inert={shielded} aria-hidden={shielded || undefined}>
+        <LandingPageContent />
+      </div>
       {covered && (
         <div
           data-testid="landing-gate-cover"

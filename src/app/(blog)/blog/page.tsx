@@ -6,7 +6,6 @@ import {
 import { REGISTER_PATH } from '@/components/landing/constants'
 import { formatPostDate, getAllPosts } from '@/lib/blog'
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import Link from 'next/link'
 
 // The hub's title says what the lane is about; "Blog | RoboLedger" told a searcher nothing.
@@ -49,21 +48,6 @@ export default async function BlogPage() {
         </div>
 
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-          <div className="mb-6 flex items-center justify-center">
-            <Link href="/" className="flex items-center">
-              <Image
-                src="/images/logos/roboledger.png"
-                alt="RoboLedger Logo"
-                width={60}
-                height={60}
-                className="mr-3"
-              />
-              <span className="font-heading text-4xl font-bold whitespace-nowrap text-white">
-                RoboLedger
-              </span>
-            </Link>
-          </div>
-
           <h1 className="font-heading text-center text-5xl font-bold md:text-6xl">
             <span className="from-primary-400 via-secondary-400 to-accent-400 bg-linear-to-r bg-clip-text text-transparent">
               Blog
