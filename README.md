@@ -103,7 +103,7 @@ npm install @robosystems/core@latest
   repository's `AWS_ROLE_ARN`, `AWS_ACCOUNT_ID` and `AWS_REGION`
 - Run `npm run setup:gha` here to configure the remaining deployment variables
 
-See the **[Bootstrap Guide](https://github.com/RoboFinSystems/robosystems/wiki/Bootstrap-Guide)** for complete instructions including access modes (internal, public).
+See the **[Bootstrap Guide](https://robosystems.ai/docs/technical/bootstrap-guide)** for complete instructions including access modes (internal, public).
 
 ## Architecture
 
@@ -136,7 +136,7 @@ Shared modules consumed as an npm package across RoboSystems frontend apps:
 ## Support
 
 - [Issues](https://github.com/RoboFinSystems/roboledger-app/issues)
-- [Wiki](https://github.com/RoboFinSystems/robosystems/wiki)
+- [Documentation](https://robosystems.ai/docs/technical)
 - [Projects](https://github.com/orgs/RoboFinSystems/projects)
 - [Discussions](https://github.com/orgs/RoboFinSystems/discussions)
 
