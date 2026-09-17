@@ -1,4 +1,5 @@
 import { getAllPosts } from '@/lib/blog'
+import { DOCS_SITE, getDocsCatalog, getDocsNav } from '@/lib/docs'
 import type { MetadataRoute } from 'next'
 
 /**
@@ -14,7 +15,7 @@ function latestDate(dates: (string | undefined)[]): Date | undefined {
   return ts.length ? new Date(Math.max(...ts)) : undefined
 }
 
-// RoboLedger's public surface is the marketing homepage and the blog. Everything else is
+// RoboLedger's public surface is the marketing homepage, the docs and the blog. Everything else is
 // behind auth in the (app) route group (see robots.ts); /register is de-indexed ahead of
 // the centralized-login flip (registration lives on the login home), and /pages/privacy +
 // /pages/terms are server redirects to the consolidated RoboSystems legal docs, so they
@@ -31,6 +32,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
+  // The product docs, from the shared docs catalog; lastmod is each page's last commit.
+  const catalog = await getDocsCatalog()
+  const docs = catalog && getDocsNav(catalog, DOCS_SITE, 'product')
+  const docsPages: MetadataRoute.Sitemap = (docs?.ordered ?? []).map(
+    (page) => ({
+      url: `${baseUrl}${page.path}`,
+      lastModified: page.updated ? new Date(page.updated) : undefined,
+      changeFrequency: 'monthly' as const,
+      priority: page.slug === 'index' ? 0.9 : 0.8,
+    })
+  )
+
   return [
     // No lastModified: the homepage changes on deploys, and nothing here knows when.
     {
@@ -44,6 +57,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.9,
     },
+    ...docsPages,
     ...blogPosts,
   ]
 }
