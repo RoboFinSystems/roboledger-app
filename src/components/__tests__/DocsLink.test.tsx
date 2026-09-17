@@ -7,10 +7,11 @@ describe('DocsLink', () => {
   it('points at the given docs page in a new tab', () => {
     render(<DocsLink href="/docs/month-end-close" />)
 
-    const link = screen.getByRole('link', { name: 'Read the guide →' })
+    const link = screen.getByRole('link', { name: /Read the guide/ })
     expect(link).toHaveAttribute('href', '/docs/month-end-close')
     expect(link).toHaveAttribute('target', '_blank')
     expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    expect(link.textContent).toContain('(opens in a new tab)')
   })
 
   it('reads the same wherever it lands', () => {

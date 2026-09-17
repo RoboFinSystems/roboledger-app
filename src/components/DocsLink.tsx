@@ -20,7 +20,7 @@ const DocsLink: FC<DocsLinkProps> = ({ href }) => (
     rel="noopener noreferrer"
     className="text-primary-600 dark:text-primary-400 font-medium underline"
   >
-    Read the guide →
+    Read the guide →<span className="sr-only"> (opens in a new tab)</span>
   </a>
 )
 

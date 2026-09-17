@@ -298,7 +298,7 @@ describe('CloseContent', () => {
     render(<CloseContent />)
 
     const link = await waitFor(() =>
-      screen.getByRole('link', { name: 'Read the guide →' })
+      screen.getByRole('link', { name: /Read the guide/ })
     )
     expect(link).toHaveAttribute('href', '/docs/month-end-close')
     expect(link).toHaveAttribute('target', '_blank')
