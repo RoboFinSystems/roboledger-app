@@ -24,3 +24,4 @@ export const QUICKBOOKS_AFFILIATE_URL =
 
 export const REGISTER_PATH = '/register'
 export const LOGIN_PATH = '/login'
+export const APP_HOME_PATH = '/home'
