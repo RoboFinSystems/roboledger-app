@@ -154,7 +154,7 @@ export function DocsArticle({
                 rel="noopener noreferrer"
                 className="hover:text-primary-400"
               >
-                Edit this page on GitHub
+                View on GitHub
               </a>
             </footer>
           </article>
