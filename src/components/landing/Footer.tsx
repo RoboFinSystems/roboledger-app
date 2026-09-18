@@ -12,7 +12,7 @@ export default function Footer() {
         { label: 'How it works', href: '/#how-it-works' },
         { label: 'Features', href: '/#features' },
         { label: 'Platform', href: '/#platform' },
-        { label: 'Done for you', href: HARBINGER_URL },
+        { label: 'Implementation', href: HARBINGER_URL },
         { label: 'FAQ', href: '/#faq' },
         { label: 'Docs', href: '/docs' },
       ]}

@@ -86,7 +86,17 @@ const faqs: { q: string; a: ReactNode }[] = [
         Yes. Each company&apos;s books live in their own isolated graph —
         connect QuickBooks per company, close each period independently, and
         switch between them from one account. It&apos;s built for accountants
-        and bookkeepers who run more than one set of books.
+        and bookkeepers who run more than one set of books.{' '}
+        <a
+          href={HARBINGER_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary-400 hover:text-primary-300 font-medium"
+        >
+          Harbinger FinLab
+        </a>{' '}
+        walks you through your first client on a screenshare and trains your
+        staff, so the second client is a playbook, not a project.
       </>
     ),
   },
@@ -103,10 +113,11 @@ const faqs: { q: string; a: ReactNode }[] = [
     ),
   },
   {
-    q: "What if I'd rather someone just did my close?",
+    q: "What if we don't have anyone to run it?",
     a: (
       <>
-        That's{' '}
+        RoboLedger is run by whoever signs off on your books. If you don't have
+        an accountant yet,{' '}
         <a
           href={HARBINGER_URL}
           target="_blank"
@@ -115,8 +126,8 @@ const faqs: { q: string; a: ReactNode }[] = [
         >
           Harbinger FinLab
         </a>{' '}
-        — the same open platform, run for you by a team of accountants: AI
-        drafts, a human controller signs off.
+        will point you to a practice that runs RoboLedger. Harbinger teaches and
+        trains; it never keeps anyone's books.
       </>
     ),
   },

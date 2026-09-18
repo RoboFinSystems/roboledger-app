@@ -2,9 +2,9 @@
  * Landing-page constants.
  *
  * Single source of truth for the marketing cross-links used across the splash
- * sections, header, and footer. Harbinger FinLab is the co-sourced / done-for-you
- * service that sits on the same open platform as RoboLedger (the self-serve
- * product this app is). It is deliberately NOT a RoboSystems "app" (it isn't in
+ * sections, header, and footer. Harbinger FinLab walks the people who run
+ * RoboLedger (practices, finance teams) through it on a screenshare and trains
+ * them; it never signs in to or runs a customer's books. It is deliberately NOT a RoboSystems "app" (it isn't in
  * core's APP_CONFIGS), so its URL lives here rather than in the shared footer's
  * Applications column.
  */
