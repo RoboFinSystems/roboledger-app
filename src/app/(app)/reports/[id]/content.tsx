@@ -16,6 +16,7 @@ import {
   PageLayout,
   ReportChat,
   useGraphContext,
+  useUser,
 } from '@robosystems/core'
 import {
   Alert,
@@ -107,6 +108,7 @@ const ReportViewerContent: FC = function () {
   // gating is an affordance only — the API re-checks and 403s regardless.
   const { state: graphState } = useGraphContext()
   const isAdmin = isGraphAdmin(graphState.graphs, graphId)
+  const { user } = useUser()
 
   const [pkg, setPkg] = useState<ReportPackage | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -487,7 +489,9 @@ const ReportViewerContent: FC = function () {
           {pkg.filedAt && (
             <span className="text-gray-500 dark:text-gray-400">
               Filed {formatDate(pkg.filedAt.split('T')[0])}
-              {pkg.filedBy ? ` by ${pkg.filedBy}` : ''}
+              {/* The API returns only a user id, and an id means nothing to a
+                  reader, so name the filer only when it is the reader. */}
+              {pkg.filedBy && pkg.filedBy === user?.id ? ' by you' : ''}
             </span>
           )}
           {pkg.sourceGraphId && (
