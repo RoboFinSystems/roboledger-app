@@ -11,6 +11,8 @@ import { describe, expect, it } from 'vitest'
 // the JSON-LD and the manifest until 2026-09-16; those files are scanned too.
 // The rest are Harbinger FinLab's old offer: a team that ran the customer's close. FinLab
 // implements and trains; it never holds the pen (harbinger.finance, recut 2026-08-28).
+// Nor does it sign in and hand access back later: setup is a screenshare (its MSA,
+// 2.2 and 4.1), and the product cannot add one person to many customers' orgs.
 const RETIRED = [
   'close your books with ai',
   'a new way to close the books',
@@ -28,6 +30,8 @@ const RETIRED = [
   'embedded in your close',
   'managed operations',
   'outcome-based',
+  'our access ends',
+  'leave the graph',
 ]
 
 const landingDir = path.resolve(__dirname, '..')

@@ -95,8 +95,8 @@ const faqs: { q: string; a: ReactNode }[] = [
         >
           Harbinger FinLab
         </a>{' '}
-        implements your first client with you and trains your staff, so the
-        second client is a playbook, not a project.
+        walks you through your first client on a screenshare and trains your
+        staff, so the second client is a playbook, not a project.
       </>
     ),
   },
@@ -126,8 +126,8 @@ const faqs: { q: string; a: ReactNode }[] = [
         >
           Harbinger FinLab
         </a>{' '}
-        will point you to a practice that runs RoboLedger. Harbinger implements
-        and trains; it doesn't keep anyone's books.
+        will point you to a practice that runs RoboLedger. Harbinger teaches and
+        trains; it never keeps anyone's books.
       </>
     ),
   },

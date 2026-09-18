@@ -1,19 +1,20 @@
 import { HARBINGER_URL } from './constants'
 import FloatingElementsVariant from './FloatingElementsVariant'
 
-// Harbinger FinLab implements RoboLedger and trains the people who run it; it never runs
-// a customer's books. The doors and their wording follow harbinger.finance, which
-// carries the argument (vault: specs/distribution/harbinger-enablement-positioning.md).
+// Harbinger FinLab walks the people who run RoboLedger through it on a screenshare and
+// trains them; it never signs in to or runs a customer's books (its MSA, 2.2 and 4.1).
+// The doors and their wording follow harbinger.finance, which carries the argument
+// (vault: specs/distribution/harbinger-enablement-positioning.md).
 // The old managed-service wording is listed in __tests__/retired-phrases.test.ts, which
 // fails if it comes back.
 const points = [
   {
     title: 'Practices: fractional CFOs, bookkeepers & firms',
-    body: 'Run RoboLedger across your whole client book. We implement the first client with you and train your staff; your clients stay yours.',
+    body: 'Run RoboLedger across your whole client book. We walk you through the first client on a screenshare and train your staff; your clients stay yours.',
   },
   {
     title: 'Finance teams',
-    body: 'One real period on RoboLedger, closed by your own person, then training so your team runs it. No controller yet? We’ll point you to a practice that runs RoboLedger.',
+    body: 'Your people set up RoboLedger with us on a screenshare, then we train them to run it. No controller yet? We’ll point you to a practice that runs RoboLedger.',
   },
   {
     title: 'Investors',
@@ -21,7 +22,7 @@ const points = [
   },
   {
     title: 'Never the pen',
-    body: 'Nobody from Harbinger posts, approves or closes a period on your books. Sign-off is yours, by name, and our access ends at handover.',
+    body: 'Nobody from Harbinger posts, approves or closes a period on your books, or signs in to them. Sign-off is yours, by name.',
   },
 ]
 
@@ -46,9 +47,9 @@ export default function HarbingerSection() {
               <p className="mb-6 text-base leading-relaxed text-gray-300">
                 RoboLedger is run by whoever signs off on the books: your own
                 accountant, or the fractional CFO or bookkeeper you work with.{' '}
-                <strong className="text-white">Harbinger FinLab</strong>{' '}
-                implements it with them and trains their people, then hands
-                over. It starts with a live demo, at no cost.
+                <strong className="text-white">Harbinger FinLab</strong> walks
+                them through it on a screenshare and trains their people; they
+                do every step. It starts with a live demo, at no cost.
               </p>
               <a
                 href={HARBINGER_URL}
