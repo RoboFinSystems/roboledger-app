@@ -25,6 +25,16 @@ describe('ChartRenderingProjection', () => {
     expect(screen.getByText('5.59')).toBeInTheDocument()
   })
 
+  it('renders its panels inside the token scope that maps the dark palette', () => {
+    const { container } = render(
+      <ChartRenderingProjection envelope={makeMetricEnvelope()} />
+    )
+    const svg = container.querySelector('svg[role="img"]')
+    // Outside .rs-report-scope the chart falls back to light-mode text and
+    // gridline colors, which vanish or glare on a dark surface.
+    expect(svg?.closest('.rs-report-scope')).not.toBeNull()
+  })
+
   it('shows an empty state for a block with no chart arm', () => {
     render(<ChartRenderingProjection envelope={makeEnvelope()} />)
     expect(screen.getByText(/No chart available/)).toBeInTheDocument()

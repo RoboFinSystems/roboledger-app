@@ -86,7 +86,9 @@ const ChartRenderingProjection: FC<ChartRenderingProjectionProps> = ({
         </div>
       )}
 
-      <div className="space-y-8 py-2">
+      {/* The chart colors itself from --rs-* tokens and falls back to a light
+          palette, so it needs the scope that maps them for dark mode. */}
+      <div className="rs-report-scope space-y-8 py-2">
         {chart.panels.map((panel: EnvelopeChartPanel, idx: number) => {
           const series = joinChartSeries(panel, windowed)
           if (series.length === 0) return null

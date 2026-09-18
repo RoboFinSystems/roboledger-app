@@ -255,6 +255,7 @@
   --rs-slicer-bg: #fafafa; /* zinc-50, matches subtotal */
   --rs-selected-bg: var(--color-primary-100);
   --rs-panel-bg: #ffffff;
+  --rs-surface: #ffffff;
   --rs-success: #047857; /* emerald-700 */
   --rs-error: #dc2626; /* red-600 */
 }
@@ -268,8 +269,19 @@
   --rs-slicer-bg: #27272a; /* zinc-800, matches subtotal */
   --rs-selected-bg: var(--color-primary-900);
   --rs-panel-bg: #18181b; /* zinc-900 */
+  --rs-surface: #18181b; /* zinc-900 */
   --rs-success: #34d399; /* emerald-400 */
   --rs-error: #f87171; /* red-400 */
+  /* TimeSeriesChart's series hues, re-stepped for a dark surface: the library's
+     SERIES_COLORS_DARK. Light mode uses its built-in light fallbacks. */
+  --rs-chart-series-1: #3987e5;
+  --rs-chart-series-2: #d95926;
+  --rs-chart-series-3: #199e70;
+  --rs-chart-series-4: #c98500;
+  --rs-chart-series-5: #d55181;
+  --rs-chart-series-6: #008300;
+  --rs-chart-series-7: #9085e9;
+  --rs-chart-series-8: #e66767;
   /* The library colors its headings (entity name, statement title) with
      --rs-primary-700; the light violet reads on a dark surface where the
      700 shade would not. */
