@@ -17,11 +17,11 @@ const points = [
   },
   {
     title: 'Investors',
-    body: 'Each company keeps its own books on RoboLedger, run by its own accountant, and its filed reports reach you as data, not PDFs.',
+    body: 'Each company keeps its own books on RoboLedger, run by its own accountant, and its filed reports land in your graph as data, not PDFs. The investor side is early, and we say so.',
   },
   {
     title: 'Never the pen',
-    body: 'Nobody from Harbinger posts, approves or closes a period on your books. Sign-off is yours, and our access ends at handover.',
+    body: 'Nobody from Harbinger posts, approves or closes a period on your books. Sign-off is yours, by name, and our access ends at handover.',
   },
 ]
 
@@ -48,7 +48,7 @@ export default function HarbingerSection() {
                 accountant, or the fractional CFO or bookkeeper you work with.{' '}
                 <strong className="text-white">Harbinger FinLab</strong>{' '}
                 implements it with them and trains their people, then hands
-                over.
+                over. It starts with a live demo, at no cost.
               </p>
               <a
                 href={HARBINGER_URL}
