@@ -35,12 +35,74 @@ function DocsTable(props: ComponentProps<'table'>) {
   )
 }
 
+// Markdown image syntax is the one way a page shows media, so the file decides what
+// it renders as: a clip plays, a YouTube link embeds, anything else is a picture.
+// Screenshots of the app are dark on a dark page, so each one gets a frame, and it
+// opens full size because the column shows it at about half. Everything here is
+// phrasing content, because markdown puts an image inside a paragraph.
+const VIDEO_FILE = /\.(mp4|webm)(?:[?#]|$)/i
+const YOUTUBE =
+  /^https:\/\/(?:www\.youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/)([\w-]{11})/
+
+const FRAME = 'my-8 block w-full rounded-lg border border-gray-700'
+
+export function DocsImage({ src, alt = '', title }: ComponentProps<'img'>) {
+  if (typeof src !== 'string' || !src) return null
+  const youtube = YOUTUBE.exec(src)
+  if (youtube) {
+    return (
+      <iframe
+        src={`https://www.youtube.com/embed/${youtube[1]}`}
+        title={alt || title || 'Video'}
+        allow="encrypted-media; picture-in-picture; fullscreen"
+        loading="lazy"
+        className={`${FRAME} aspect-video`}
+      />
+    )
+  }
+  if (VIDEO_FILE.test(src)) {
+    return (
+      <video
+        src={src}
+        title={title}
+        aria-label={alt}
+        controls
+        muted
+        playsInline
+        preload="metadata"
+        className={FRAME}
+      >
+        <a href={src}>{alt || 'Download the video'}</a>
+      </video>
+    )
+  }
+  return (
+    <a
+      href={src}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Open full size"
+      className="not-prose block cursor-zoom-in"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- CDN files of any size; markdown carries no dimensions for next/image */}
+      <img
+        src={src}
+        alt={alt}
+        title={title}
+        loading="lazy"
+        decoding="async"
+        className={`${FRAME} h-auto`}
+      />
+    </a>
+  )
+}
+
 export function DocsMarkdown({ children }: { children: string }) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       rehypePlugins={[rehypeSlug]}
-      components={{ a: DocsLink, table: DocsTable }}
+      components={{ a: DocsLink, img: DocsImage, table: DocsTable }}
     >
       {children}
     </ReactMarkdown>
