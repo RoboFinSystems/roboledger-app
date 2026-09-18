@@ -18,7 +18,7 @@ import {
 const NAV_LINKS = [
   { href: '/#how-it-works', label: 'How it works' },
   { href: '/#agent-surface', label: 'Agent tools' },
-  { href: '/#harbinger', label: 'Done for you' },
+  { href: '/#harbinger', label: 'For practices' },
   { href: '/docs', label: 'Docs' },
   { href: '/blog', label: 'Blog' },
 ]

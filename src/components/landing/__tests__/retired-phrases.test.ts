@@ -9,6 +9,8 @@ import { describe, expect, it } from 'vitest'
 // "hours, not days" is the bare form: the contrast section carried it without the "in".
 // The last two are the pre-arc positioning, which outlived the hero in the social card,
 // the JSON-LD and the manifest until 2026-09-16; those files are scanned too.
+// The rest are Harbinger FinLab's old offer: a team that ran the customer's close. FinLab
+// implements and trains; it never holds the pen (harbinger.finance, recut 2026-08-28).
 const RETIRED = [
   'close your books with ai',
   'a new way to close the books',
@@ -16,6 +18,16 @@ const RETIRED = [
   'faster close',
   'ai-native financial reporting',
   'natural language into complete',
+  'done for you',
+  'done-for-you',
+  'co-sourced',
+  'controllership',
+  'run it for you',
+  'run your close for you',
+  'run for you by',
+  'embedded in your close',
+  'managed operations',
+  'outcome-based',
 ]
 
 const landingDir = path.resolve(__dirname, '..')

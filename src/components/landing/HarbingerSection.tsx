@@ -1,22 +1,27 @@
 import { HARBINGER_URL } from './constants'
 import FloatingElementsVariant from './FloatingElementsVariant'
 
+// Harbinger FinLab implements RoboLedger and trains the people who run it; it never runs
+// a customer's books. The doors and their wording follow harbinger.finance, which
+// carries the argument (vault: specs/distribution/harbinger-enablement-positioning.md).
+// The old managed-service wording is listed in __tests__/retired-phrases.test.ts, which
+// fails if it comes back.
 const points = [
   {
-    title: 'Co-sourced close & controllership',
-    body: 'AI drafts, a human controller signs off — an accounting team embedded in your close.',
+    title: 'Practices: fractional CFOs, bookkeepers & firms',
+    body: 'Run RoboLedger across your whole client book. We implement the first client with you and train your staff; your clients stay yours.',
   },
   {
-    title: 'Deploy in your own cloud (BYOC)',
-    body: 'Your VPC, your data, your control — the same open platform, run where you want it.',
+    title: 'Finance teams',
+    body: 'One real period on RoboLedger, closed by your own person, then training so your team runs it. No controller yet? We’ll point you to a practice that runs RoboLedger.',
   },
   {
-    title: 'Custom integrations & frameworks',
-    body: 'Bespoke adapters, reporting frameworks, and managed operations tailored to your business.',
+    title: 'Investors',
+    body: 'Each company keeps its own books on RoboLedger, run by its own accountant, and its filed reports reach you as data, not PDFs.',
   },
   {
-    title: 'Outcome-based retainers',
-    body: 'Priced to results — never billable hours.',
+    title: 'Never the pen',
+    body: 'Nobody from Harbinger posts, approves or closes a period on your books. Sign-off is yours, and our access ends at handover.',
   },
 ]
 
@@ -33,16 +38,17 @@ export default function HarbingerSection() {
           <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
             <div>
               <div className="bg-secondary-500/15 text-secondary-300 mb-4 inline-block rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase">
-                Done for you
+                Implementation & training
               </div>
               <h2 className="font-heading mb-4 text-3xl font-bold text-white sm:text-4xl">
-                Rather have experts run it for you?
+                Run by the people who already keep the books
               </h2>
               <p className="mb-6 text-base leading-relaxed text-gray-300">
-                RoboLedger is the self-serve product — connect your books and
-                close with AI yourself. If you'd rather a team of accountants
-                embed and run your close for you, on the same open platform,
-                that's <strong className="text-white">Harbinger FinLab</strong>.
+                RoboLedger is run by whoever signs off on the books: your own
+                accountant, or the fractional CFO or bookkeeper you work with.{' '}
+                <strong className="text-white">Harbinger FinLab</strong>{' '}
+                implements it with them and trains their people, then hands
+                over.
               </p>
               <a
                 href={HARBINGER_URL}
