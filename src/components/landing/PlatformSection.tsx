@@ -117,14 +117,16 @@ export default function PlatformSection() {
                     Concepts, structures, and rules
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {['Element', 'Structure', 'Rule'].map((comp, cidx) => (
-                      <span
-                        key={cidx}
-                        className="bg-secondary-900/50 text-secondary-300 rounded px-2 py-0.5 text-xs"
-                      >
-                        {comp}
-                      </span>
-                    ))}
+                    {['Element', 'Structure', 'Association'].map(
+                      (comp, cidx) => (
+                        <span
+                          key={cidx}
+                          className="bg-secondary-900/50 text-secondary-300 rounded px-2 py-0.5 text-xs"
+                        >
+                          {comp}
+                        </span>
+                      )
+                    )}
                   </div>
                 </div>
 
@@ -159,7 +161,7 @@ export default function PlatformSection() {
                     Facts, statements, and rendering
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {['Fact', 'Statement', 'Report'].map((comp, cidx) => (
+                    {['Fact', 'FactSet', 'Report'].map((comp, cidx) => (
                       <span
                         key={cidx}
                         className="bg-primary-900/50 text-primary-300 rounded px-2 py-0.5 text-xs"
