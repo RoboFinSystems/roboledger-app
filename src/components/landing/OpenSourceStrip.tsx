@@ -88,7 +88,7 @@ export default function OpenSourceStrip() {
           </a>
           <span className="hidden text-gray-700 sm:inline">·</span>
           <span className="text-gray-500">
-            Want it hosted, or deployed in your own cloud?{' '}
+            Need help implementing it, hosted or on your own stack?{' '}
             <a
               href={HARBINGER_URL}
               target="_blank"

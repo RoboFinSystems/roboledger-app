@@ -13,6 +13,9 @@ import { describe, expect, it } from 'vitest'
 // implements and trains; it never holds the pen (harbinger.finance, recut 2026-08-28).
 // Nor does it sign in and hand access back later: setup is a screenshare (its MSA,
 // 2.2 and 4.1), and the product cannot add one person to many customers' orgs.
+// "Have it run for you" was the old CTA to that team. The two "sign off" forms cast the
+// operator as only the approver; FinLab trains the people who work in it every day, from
+// the AI chat they already use (recut 2026-09-18).
 const RETIRED = [
   'close your books with ai',
   'a new way to close the books',
@@ -32,6 +35,9 @@ const RETIRED = [
   'outcome-based',
   'our access ends',
   'leave the graph',
+  'have it run for you',
+  'whoever signs off',
+  'already sign off',
 ]
 
 const landingDir = path.resolve(__dirname, '..')

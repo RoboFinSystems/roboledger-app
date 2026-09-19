@@ -116,8 +116,9 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: "What if we don't have anyone to run it?",
     a: (
       <>
-        RoboLedger is run by whoever signs off on your books. If you don't have
-        an accountant yet,{' '}
+        RoboLedger is run by your own accountant, bookkeeper or fractional CFO,
+        working from the AI chat they already use. If you don&apos;t have one
+        yet,{' '}
         <a
           href={HARBINGER_URL}
           target="_blank"
@@ -126,8 +127,8 @@ const faqs: { q: string; a: ReactNode }[] = [
         >
           Harbinger FinLab
         </a>{' '}
-        will point you to a practice that runs RoboLedger. Harbinger teaches and
-        trains; it never keeps anyone's books.
+        will point you to a practice that runs RoboLedger. Harbinger implements
+        and trains; it never keeps anyone&apos;s books.
       </>
     ),
   },
