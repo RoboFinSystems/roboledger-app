@@ -19,14 +19,6 @@ const steps = [
   },
   {
     number: '03',
-    title: 'Map to US-GAAP',
-    description:
-      'AI Auto-Map suggests US-GAAP taxonomy targets for your chart of accounts, tracked by a live coverage bar. Review, override inline, and close the gaps.',
-    tags: ['AI Auto-Map', 'GAAP Taxonomy', 'Coverage'],
-    color: 'fuchsia',
-  },
-  {
-    number: '04',
     title: 'Review your ledger',
     description:
       'Drill into journal-entry line items, validate the trial balance in CoA or US-GAAP view, and watch Balance Sheet, Income Statement, Cash Flow & Equity take shape as you go — no close required.',
@@ -34,7 +26,7 @@ const steps = [
     color: 'pink',
   },
   {
-    number: '05',
+    number: '04',
     title: 'Close the period',
     description:
       'Step through a guided close: bootstrap the fiscal calendar, post depreciation & prepaid schedules to draft, clear rule-engine blockers, then lock — with optional write-back to QuickBooks.',
@@ -42,7 +34,7 @@ const steps = [
     color: 'green',
   },
   {
-    number: '06',
+    number: '05',
     title: 'Generate & file reports',
     description:
       'Build multi-period, comparative statements with the Report Creator, walk the Draft → Filed lifecycle, export XBRL 2.1 and JSON-LD bundles, and share to stakeholder publish lists.',
@@ -50,7 +42,7 @@ const steps = [
     color: 'orange',
   },
   {
-    number: '07',
+    number: '06',
     title: 'Plan forward',
     description:
       'Roll the closed months into a forecast. The Plan grid puts statements and the scenario’s assumptions side by side across the actuals/forecast seam, and the Block Explorer opens any figure down to the facts behind it.',
@@ -76,13 +68,6 @@ const colorClasses: Record<
     number: 'text-secondary-400',
     tag: 'bg-secondary-950/50 text-secondary-300',
     dot: 'bg-secondary-500',
-  },
-  fuchsia: {
-    border: 'border-accent-500/30',
-    bg: 'from-accent-500/10',
-    number: 'text-accent-400',
-    tag: 'bg-accent-950/50 text-accent-300',
-    dot: 'bg-accent-500',
   },
   pink: {
     border: 'border-pink-500/30',
@@ -131,8 +116,8 @@ export default function HowItWorks() {
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
             RoboLedger covers the whole close cycle — connect your sources,
-            triage events, map to GAAP, close the period, publish statements,
-            and plan the months ahead, all in one place.
+            triage events, close the period, publish statements, and plan the
+            months ahead, all in one place.
           </p>
         </div>
 
