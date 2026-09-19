@@ -1,7 +1,18 @@
 'use client'
 
+import {
+  FilterActions,
+  FilterBar,
+  FilterDate,
+  FilterField,
+  FilterSelect,
+} from '@/components/FilterBar'
 import RefreshControl from '@/components/RefreshControl'
+import SegmentedControl, {
+  type SegmentedOption,
+} from '@/components/SegmentedControl'
 import ValidationBanner from '@/components/ValidationBanner'
+import { friendlyError, type FriendlyError } from '@/lib/ledger/errors'
 import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
 import {
   clients,
@@ -12,31 +23,18 @@ import {
   PageLayout,
   useGraphContext,
 } from '@robosystems/core'
-import {
-  Alert,
-  Button,
-  Card,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
-  TextInput,
-} from 'flowbite-react'
+import { Alert, Card } from 'flowbite-react'
 import Link from 'next/link'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
 import { TbReportMoney } from 'react-icons/tb'
+import LiveStatementTable from './components/LiveStatementTable'
 
-// The SDK types these directly now — liveFinancialStatement returns
+// The SDK types this directly now — liveFinancialStatement returns
 // LiveFinancialStatementResponse rather than Record<string, unknown>, so the
 // hand-maintained mirrors of this shape are gone.
 type LiveStatement = LiveFinancialStatementResponse
-type LivePeriod = LiveFinancialStatementResponse['periods'][number]
-type LiveFactRow = LiveFinancialStatementResponse['facts'][number]
 
 type StatementType =
   | 'balance_sheet'
@@ -44,11 +42,11 @@ type StatementType =
   | 'cash_flow_statement'
   | 'equity_statement'
 
-const STATEMENT_TYPES: { key: StatementType; label: string }[] = [
-  { key: 'balance_sheet', label: 'Balance Sheet' },
-  { key: 'income_statement', label: 'Income Statement' },
-  { key: 'cash_flow_statement', label: 'Cash Flow' },
-  { key: 'equity_statement', label: 'Statement of Equity' },
+const STATEMENT_TYPES: readonly SegmentedOption<StatementType>[] = [
+  { value: 'balance_sheet', label: 'Balance Sheet' },
+  { value: 'income_statement', label: 'Income Statement' },
+  { value: 'cash_flow_statement', label: 'Cash Flow' },
+  { value: 'equity_statement', label: 'Statement of Equity' },
 ]
 
 type PresetKey = 'this_month' | 'this_quarter' | 'ytd' | 'last_fy' | 'custom'
@@ -60,14 +58,6 @@ const PRESETS: { key: PresetKey; label: string }[] = [
   { key: 'last_fy', label: 'Last calendar year' },
   { key: 'custom', label: 'Custom range' },
 ]
-
-const formatCurrency = (amount: number): string =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount)
 
 const isoDate = (d: Date): string =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
@@ -125,7 +115,7 @@ const LiveStatementsContent: FC = function () {
   const [customEnd, setCustomEnd] = useState('')
   const [statement, setStatement] = useState<LiveStatement | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<FriendlyError | null>(null)
   const [fetchedAt, setFetchedAt] = useState<Date | null>(null)
 
   // Bumped per load; a stale in-flight response (seq !== current) is
@@ -171,10 +161,14 @@ const LiveStatementsContent: FC = function () {
     } catch (err) {
       if (seq !== loadSeq.current) return
       console.error('Error loading live statement:', err)
+      // The SDK throws `"<label> failed: " + JSON.stringify(error)`, so the
+      // raw message is a `{"detail": …}` blob — never show that.
       setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to render the statement. Please try again.'
+        friendlyError(
+          err instanceof Error
+            ? err.message
+            : 'Failed to render the statement. Please try again.'
+        )
       )
       setStatement(null)
     } finally {
@@ -206,93 +200,66 @@ const LiveStatementsContent: FC = function () {
       </Alert>
 
       {/* Controls */}
-      <Card>
-        <div className="flex flex-wrap items-end gap-4 p-4">
-          {/* Statement type */}
-          <div className="flex flex-wrap gap-2">
-            {STATEMENT_TYPES.map((s) => (
-              <Button
-                key={s.key}
-                size="sm"
-                color={statementType === s.key ? 'primary' : 'gray'}
-                onClick={() => setStatementType(s.key)}
-              >
-                {s.label}
-              </Button>
-            ))}
-          </div>
-
-          {/* Period preset */}
-          <div className="w-full sm:w-56">
-            <label
-              htmlFor="period-preset"
-              className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400"
-            >
-              Period
-            </label>
-            <Select
-              id="period-preset"
-              sizing="sm"
-              value={preset}
-              onChange={(e) => setPreset(e.target.value as PresetKey)}
-            >
-              {PRESETS.map((p) => (
-                <option key={p.key} value={p.key}>
-                  {p.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          {/* Custom range */}
-          {preset === 'custom' && (
-            <div className="flex items-end gap-2">
-              <div>
-                <label
-                  htmlFor="custom-start"
-                  className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400"
-                >
-                  Start
-                </label>
-                <TextInput
-                  id="custom-start"
-                  type="date"
-                  sizing="sm"
-                  value={customStart}
-                  onChange={(e) => setCustomStart(e.target.value)}
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="custom-end"
-                  className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400"
-                >
-                  End
-                </label>
-                <TextInput
-                  id="custom-end"
-                  type="date"
-                  sizing="sm"
-                  value={customEnd}
-                  onChange={(e) => setCustomEnd(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-
+      <FilterBar>
+        <FilterField label="Statement">
+          <SegmentedControl
+            options={STATEMENT_TYPES}
+            value={statementType}
+            onChange={setStatementType}
+            ariaLabel="Statement"
+          />
+        </FilterField>
+        <FilterSelect
+          id="period-preset"
+          label="Period"
+          value={preset}
+          onChange={(value) => setPreset(value as PresetKey)}
+          className="sm:w-48"
+        >
+          {PRESETS.map((p) => (
+            <option key={p.key} value={p.key}>
+              {p.label}
+            </option>
+          ))}
+        </FilterSelect>
+        {preset === 'custom' && (
+          <>
+            <FilterDate
+              id="custom-start"
+              label="Start date"
+              value={customStart}
+              onChange={setCustomStart}
+            />
+            <FilterDate
+              id="custom-end"
+              label="End date"
+              value={customEnd}
+              onChange={setCustomEnd}
+            />
+          </>
+        )}
+        <FilterActions>
           <RefreshControl
             onRefresh={() => void load()}
             isRefreshing={isLoading}
             fetchedAt={fetchedAt}
             disabled={!currentGraph}
           />
-        </div>
-      </Card>
+        </FilterActions>
+      </FilterBar>
 
       {error && (
         <Alert color="failure">
           <HiExclamationCircle className="h-4 w-4" />
-          <span className="font-medium">Error!</span> {error}
+          <span className="font-medium">Error!</span> {error.message}
+          {error.link && (
+            <>
+              {' '}
+              <Link href={error.link.href} className="font-medium underline">
+                {error.link.label}
+              </Link>
+            </>
+          )}
         </Alert>
       )}
 
@@ -342,44 +309,6 @@ const LiveStatementsContent: FC = function () {
         )}
       </Card>
     </PageLayout>
-  )
-}
-
-function LiveStatementTable({ statement }: { statement: LiveStatement }) {
-  return (
-    <Table>
-      <TableHead>
-        <TableHeadCell>Concept</TableHeadCell>
-        {statement.periods.map((p) => (
-          <TableHeadCell key={p.label} className="text-right">
-            {p.label}
-          </TableHeadCell>
-        ))}
-      </TableHead>
-      <TableBody>
-        {statement.facts.map((row, ri) => (
-          <TableRow
-            key={`${row.qname}-${ri}`}
-            className={row.is_subtotal ? 'font-semibold' : undefined}
-          >
-            <TableCell
-              className="text-gray-900 dark:text-white"
-              style={{ paddingLeft: `${0.75 + row.depth * 1.25}rem` }}
-            >
-              {row.name}
-            </TableCell>
-            {row.values.map((v, vi) => (
-              <TableCell
-                key={vi}
-                className="text-right font-mono text-gray-900 dark:text-white"
-              >
-                {v === null || v === undefined ? '—' : formatCurrency(v)}
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
   )
 }
 

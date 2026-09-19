@@ -125,8 +125,10 @@ const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
       <div className="overflow-x-auto">
         <Table>
           <TableHead>
-            <TableHeadCell className="w-2/3">Account</TableHeadCell>
-            <TableHeadCell className="text-right">Balance</TableHeadCell>
+            <tr>
+              <TableHeadCell className="w-2/3">Account</TableHeadCell>
+              <TableHeadCell className="text-right">Balance</TableHeadCell>
+            </tr>
           </TableHead>
           <TableBody>
             {data.groups.map((group) => (

@@ -1,6 +1,12 @@
 'use client'
 
+import { FilterBar, FilterField, SearchField } from '@/components/FilterBar'
+import SegmentedControl, {
+  type SegmentedOption,
+} from '@/components/SegmentedControl'
+import SortableHeadCell from '@/components/SortableHeadCell'
 import type { ElementClassification } from '@/lib/ledger'
+import { type SortColumn, useTableSort } from '@/lib/useTableSort'
 import {
   clients,
   EmptyState,
@@ -18,10 +24,7 @@ import {
   TableBody,
   TableCell,
   TableHead,
-  TableHeadCell,
   TableRow,
-  TextInput,
-  ToggleSwitch,
 } from 'flowbite-react'
 import type { FC } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -91,6 +94,23 @@ const formatCurrency = (amount: number): string => {
 }
 
 type ViewMode = 'coa' | 'usgaap'
+
+type SortKey = 'account' | 'classification' | 'debits' | 'credits' | 'net'
+
+// Module-level so the sorted list isn't rebuilt on every render.
+const SORT_COLUMNS: Record<SortKey, SortColumn<TrialBalanceRowWithGraph>> = {
+  // By code when there is one ("1010" before "1200"), else by name.
+  account: { value: (row) => row.accountCode || row.accountName },
+  classification: { value: (row) => row.classification },
+  debits: { value: (row) => row.totalDebits },
+  credits: { value: (row) => row.totalCredits },
+  net: { value: (row) => row.netBalance },
+}
+
+const VIEW_MODES: readonly SegmentedOption<ViewMode>[] = [
+  { value: 'coa', label: 'Chart of Accounts' },
+  { value: 'usgaap', label: 'US-GAAP' },
+]
 
 const TrialBalanceContent: FC = function () {
   const { state: graphState } = useGraphContext()
@@ -293,6 +313,10 @@ const TrialBalanceContent: FC = function () {
   // books balance is a property of the whole trial balance — computing it over
   // the filtered rows made any search (e.g. "cash") trip the red unbalanced
   // warning, implying the ledger didn't tie.
+  // The whole trial balance is in hand (no cap, no paging), so sorting it is
+  // honest. Unsorted is the chart-of-accounts order; a third click returns.
+  const tableSort = useTableSort(filteredData, SORT_COLUMNS)
+
   const totals = useMemo(() => {
     const totalDebits = filteredData.reduce(
       (sum, row) => sum + row.totalDebits,
@@ -341,45 +365,24 @@ const TrialBalanceContent: FC = function () {
       />
 
       {/* Filters */}
-      <Card>
-        <div className="flex flex-wrap items-end gap-4 p-4">
-          {/* Search */}
-          <div className="w-full sm:w-64">
-            <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              </div>
-              <TextInput
-                id="search"
-                placeholder="Search accounts..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span
-                className={`text-sm ${viewMode === 'coa' ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
-              >
-                Chart of Accounts
-              </span>
-              <ToggleSwitch
-                checked={viewMode === 'usgaap'}
-                onChange={(checked) => setViewMode(checked ? 'usgaap' : 'coa')}
-              />
-              <span
-                className={`text-sm ${viewMode === 'usgaap' ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
-              >
-                US-GAAP
-              </span>
-            </div>
-          </div>
-        </div>
-      </Card>
+      <FilterBar>
+        <SearchField
+          id="search"
+          placeholder="Search accounts…"
+          value={searchTerm}
+          onChange={setSearchTerm}
+        />
+        {/* Two views, not an on/off — a switch labelled on both sides never
+            said which side was "on". */}
+        <FilterField label="View">
+          <SegmentedControl
+            options={VIEW_MODES}
+            value={viewMode}
+            onChange={setViewMode}
+            ariaLabel="View"
+          />
+        </FilterField>
+      </FilterBar>
 
       {/* US-GAAP Mode Notice */}
       {viewMode === 'usgaap' && (
@@ -459,16 +462,44 @@ const TrialBalanceContent: FC = function () {
           ) : (
             <Table>
               <TableHead>
-                <TableHeadCell>Account</TableHeadCell>
-                <TableHeadCell>Classification</TableHeadCell>
-                <TableHeadCell className="text-right">Debits</TableHeadCell>
-                <TableHeadCell className="text-right">Credits</TableHeadCell>
-                <TableHeadCell className="text-right">
-                  Net Balance
-                </TableHeadCell>
+                <tr>
+                  <SortableHeadCell
+                    sort={tableSort.ariaSort('account')}
+                    onSort={() => tableSort.toggle('account')}
+                  >
+                    Account
+                  </SortableHeadCell>
+                  <SortableHeadCell
+                    sort={tableSort.ariaSort('classification')}
+                    onSort={() => tableSort.toggle('classification')}
+                  >
+                    Classification
+                  </SortableHeadCell>
+                  <SortableHeadCell
+                    align="right"
+                    sort={tableSort.ariaSort('debits')}
+                    onSort={() => tableSort.toggle('debits')}
+                  >
+                    Debits
+                  </SortableHeadCell>
+                  <SortableHeadCell
+                    align="right"
+                    sort={tableSort.ariaSort('credits')}
+                    onSort={() => tableSort.toggle('credits')}
+                  >
+                    Credits
+                  </SortableHeadCell>
+                  <SortableHeadCell
+                    align="right"
+                    sort={tableSort.ariaSort('net')}
+                    onSort={() => tableSort.toggle('net')}
+                  >
+                    Net Balance
+                  </SortableHeadCell>
+                </tr>
               </TableHead>
               <TableBody>
-                {filteredData.map((row) => (
+                {tableSort.sorted.map((row) => (
                   <TableRow key={`${row._graphId}-${row.accountId}`}>
                     <TableCell className="font-medium text-gray-900 dark:text-white">
                       {row.accountCode && (

@@ -1,6 +1,12 @@
 'use client'
 
 import {
+  FilterBar,
+  FilterDate,
+  FilterSelect,
+  SearchField,
+} from '@/components/FilterBar'
+import {
   clients,
   EmptyState,
   GraphFilters,
@@ -14,14 +20,12 @@ import {
   Badge,
   Button,
   Card,
-  Select,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeadCell,
   TableRow,
-  TextInput,
 } from 'flowbite-react'
 import {
   type FC,
@@ -318,39 +322,26 @@ const JournalContent: FC = function () {
       {/* Date range is page-level — it scopes both tabs, so it sits above
           them rather than inside either view's own filters. */}
       <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <div>
-            <label
-              htmlFor="startDate"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Start Date
-            </label>
-            <TextInput
-              id="startDate"
-              type="date"
-              value={startDate || ''}
-              onChange={(e) => setStartDate(e.target.value || null)}
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="endDate"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              End Date
-            </label>
-            <TextInput
-              id="endDate"
-              type="date"
-              value={endDate || ''}
-              onChange={(e) => setEndDate(e.target.value || null)}
-            />
-          </div>
+        <div className="flex items-end gap-3">
+          <FilterDate
+            id="startDate"
+            label="Start date"
+            value={startDate || ''}
+            onChange={(value) => setStartDate(value || null)}
+          />
+          <FilterDate
+            id="endDate"
+            label="End date"
+            value={endDate || ''}
+            onChange={(value) => setEndDate(value || null)}
+          />
         </div>
         {graphState.currentGraphId && (
-          <Button color="primary" onClick={() => setNewEntryOpen(true)}>
+          <Button
+            color="primary"
+            size="sm"
+            onClick={() => setNewEntryOpen(true)}
+          >
             <HiPlus className="mr-2 h-4 w-4" />
             New Entry
           </Button>
@@ -412,47 +403,28 @@ const JournalContent: FC = function () {
       ) : (
         <>
           {/* Filters */}
-          <Card>
-            <div className="flex flex-wrap items-end gap-4 p-4">
-              {/* Search */}
-              <div className="w-full sm:w-64">
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                  </div>
-                  <TextInput
-                    id="search"
-                    placeholder="Search transactions..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              {/* Type Filter */}
-              <div className="w-full sm:w-48">
-                <label
-                  htmlFor="typeFilter"
-                  className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-                >
-                  Type
-                </label>
-                <Select
-                  id="typeFilter"
-                  value={transactionTypeFilter}
-                  onChange={(e) => setTransactionTypeFilter(e.target.value)}
-                >
-                  <option value="">All Types</option>
-                  {transactionTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-          </Card>
+          <FilterBar>
+            <SearchField
+              id="search"
+              placeholder="Search transactions…"
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
+            <FilterSelect
+              id="typeFilter"
+              label="Type"
+              value={transactionTypeFilter}
+              onChange={setTransactionTypeFilter}
+              className="sm:w-48"
+            >
+              <option value="">All types</option>
+              {transactionTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </FilterSelect>
+          </FilterBar>
 
           {error && (
             <Alert color="failure">
@@ -487,11 +459,15 @@ const JournalContent: FC = function () {
               ) : (
                 <Table>
                   <TableHead>
-                    <TableHeadCell className="w-10"></TableHeadCell>
-                    <TableHeadCell>Date</TableHeadCell>
-                    <TableHeadCell>Description</TableHeadCell>
-                    <TableHeadCell>Type</TableHeadCell>
-                    <TableHeadCell className="text-right">Amount</TableHeadCell>
+                    <tr>
+                      <TableHeadCell className="w-10"></TableHeadCell>
+                      <TableHeadCell>Date</TableHeadCell>
+                      <TableHeadCell>Description</TableHeadCell>
+                      <TableHeadCell>Type</TableHeadCell>
+                      <TableHeadCell className="text-right">
+                        Amount
+                      </TableHeadCell>
+                    </tr>
                   </TableHead>
                   <TableBody>
                     {filteredTransactions.map((tx) => {

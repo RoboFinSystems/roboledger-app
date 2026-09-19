@@ -47,20 +47,14 @@ vi.mock('flowbite-react', () => ({
   TableHeadCell: ({ children }: any) => <th>{children}</th>,
   TableRow: ({ children }: any) => <tr>{children}</tr>,
   TextInput: (props: any) => <input type="text" {...props} />,
-  ToggleSwitch: ({ checked, onChange, label }: any) => (
-    <button
-      data-testid="view-mode-toggle"
-      aria-pressed={checked}
-      onClick={() => onChange(!checked)}
-    >
-      {label ?? 'toggle'}
-    </button>
-  ),
 }))
 
 vi.mock('react-icons/hi', () => ({
+  HiChevronDown: () => <span />,
+  HiChevronUp: () => <span />,
   HiCheckCircle: () => <span />,
   HiExclamationCircle: () => <span />,
+  HiSelector: () => <span />,
   HiScale: () => <span />,
   HiSearch: () => <span />,
 }))
@@ -137,11 +131,56 @@ describe('TrialBalanceContent', () => {
     expect(await screen.findByText('Cash')).toBeInTheDocument()
   })
 
+  it('sorts by a column on click and keeps TOTALS pinned last', async () => {
+    const account = (code: string, name: string, net: number) => ({
+      accountId: `acct_${code}`,
+      accountCode: code,
+      accountName: name,
+      trait: 'asset',
+      accountType: 'Bank',
+      totalDebits: net,
+      totalCredits: 0,
+      netBalance: net,
+    })
+    mockGetTrialBalance.mockResolvedValue({
+      rows: [
+        account('1000', 'Cash', 100),
+        account('1100', 'Savings', 9000),
+        account('1200', 'Receivables', 500),
+      ],
+    })
+    render(<TrialBalanceContent />)
+    await screen.findByText('Savings')
+
+    const accountOrder = () =>
+      screen
+        .getAllByRole('row')
+        .slice(1) // header
+        .map((row) => row.textContent ?? '')
+        .map((text) =>
+          ['Cash', 'Savings', 'Receivables', 'TOTALS'].find((n) =>
+            text.includes(n)
+          )
+        )
+
+    expect(accountOrder()).toEqual(['Cash', 'Savings', 'Receivables', 'TOTALS'])
+
+    // A balance column opens largest-first.
+    fireEvent.click(screen.getByRole('button', { name: 'Net Balance' }))
+    expect(accountOrder()).toEqual(['Savings', 'Receivables', 'Cash', 'TOTALS'])
+
+    // …reverses, then returns to the chart-of-accounts order.
+    fireEvent.click(screen.getByRole('button', { name: 'Net Balance' }))
+    expect(accountOrder()).toEqual(['Cash', 'Receivables', 'Savings', 'TOTALS'])
+    fireEvent.click(screen.getByRole('button', { name: 'Net Balance' }))
+    expect(accountOrder()).toEqual(['Cash', 'Savings', 'Receivables', 'TOTALS'])
+  })
+
   it('uses this graph‘s mapping for the US-GAAP view', async () => {
     render(<TrialBalanceContent />)
 
     await waitFor(() => expect(mockGetTrialBalance).toHaveBeenCalled())
-    fireEvent.click(screen.getByTestId('view-mode-toggle'))
+    fireEvent.click(screen.getByRole('button', { name: 'US-GAAP' }))
 
     await waitFor(() => {
       expect(mockGetMappedTrialBalance).toHaveBeenCalledWith('kg_a', 'map_a')
@@ -153,7 +192,7 @@ describe('TrialBalanceContent', () => {
       const { rerender } = render(<TrialBalanceContent />)
 
       await waitFor(() => expect(mockGetTrialBalance).toHaveBeenCalled())
-      fireEvent.click(screen.getByTestId('view-mode-toggle'))
+      fireEvent.click(screen.getByRole('button', { name: 'US-GAAP' }))
       await waitFor(() => {
         expect(mockGetMappedTrialBalance).toHaveBeenCalledWith('kg_a', 'map_a')
       })
@@ -180,7 +219,7 @@ describe('TrialBalanceContent', () => {
       const { rerender } = render(<TrialBalanceContent />)
 
       await waitFor(() => expect(mockGetTrialBalance).toHaveBeenCalled())
-      fireEvent.click(screen.getByTestId('view-mode-toggle'))
+      fireEvent.click(screen.getByRole('button', { name: 'US-GAAP' }))
       await waitFor(() => expect(mockGetMappedTrialBalance).toHaveBeenCalled())
 
       // kg_b's mapping resolves slowly. Until it does, the page must issue no

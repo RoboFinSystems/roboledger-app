@@ -560,10 +560,12 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
         <>
           <Table>
             <TableHead>
-              <TableHeadCell>Schedule</TableHeadCell>
-              <TableHeadCell>Amount</TableHeadCell>
-              <TableHeadCell>Status</TableHeadCell>
-              <TableHeadCell className="w-40" />
+              <tr>
+                <TableHeadCell>Schedule</TableHeadCell>
+                <TableHeadCell>Amount</TableHeadCell>
+                <TableHeadCell>Status</TableHeadCell>
+                <TableHeadCell className="w-40" />
+              </tr>
             </TableHead>
             <TableBody>
               {closeStatus.schedules.map((item) => (

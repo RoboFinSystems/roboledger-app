@@ -96,12 +96,14 @@ const ScheduleRenderingProjection: FC<ScheduleRenderingProjectionProps> = ({
       <div className="overflow-x-auto">
         <Table>
           <TableHead>
-            <TableHeadCell>Period</TableHeadCell>
-            <TableHeadCell className="text-right">Beginning</TableHeadCell>
-            <TableHeadCell className="text-right">
-              {movementName ?? 'Movement'}
-            </TableHeadCell>
-            <TableHeadCell className="text-right">Ending</TableHeadCell>
+            <tr>
+              <TableHeadCell>Period</TableHeadCell>
+              <TableHeadCell className="text-right">Beginning</TableHeadCell>
+              <TableHeadCell className="text-right">
+                {movementName ?? 'Movement'}
+              </TableHeadCell>
+              <TableHeadCell className="text-right">Ending</TableHeadCell>
+            </tr>
           </TableHead>
           <TableBody>
             {rows.map((row) => (

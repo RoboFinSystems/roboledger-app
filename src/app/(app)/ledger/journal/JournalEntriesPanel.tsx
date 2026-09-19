@@ -1,19 +1,18 @@
 'use client'
 
+import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
 import { formatDate } from '@/lib/ledger/formatters'
 import { clients, EmptyState, LoadingState } from '@robosystems/core'
 import {
   Alert,
   Badge,
   Card,
-  Select,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeadCell,
   TableRow,
-  TextInput,
 } from 'flowbite-react'
 import { type FC, Fragment, useCallback, useEffect, useState } from 'react'
 import {
@@ -220,90 +219,53 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
 
   return (
     <>
-      <Card>
-        <div className="flex flex-wrap items-end gap-4 p-4">
-          <div className="w-full sm:w-64">
-            <label
-              htmlFor="entrySearch"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Search
-            </label>
-            <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              </div>
-              <TextInput
-                id="entrySearch"
-                placeholder="Memo, schedule, or entry ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
-          <div className="w-full sm:w-40">
-            <label
-              htmlFor="entryStatus"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Status
-            </label>
-            <Select
-              id="entryStatus"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="posted">Posted</option>
-              <option value="draft">Draft</option>
-              <option value="reversed">Reversed</option>
-              <option value="">All</option>
-            </Select>
-          </div>
-
-          <div className="w-full sm:w-40">
-            <label
-              htmlFor="entryType"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Type
-            </label>
-            <Select
-              id="entryType"
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="">All Types</option>
-              <option value="standard">Standard</option>
-              <option value="adjusting">Adjusting</option>
-              <option value="closing">Closing</option>
-              <option value="reversing">Reversing</option>
-            </Select>
-          </div>
-
-          <div className="w-full sm:w-48">
-            <label
-              htmlFor="entryProvenance"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Source
-            </label>
-            <Select
-              id="entryProvenance"
-              value={provenanceFilter}
-              onChange={(e) => setProvenanceFilter(e.target.value)}
-            >
-              <option value="">All Sources</option>
-              {Object.entries(PROVENANCE_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
-      </Card>
+      <FilterBar>
+        <SearchField
+          id="entrySearch"
+          placeholder="Memo, schedule, or entry ID…"
+          value={searchTerm}
+          onChange={setSearchTerm}
+        />
+        <FilterSelect
+          id="entryStatus"
+          label="Status"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          className="sm:w-40"
+        >
+          <option value="posted">Posted</option>
+          <option value="draft">Draft</option>
+          <option value="reversed">Reversed</option>
+          <option value="">All statuses</option>
+        </FilterSelect>
+        <FilterSelect
+          id="entryType"
+          label="Type"
+          value={typeFilter}
+          onChange={setTypeFilter}
+          className="sm:w-40"
+        >
+          <option value="">All types</option>
+          <option value="standard">Standard</option>
+          <option value="adjusting">Adjusting</option>
+          <option value="closing">Closing</option>
+          <option value="reversing">Reversing</option>
+        </FilterSelect>
+        <FilterSelect
+          id="entryProvenance"
+          label="Source"
+          value={provenanceFilter}
+          onChange={setProvenanceFilter}
+          className="sm:w-48"
+        >
+          <option value="">All sources</option>
+          {Object.entries(PROVENANCE_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </FilterSelect>
+      </FilterBar>
 
       {error && (
         <Alert color="failure">
@@ -333,12 +295,14 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
           ) : (
             <Table>
               <TableHead>
-                <TableHeadCell className="w-10"></TableHeadCell>
-                <TableHeadCell>Date</TableHeadCell>
-                <TableHeadCell>Memo</TableHeadCell>
-                <TableHeadCell>Type</TableHeadCell>
-                <TableHeadCell>Source</TableHeadCell>
-                <TableHeadCell className="text-right">Amount</TableHeadCell>
+                <tr>
+                  <TableHeadCell className="w-10"></TableHeadCell>
+                  <TableHeadCell>Date</TableHeadCell>
+                  <TableHeadCell>Memo</TableHeadCell>
+                  <TableHeadCell>Type</TableHeadCell>
+                  <TableHeadCell>Source</TableHeadCell>
+                  <TableHeadCell className="text-right">Amount</TableHeadCell>
+                </tr>
               </TableHead>
               <TableBody>
                 {visibleEntries.map((entry) => {

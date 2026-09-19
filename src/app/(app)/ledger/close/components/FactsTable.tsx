@@ -60,11 +60,13 @@ const FactsTable: FC<FactsTableProps> = ({ facts }) => {
     <div className="overflow-x-auto">
       <Table>
         <TableHead>
-          <TableHeadCell>Element</TableHeadCell>
-          <TableHeadCell>QName</TableHeadCell>
-          <TableHeadCell>Period</TableHeadCell>
-          <TableHeadCell className="text-right">Value</TableHeadCell>
-          <TableHeadCell>Unit</TableHeadCell>
+          <tr>
+            <TableHeadCell>Element</TableHeadCell>
+            <TableHeadCell>QName</TableHeadCell>
+            <TableHeadCell>Period</TableHeadCell>
+            <TableHeadCell className="text-right">Value</TableHeadCell>
+            <TableHeadCell>Unit</TableHeadCell>
+          </tr>
         </TableHead>
         <TableBody>
           {facts.map((fact, idx) => (

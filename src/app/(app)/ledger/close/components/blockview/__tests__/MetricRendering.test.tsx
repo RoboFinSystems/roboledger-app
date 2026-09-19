@@ -1,21 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+// The grid is a raw table — only the toolbar's controls come from flowbite.
 vi.mock('flowbite-react', () => ({
-  Table: ({ children }: any) => <table>{children}</table>,
-  TableBody: ({ children }: any) => <tbody>{children}</tbody>,
-  TableCell: ({ children, className, style }: any) => (
-    <td className={className} style={style}>
-      {children}
-    </td>
-  ),
-  TableHead: ({ children }: any) => <thead>{children}</thead>,
-  TableHeadCell: ({ children, className }: any) => (
-    <th className={className}>{children}</th>
-  ),
-  TableRow: ({ children, className }: any) => (
-    <tr className={className}>{children}</tr>
-  ),
   TextInput: ({ value, onChange, placeholder }: any) => (
     <input value={value} onChange={onChange} placeholder={placeholder} />
   ),
@@ -48,10 +35,14 @@ describe('MetricRenderingProjection', () => {
     render(<MetricRenderingProjection envelope={makeMetricEnvelope()} />)
     const headers = screen.getAllByRole('columnheader')
     const labels = headers.map((h) => h.textContent)
-    expect(labels).toContain('Dec 31, 2025')
-    expect(labels).toContain('Jun 30, 2026')
-    expect(labels.indexOf('Dec 31, 2025')).toBeLessThan(
-      labels.indexOf('Jun 30, 2026')
+    // Metric periods are instants (no start). A month-end reads as its
+    // month; the measured date stays on the tooltip.
+    expect(labels).toContain('Dec 2025')
+    expect(labels).toContain('Jun 2026')
+    expect(labels.indexOf('Dec 2025')).toBeLessThan(labels.indexOf('Jun 2026'))
+    expect(screen.getByText('Dec 2025')).toHaveAttribute(
+      'title',
+      'Actual · As of Dec 31, 2025'
     )
   })
 
@@ -121,5 +112,52 @@ describe('MetricRenderingProjection', () => {
     })
     render(<MetricRenderingProjection envelope={env} />)
     expect(screen.getByText(/No metrics defined/)).toBeInTheDocument()
+  })
+
+  it('keeps the title and toolbar outside the horizontal scroller, labels pinned', () => {
+    // Inside it they scrolled off with the columns on a long monthly series.
+    render(
+      <MetricRenderingProjection
+        envelope={makeMetricEnvelope()}
+        entityName="Driftline Coffee"
+      />
+    )
+    const scroller = screen.getByTestId('metric-grid').parentElement
+    expect(scroller?.className).toContain('overflow-x-auto')
+    expect(scroller).not.toContainElement(screen.getByText('Driftline Coffee'))
+    expect(scroller).not.toContainElement(
+      screen.getByPlaceholderText('Filter metrics')
+    )
+    const label = screen.getByText('Working Capital').closest('td')
+    expect(label?.className).toContain('sticky')
+    expect(label?.className).toMatch(/dark:bg-gray-900(\s|$)/) // opaque
+  })
+
+  it('opens a series longer than a year on its trailing twelve months', () => {
+    const base = makeMetricEnvelope()
+    const months = Array.from({ length: 15 }, (_, i) => {
+      const end = new Date(Date.UTC(2025, i + 1, 0)).toISOString().slice(0, 10)
+      return { start: null, end, label: null }
+    })
+    const env = makeMetricEnvelope({
+      view: {
+        ...base.view,
+        rendering: makeRendering({
+          periods: months,
+          rows: base.view.rendering!.rows.map((row) => ({
+            ...row,
+            values: months.map((_, i) => i + 1),
+          })),
+        }),
+      },
+    } as any)
+    render(<MetricRenderingProjection envelope={env} />)
+    // Jan–Mar 2025 are past the window; the latest month is in view.
+    expect(screen.queryByText('Jan 2025')).not.toBeInTheDocument()
+    expect(screen.getByText('Apr 2025')).toBeInTheDocument()
+    expect(screen.getByText('Mar 2026')).toBeInTheDocument()
+    // "All" is one click away.
+    fireEvent.click(screen.getByText('All'))
+    expect(screen.getByText('Jan 2025')).toBeInTheDocument()
   })
 })

@@ -171,11 +171,13 @@ const ReportsContent: FC = function () {
           ) : (
             <Table>
               <TableHead>
-                <TableHeadCell>Report Name</TableHeadCell>
-                <TableHeadCell>Period</TableHeadCell>
-                <TableHeadCell>Status</TableHeadCell>
-                <TableHeadCell>Structures</TableHeadCell>
-                <TableHeadCell className="w-24"></TableHeadCell>
+                <tr>
+                  <TableHeadCell>Report Name</TableHeadCell>
+                  <TableHeadCell>Period</TableHeadCell>
+                  <TableHeadCell>Status</TableHeadCell>
+                  <TableHeadCell>Structures</TableHeadCell>
+                  <TableHeadCell className="w-24"></TableHeadCell>
+                </tr>
               </TableHead>
               <TableBody>
                 {reports.map((report) => (

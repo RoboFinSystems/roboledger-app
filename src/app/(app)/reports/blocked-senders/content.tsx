@@ -182,10 +182,12 @@ const BlockedSendersContent: FC = function () {
             <div className="overflow-x-auto">
               <Table>
                 <TableHead>
-                  <TableHeadCell>Sender</TableHeadCell>
-                  <TableHeadCell>Blocked</TableHeadCell>
-                  <TableHeadCell>Reason</TableHeadCell>
-                  <TableHeadCell className="w-24"></TableHeadCell>
+                  <tr>
+                    <TableHeadCell>Sender</TableHeadCell>
+                    <TableHeadCell>Blocked</TableHeadCell>
+                    <TableHeadCell>Reason</TableHeadCell>
+                    <TableHeadCell className="w-24"></TableHeadCell>
+                  </tr>
                 </TableHead>
                 <TableBody>
                   {blocked.map((row) => (
