@@ -1,5 +1,6 @@
 'use client'
 
+import { FilterBar, SearchField } from '@/components/FilterBar'
 import type { Entity } from '@robosystems/core'
 import {
   clients,
@@ -21,11 +22,10 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
-  TextInput,
 } from 'flowbite-react'
 import type { FC } from 'react'
 import { useEffect, useState } from 'react'
-import { HiExclamationCircle, HiOfficeBuilding, HiSearch } from 'react-icons/hi'
+import { HiExclamationCircle, HiOfficeBuilding } from 'react-icons/hi'
 
 interface EntityWithGraph extends Entity {
   _graphId: string
@@ -114,20 +114,14 @@ const EntitiesListPageContent: FC = function () {
       />
 
       {/* Search */}
-      <Card>
-        <div className="relative w-full sm:w-64">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-          </div>
-          <TextInput
-            id="search"
-            placeholder="Search entities..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </Card>
+      <FilterBar>
+        <SearchField
+          id="search"
+          placeholder="Search entities…"
+          value={searchTerm}
+          onChange={setSearchTerm}
+        />
+      </FilterBar>
 
       {error && (
         <Alert color="failure">

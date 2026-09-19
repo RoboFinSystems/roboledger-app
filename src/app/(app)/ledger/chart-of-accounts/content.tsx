@@ -1,5 +1,7 @@
 'use client'
 
+import { FilterBar, FilterField, SearchField } from '@/components/FilterBar'
+import SegmentedControl from '@/components/SegmentedControl'
 import type { ElementClassification } from '@/lib/ledger'
 import type {
   LedgerMapping,
@@ -27,7 +29,6 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
-  TextInput,
 } from 'flowbite-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -35,7 +36,6 @@ import {
   HiCollection,
   HiExclamationCircle,
   HiPencil,
-  HiSearch,
   HiSparkles,
   HiViewList,
   HiX,
@@ -59,6 +59,13 @@ const CLASSIFICATION_LABELS: Record<ElementClassification, string> = {
   revenue: 'Revenue',
   expense: 'Expense',
 }
+
+/** "Asset 42" — the count rides along muted, in either segment state. */
+const CountLabel: FC<{ text: string; count: number }> = ({ text, count }) => (
+  <>
+    {text} <span className="ml-0.5 opacity-60">{count}</span>
+  </>
+)
 
 const ALL_CLASSIFICATIONS: ElementClassification[] = [
   'asset',
@@ -796,53 +803,39 @@ const ChartOfAccountsContent: FC = function () {
       )}
 
       {/* Filters */}
-      <Card>
-        <div className="space-y-4 p-4">
-          <div className="block items-center gap-4 sm:flex">
-            <div className="mb-4 flex flex-1 sm:mb-0">
-              <div className="relative w-full max-w-md">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                </div>
-                <TextInput
-                  id="search"
-                  placeholder="Search accounts..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => handleClassificationFilter(null)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                selectedClassification === null
-                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              All ({accounts.length})
-            </button>
-            {ALL_CLASSIFICATIONS.map((classification) => (
-              <button
-                key={classification}
-                onClick={() => handleClassificationFilter(classification)}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                  selectedClassification === classification
-                    ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                }`}
-              >
-                {CLASSIFICATION_LABELS[classification]} (
-                {classificationCounts[classification]})
-              </button>
-            ))}
-          </div>
-        </div>
-      </Card>
+      <FilterBar>
+        <SearchField
+          id="search"
+          placeholder="Search accounts…"
+          value={searchTerm}
+          onChange={setSearchTerm}
+          className="sm:w-72"
+        />
+        <FilterField label="Classification">
+          <SegmentedControl
+            options={[
+              {
+                value: 'all' as const,
+                label: <CountLabel text="All" count={accounts.length} />,
+              },
+              ...ALL_CLASSIFICATIONS.map((classification) => ({
+                value: classification,
+                label: (
+                  <CountLabel
+                    text={CLASSIFICATION_LABELS[classification]}
+                    count={classificationCounts[classification]}
+                  />
+                ),
+              })),
+            ]}
+            value={selectedClassification ?? 'all'}
+            onChange={(value) =>
+              handleClassificationFilter(value === 'all' ? null : value)
+            }
+            ariaLabel="Classification"
+          />
+        </FilterField>
+      </FilterBar>
 
       {error && (
         <Card>

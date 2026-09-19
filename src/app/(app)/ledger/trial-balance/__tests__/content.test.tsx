@@ -47,15 +47,6 @@ vi.mock('flowbite-react', () => ({
   TableHeadCell: ({ children }: any) => <th>{children}</th>,
   TableRow: ({ children }: any) => <tr>{children}</tr>,
   TextInput: (props: any) => <input type="text" {...props} />,
-  ToggleSwitch: ({ checked, onChange, label }: any) => (
-    <button
-      data-testid="view-mode-toggle"
-      aria-pressed={checked}
-      onClick={() => onChange(!checked)}
-    >
-      {label ?? 'toggle'}
-    </button>
-  ),
 }))
 
 vi.mock('react-icons/hi', () => ({
@@ -141,7 +132,7 @@ describe('TrialBalanceContent', () => {
     render(<TrialBalanceContent />)
 
     await waitFor(() => expect(mockGetTrialBalance).toHaveBeenCalled())
-    fireEvent.click(screen.getByTestId('view-mode-toggle'))
+    fireEvent.click(screen.getByRole('button', { name: 'US-GAAP' }))
 
     await waitFor(() => {
       expect(mockGetMappedTrialBalance).toHaveBeenCalledWith('kg_a', 'map_a')
@@ -153,7 +144,7 @@ describe('TrialBalanceContent', () => {
       const { rerender } = render(<TrialBalanceContent />)
 
       await waitFor(() => expect(mockGetTrialBalance).toHaveBeenCalled())
-      fireEvent.click(screen.getByTestId('view-mode-toggle'))
+      fireEvent.click(screen.getByRole('button', { name: 'US-GAAP' }))
       await waitFor(() => {
         expect(mockGetMappedTrialBalance).toHaveBeenCalledWith('kg_a', 'map_a')
       })
@@ -180,7 +171,7 @@ describe('TrialBalanceContent', () => {
       const { rerender } = render(<TrialBalanceContent />)
 
       await waitFor(() => expect(mockGetTrialBalance).toHaveBeenCalled())
-      fireEvent.click(screen.getByTestId('view-mode-toggle'))
+      fireEvent.click(screen.getByRole('button', { name: 'US-GAAP' }))
       await waitFor(() => expect(mockGetMappedTrialBalance).toHaveBeenCalled())
 
       // kg_b's mapping resolves slowly. Until it does, the page must issue no

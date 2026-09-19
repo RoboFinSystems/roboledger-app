@@ -1,6 +1,16 @@
 'use client'
 
+import {
+  FilterActions,
+  FilterBar,
+  FilterDate,
+  FilterField,
+  FilterSelect,
+} from '@/components/FilterBar'
 import RefreshControl from '@/components/RefreshControl'
+import SegmentedControl, {
+  type SegmentedOption,
+} from '@/components/SegmentedControl'
 import ValidationBanner from '@/components/ValidationBanner'
 import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
 import {
@@ -12,7 +22,7 @@ import {
   PageLayout,
   useGraphContext,
 } from '@robosystems/core'
-import { Alert, Button, Card, Select, TextInput } from 'flowbite-react'
+import { Alert, Card } from 'flowbite-react'
 import Link from 'next/link'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -31,11 +41,11 @@ type StatementType =
   | 'cash_flow_statement'
   | 'equity_statement'
 
-const STATEMENT_TYPES: { key: StatementType; label: string }[] = [
-  { key: 'balance_sheet', label: 'Balance Sheet' },
-  { key: 'income_statement', label: 'Income Statement' },
-  { key: 'cash_flow_statement', label: 'Cash Flow' },
-  { key: 'equity_statement', label: 'Statement of Equity' },
+const STATEMENT_TYPES: readonly SegmentedOption<StatementType>[] = [
+  { value: 'balance_sheet', label: 'Balance Sheet' },
+  { value: 'income_statement', label: 'Income Statement' },
+  { value: 'cash_flow_statement', label: 'Cash Flow' },
+  { value: 'equity_statement', label: 'Statement of Equity' },
 ]
 
 type PresetKey = 'this_month' | 'this_quarter' | 'ytd' | 'last_fy' | 'custom'
@@ -185,88 +195,53 @@ const LiveStatementsContent: FC = function () {
       </Alert>
 
       {/* Controls */}
-      <Card>
-        <div className="flex flex-wrap items-end gap-4 p-4">
-          {/* Statement type */}
-          <div className="flex flex-wrap gap-2">
-            {STATEMENT_TYPES.map((s) => (
-              <Button
-                key={s.key}
-                size="sm"
-                color={statementType === s.key ? 'primary' : 'gray'}
-                onClick={() => setStatementType(s.key)}
-              >
-                {s.label}
-              </Button>
-            ))}
-          </div>
-
-          {/* Period preset */}
-          <div className="w-full sm:w-56">
-            <label
-              htmlFor="period-preset"
-              className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400"
-            >
-              Period
-            </label>
-            <Select
-              id="period-preset"
-              sizing="sm"
-              value={preset}
-              onChange={(e) => setPreset(e.target.value as PresetKey)}
-            >
-              {PRESETS.map((p) => (
-                <option key={p.key} value={p.key}>
-                  {p.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          {/* Custom range */}
-          {preset === 'custom' && (
-            <div className="flex items-end gap-2">
-              <div>
-                <label
-                  htmlFor="custom-start"
-                  className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400"
-                >
-                  Start
-                </label>
-                <TextInput
-                  id="custom-start"
-                  type="date"
-                  sizing="sm"
-                  value={customStart}
-                  onChange={(e) => setCustomStart(e.target.value)}
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="custom-end"
-                  className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400"
-                >
-                  End
-                </label>
-                <TextInput
-                  id="custom-end"
-                  type="date"
-                  sizing="sm"
-                  value={customEnd}
-                  onChange={(e) => setCustomEnd(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-
+      <FilterBar>
+        <FilterField label="Statement">
+          <SegmentedControl
+            options={STATEMENT_TYPES}
+            value={statementType}
+            onChange={setStatementType}
+            ariaLabel="Statement"
+          />
+        </FilterField>
+        <FilterSelect
+          id="period-preset"
+          label="Period"
+          value={preset}
+          onChange={(value) => setPreset(value as PresetKey)}
+          className="sm:w-48"
+        >
+          {PRESETS.map((p) => (
+            <option key={p.key} value={p.key}>
+              {p.label}
+            </option>
+          ))}
+        </FilterSelect>
+        {preset === 'custom' && (
+          <>
+            <FilterDate
+              id="custom-start"
+              label="Start date"
+              value={customStart}
+              onChange={setCustomStart}
+            />
+            <FilterDate
+              id="custom-end"
+              label="End date"
+              value={customEnd}
+              onChange={setCustomEnd}
+            />
+          </>
+        )}
+        <FilterActions>
           <RefreshControl
             onRefresh={() => void load()}
             isRefreshing={isLoading}
             fetchedAt={fetchedAt}
             disabled={!currentGraph}
           />
-        </div>
-      </Card>
+        </FilterActions>
+      </FilterBar>
 
       {error && (
         <Alert color="failure">

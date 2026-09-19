@@ -1,5 +1,6 @@
 'use client'
 
+import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
 import { formatAmount, formatDate } from '@/lib/ledger/formatters'
 import type { LedgerAgent, LedgerEventBlock } from '@robosystems/client/clients'
 import {
@@ -15,14 +16,12 @@ import {
   Alert,
   Badge,
   Card,
-  Select,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeadCell,
   TableRow,
-  TextInput,
 } from 'flowbite-react'
 import { useSearchParams } from 'next/navigation'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
@@ -238,111 +237,64 @@ const InboxContent: FC = function () {
       />
 
       {/* Filters */}
-      <Card>
-        <div className="flex flex-wrap items-end gap-4 p-4">
-          <div className="w-full sm:w-64">
-            <label
-              htmlFor="search"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Search
-            </label>
-            <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              </div>
-              <TextInput
-                id="search"
-                placeholder="Description, ext id, agent…"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
-          <div className="w-full sm:w-44">
-            <label
-              htmlFor="eventType"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Event type
-            </label>
-            <Select
-              id="eventType"
-              value={eventType}
-              onChange={(e) => setEventType(e.target.value)}
-            >
-              {EVENT_TYPE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          <div className="w-full sm:w-44">
-            <label
-              htmlFor="status"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Status
-            </label>
-            <Select
-              id="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              {STATUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          <div className="w-full sm:w-40">
-            <label
-              htmlFor="source"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Source
-            </label>
-            <Select
-              id="source"
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-            >
-              {SOURCE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          <div className="w-full sm:w-56">
-            <label
-              htmlFor="agent"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Agent
-            </label>
-            <Select
-              id="agent"
-              value={agentId}
-              onChange={(e) => setAgentId(e.target.value)}
-            >
-              <option value="">All agents</option>
-              {agents.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
-      </Card>
+      <FilterBar>
+        <SearchField
+          id="search"
+          placeholder="Description, ext id, agent…"
+          value={searchTerm}
+          onChange={setSearchTerm}
+        />
+        <FilterSelect
+          id="eventType"
+          label="Event type"
+          value={eventType}
+          onChange={setEventType}
+        >
+          {EVENT_TYPE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </FilterSelect>
+        <FilterSelect
+          id="status"
+          label="Status"
+          value={status}
+          onChange={setStatus}
+        >
+          {STATUS_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </FilterSelect>
+        <FilterSelect
+          id="source"
+          label="Source"
+          value={source}
+          onChange={setSource}
+        >
+          {SOURCE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </FilterSelect>
+        <FilterSelect
+          id="agent"
+          label="Agent"
+          value={agentId}
+          onChange={setAgentId}
+          className="sm:w-56"
+        >
+          <option value="">All agents</option>
+          {agents.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </FilterSelect>
+      </FilterBar>
 
       {error && (
         <Alert color="failure">

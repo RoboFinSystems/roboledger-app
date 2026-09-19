@@ -1,5 +1,9 @@
 'use client'
 
+import { FilterBar, FilterField, SearchField } from '@/components/FilterBar'
+import SegmentedControl, {
+  type SegmentedOption,
+} from '@/components/SegmentedControl'
 import type { ElementClassification } from '@/lib/ledger'
 import {
   clients,
@@ -20,8 +24,6 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
-  TextInput,
-  ToggleSwitch,
 } from 'flowbite-react'
 import type { FC } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -91,6 +93,11 @@ const formatCurrency = (amount: number): string => {
 }
 
 type ViewMode = 'coa' | 'usgaap'
+
+const VIEW_MODES: readonly SegmentedOption<ViewMode>[] = [
+  { value: 'coa', label: 'Chart of Accounts' },
+  { value: 'usgaap', label: 'US-GAAP' },
+]
 
 const TrialBalanceContent: FC = function () {
   const { state: graphState } = useGraphContext()
@@ -341,45 +348,24 @@ const TrialBalanceContent: FC = function () {
       />
 
       {/* Filters */}
-      <Card>
-        <div className="flex flex-wrap items-end gap-4 p-4">
-          {/* Search */}
-          <div className="w-full sm:w-64">
-            <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              </div>
-              <TextInput
-                id="search"
-                placeholder="Search accounts..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span
-                className={`text-sm ${viewMode === 'coa' ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
-              >
-                Chart of Accounts
-              </span>
-              <ToggleSwitch
-                checked={viewMode === 'usgaap'}
-                onChange={(checked) => setViewMode(checked ? 'usgaap' : 'coa')}
-              />
-              <span
-                className={`text-sm ${viewMode === 'usgaap' ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
-              >
-                US-GAAP
-              </span>
-            </div>
-          </div>
-        </div>
-      </Card>
+      <FilterBar>
+        <SearchField
+          id="search"
+          placeholder="Search accounts…"
+          value={searchTerm}
+          onChange={setSearchTerm}
+        />
+        {/* Two views, not an on/off — a switch labelled on both sides never
+            said which side was "on". */}
+        <FilterField label="View">
+          <SegmentedControl
+            options={VIEW_MODES}
+            value={viewMode}
+            onChange={setViewMode}
+            ariaLabel="View"
+          />
+        </FilterField>
+      </FilterBar>
 
       {/* US-GAAP Mode Notice */}
       {viewMode === 'usgaap' && (

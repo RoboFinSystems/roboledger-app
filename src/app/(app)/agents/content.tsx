@@ -1,5 +1,6 @@
 'use client'
 
+import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
 import { formatDate } from '@/lib/ledger/formatters'
 import type { LedgerAgent } from '@robosystems/client/clients'
 import {
@@ -15,14 +16,12 @@ import {
   Alert,
   Badge,
   Card,
-  Select,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeadCell,
   TableRow,
-  TextInput,
 } from 'flowbite-react'
 import { useSearchParams } from 'next/navigation'
 import { type FC, useEffect, useMemo, useState } from 'react'
@@ -133,70 +132,38 @@ const AgentsContent: FC = function () {
         subtitle="Counterparties — customers, vendors, employees"
       />
 
-      <Card>
-        <div className="flex flex-wrap items-end gap-4 p-4">
-          <div className="w-full sm:w-64">
-            <label
-              htmlFor="search"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Search
-            </label>
-            <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <HiSearch className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              </div>
-              <TextInput
-                id="search"
-                placeholder="Name, email, ext id…"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
-          <div className="w-full sm:w-44">
-            <label
-              htmlFor="agentType"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Type
-            </label>
-            <Select
-              id="agentType"
-              value={agentType}
-              onChange={(e) => setAgentType(e.target.value)}
-            >
-              {TYPE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          <div className="w-full sm:w-44">
-            <label
-              htmlFor="source"
-              className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
-            >
-              Source
-            </label>
-            <Select
-              id="source"
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-            >
-              {SOURCE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
-      </Card>
+      <FilterBar>
+        <SearchField
+          id="search"
+          placeholder="Name, email, ext id…"
+          value={searchTerm}
+          onChange={setSearchTerm}
+        />
+        <FilterSelect
+          id="agentType"
+          label="Type"
+          value={agentType}
+          onChange={setAgentType}
+        >
+          {TYPE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </FilterSelect>
+        <FilterSelect
+          id="source"
+          label="Source"
+          value={source}
+          onChange={setSource}
+        >
+          {SOURCE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </FilterSelect>
+      </FilterBar>
 
       {error && (
         <Alert color="failure">
