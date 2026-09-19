@@ -4,7 +4,8 @@ import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
 /**
  * The Live Statements table as data — the response reshaped for reading.
  *
- * Three things the wire shape doesn't give the table directly:
+ * Two things the wire shape doesn't give the table directly (section
+ * folding is the shared `@/lib/ledger/rowFold`, not modelled here):
  *
  * - **Column order.** The op returns `[Current, Prior]`. A comparative
  *   statement reads oldest → newest, left to right, the way the Plan grid
@@ -13,9 +14,6 @@ import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
  *   response feeds the MCP tools, whose callers index by the wire order.
  * - **Dated headers.** "Current" / "Prior" say nothing about the window;
  *   each period carries `start` / `end`, so the caption is derived from them.
- * - **A fold tree.** Rows arrive flat and post-order (children, then their
- *   subtotal — see `fact_grid._emit`), so a row owns the contiguous run of
- *   deeper rows directly above it.
  */
 
 type LivePeriod = LiveFinancialStatementResponse['periods'][number]
@@ -38,8 +36,6 @@ export interface StatementRow {
   depth: number
   /** Aligned to the model's (chronological) columns. */
   values: (number | null)[]
-  /** Index of the first row this one owns; equals its own index when none. */
-  ownedStart: number
 }
 
 export interface StatementModel {
@@ -93,42 +89,9 @@ export function buildStatementModel(
     isSubtotal: fact.is_subtotal ?? false,
     depth: fact.depth ?? 0,
     values: order.map((i) => fact.values[i] ?? null),
-    ownedStart: 0,
   }))
 
-  // Post-order: walk back over the deeper rows directly above. Depth can skip
-  // levels (abstract and all-zero rows are dropped server-side), so this is
-  // "deeper than me", not "exactly one deeper".
-  rows.forEach((row, i) => {
-    let start = i
-    while (start > 0 && rows[start - 1].depth > row.depth) start--
-    row.ownedStart = start
-  })
-
   return { columns, rows }
-}
-
-/**
- * Foldable is structural, not `isSubtotal`: a calc-only subtotal (Gross
- * Profit — its summands are siblings) owns no rows and has nothing to fold.
- */
-export const isFoldable = (row: StatementRow, index: number): boolean =>
-  row.ownedStart < index
-
-export const foldableKeys = (rows: StatementRow[]): string[] =>
-  rows.filter(isFoldable).map((row) => row.key)
-
-/** Row indexes left showing once every row owned by a folded row is hidden. */
-export function visibleRowIndexes(
-  rows: StatementRow[],
-  folded: ReadonlySet<string>
-): number[] {
-  const hidden = new Set<number>()
-  rows.forEach((row, i) => {
-    if (!isFoldable(row, i) || !folded.has(row.key)) return
-    for (let j = row.ownedStart; j < i; j++) hidden.add(j)
-  })
-  return rows.map((_, i) => i).filter((i) => !hidden.has(i))
 }
 
 export interface RowChange {

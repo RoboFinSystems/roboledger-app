@@ -1,8 +1,10 @@
 'use client'
 
+import FoldControls from '@/components/FoldControls'
+import FoldLabel from '@/components/FoldLabel'
+import { useRowFold } from '@/lib/ledger/rowFold'
 import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
 import {
-  Button,
   Table,
   TableBody,
   TableCell,
@@ -13,13 +15,10 @@ import {
 } from 'flowbite-react'
 import type { FC } from 'react'
 import { useMemo, useState } from 'react'
-import { HiChevronDown, HiChevronRight } from 'react-icons/hi'
 import {
   buildStatementModel,
-  foldableKeys,
-  isFoldable,
   rowChange,
-  visibleRowIndexes,
+  type StatementRow,
 } from '../statementModel'
 
 const formatCurrency = (amount: number): string =>
@@ -51,6 +50,8 @@ const formatSignedPercent = (ratio: number): string =>
 
 const NUMERIC_CELL = 'text-right font-mono text-gray-900 dark:text-white'
 
+const rowKey = (row: StatementRow): string => row.key
+
 interface LiveStatementTableProps {
   statement: LiveFinancialStatementResponse
 }
@@ -59,47 +60,17 @@ const LiveStatementTable: FC<LiveStatementTableProps> = ({ statement }) => {
   const model = useMemo(() => buildStatementModel(statement), [statement])
   const { columns, rows } = model
 
-  // Keyed by qname, so a folded section stays folded across a refresh or a
-  // period change; keys from another statement type simply match nothing.
-  const [folded, setFolded] = useState<ReadonlySet<string>>(new Set())
+  const fold = useRowFold(rows, rowKey)
   const [showChange, setShowChange] = useState(false)
-
-  const foldable = useMemo(() => foldableKeys(rows), [rows])
-  const visible = useMemo(() => visibleRowIndexes(rows, folded), [rows, folded])
-  const foldedHere = foldable.filter((key) => folded.has(key)).length
 
   // Change needs two columns to compare — the cash flow renders one.
   const canCompare = columns.length >= 2
   const withChange = canCompare && showChange
 
-  const toggle = (key: string) =>
-    setFolded((prev) => {
-      const next = new Set(prev)
-      if (!next.delete(key)) next.add(key)
-      return next
-    })
-
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 pb-3">
-        <div className="flex gap-2">
-          <Button
-            size="xs"
-            color="gray"
-            disabled={foldedHere === 0}
-            onClick={() => setFolded(new Set())}
-          >
-            Expand all
-          </Button>
-          <Button
-            size="xs"
-            color="gray"
-            disabled={foldable.length === 0 || foldedHere === foldable.length}
-            onClick={() => setFolded(new Set(foldable))}
-          >
-            Collapse all
-          </Button>
-        </div>
+        <FoldControls fold={fold} />
         {canCompare && (
           <ToggleSwitch
             checked={showChange}
@@ -133,12 +104,10 @@ const LiveStatementTable: FC<LiveStatementTableProps> = ({ statement }) => {
           </tr>
         </TableHead>
         <TableBody>
-          {visible.map((index) => {
+          {fold.visible.map((index) => {
             const row = rows[index]
-            const canFold = isFoldable(row, index)
-            const isFolded = canFold && folded.has(row.key)
+            const canFold = fold.isFoldable(index)
             const change = withChange ? rowChange(row.values) : null
-            const Chevron = isFolded ? HiChevronRight : HiChevronDown
             return (
               <TableRow
                 key={`${row.key}-${index}`}
@@ -150,32 +119,14 @@ const LiveStatementTable: FC<LiveStatementTableProps> = ({ statement }) => {
                   }`}
                   style={{ paddingLeft: `${0.75 + row.depth * 1.25}rem` }}
                   title={row.qname}
-                  onClick={canFold ? () => toggle(row.key) : undefined}
+                  onClick={canFold ? () => fold.toggle(index) : undefined}
                 >
-                  {canFold ? (
-                    // No handler of its own: its click (Enter / Space included)
-                    // bubbles to the cell, so the whole label cell is the
-                    // target. Not the whole row — dragging across the numbers
-                    // to copy them must not fold the section.
-                    <button
-                      type="button"
-                      aria-expanded={!isFolded}
-                      className="flex items-center gap-1 text-left"
-                    >
-                      <Chevron className="h-4 w-4 shrink-0 text-gray-400" />
-                      {row.label}
-                      {isFolded && (
-                        <span className="ml-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-                          {index - row.ownedStart} line
-                          {index - row.ownedStart === 1 ? '' : 's'}
-                        </span>
-                      )}
-                    </button>
-                  ) : (
-                    // Indent past the chevron gutter so labels at one depth
-                    // line up whether or not the row folds.
-                    <span className="pl-5">{row.label}</span>
-                  )}
+                  <FoldLabel
+                    label={row.label}
+                    canFold={canFold}
+                    folded={fold.isFolded(index)}
+                    ownedCount={fold.ownedCount(index)}
+                  />
                 </TableCell>
                 {row.values.map((value, vi) => (
                   <TableCell key={columns[vi].end} className={NUMERIC_CELL}>

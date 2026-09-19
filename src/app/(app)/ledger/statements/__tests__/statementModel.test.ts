@@ -2,10 +2,8 @@ import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
 import { describe, expect, it } from 'vitest'
 import {
   buildStatementModel,
-  foldableKeys,
   periodCaption,
   rowChange,
-  visibleRowIndexes,
 } from '../statementModel'
 
 // Wire shape: [Current, Prior], rows post-order (children, then subtotal).
@@ -76,46 +74,6 @@ describe('buildStatementModel', () => {
     expect(model.columns.map((c) => c.label)).toEqual(['Prior', 'Current'])
     expect(model.rows[0].values).toEqual([19112.3, 2043.95])
   })
-
-  it('gives each subtotal the run of deeper rows directly above it', () => {
-    const { rows } = buildStatementModel(BALANCE_SHEET)
-    expect(rows.map((r) => r.ownedStart)).toEqual([0, 1, 0, 3, 3, 0])
-    expect(foldableKeys(rows)).toEqual([
-      'us-gaap:AssetsCurrent',
-      'us-gaap:AssetsNoncurrent',
-      'us-gaap:Assets',
-    ])
-  })
-
-  it('does not fold a calc-only subtotal whose summands are siblings', () => {
-    const { rows } = buildStatementModel({
-      ...BALANCE_SHEET,
-      statement_type: 'income_statement',
-      facts: [
-        {
-          qname: 'fac:Revenues',
-          name: 'Revenues',
-          values: [100, 80],
-          depth: 1,
-        },
-        {
-          qname: 'fac:CostOfRevenue',
-          name: 'Cost of Revenue',
-          values: [40, 30],
-          depth: 1,
-        },
-        {
-          qname: 'fac:GrossProfit',
-          name: 'Gross Profit',
-          values: [60, 50],
-          depth: 1,
-          is_subtotal: true,
-        },
-      ],
-    })
-    expect(rows[2].isSubtotal).toBe(true)
-    expect(foldableKeys(rows)).toEqual([])
-  })
 })
 
 describe('periodCaption', () => {
@@ -138,30 +96,6 @@ describe('periodCaption', () => {
         'income_statement'
       )
     ).toBe('Oct 1, 2025 – Mar 31, 2026')
-  })
-})
-
-describe('visibleRowIndexes', () => {
-  const { rows } = buildStatementModel(BALANCE_SHEET)
-
-  it('shows everything when nothing is folded', () => {
-    expect(visibleRowIndexes(rows, new Set())).toEqual([0, 1, 2, 3, 4, 5])
-  })
-
-  it('hides only the rows a folded subtotal owns', () => {
-    expect(visibleRowIndexes(rows, new Set(['us-gaap:AssetsCurrent']))).toEqual(
-      [2, 3, 4, 5]
-    )
-  })
-
-  it('folds nested sections under a folded root', () => {
-    expect(visibleRowIndexes(rows, new Set(['us-gaap:Assets']))).toEqual([5])
-  })
-
-  it('ignores keys that belong to another statement', () => {
-    expect(visibleRowIndexes(rows, new Set(['fac:GrossProfit']))).toHaveLength(
-      6
-    )
   })
 })
 

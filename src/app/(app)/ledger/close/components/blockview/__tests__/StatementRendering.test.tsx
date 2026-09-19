@@ -3,30 +3,17 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@robosystems/core', () => ({ customTheme: { table: {} } }))
 
+// The grid is a raw table — only the banner's Badge comes from flowbite.
 vi.mock('flowbite-react', () => ({
   Badge: ({ children, color }: any) => (
     <span data-testid={`badge-${color}`}>{children}</span>
-  ),
-  Table: ({ children }: any) => <table>{children}</table>,
-  TableBody: ({ children }: any) => <tbody>{children}</tbody>,
-  TableCell: ({ children, className, style }: any) => (
-    <td className={className} style={style}>
-      {children}
-    </td>
-  ),
-  TableHead: ({ children }: any) => <thead>{children}</thead>,
-  TableHeadCell: ({ children, className, title }: any) => (
-    <th className={className} title={title}>
-      {children}
-    </th>
-  ),
-  TableRow: ({ children, className }: any) => (
-    <tr className={className}>{children}</tr>
   ),
 }))
 
 vi.mock('react-icons/hi', () => ({
   HiCheckCircle: () => <span data-testid="icon-check" />,
+  HiChevronDown: () => <span data-testid="icon-chevron-down" />,
+  HiChevronRight: () => <span data-testid="icon-chevron-right" />,
   HiExclamationCircle: () => <span data-testid="icon-warn" />,
   HiMinusCircle: () => <span data-testid="icon-neutral" />,
 }))
@@ -50,9 +37,9 @@ describe('StatementRenderingProjection', () => {
 
   it('indents non-zero-depth rows by 24px per level + 16px base padding', () => {
     render(<StatementRenderingProjection envelope={makeEnvelope()} />)
-    const cogs = screen.getByText('Cost of Goods Sold')
+    const cogs = screen.getByText('Cost of Goods Sold').closest('td')
     expect(cogs).toHaveStyle({ paddingLeft: '40px' }) // depth=1 → 24+16
-    const rev = screen.getByText('Revenue')
+    const rev = screen.getByText('Revenue').closest('td')
     expect(rev).toHaveStyle({ paddingLeft: '16px' }) // depth=0 → 0+16
   })
 
@@ -60,7 +47,7 @@ describe('StatementRenderingProjection', () => {
     render(<StatementRenderingProjection envelope={makeEnvelope()} />)
     const gpRow = screen.getByText('Gross Profit').closest('tr')
     expect(gpRow?.className).toContain('bg-gray-50')
-    expect(screen.getByText('Gross Profit').className).toContain(
+    expect(screen.getByText('Gross Profit').closest('td')?.className).toContain(
       'font-semibold'
     )
   })
@@ -93,16 +80,23 @@ describe('StatementRenderingProjection', () => {
     })
     render(<StatementRenderingProjection envelope={env} />)
     const forecastHeader = screen.getByText(/Jun 2026/).closest('th')
-    expect(forecastHeader).toHaveAttribute('title', 'Forecast')
+    expect(forecastHeader).toHaveAttribute(
+      'title',
+      'Forecast · Jun 1, 2026 — Jun 30, 2026'
+    )
+    // " (forecast)" is dropped from the label; the marker + tint carry it.
+    expect(forecastHeader).toHaveTextContent(/^Jun 2026\s*f$/)
     // Tint in BOTH themes + the seam border on the first forecast column.
     expect(forecastHeader?.className).toContain('bg-primary-50/60')
     expect(forecastHeader?.className).toContain('dark:bg-primary-900/25')
     expect(forecastHeader?.className).toContain('border-l-2')
-    // Actual columns carry neither (the column label, not the header
-    // paragraph's date-range line, which also mentions April).
-    const actualHeader = screen
-      .getByText('Apr 1, 2026 — Apr 30, 2026')
-      .closest('th')
+    // Actual columns carry neither. An unlabelled calendar month reads
+    // "Apr 2026", with the full window on the tooltip.
+    const actualHeader = screen.getByText('Apr 2026').closest('th')
+    expect(actualHeader).toHaveAttribute(
+      'title',
+      'Actual · Apr 1, 2026 — Apr 30, 2026'
+    )
     expect(actualHeader?.className).not.toContain('bg-primary-50/60')
   })
 
@@ -260,5 +254,105 @@ describe('StatementRenderingProjection', () => {
   it('omits the unmapped count footnote when 0', () => {
     render(<StatementRenderingProjection envelope={makeEnvelope()} />)
     expect(screen.queryByText(/unmapped CoA element/)).toBeNull()
+  })
+
+  it('keeps the title and controls outside the horizontal scroller', () => {
+    // Inside it they scrolled off with the columns on a wide monthly series.
+    render(
+      <StatementRenderingProjection
+        envelope={makeEnvelope()}
+        entityName="Acme LLC"
+      />
+    )
+    const scroller = screen.getByTestId('statement-grid').parentElement
+    expect(scroller?.className).toContain('overflow-x-auto')
+    expect(scroller).not.toContainElement(screen.getByText('Acme LLC'))
+    expect(scroller).not.toContainElement(
+      screen.getByRole('group', { name: 'Sections' })
+    )
+  })
+
+  it('pins the label column with an opaque background on every row', () => {
+    render(<StatementRenderingProjection envelope={makeEnvelope()} />)
+    for (const name of ['Revenue', 'Gross Profit']) {
+      const cell = screen.getByText(name).closest('td')
+      expect(cell?.className).toContain('sticky')
+      expect(cell?.className).toContain('left-0')
+      // Translucent (`/50`) would let scrolled values show through.
+      expect(cell?.className).toMatch(/dark:bg-gray-(800|900)(\s|$)/)
+    }
+  })
+
+  it('names a non-month window in full, and a balance sheet as a point in time', () => {
+    const quarter = makeEnvelope({
+      view: {
+        rendering: makeRendering({
+          periods: [{ start: '2026-01-01', end: '2026-03-31', label: null }],
+        }),
+      },
+    })
+    const { unmount } = render(
+      <StatementRenderingProjection envelope={quarter} />
+    )
+    expect(
+      screen.getByText('Jan 1, 2026 — Mar 31, 2026').closest('th')
+    ).toBeInTheDocument()
+    unmount()
+
+    const balanceSheet = makeEnvelope({
+      blockType: 'balance_sheet',
+      view: {
+        rendering: makeRendering({
+          periods: [{ start: '2026-03-01', end: '2026-03-31', label: null }],
+        }),
+      },
+    })
+    render(<StatementRenderingProjection envelope={balanceSheet} />)
+    expect(screen.getByText('Mar 2026').closest('th')).toHaveAttribute(
+      'title',
+      'Actual · As of Mar 31, 2026'
+    )
+  })
+
+  it('folds a section onto its subtotal from anywhere in the label cell', () => {
+    render(<StatementRenderingProjection envelope={makeEnvelope()} />)
+    // Post-order: Gross Profit (depth 0) owns Cost of Goods Sold (depth 1)
+    // directly above it, but not Revenue (depth 0).
+    const section = screen.getByRole('button', { name: /Gross Profit/ })
+    expect(section).toHaveAttribute('aria-expanded', 'true')
+
+    fireEvent.click(section.closest('td') as HTMLElement)
+    expect(screen.queryByText('Cost of Goods Sold')).not.toBeInTheDocument()
+    expect(screen.getByText('Revenue')).toBeInTheDocument()
+    expect(section).toHaveTextContent('1 line')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand all' }))
+    expect(screen.getByText('Cost of Goods Sold')).toBeInTheDocument()
+  })
+
+  it('keeps a section folded when the column window changes', () => {
+    const base = makeRendering()
+    const env = makeEnvelope({
+      view: {
+        rendering: makeRendering({
+          periods: Array.from({ length: 6 }, (_, i) => ({
+            start: `2026-0${i + 1}-01`,
+            end: `2026-0${i + 1}-28`,
+            label: `M${i + 1}`,
+          })),
+          rows: base.rows.map((row) => ({
+            ...row,
+            values: [1, 2, 3, 4, 5, 6],
+          })),
+        }),
+      },
+    })
+    render(<StatementRenderingProjection envelope={env} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse all' }))
+    expect(screen.queryByText('Cost of Goods Sold')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('3M'))
+    expect(screen.queryByText('M1')).not.toBeInTheDocument()
+    expect(screen.queryByText('Cost of Goods Sold')).not.toBeInTheDocument()
   })
 })
