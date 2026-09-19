@@ -50,11 +50,56 @@ const STATEMENT_TYPE_ORDER: Record<string, number> = {
 }
 
 const byName = (a: BlockListItem, b: BlockListItem) =>
-  (a.name || a.displayName || '').localeCompare(b.name || b.displayName || '')
+  fullName(a).localeCompare(fullName(b))
 
 const byStatementOrder = (a: BlockListItem, b: BlockListItem) =>
   (STATEMENT_TYPE_ORDER[a.blockType] ?? 99) -
     (STATEMENT_TYPE_ORDER[b.blockType] ?? 99) || byName(a, b)
+
+const fullName = (block: BlockListItem): string =>
+  block.name || block.displayName || ''
+
+// A taxonomy id as a name's lead segment: "rs-gaap", "us-gaap", "ifrs-full".
+const TAXONOMY_ID = /^[a-z][a-z0-9]*(-[a-z0-9]+)+$/
+
+/**
+ * A library-seeded structure is named for its taxonomy first — "rs-gaap —
+ * Balance Sheet — Classified" — and in a 16rem rail that prefix is all that
+ * survives truncation: four rows reading "rs-gaap — …". Drop it, so the row
+ * says which statement it is.
+ */
+const withoutTaxonomy = (block: BlockListItem): string => {
+  const name = fullName(block)
+  const cut = name.indexOf(' — ')
+  if (cut < 0) return name
+  const lead = name.slice(0, cut)
+  const isTaxonomy =
+    lead === block.taxonomyName ||
+    lead === block.taxonomyId ||
+    TAXONOMY_ID.test(lead)
+  return isTaxonomy ? name.slice(cut + 3) : name
+}
+
+/**
+ * Row labels by block id. The short form, unless two blocks would then read
+ * the same (one statement in two taxonomies) — those keep the prefix that
+ * tells them apart.
+ */
+export function blockLabels(
+  blocks: readonly BlockListItem[]
+): Map<string, string> {
+  const uses = new Map<string, number>()
+  for (const block of blocks) {
+    const short = withoutTaxonomy(block)
+    uses.set(short, (uses.get(short) ?? 0) + 1)
+  }
+  return new Map(
+    blocks.map((block) => {
+      const short = withoutTaxonomy(block)
+      return [block.id, uses.get(short) === 1 ? short : fullName(block)]
+    })
+  )
+}
 
 interface BlockPickerProps {
   blocks: InformationBlockList
@@ -77,12 +122,14 @@ const BlockPicker: FC<BlockPickerProps> = ({
 }) => {
   const [search, setSearch] = useState('')
 
+  // Over every block, not the filtered ones, so a label doesn't change shape
+  // as a search narrows the list.
+  const labels = useMemo(() => blockLabels(blocks), [blocks])
+
   const groups = useMemo(() => {
     const needle = search.toLowerCase()
     const filtered = needle
-      ? blocks.filter((b) =>
-          (b.name || (b.displayName ?? '')).toLowerCase().includes(needle)
-        )
+      ? blocks.filter((b) => fullName(b).toLowerCase().includes(needle))
       : blocks
 
     const byGroup = new Map<string, BlockListItem[]>()
@@ -142,6 +189,7 @@ const BlockPicker: FC<BlockPickerProps> = ({
                   <button
                     key={block.id}
                     onClick={() => onSelect(block)}
+                    title={fullName(block)}
                     className={`flex w-full items-center gap-2 px-4 py-1.5 text-left text-sm transition-colors ${
                       active
                         ? 'border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/20 dark:text-primary-300 border-l-2 font-medium'
@@ -155,9 +203,7 @@ const BlockPicker: FC<BlockPickerProps> = ({
                           : 'bg-gray-300 dark:bg-gray-600'
                       }`}
                     />
-                    <span className="truncate">
-                      {block.name || block.displayName}
-                    </span>
+                    <span className="truncate">{labels.get(block.id)}</span>
                   </button>
                 )
               })}

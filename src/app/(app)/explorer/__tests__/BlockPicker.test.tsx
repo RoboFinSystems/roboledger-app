@@ -15,7 +15,7 @@ vi.mock('react-icons/hi', () => ({
   HiSearch: () => <span />,
 }))
 
-import BlockPicker from '../components/BlockPicker'
+import BlockPicker, { blockLabels } from '../components/BlockPicker'
 
 // `displayName` is the block-TYPE label ("Metric", "Schedule"); `name` is
 // the instance identity. The picker must label rows by name or every
@@ -34,6 +34,66 @@ const BLOCKS = [
     displayName: 'Schedule',
   },
 ] as any
+
+// Library-seeded structures are named for their taxonomy first.
+const STATEMENTS = [
+  {
+    id: 'bs',
+    blockType: 'balance_sheet',
+    name: 'rs-gaap — Balance Sheet — Classified',
+    displayName: 'Balance Sheet',
+    taxonomyId: 'tax_rs_gaap',
+    taxonomyName: 'rs-gaap',
+  },
+  {
+    id: 'is',
+    blockType: 'income_statement',
+    name: 'rs-gaap — Income Statement — Multi-Step',
+    displayName: 'Income Statement',
+    taxonomyId: 'tax_rs_gaap',
+    taxonomyName: 'rs-gaap',
+  },
+] as any
+
+describe('blockLabels', () => {
+  it('drops the taxonomy a structure is named for', () => {
+    const labels = blockLabels(STATEMENTS)
+    expect(labels.get('bs')).toBe('Balance Sheet — Classified')
+    expect(labels.get('is')).toBe('Income Statement — Multi-Step')
+  })
+
+  it('recognises a taxonomy id by shape when the block does not name one', () => {
+    const labels = blockLabels([
+      { id: 'a', name: 'us-gaap — Cash Flow — Indirect', taxonomyName: null },
+    ] as any)
+    expect(labels.get('a')).toBe('Cash Flow — Indirect')
+  })
+
+  it('leaves a name whose lead segment is not a taxonomy', () => {
+    const labels = blockLabels([
+      { id: 'a', name: 'Buffer — 2026-07 Prepaid Amortization' },
+      { id: 'b', name: 'Key Financial Metrics' },
+    ] as any)
+    expect(labels.get('a')).toBe('Buffer — 2026-07 Prepaid Amortization')
+    expect(labels.get('b')).toBe('Key Financial Metrics')
+  })
+
+  it('keeps the prefix where dropping it would make two rows read the same', () => {
+    const labels = blockLabels([
+      ...STATEMENTS,
+      {
+        id: 'bs_us',
+        blockType: 'balance_sheet',
+        name: 'us-gaap — Balance Sheet — Classified',
+        taxonomyName: 'us-gaap',
+      },
+    ] as any)
+    expect(labels.get('bs')).toBe('rs-gaap — Balance Sheet — Classified')
+    expect(labels.get('bs_us')).toBe('us-gaap — Balance Sheet — Classified')
+    // Unaffected rows still shorten.
+    expect(labels.get('is')).toBe('Income Statement — Multi-Step')
+  })
+})
 
 describe('BlockPicker', () => {
   it('labels rows by instance name, not the block-type display name', () => {
@@ -117,13 +177,17 @@ describe('BlockPicker ordering', () => {
         isLoading={false}
       />
     )
-    const buttons = screen.getAllByRole('button').map((b) => b.textContent)
-    const statements = buttons.filter((t) => t?.startsWith('rs-gaap'))
+    // Rows read without the taxonomy; the tooltip keeps the full name, which
+    // is what picks the statement family out of the list here.
+    const statements = screen
+      .getAllByRole('button')
+      .filter((b) => b.getAttribute('title')?.startsWith('rs-gaap'))
+      .map((b) => b.textContent)
     expect(statements).toEqual([
-      'rs-gaap — Balance Sheet',
-      'rs-gaap — Income Statement',
-      'rs-gaap — Cash Flow Statement',
-      'rs-gaap — Statement of Changes',
+      'Balance Sheet',
+      'Income Statement',
+      'Cash Flow Statement',
+      'Statement of Changes',
     ])
   })
 
@@ -161,5 +225,28 @@ describe('BlockPicker ordering', () => {
     expect(screen.getByText('Other')).toBeInTheDocument()
     const buttons = screen.getAllByRole('button').map((b) => b.textContent)
     expect(buttons[buttons.length - 1]).toBe('Future Block')
+  })
+
+  it('shows the short label, keeps the full name on the tooltip and in search', () => {
+    render(
+      <BlockPicker
+        blocks={STATEMENTS}
+        selectedId={null}
+        onSelect={() => {}}
+        isLoading={false}
+      />
+    )
+    const row = screen.getByText('Balance Sheet — Classified').closest('button')
+    expect(row).toHaveAttribute('title', 'rs-gaap — Balance Sheet — Classified')
+    expect(screen.queryByText(/rs-gaap/)).not.toBeInTheDocument()
+
+    // Typing the taxonomy still finds them, and the labels stay short.
+    fireEvent.change(screen.getByPlaceholderText('Search blocks'), {
+      target: { value: 'rs-gaap' },
+    })
+    expect(screen.getByText('Balance Sheet — Classified')).toBeInTheDocument()
+    expect(
+      screen.getByText('Income Statement — Multi-Step')
+    ).toBeInTheDocument()
   })
 })
