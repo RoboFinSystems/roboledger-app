@@ -12,31 +12,18 @@ import {
   PageLayout,
   useGraphContext,
 } from '@robosystems/core'
-import {
-  Alert,
-  Button,
-  Card,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
-  TextInput,
-} from 'flowbite-react'
+import { Alert, Button, Card, Select, TextInput } from 'flowbite-react'
 import Link from 'next/link'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
 import { TbReportMoney } from 'react-icons/tb'
+import LiveStatementTable from './components/LiveStatementTable'
 
-// The SDK types these directly now — liveFinancialStatement returns
+// The SDK types this directly now — liveFinancialStatement returns
 // LiveFinancialStatementResponse rather than Record<string, unknown>, so the
 // hand-maintained mirrors of this shape are gone.
 type LiveStatement = LiveFinancialStatementResponse
-type LivePeriod = LiveFinancialStatementResponse['periods'][number]
-type LiveFactRow = LiveFinancialStatementResponse['facts'][number]
 
 type StatementType =
   | 'balance_sheet'
@@ -60,14 +47,6 @@ const PRESETS: { key: PresetKey; label: string }[] = [
   { key: 'last_fy', label: 'Last calendar year' },
   { key: 'custom', label: 'Custom range' },
 ]
-
-const formatCurrency = (amount: number): string =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount)
 
 const isoDate = (d: Date): string =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
@@ -342,44 +321,6 @@ const LiveStatementsContent: FC = function () {
         )}
       </Card>
     </PageLayout>
-  )
-}
-
-function LiveStatementTable({ statement }: { statement: LiveStatement }) {
-  return (
-    <Table>
-      <TableHead>
-        <TableHeadCell>Concept</TableHeadCell>
-        {statement.periods.map((p) => (
-          <TableHeadCell key={p.label} className="text-right">
-            {p.label}
-          </TableHeadCell>
-        ))}
-      </TableHead>
-      <TableBody>
-        {statement.facts.map((row, ri) => (
-          <TableRow
-            key={`${row.qname}-${ri}`}
-            className={row.is_subtotal ? 'font-semibold' : undefined}
-          >
-            <TableCell
-              className="text-gray-900 dark:text-white"
-              style={{ paddingLeft: `${0.75 + row.depth * 1.25}rem` }}
-            >
-              {row.name}
-            </TableCell>
-            {row.values.map((v, vi) => (
-              <TableCell
-                key={vi}
-                className="text-right font-mono text-gray-900 dark:text-white"
-              >
-                {v === null || v === undefined ? '—' : formatCurrency(v)}
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
   )
 }
 
