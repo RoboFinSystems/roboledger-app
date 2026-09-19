@@ -295,12 +295,14 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
           ) : (
             <Table>
               <TableHead>
-                <TableHeadCell className="w-10"></TableHeadCell>
-                <TableHeadCell>Date</TableHeadCell>
-                <TableHeadCell>Memo</TableHeadCell>
-                <TableHeadCell>Type</TableHeadCell>
-                <TableHeadCell>Source</TableHeadCell>
-                <TableHeadCell className="text-right">Amount</TableHeadCell>
+                <tr>
+                  <TableHeadCell className="w-10"></TableHeadCell>
+                  <TableHeadCell>Date</TableHeadCell>
+                  <TableHeadCell>Memo</TableHeadCell>
+                  <TableHeadCell>Type</TableHeadCell>
+                  <TableHeadCell>Source</TableHeadCell>
+                  <TableHeadCell className="text-right">Amount</TableHeadCell>
+                </tr>
               </TableHead>
               <TableBody>
                 {visibleEntries.map((entry) => {

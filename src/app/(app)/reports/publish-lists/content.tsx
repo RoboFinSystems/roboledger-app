@@ -326,10 +326,12 @@ const PublishListsContent: FC = function () {
               ) : (
                 <Table>
                   <TableHead>
-                    <TableHeadCell>Graph ID</TableHeadCell>
-                    <TableHeadCell>Organization</TableHeadCell>
-                    <TableHeadCell>Added</TableHeadCell>
-                    <TableHeadCell className="w-16"></TableHeadCell>
+                    <tr>
+                      <TableHeadCell>Graph ID</TableHeadCell>
+                      <TableHeadCell>Organization</TableHeadCell>
+                      <TableHeadCell>Added</TableHeadCell>
+                      <TableHeadCell className="w-16"></TableHeadCell>
+                    </tr>
                   </TableHead>
                   <TableBody>
                     {selectedList.members.map((member) => (

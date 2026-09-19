@@ -878,12 +878,14 @@ const ChartOfAccountsContent: FC = function () {
           ) : (
             <Table>
               <TableHead>
-                <TableHeadCell>Account Name</TableHeadCell>
-                <TableHeadCell>Classification</TableHeadCell>
-                <TableHeadCell>Normal Balance</TableHeadCell>
-                {hasMappings && showMappings && (
-                  <TableHeadCell>GAAP Mapping</TableHeadCell>
-                )}
+                <tr>
+                  <TableHeadCell>Account Name</TableHeadCell>
+                  <TableHeadCell>Classification</TableHeadCell>
+                  <TableHeadCell>Normal Balance</TableHeadCell>
+                  {hasMappings && showMappings && (
+                    <TableHeadCell>GAAP Mapping</TableHeadCell>
+                  )}
+                </tr>
               </TableHead>
               <TableBody>
                 {filteredAccounts.map((account) => {

@@ -193,12 +193,14 @@ const AgentsContent: FC = function () {
           ) : (
             <Table>
               <TableHead>
-                <TableHeadCell>Name</TableHeadCell>
-                <TableHeadCell>Type</TableHeadCell>
-                <TableHeadCell>Email</TableHeadCell>
-                <TableHeadCell>Phone</TableHeadCell>
-                <TableHeadCell>Source</TableHeadCell>
-                <TableHeadCell>Created</TableHeadCell>
+                <tr>
+                  <TableHeadCell>Name</TableHeadCell>
+                  <TableHeadCell>Type</TableHeadCell>
+                  <TableHeadCell>Email</TableHeadCell>
+                  <TableHeadCell>Phone</TableHeadCell>
+                  <TableHeadCell>Source</TableHeadCell>
+                  <TableHeadCell>Created</TableHeadCell>
+                </tr>
               </TableHead>
               <TableBody>
                 {filteredAgents.map((a) => (

@@ -324,12 +324,14 @@ const InboxContent: FC = function () {
           ) : (
             <Table>
               <TableHead>
-                <TableHeadCell>Date</TableHeadCell>
-                <TableHeadCell>Event</TableHeadCell>
-                <TableHeadCell>Agent</TableHeadCell>
-                <TableHeadCell>Source</TableHeadCell>
-                <TableHeadCell>Status</TableHeadCell>
-                <TableHeadCell className="text-right">Amount</TableHeadCell>
+                <tr>
+                  <TableHeadCell>Date</TableHeadCell>
+                  <TableHeadCell>Event</TableHeadCell>
+                  <TableHeadCell>Agent</TableHeadCell>
+                  <TableHeadCell>Source</TableHeadCell>
+                  <TableHeadCell>Status</TableHeadCell>
+                  <TableHeadCell className="text-right">Amount</TableHeadCell>
+                </tr>
               </TableHead>
               <TableBody>
                 {filteredEvents.map((evt) => {

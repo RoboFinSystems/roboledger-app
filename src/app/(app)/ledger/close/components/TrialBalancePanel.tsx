@@ -220,11 +220,13 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
       <div className="overflow-x-auto">
         <Table>
           <TableHead>
-            <TableHeadCell>Account</TableHeadCell>
-            <TableHeadCell>Classification</TableHeadCell>
-            <TableHeadCell className="text-right">Debits</TableHeadCell>
-            <TableHeadCell className="text-right">Credits</TableHeadCell>
-            <TableHeadCell className="text-right">Net Balance</TableHeadCell>
+            <tr>
+              <TableHeadCell>Account</TableHeadCell>
+              <TableHeadCell>Classification</TableHeadCell>
+              <TableHeadCell className="text-right">Debits</TableHeadCell>
+              <TableHeadCell className="text-right">Credits</TableHeadCell>
+              <TableHeadCell className="text-right">Net Balance</TableHeadCell>
+            </tr>
           </TableHead>
           <TableBody>
             {rows.map((row) => (

@@ -198,12 +198,14 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
                 <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
                   <Table>
                     <TableHead>
-                      <TableHeadCell>Date</TableHeadCell>
-                      <TableHeadCell>Type</TableHeadCell>
-                      <TableHeadCell>Status</TableHeadCell>
-                      <TableHeadCell className="text-right">
-                        Amount
-                      </TableHeadCell>
+                      <tr>
+                        <TableHeadCell>Date</TableHeadCell>
+                        <TableHeadCell>Type</TableHeadCell>
+                        <TableHeadCell>Status</TableHeadCell>
+                        <TableHeadCell className="text-right">
+                          Amount
+                        </TableHeadCell>
+                      </tr>
                     </TableHead>
                     <TableBody>
                       {events.map((evt) => (

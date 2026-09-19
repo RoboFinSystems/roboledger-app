@@ -459,11 +459,15 @@ const JournalContent: FC = function () {
               ) : (
                 <Table>
                   <TableHead>
-                    <TableHeadCell className="w-10"></TableHeadCell>
-                    <TableHeadCell>Date</TableHeadCell>
-                    <TableHeadCell>Description</TableHeadCell>
-                    <TableHeadCell>Type</TableHeadCell>
-                    <TableHeadCell className="text-right">Amount</TableHeadCell>
+                    <tr>
+                      <TableHeadCell className="w-10"></TableHeadCell>
+                      <TableHeadCell>Date</TableHeadCell>
+                      <TableHeadCell>Description</TableHeadCell>
+                      <TableHeadCell>Type</TableHeadCell>
+                      <TableHeadCell className="text-right">
+                        Amount
+                      </TableHeadCell>
+                    </tr>
                   </TableHead>
                   <TableBody>
                     {filteredTransactions.map((tx) => {
