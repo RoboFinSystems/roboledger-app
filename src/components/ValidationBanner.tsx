@@ -36,6 +36,102 @@ export function validationStatus(
   return validation.passed ? 'passed' : 'failed'
 }
 
+/** One kind of finding, across every period that raised it. */
+export interface FindingGroup {
+  /** The message with any number that varies across the group elided. */
+  title: string
+  /** True when every message is the same text and only the period differs. */
+  uniform: boolean
+  /** The findings as the server sent them, in order. */
+  messages: string[]
+  /** Period labels from the `[…]` prefixes, in order; empty when unprefixed. */
+  periods: string[]
+}
+
+const PERIOD_PREFIX = /^\[([^\]]+)\]\s*/
+const NUMBER = /-?\d[\d,]*(?:\.\d+)?/g
+
+/**
+ * Collapse per-period repeats into one group per kind of finding.
+ *
+ * The guard rails run once per rendered column and prefix each finding with
+ * its period (`[2024-07-31] …`, `[Current] …`). A two-column statement yields
+ * a handful of lines; a 25-month series yields the same three messages 25
+ * times over. Findings group on the message with the prefix stripped and
+ * numbers treated as wildcards, so "… (-3152.32 vs operating cash -2641.63)"
+ * and "… (8148.57 vs operating cash 6009.03)" are one kind, not two.
+ *
+ * Only the numbers that actually differ within a group are elided from its
+ * title — a constant one ("AWS RI 2024-07 Prepaid") is part of the name.
+ */
+export function groupFindings(findings: readonly string[]): FindingGroup[] {
+  const groups = new Map<
+    string,
+    { bodies: string[]; messages: string[]; periods: string[] }
+  >()
+  for (const message of findings) {
+    const prefix = PERIOD_PREFIX.exec(message)
+    const body = prefix ? message.slice(prefix[0].length) : message
+    const key = body.replace(NUMBER, '\u0000')
+    const group = groups.get(key) ?? { bodies: [], messages: [], periods: [] }
+    group.bodies.push(body)
+    group.messages.push(message)
+    if (prefix) group.periods.push(prefix[1])
+    groups.set(key, group)
+  }
+
+  return [...groups.values()].map(({ bodies, messages, periods }) => {
+    const numbers = bodies.map((body) => body.match(NUMBER) ?? [])
+    let position = 0
+    const title = bodies[0].replace(NUMBER, (match) => {
+      const k = position++
+      return numbers.every((n) => n[k] === match) ? match : '…'
+    })
+    return {
+      title,
+      uniform: bodies.every((body) => body === bodies[0]),
+      messages,
+      periods,
+    }
+  })
+}
+
+const FindingList: FC<{ findings: string[]; className: string }> = ({
+  findings,
+  className,
+}) => (
+  <ul className={`mt-2 space-y-1 text-sm ${className}`}>
+    {groupFindings(findings).map((group, i) =>
+      group.messages.length === 1 ? (
+        <li key={i}>{group.messages[0]}</li>
+      ) : (
+        <li key={i}>
+          <details>
+            <summary className="cursor-pointer">
+              {group.title}
+              <span className="ml-2 text-xs whitespace-nowrap opacity-70">
+                {group.messages.length} periods
+              </span>
+            </summary>
+            {group.uniform && group.periods.length === group.messages.length ? (
+              // Same text every period — the periods are the only detail.
+              <p className="mt-1 ml-4 text-xs opacity-80">
+                {group.periods.join(', ')}
+              </p>
+            ) : (
+              <ul className="mt-1 ml-4 space-y-0.5 text-xs opacity-80">
+                {group.messages.map((message, j) => (
+                  <li key={j}>{message}</li>
+                ))}
+              </ul>
+            )}
+          </details>
+        </li>
+      )
+    )}
+  </ul>
+)
+
 interface ValidationBannerProps {
   validation: ValidationOutcome
   className?: string
@@ -49,7 +145,8 @@ interface ValidationBannerProps {
  * it renders neutral, never as a green "passed". Failures list in red;
  * warnings (a cash-flow reconciling plug larger than operating cash, a
  * subtotal that does not foot in one column) list in amber so the reader
- * sees the finding, not just a count.
+ * sees the finding, not just a count. A finding raised in several periods
+ * collapses to one line (`groupFindings`); the badge still counts every one.
  */
 const ValidationBanner: FC<ValidationBannerProps> = ({
   validation,
@@ -86,24 +183,17 @@ const ValidationBanner: FC<ValidationBannerProps> = ({
         )}
       </div>
       {validation.failures.length > 0 && (
-        <ul className="mt-2 text-sm text-red-400">
-          {validation.failures.map((f, i) => (
-            <li key={i}>{f}</li>
-          ))}
-        </ul>
+        <FindingList findings={validation.failures} className="text-red-400" />
       )}
       {warningCount > 0 && (
-        <ul
-          className={`mt-2 text-sm ${
+        <FindingList
+          findings={validation.warnings}
+          className={
             status === 'inconclusive'
               ? 'text-gray-500 dark:text-gray-400'
               : 'text-amber-600 dark:text-amber-400'
-          }`}
-        >
-          {validation.warnings.map((w, i) => (
-            <li key={i}>{w}</li>
-          ))}
-        </ul>
+          }
+        />
       )}
     </div>
   )
