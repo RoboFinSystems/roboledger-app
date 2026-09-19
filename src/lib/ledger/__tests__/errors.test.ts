@@ -60,13 +60,21 @@ describe('friendlyError — pre-existing ledger cases', () => {
     })
   })
 
-  it('links an unresolved element to the chart of accounts', () => {
+  it('sends an account missing from the chart of accounts to a QuickBooks sync', () => {
     const result = friendlyError(
       sdkError('Approve event', {
-        detail: 'Could not resolve element for account 4000.',
+        detail:
+          "Event ev_1: 1 element_external_id(s) could not be resolved against source='quickbooks', connection_id='conn_1': '4000' (entry 0).",
       })
     )
-    expect(result.link?.href).toBe('/ledger/chart-of-accounts')
+    expect(result.message).toBe(
+      "Some accounts in this event aren't in RoboLedger's chart of accounts yet. Sync QuickBooks from Connections to bring them in, then try again."
+    )
+    expect(result.message).not.toMatch(/mapp/i)
+    expect(result.link).toEqual({
+      href: '/connections',
+      label: 'Open Connections',
+    })
   })
 })
 

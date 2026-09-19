@@ -87,6 +87,9 @@ export const friendlyError = (raw: string): FriendlyError => {
     }
   }
 
+  // The event names a QuickBooks account the ledger has no element for yet
+  // (the backend's ElementResolutionError, classified `element_unmapped`).
+  // The fix is a sync that brings the account in, not a reporting mapping.
   if (
     lower.includes('element') &&
     (lower.includes('unmapped') ||
@@ -95,11 +98,8 @@ export const friendlyError = (raw: string): FriendlyError => {
   ) {
     return {
       message:
-        "Some accounts in this event aren't mapped. Visit Chart of Accounts to fix mappings, then try again.",
-      link: {
-        href: '/ledger/chart-of-accounts',
-        label: 'Open Chart of Accounts',
-      },
+        "Some accounts in this event aren't in RoboLedger's chart of accounts yet. Sync QuickBooks from Connections to bring them in, then try again.",
+      link: { href: '/connections', label: 'Open Connections' },
     }
   }
 
