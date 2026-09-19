@@ -1,5 +1,6 @@
 'use client'
 
+import DocsLink from '@/components/DocsLink'
 import ExportMenu, { type ExportMenuGroup } from '@/components/ExportMenu'
 import RefreshControl from '@/components/RefreshControl'
 import type { InformationBlockList } from '@robosystems/client/clients'
@@ -450,9 +451,14 @@ const PlanContent: FC = function () {
           const what = scenarioId
             ? 'statements and assumptions across the forecast seam'
             : 'monthly statements from the closed history'
-          return entityName
+          const text = entityName
             ? `${entityName} — ${what}`
             : what.charAt(0).toUpperCase() + what.slice(1)
+          return (
+            <>
+              {text}. <DocsLink href="/docs/plan-and-forecast" />
+            </>
+          )
         })()}
       />
 

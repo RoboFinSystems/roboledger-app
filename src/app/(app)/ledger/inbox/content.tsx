@@ -1,5 +1,6 @@
 'use client'
 
+import DocsLink from '@/components/DocsLink'
 import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
 import { formatAmount, formatDate } from '@/lib/ledger/formatters'
 import type { LedgerAgent, LedgerEventBlock } from '@robosystems/client/clients'
@@ -233,7 +234,12 @@ const InboxContent: FC = function () {
       <PageHeader
         icon={HiInbox}
         title="Inbox"
-        subtitle="Review and approve captured events before they post to the GL"
+        subtitle={
+          <>
+            Review and approve captured events before they post to the GL.{' '}
+            <DocsLink href="/docs/inbox" />
+          </>
+        }
       />
 
       {/* Filters */}

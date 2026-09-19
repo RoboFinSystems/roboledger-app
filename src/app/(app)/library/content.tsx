@@ -1,5 +1,6 @@
 'use client'
 
+import DocsLink from '@/components/DocsLink'
 import {
   ElementBrowser,
   ElementDetail,
@@ -134,7 +135,12 @@ export default function LibraryContent() {
       <PageHeader
         icon={HiBookOpen}
         title="Taxonomy Library"
-        subtitle="Library taxonomies, CoA elements, and reporting extensions"
+        subtitle={
+          <>
+            Library taxonomies, CoA elements, and reporting extensions.{' '}
+            <DocsLink href="/docs/the-library" />
+          </>
+        }
       />
 
       {taxonomiesState === 'loading' && (
