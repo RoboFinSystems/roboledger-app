@@ -17,7 +17,7 @@ export default function FinalCTA() {
           See it on your own books
         </h2>
         <p className="mb-10 text-xl text-gray-300">
-          Connect QuickBooks and ask Claude the first question. Nothing writes
+          Connect QuickBooks and ask your AI the first question. Nothing writes
           to QuickBooks until you post an entry.
         </p>
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">

@@ -19,7 +19,7 @@ export const BLOG_FEED = [
 ]
 
 export const BLOG_DESCRIPTION =
-  'Connect QuickBooks, ask Claude the first question, share the statement, plan the quarter, compare against public filers. The close comes last.'
+  'Connect QuickBooks, ask your AI the first question, share the statement, plan the quarter, compare against public filers. The close comes last.'
 
 /** One JSON-LD block. `</` is escaped so post text can never break out of the script. */
 function JsonLd({ data }: { data: Record<string, unknown> }) {

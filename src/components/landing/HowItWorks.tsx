@@ -13,7 +13,7 @@ const steps = [
     number: '02',
     title: 'Triage the inbox',
     description:
-      'Every transaction arrives as a typed business event, pre-classified by Claude. Approve in one click, reject, or preview exactly what would post to the GL first.',
+      'Every transaction arrives as a typed business event, pre-classified by AI. Approve in one click, reject, or preview exactly what would post to the GL first.',
     tags: ['Event Inbox', 'AI Classify', 'Preview Post'],
     color: 'purple',
   },

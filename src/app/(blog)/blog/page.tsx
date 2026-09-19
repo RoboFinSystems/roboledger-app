@@ -9,7 +9,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 // The hub's title says what the lane is about; "Blog | RoboLedger" told a searcher nothing.
-const TITLE = 'AI Accounting on QuickBooks, with Claude | RoboLedger Blog'
+const TITLE = 'AI Accounting on QuickBooks, over MCP | RoboLedger Blog'
 const URL = 'https://roboledger.ai/blog'
 
 export const metadata: Metadata = {

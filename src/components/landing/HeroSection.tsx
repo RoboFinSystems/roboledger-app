@@ -1,7 +1,7 @@
 'use client'
 
+import { McpLogo } from '@/components/mcp/McpLogo'
 import { AnimatedLogo } from '@robosystems/core/ui-components'
-import Image from 'next/image'
 import Link from 'next/link'
 import { GITHUB_URL, REGISTER_PATH, ROBOSYSTEMS_URL } from './constants'
 import CoworkDemo from './CoworkDemo'
@@ -30,15 +30,17 @@ export default function HeroSection() {
               Connect your books.
             </span>
             <span className="from-primary-400 via-secondary-400 to-accent-400 mt-2 block bg-linear-to-r bg-clip-text pb-2 text-transparent">
-              Ask Claude.
+              Ask your AI.
             </span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-gray-300 sm:text-lg md:mt-8 md:text-2xl">
             Sync QuickBooks into a graph{' '}
-            <strong className="text-primary-400">Claude</strong> can reason
-            over. Statements that tie, a plan that rolls off your actuals, and
-            your numbers beside public companies.{' '}
+            <strong className="text-primary-400">
+              Claude, ChatGPT, or any MCP client
+            </strong>{' '}
+            can reason over. Statements that tie, a plan that rolls off your
+            actuals, and your numbers beside public companies.{' '}
             <span className="text-white">
               Nothing writes back until you post an entry.
             </span>{' '}
@@ -78,14 +80,8 @@ export default function HeroSection() {
           {/* Trust row */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-500 sm:gap-6 sm:text-sm">
             <div className="flex items-center gap-2">
-              <Image
-                src="/images/claude.svg"
-                alt="Claude AI"
-                width={20}
-                height={20}
-                className="h-5 w-5"
-              />
-              <span>Powered by Claude</span>
+              <McpLogo className="h-5 w-5 text-gray-300" />
+              <span>Works with any MCP client</span>
             </div>
             <a
               href={ROBOSYSTEMS_URL}
@@ -121,8 +117,8 @@ export default function HeroSection() {
           {/* Product preview */}
           <div className="mx-auto mt-14 max-w-4xl md:mt-20">
             <ProductShot
-              alt="Claude working the books with a human in the loop, calling RoboLedger tools over MCP"
-              caption="Claude · MCP › roboledger"
+              alt="An AI assistant working the books with a human in the loop, calling RoboLedger tools over MCP"
+              caption="AI assistant · MCP › roboledger"
               aspect="aspect-[4/3]"
             >
               <CoworkDemo />
