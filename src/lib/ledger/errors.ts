@@ -98,7 +98,7 @@ export const friendlyError = (raw: string): FriendlyError => {
   ) {
     return {
       message:
-        "Some accounts in this event aren't in RoboLedger's chart of accounts yet. Sync QuickBooks from Connections to bring them in, then try again.",
+        "Some accounts in this event aren't in RoboLedger's chart of accounts yet. Sync the connection they came from, then try again.",
       link: { href: '/connections', label: 'Open Connections' },
     }
   }

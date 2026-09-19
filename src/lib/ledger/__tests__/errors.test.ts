@@ -60,7 +60,7 @@ describe('friendlyError — pre-existing ledger cases', () => {
     })
   })
 
-  it('sends an account missing from the chart of accounts to a QuickBooks sync', () => {
+  it('sends an account missing from the chart of accounts to a sync', () => {
     const result = friendlyError(
       sdkError('Approve event', {
         detail:
@@ -68,9 +68,11 @@ describe('friendlyError — pre-existing ledger cases', () => {
       })
     )
     expect(result.message).toBe(
-      "Some accounts in this event aren't in RoboLedger's chart of accounts yet. Sync QuickBooks from Connections to bring them in, then try again."
+      "Some accounts in this event aren't in RoboLedger's chart of accounts yet. Sync the connection they came from, then try again."
     )
     expect(result.message).not.toMatch(/mapp/i)
+    // The match does not read the source, so the copy must not name one.
+    expect(result.message).not.toMatch(/quickbooks/i)
     expect(result.link).toEqual({
       href: '/connections',
       label: 'Open Connections',
