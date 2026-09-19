@@ -12,6 +12,7 @@ import SegmentedControl, {
   type SegmentedOption,
 } from '@/components/SegmentedControl'
 import ValidationBanner from '@/components/ValidationBanner'
+import { friendlyError, type FriendlyError } from '@/lib/ledger/errors'
 import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
 import {
   clients,
@@ -114,7 +115,7 @@ const LiveStatementsContent: FC = function () {
   const [customEnd, setCustomEnd] = useState('')
   const [statement, setStatement] = useState<LiveStatement | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<FriendlyError | null>(null)
   const [fetchedAt, setFetchedAt] = useState<Date | null>(null)
 
   // Bumped per load; a stale in-flight response (seq !== current) is
@@ -160,10 +161,14 @@ const LiveStatementsContent: FC = function () {
     } catch (err) {
       if (seq !== loadSeq.current) return
       console.error('Error loading live statement:', err)
+      // The SDK throws `"<label> failed: " + JSON.stringify(error)`, so the
+      // raw message is a `{"detail": …}` blob — never show that.
       setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to render the statement. Please try again.'
+        friendlyError(
+          err instanceof Error
+            ? err.message
+            : 'Failed to render the statement. Please try again.'
+        )
       )
       setStatement(null)
     } finally {
@@ -246,7 +251,15 @@ const LiveStatementsContent: FC = function () {
       {error && (
         <Alert color="failure">
           <HiExclamationCircle className="h-4 w-4" />
-          <span className="font-medium">Error!</span> {error}
+          <span className="font-medium">Error!</span> {error.message}
+          {error.link && (
+            <>
+              {' '}
+              <Link href={error.link.href} className="font-medium underline">
+                {error.link.label}
+              </Link>
+            </>
+          )}
         </Alert>
       )}
 
