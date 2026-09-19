@@ -26,7 +26,7 @@ const traditional = [
 const aiNative = [
   {
     title: 'Events flow in',
-    body: 'QuickBooks syncs and manual entries arrive as typed business events, on a graph Claude can query. No spreadsheet plumbing.',
+    body: 'QuickBooks syncs and manual entries arrive as typed business events, on a graph your AI can query. No spreadsheet plumbing.',
   },
   {
     title: 'Ask, share, plan',
@@ -34,7 +34,7 @@ const aiNative = [
   },
   {
     title: 'Approve, then close',
-    body: 'Claude triages each event in the inbox; nothing writes back until you post an entry. When you trust it, schedules and the rule engine carry the close.',
+    body: 'AI triages each event in the inbox; nothing writes back until you post an entry. When you trust it, schedules and the rule engine carry the close.',
   },
   {
     title: 'Publish & file',
@@ -59,7 +59,7 @@ export default function ContrastSection() {
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
             Every export keeps the numbers and throws away the accounting. Put
-            the books on a ledger Claude can query and the exports stop.
+            the books on a ledger your AI can query and the exports stop.
           </p>
         </div>
 

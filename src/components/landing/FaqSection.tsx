@@ -61,21 +61,21 @@ const faqs: { q: string; a: ReactNode }[] = [
         puts your monthly statements and a scenario&apos;s assumptions in one
         grid spanning the actuals/forecast seam — so the forecast is driven by
         the same ledger the close produced, not a spreadsheet copied out of it.
-        Scenarios are authored through Claude over MCP today; the in-app editor
-        is on the way.
+        Scenarios are authored from your AI assistant over MCP today; the in-app
+        editor is on the way.
       </>
     ),
   },
   {
-    q: 'Are there things Claude can do that the app cannot?',
+    q: 'Are there things my AI assistant can do that the app cannot?',
     a: (
       <>
-        Yes — deliberately. Every write operation on the platform becomes a
-        Claude tool the day it ships, while screens follow where they earn their
-        place. Authoring a forecast scenario, defining a new metric, and writing
-        an event-handler rule all run from Claude today without a dedicated form
-        in the app. Anything you drive that way lands in the same ledger and
-        shows up on the same screens.
+        Yes — deliberately. Every write operation on the platform becomes an MCP
+        tool the day it ships, while screens follow where they earn their place.
+        Authoring a forecast scenario, defining a new metric, and writing an
+        event-handler rule all run from Claude, ChatGPT, or any MCP client today
+        without a dedicated form in the app. Anything you drive that way lands
+        in the same ledger and shows up on the same screens.
       </>
     ),
   },
@@ -107,7 +107,7 @@ const faqs: { q: string; a: ReactNode }[] = [
         Create an account, then provision a graph on the RoboSystems platform —
         enabling RoboLedger gives you access to this app. Plans and provisioning
         live on the RoboSystems side; once you've enabled RoboLedger, connect
-        QuickBooks and ask Claude the first question. Nothing writes back until
+        QuickBooks and ask your AI the first question. Nothing writes back until
         you post an entry.
       </>
     ),
@@ -116,8 +116,9 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: "What if we don't have anyone to run it?",
     a: (
       <>
-        RoboLedger is run by whoever signs off on your books. If you don't have
-        an accountant yet,{' '}
+        RoboLedger is run by your own accountant, bookkeeper or fractional CFO,
+        working from the AI chat they already use. If you don&apos;t have one
+        yet,{' '}
         <a
           href={HARBINGER_URL}
           target="_blank"
@@ -126,8 +127,8 @@ const faqs: { q: string; a: ReactNode }[] = [
         >
           Harbinger FinLab
         </a>{' '}
-        will point you to a practice that runs RoboLedger. Harbinger teaches and
-        trains; it never keeps anyone's books.
+        will point you to a practice that runs RoboLedger. Harbinger implements
+        and trains; it never keeps anyone&apos;s books.
       </>
     ),
   },

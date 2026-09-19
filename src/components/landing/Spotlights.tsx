@@ -20,7 +20,7 @@ const spotlights: Spotlight[] = [
     label: 'Event-driven ledger',
     title: 'An inbox for your books',
     description:
-      'Every transaction lands as a typed business event — captured, classified, then committed. Claude proposes the entry; you stay in control.',
+      'Every transaction lands as a typed business event — captured, classified, then committed. AI proposes the entry; you stay in control.',
     bullets: [
       'AI pre-classifies invoices, bills, payments, and receipts',
       'Preview exactly what would post — matched handler, planned journal entries, validation errors — before it hits the GL',
@@ -88,13 +88,13 @@ const spotlights: Spotlight[] = [
   {
     id: 'console',
     label: 'Natural language',
-    title: 'Ask Claude about your books',
+    title: 'Ask about your books in plain English',
     description:
-      'Query your ledger in plain English in the AI Console, or connect Claude over MCP to help drive your month-end close from your own agent.',
+      'Query your ledger in the AI Console, or connect Claude, ChatGPT, or any MCP client to help drive your month-end close from the chat you already use.',
     bullets: [
       'Natural language → Cypher, with the generated query shown and results one copy away',
       'Grounded in your actual ledger — transactions, trial balance, statements',
-      "Paste your ledger's MCP URL into Claude to run RoboLedger tools — no install",
+      'Add one MCP address to your AI client and sign in to run RoboLedger tools — no install',
     ],
     caption: 'Console',
     preview: <ConsolePreview />,

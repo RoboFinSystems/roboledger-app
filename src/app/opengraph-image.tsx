@@ -8,7 +8,8 @@ export const alt = SITE_TITLE
 export default function Image() {
   return renderOgImage({
     eyebrow: 'RoboLedger',
-    title: 'Connect your books. Ask Claude.',
-    subtitle: 'Sync QuickBooks into a graph Claude can reason over.',
+    title: 'Connect your books. Ask your AI.',
+    subtitle:
+      'Sync QuickBooks into a graph Claude, ChatGPT, or any MCP client can query.',
   })
 }

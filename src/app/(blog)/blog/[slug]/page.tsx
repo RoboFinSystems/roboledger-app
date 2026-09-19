@@ -175,8 +175,8 @@ export default async function BlogPostPage({
           <div>
             <h3 className="font-bold text-white">{post.author}</h3>
             <p className="mt-1 text-gray-400">
-              Writing about what changes when accounting runs on a ledger Claude
-              can query.
+              Writing about what changes when accounting runs on a ledger your
+              AI can query.
             </p>
           </div>
         </div>
@@ -188,9 +188,9 @@ export default async function BlogPostPage({
             See it on your own books
           </h3>
           <p className="mb-6 text-gray-300">
-            Connect QuickBooks and ask Claude the first question. Nothing writes
-            to QuickBooks until you post an entry. We close our own books this
-            way.
+            Connect QuickBooks and ask your AI the first question. Nothing
+            writes to QuickBooks until you post an entry. We close our own books
+            this way.
           </p>
           <Link
             href={REGISTER_PATH}

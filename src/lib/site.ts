@@ -7,7 +7,7 @@
 
 export const SITE_NAME = 'RoboLedger'
 
-export const SITE_TITLE = 'RoboLedger | Connect Your Books. Ask Claude.'
+export const SITE_TITLE = 'RoboLedger | Connect Your Books. Ask Your AI.'
 
 export const SITE_DESCRIPTION =
-  'Sync QuickBooks into a graph Claude can reason over. Analyze, plan off your actuals, compare to public companies. Nothing writes back until you post.'
+  'Sync QuickBooks into a graph Claude, ChatGPT, or any MCP client can query. Analyze, plan, compare to public companies. Nothing writes back until you post.'

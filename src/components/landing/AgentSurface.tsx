@@ -1,4 +1,4 @@
-import Image from 'next/image'
+import { McpLogo } from '@/components/mcp/McpLogo'
 import FloatingElementsVariant from './FloatingElementsVariant'
 
 /**
@@ -9,8 +9,8 @@ import FloatingElementsVariant from './FloatingElementsVariant'
  * roboledger graph — verified against the backend's tool registry, not
  * aspirational. Write operations declared as `OperationSpec`s are
  * auto-generated into MCP tools by the registrar, which is *why* the agent
- * surface runs ahead of the UI: a new operation is callable by Claude the
- * moment it's registered, whereas a screen has to be designed and built.
+ * surface runs ahead of the UI: a new operation is callable from any MCP
+ * client the moment it's registered, whereas a screen has to be designed and built.
  *
  * Keep this list honest. Before adding a row, confirm the tool is actually
  * registered (an `OperationSpec(name=...)`, or a hand-written tool in
@@ -74,9 +74,9 @@ export default function AgentSurface() {
             Your agent has the wider surface
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Every write operation on the platform becomes a Claude tool the day
-            it ships. Screens follow where they earn it — so there are things
-            you can do from Claude today that don&apos;t have a button yet.
+            Every write operation on the platform becomes an MCP tool the day it
+            ships. Screens follow where they earn it — so there are things your
+            AI assistant can do today that don&apos;t have a button yet.
           </p>
         </div>
 
@@ -110,22 +110,17 @@ export default function AgentSurface() {
           <div className="flex flex-col items-start gap-6 lg:flex-row lg:items-center">
             <div className="flex-1">
               <div className="mb-3 flex items-center gap-2">
-                <Image
-                  src="/images/claude.svg"
-                  alt="Claude"
-                  width={20}
-                  height={20}
-                  className="h-5 w-5"
-                />
+                <McpLogo className="h-5 w-5 text-gray-300" />
                 <span className="text-sm font-semibold text-white">
-                  Connect Claude to your books
+                  Connect your AI to your books
                 </span>
               </div>
               <p className="text-sm leading-relaxed text-gray-400">
-                Paste your ledger's URL into Claude and it can read your books
+                Add this address as a connector in Claude, ChatGPT, or any MCP
+                client, sign in, and choose your graph. It can read your books
                 and drive these tools directly — with you approving each write.
-                No install. The same tools back the in-app AI Console, so
-                nothing is locked behind a desktop app.
+                No install, no key to paste. The same tools back the in-app AI
+                Console, so nothing is locked behind a desktop app.
               </p>
             </div>
             <div className="w-full shrink-0 lg:w-auto">
@@ -134,8 +129,7 @@ export default function AgentSurface() {
                   Connect
                 </div>
                 <code className="font-mono text-xs break-all text-gray-300">
-                  https://api.robosystems.ai/v1/graphs/
-                  <span className="text-gray-500">{'{your-graph-id}'}</span>/mcp
+                  https://api.robosystems.ai/v1/mcp
                 </code>
               </div>
             </div>

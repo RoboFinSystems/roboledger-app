@@ -1,11 +1,11 @@
 # RoboLedger App
 
-RoboLedger App is the web interface for AI-native accounting, building semantic knowledge graphs from financial data for intelligent automation and natural language analysis powered by Claude AI.
+RoboLedger App is the web interface for AI-native accounting, building semantic knowledge graphs from financial data for intelligent automation and natural language analysis from Claude, ChatGPT, or any MCP client.
 
 - **Semantic Financial Intelligence**: Every transaction connected semantically, preserving relationships and context for AI-powered insights
 - **QuickBooks Integration**: Sync with existing [QuickBooks](https://quickbooks.intuit.com/partners/affiliates?cid=par_pim_4TcakSEFQs73) data and add AI automation without changing workflows
 - **Natural Language Queries**: Ask questions in plain English and get instant, intelligent answers about your finances
-- **AI-Powered Automation**: Leverage Claude AI for intelligent financial analysis that understands business context
+- **AI-Powered Automation**: Connect the AI assistant you already use over MCP for financial analysis that understands business context
 - **Multi-Source Data**: QuickBooks, SEC XBRL filings, and custom datasets
 
 ## Core Features

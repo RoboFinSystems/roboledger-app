@@ -1,19 +1,20 @@
 'use client'
 
-import Image from 'next/image'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { HiSparkles } from 'react-icons/hi'
 
 /**
- * Animated emulation of the human-in-the-loop close: Claude drives the
- * RoboLedger tools over MCP while a person approves each step. Modeled on the
- * robosystems-app ConsoleDemo (IntersectionObserver start, sequential reveal,
- * progressive typing). Used in the hero until a real Claude cowork screenshot
- * is captured. Purely decorative — nothing here is interactive.
+ * Animated emulation of the human-in-the-loop close: an AI assistant drives
+ * the RoboLedger tools over MCP while a person approves each step. The
+ * assistant is deliberately unbranded, since any MCP client can do this.
+ * Modeled on the robosystems-app ConsoleDemo (IntersectionObserver start,
+ * sequential reveal, progressive typing). Used in the hero until a real
+ * screenshot is captured. Purely decorative — nothing here is interactive.
  */
 
 type Step =
   | { kind: 'user'; text: string }
-  | { kind: 'claude'; text: string }
+  | { kind: 'assistant'; text: string }
   | { kind: 'approve' }
   | {
       kind: 'tool'
@@ -27,7 +28,7 @@ type Step =
 const SCRIPT: Step[] = [
   { kind: 'user', text: 'Close the books for May 2026.' },
   {
-    kind: 'claude',
+    kind: 'assistant',
     text: "Let me review what's pending before we lock the period.",
   },
   {
@@ -37,7 +38,7 @@ const SCRIPT: Step[] = [
     result: '3 events · all AI-classified, balanced',
   },
   {
-    kind: 'claude',
+    kind: 'assistant',
     text: 'All three look right. Commit them and post the close schedules?',
   },
   { kind: 'approve' },
@@ -94,13 +95,7 @@ function ProgressiveText({
 function Avatar() {
   return (
     <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/5 ring-1 ring-gray-800">
-      <Image
-        src="/images/claude.svg"
-        alt="Claude"
-        width={14}
-        height={14}
-        className="h-3.5 w-3.5"
-      />
+      <HiSparkles className="text-primary-300 h-3.5 w-3.5" aria-hidden="true" />
     </span>
   )
 }
@@ -250,9 +245,9 @@ export default function CoworkDemo() {
           const show = reduced || (started && i <= revealed)
           if (!show) return null
           const animating = !reduced && started && i === revealed
-          const claudeSide = step.kind !== 'user'
+          const assistantSide = step.kind !== 'user'
           const withAvatar =
-            claudeSide && (i === 0 || SCRIPT[i - 1].kind === 'user')
+            assistantSide && (i === 0 || SCRIPT[i - 1].kind === 'user')
 
           if (step.kind === 'user') {
             return (
@@ -273,7 +268,7 @@ export default function CoworkDemo() {
           }
 
           const body =
-            step.kind === 'claude' ? (
+            step.kind === 'assistant' ? (
               <div className="rounded-lg rounded-tl-sm border border-gray-800 bg-zinc-900/70 px-3 py-2 text-[12px] leading-relaxed text-gray-200">
                 {animating ? (
                   <ProgressiveText
@@ -302,8 +297,10 @@ export default function CoworkDemo() {
 
       {/* faux input bar */}
       <div className="flex items-center gap-2 border-t border-gray-800 bg-zinc-900/60 px-4 py-2.5">
-        <span className="text-secondary-400 text-xs">✳</span>
-        <span className="text-[11px] text-gray-600">Message Claude…</span>
+        <span className="text-secondary-400 text-xs">›</span>
+        <span className="text-[11px] text-gray-600">
+          Message your assistant…
+        </span>
       </div>
     </div>
   )

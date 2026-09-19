@@ -1,8 +1,9 @@
 import { HARBINGER_URL } from './constants'
 import FloatingElementsVariant from './FloatingElementsVariant'
 
-// Harbinger FinLab walks the people who run RoboLedger through it on a screenshare and
-// trains them; it never signs in to or runs a customer's books (its MSA, 2.2 and 4.1).
+// Harbinger FinLab implements RoboLedger and trains the people who will operate it, human
+// in the loop from the AI chat they already use. Setup is a screenshare with them at the
+// keyboard; it never signs in to or runs a customer's books (its MSA, 2.2 and 4.1).
 // The doors and their wording follow harbinger.finance, which carries the argument
 // (vault: specs/distribution/harbinger-enablement-positioning.md).
 // The old managed-service wording is listed in __tests__/retired-phrases.test.ts, which
@@ -42,14 +43,15 @@ export default function HarbingerSection() {
                 Implementation & training
               </div>
               <h2 className="font-heading mb-4 text-3xl font-bold text-white sm:text-4xl">
-                Run by the people who already keep the books
+                Your people run it. Harbinger trains them.
               </h2>
               <p className="mb-6 text-base leading-relaxed text-gray-300">
-                RoboLedger is run by whoever signs off on the books: your own
-                accountant, or the fractional CFO or bookkeeper you work with.{' '}
-                <strong className="text-white">Harbinger FinLab</strong> walks
-                them through it on a screenshare and trains their people; they
-                do every step. It starts with a live demo, at no cost.
+                <strong className="text-white">Harbinger FinLab</strong>{' '}
+                implements RoboLedger and trains the people who’ll work in it
+                every day: your own accountant, or the fractional CFO or
+                bookkeeper you work with, and their staff. They work from the AI
+                chat they already use. AI drafts, they approve, and they do
+                every step. It starts with a live demo, at no cost.
               </p>
               <a
                 href={HARBINGER_URL}

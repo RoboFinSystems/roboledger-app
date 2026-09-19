@@ -8,7 +8,9 @@ export const landingMetadata: Metadata = {
   // terms left with the old hero.
   keywords: [
     'AI-native accounting',
+    'QuickBooks MCP server',
     'connect QuickBooks to Claude',
+    'connect QuickBooks to ChatGPT',
     'Claude QuickBooks integration',
     'analyze QuickBooks data with AI',
     'benchmark small business against public companies',
