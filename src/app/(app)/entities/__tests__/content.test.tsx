@@ -53,8 +53,11 @@ vi.mock('flowbite-react', () => ({
 }))
 
 vi.mock('react-icons/hi', () => ({
+  HiChevronDown: () => <span />,
+  HiChevronUp: () => <span />,
   HiExclamationCircle: () => <span />,
   HiOfficeBuilding: () => <span />,
+  HiSelector: () => <span />,
   HiSearch: () => <span />,
 }))
 

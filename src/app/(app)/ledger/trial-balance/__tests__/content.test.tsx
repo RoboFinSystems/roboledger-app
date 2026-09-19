@@ -50,8 +50,11 @@ vi.mock('flowbite-react', () => ({
 }))
 
 vi.mock('react-icons/hi', () => ({
+  HiChevronDown: () => <span />,
+  HiChevronUp: () => <span />,
   HiCheckCircle: () => <span />,
   HiExclamationCircle: () => <span />,
+  HiSelector: () => <span />,
   HiScale: () => <span />,
   HiSearch: () => <span />,
 }))
@@ -126,6 +129,51 @@ describe('TrialBalanceContent', () => {
       expect(mockGetTrialBalance).toHaveBeenCalledWith('kg_a')
     })
     expect(await screen.findByText('Cash')).toBeInTheDocument()
+  })
+
+  it('sorts by a column on click and keeps TOTALS pinned last', async () => {
+    const account = (code: string, name: string, net: number) => ({
+      accountId: `acct_${code}`,
+      accountCode: code,
+      accountName: name,
+      trait: 'asset',
+      accountType: 'Bank',
+      totalDebits: net,
+      totalCredits: 0,
+      netBalance: net,
+    })
+    mockGetTrialBalance.mockResolvedValue({
+      rows: [
+        account('1000', 'Cash', 100),
+        account('1100', 'Savings', 9000),
+        account('1200', 'Receivables', 500),
+      ],
+    })
+    render(<TrialBalanceContent />)
+    await screen.findByText('Savings')
+
+    const accountOrder = () =>
+      screen
+        .getAllByRole('row')
+        .slice(1) // header
+        .map((row) => row.textContent ?? '')
+        .map((text) =>
+          ['Cash', 'Savings', 'Receivables', 'TOTALS'].find((n) =>
+            text.includes(n)
+          )
+        )
+
+    expect(accountOrder()).toEqual(['Cash', 'Savings', 'Receivables', 'TOTALS'])
+
+    // A balance column opens largest-first.
+    fireEvent.click(screen.getByRole('button', { name: 'Net Balance' }))
+    expect(accountOrder()).toEqual(['Savings', 'Receivables', 'Cash', 'TOTALS'])
+
+    // …reverses, then returns to the chart-of-accounts order.
+    fireEvent.click(screen.getByRole('button', { name: 'Net Balance' }))
+    expect(accountOrder()).toEqual(['Cash', 'Receivables', 'Savings', 'TOTALS'])
+    fireEvent.click(screen.getByRole('button', { name: 'Net Balance' }))
+    expect(accountOrder()).toEqual(['Cash', 'Savings', 'Receivables', 'TOTALS'])
   })
 
   it('uses this graph‘s mapping for the US-GAAP view', async () => {

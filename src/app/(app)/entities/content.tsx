@@ -1,6 +1,8 @@
 'use client'
 
 import { FilterBar, SearchField } from '@/components/FilterBar'
+import SortableHeadCell from '@/components/SortableHeadCell'
+import { type SortColumn, useTableSort } from '@/lib/useTableSort'
 import type { Entity } from '@robosystems/core'
 import {
   clients,
@@ -24,7 +26,7 @@ import {
   TableRow,
 } from 'flowbite-react'
 import type { FC } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { HiExclamationCircle, HiOfficeBuilding } from 'react-icons/hi'
 
 interface EntityWithGraph extends Entity {
@@ -32,6 +34,16 @@ interface EntityWithGraph extends Entity {
   _graphName: string
   _graphCreatedAt?: string
   _graphType?: string
+}
+
+type SortKey = 'entity' | 'graph' | 'type' | 'created'
+
+const SORT_COLUMNS: Record<SortKey, SortColumn<EntityWithGraph>> = {
+  entity: { value: (entity) => entity.name },
+  graph: { value: (entity) => entity._graphName },
+  type: { value: (entity) => entity._graphType || 'entity' },
+  // ISO timestamps order correctly as text; newest first.
+  created: { value: (entity) => entity._graphCreatedAt ?? null, first: 'desc' },
 }
 
 const EntitiesListPageContent: FC = function () {
@@ -97,13 +109,20 @@ const EntitiesListPageContent: FC = function () {
     loadAllEntities()
   }, [graphState.graphs])
 
-  // Filter entities based on search term
-  const filteredEntities = entities.filter(
-    (entity) =>
-      entity.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entity.identifier.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entity._graphName.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // Filter entities based on search term. Memoised so the sort below has a
+  // stable list to work from.
+  const filteredEntities = useMemo(() => {
+    const needle = searchTerm.toLowerCase()
+    return entities.filter(
+      (entity) =>
+        entity.name.toLowerCase().includes(needle) ||
+        entity.identifier.toLowerCase().includes(needle) ||
+        entity._graphName.toLowerCase().includes(needle)
+    )
+  }, [entities, searchTerm])
+
+  // Every entity is in hand (no cap, no paging), so sorting is honest.
+  const tableSort = useTableSort(filteredEntities, SORT_COLUMNS)
 
   return (
     <PageLayout>
@@ -144,14 +163,36 @@ const EntitiesListPageContent: FC = function () {
           ) : (
             <Table>
               <TableHead>
-                <TableHeadCell>Entity</TableHeadCell>
-                <TableHeadCell>Graph</TableHeadCell>
-                <TableHeadCell>Type</TableHeadCell>
-                <TableHeadCell>Created</TableHeadCell>
-                <TableHeadCell>Selected</TableHeadCell>
+                <tr>
+                  <SortableHeadCell
+                    sort={tableSort.ariaSort('entity')}
+                    onSort={() => tableSort.toggle('entity')}
+                  >
+                    Entity
+                  </SortableHeadCell>
+                  <SortableHeadCell
+                    sort={tableSort.ariaSort('graph')}
+                    onSort={() => tableSort.toggle('graph')}
+                  >
+                    Graph
+                  </SortableHeadCell>
+                  <SortableHeadCell
+                    sort={tableSort.ariaSort('type')}
+                    onSort={() => tableSort.toggle('type')}
+                  >
+                    Type
+                  </SortableHeadCell>
+                  <SortableHeadCell
+                    sort={tableSort.ariaSort('created')}
+                    onSort={() => tableSort.toggle('created')}
+                  >
+                    Created
+                  </SortableHeadCell>
+                  <TableHeadCell>Selected</TableHeadCell>
+                </tr>
               </TableHead>
               <TableBody>
-                {filteredEntities.map((entity) => {
+                {tableSort.sorted.map((entity) => {
                   const isSelected =
                     currentEntity?.identifier === entity.identifier &&
                     graphState.currentGraphId === entity._graphId
