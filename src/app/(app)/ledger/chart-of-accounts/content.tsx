@@ -1,5 +1,6 @@
 'use client'
 
+import DocsLink from '@/components/DocsLink'
 import { FilterBar, FilterField, SearchField } from '@/components/FilterBar'
 import SegmentedControl from '@/components/SegmentedControl'
 import type { ElementClassification } from '@/lib/ledger'
@@ -719,7 +720,12 @@ const ChartOfAccountsContent: FC = function () {
       <PageHeader
         icon={HiCollection}
         title="Chart of Accounts"
-        subtitle="View accounts and GAAP mappings for the selected entity"
+        subtitle={
+          <>
+            View accounts and GAAP mappings for the selected entity.{' '}
+            <DocsLink href="/docs/map-your-chart-of-accounts" />
+          </>
+        }
       />
 
       {/* Mapping header bar */}

@@ -18,7 +18,7 @@ const DocsLink: FC<DocsLinkProps> = ({ href }) => (
     href={href}
     target="_blank"
     rel="noopener noreferrer"
-    className="text-primary-600 dark:text-primary-400 font-medium underline"
+    className="text-primary-600 dark:text-primary-400 font-medium whitespace-nowrap underline"
   >
     Read the guide →<span className="sr-only"> (opens in a new tab)</span>
   </a>

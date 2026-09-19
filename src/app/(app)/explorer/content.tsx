@@ -1,5 +1,6 @@
 'use client'
 
+import DocsLink from '@/components/DocsLink'
 import ExportMenu, { type ExportMenuGroup } from '@/components/ExportMenu'
 import RefreshControl from '@/components/RefreshControl'
 import type { InformationBlockList } from '@robosystems/client/clients'
@@ -333,9 +334,12 @@ const BlockExplorerContent: FC = function () {
         icon={HiChartBar}
         title="Block Explorer"
         subtitle={
-          currentGraph
-            ? 'Explore information blocks as standing time series'
-            : undefined
+          currentGraph ? (
+            <>
+              Explore information blocks as standing time series.{' '}
+              <DocsLink href="/docs/explorer" />
+            </>
+          ) : undefined
         }
         actions={
           <div className="flex items-center gap-2">
