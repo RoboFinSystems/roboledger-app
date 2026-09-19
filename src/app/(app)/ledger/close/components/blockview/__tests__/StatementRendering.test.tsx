@@ -355,4 +355,62 @@ describe('StatementRenderingProjection', () => {
     expect(screen.queryByText('M1')).not.toBeInTheDocument()
     expect(screen.queryByText('Cost of Goods Sold')).not.toBeInTheDocument()
   })
+
+  it('titles the statement without the taxonomy it was seeded from', () => {
+    render(
+      <StatementRenderingProjection
+        envelope={makeEnvelope({
+          name: 'rs-gaap — Income Statement — Multi-Step',
+          taxonomyName: 'rs-gaap',
+        } as any)}
+      />
+    )
+    expect(
+      screen.getByText('Income Statement — Multi-Step')
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/rs-gaap/)).not.toBeInTheDocument()
+  })
+
+  it('opens a long series on the trailing twelve, and re-defaults per block', () => {
+    const series = (count: number) =>
+      makeEnvelope({
+        view: {
+          rendering: makeRendering({
+            periods: Array.from({ length: count }, (_, i) => ({
+              start: null,
+              end: '2026-01-31',
+              label: `M${i + 1}`,
+            })),
+            rows: [
+              {
+                elementId: 'e_rev',
+                elementQname: 'us-gaap:Revenues',
+                elementName: 'Revenue',
+                depth: 0,
+                isSubtotal: false,
+                values: Array.from({ length: count }, (_, i) => i),
+              },
+            ],
+          }),
+        },
+      } as any)
+
+    const { rerender } = render(
+      <StatementRenderingProjection envelope={series(15)} />
+    )
+    expect(screen.queryByText('M3')).not.toBeInTheDocument()
+    expect(screen.getByText('M4')).toBeInTheDocument()
+    expect(screen.getByText('M15')).toBeInTheDocument()
+
+    // The same mounted projection, handed a short block: the default follows
+    // the block rather than staying frozen at the first one's.
+    rerender(<StatementRenderingProjection envelope={series(6)} />)
+    expect(screen.getByText('M1')).toBeInTheDocument()
+
+    // Once the reader picks, the pick sticks across blocks.
+    fireEvent.click(screen.getByText('3M'))
+    rerender(<StatementRenderingProjection envelope={series(15)} />)
+    expect(screen.queryByText('M12')).not.toBeInTheDocument()
+    expect(screen.getByText('M13')).toBeInTheDocument()
+  })
 })

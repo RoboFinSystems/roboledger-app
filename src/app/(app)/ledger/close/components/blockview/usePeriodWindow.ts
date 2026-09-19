@@ -26,12 +26,27 @@ export function windowStartIndex(total: number, window: PeriodWindow): number {
   return Math.max(0, total - Number(window))
 }
 
+/**
+ * The default for a TABLE over `total` periods. A series read runs oldest →
+ * newest, so "All" opens a 25-month grid on its first month with the current
+ * one a long scroll to the right — the opposite of what a reader came for.
+ * Past a year, open on the trailing twelve. (A chart shows its whole span at
+ * a glance, so it keeps "All".)
+ */
+export const defaultTableWindow = (total: number): PeriodWindow =>
+  total > 12 ? '12' : 'all'
+
+/**
+ * `defaultWindow` stays live until the user picks: the same mounted
+ * projection is handed a 3-month block and then a 25-month one, and a
+ * default frozen at first mount would be wrong for the second.
+ */
 export function usePeriodWindow(defaultWindow: PeriodWindow = 'all'): {
   window: PeriodWindow
   setWindow: (w: PeriodWindow) => void
 } {
-  const [window, setWindow] = useState<PeriodWindow>(defaultWindow)
-  return { window, setWindow }
+  const [picked, setPicked] = useState<PeriodWindow | null>(null)
+  return { window: picked ?? defaultWindow, setWindow: setPicked }
 }
 
 /**

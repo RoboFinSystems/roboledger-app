@@ -1,5 +1,6 @@
 'use client'
 
+import { withoutTaxonomy } from '@/lib/ledger/blockName'
 import type { InformationBlockList } from '@robosystems/client/clients'
 import { LoadingState } from '@robosystems/core'
 import { TextInput } from 'flowbite-react'
@@ -59,27 +60,6 @@ const byStatementOrder = (a: BlockListItem, b: BlockListItem) =>
 const fullName = (block: BlockListItem): string =>
   block.name || block.displayName || ''
 
-// A taxonomy id as a name's lead segment: "rs-gaap", "us-gaap", "ifrs-full".
-const TAXONOMY_ID = /^[a-z][a-z0-9]*(-[a-z0-9]+)+$/
-
-/**
- * A library-seeded structure is named for its taxonomy first — "rs-gaap —
- * Balance Sheet — Classified" — and in a 16rem rail that prefix is all that
- * survives truncation: four rows reading "rs-gaap — …". Drop it, so the row
- * says which statement it is.
- */
-const withoutTaxonomy = (block: BlockListItem): string => {
-  const name = fullName(block)
-  const cut = name.indexOf(' — ')
-  if (cut < 0) return name
-  const lead = name.slice(0, cut)
-  const isTaxonomy =
-    lead === block.taxonomyName ||
-    lead === block.taxonomyId ||
-    TAXONOMY_ID.test(lead)
-  return isTaxonomy ? name.slice(cut + 3) : name
-}
-
 /**
  * Row labels by block id. The short form, unless two blocks would then read
  * the same (one statement in two taxonomies) — those keep the prefix that
@@ -90,12 +70,12 @@ export function blockLabels(
 ): Map<string, string> {
   const uses = new Map<string, number>()
   for (const block of blocks) {
-    const short = withoutTaxonomy(block)
+    const short = withoutTaxonomy(fullName(block), block)
     uses.set(short, (uses.get(short) ?? 0) + 1)
   }
   return new Map(
     blocks.map((block) => {
-      const short = withoutTaxonomy(block)
+      const short = withoutTaxonomy(fullName(block), block)
       return [block.id, uses.get(short) === 1 ? short : fullName(block)]
     })
   )

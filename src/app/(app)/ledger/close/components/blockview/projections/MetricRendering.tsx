@@ -1,27 +1,34 @@
 'use client'
 
 import { formatMetricValue } from '@robosystems/report-components'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
-  TextInput,
-  ToggleSwitch,
-} from 'flowbite-react'
+import { TextInput, ToggleSwitch } from 'flowbite-react'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { HiSearch } from 'react-icons/hi'
 import { formatDate } from '../../../utils'
 import PeriodWindowControl from '../PeriodWindowControl'
+import {
+  columnLabel,
+  columnTitle,
+  GRID_HEAD_CELL,
+  GRID_HEAD_ROW,
+  GRID_LABEL_CELL,
+  GRID_LABEL_HEAD,
+  GRID_LABEL_TEXT,
+  GRID_ROW,
+  GRID_SCROLLER,
+  GRID_TABLE,
+  GRID_VALUE_CELL,
+  rowBackground,
+  seamClasses,
+} from '../seriesGrid'
 import type {
   EnvelopeBlock,
   EnvelopeRenderingPeriod,
   EnvelopeRenderingRow,
 } from '../types'
 import {
+  defaultTableWindow,
   sliceRendering,
   usePeriodWindow,
   windowStartIndex,
@@ -54,9 +61,10 @@ const MetricRenderingProjection: FC<MetricRenderingProjectionProps> = ({
 }) => {
   const [filter, setFilter] = useState('')
   const [showVariance, setShowVariance] = useState(false)
-  const { window, setWindow } = usePeriodWindow('all')
-
   const rendering = envelope.view.rendering
+  const { window, setWindow } = usePeriodWindow(
+    defaultTableWindow(rendering?.periods.length ?? 0)
+  )
 
   if (rendering === null || rendering.rows.length === 0) {
     return (
@@ -111,9 +119,12 @@ const MetricRenderingProjection: FC<MetricRenderingProjectionProps> = ({
   const formatCell = (row: EnvelopeRenderingRow, value: number): string =>
     formatMetricValue(row.itemType, value)
 
+  const columnClasses = seamClasses(periods)
+
   return (
-    <div className="overflow-x-auto">
-      {/* Header — entity + block + period span */}
+    <div>
+      {/* Header — entity + block + period span. It and the toolbar sit
+          OUTSIDE the scroller; inside it they scrolled off with the columns. */}
       <div className="border-b border-gray-200 py-4 text-center dark:border-gray-700">
         {entityName && (
           <p className="text-sm font-bold tracking-widest text-gray-900 uppercase dark:text-white">
@@ -155,75 +166,96 @@ const MetricRenderingProjection: FC<MetricRenderingProjectionProps> = ({
         </div>
       </div>
 
-      <Table>
-        <TableHead>
-          <TableHeadCell className="w-1/3" />
-          {periods.map((period: EnvelopeRenderingPeriod, i: number) => (
-            <TableHeadCell key={i} className="text-right">
-              {period.label || formatDate(period.end)}
-            </TableHeadCell>
-          ))}
-          {showVariance && canShowVariance && (
-            <>
-              <TableHeadCell className="text-right">Δ</TableHeadCell>
-              <TableHeadCell className="text-right">Δ%</TableHeadCell>
-            </>
-          )}
-        </TableHead>
-        <TableBody>
-          {visibleRows.map((row: EnvelopeRenderingRow, idx: number) => {
-            const indent = row.depth * 16
-            const last = row.values[lastIdx] ?? null
-            const prev = row.values[prevIdx] ?? null
-            const delta = last !== null && prev !== null ? last - prev : null
-            const deltaPct =
-              delta !== null && prev !== null && prev !== 0
-                ? (delta / Math.abs(prev)) * 100
-                : null
-
-            return (
-              <TableRow key={`${row.elementId}-${idx}`}>
-                <TableCell
-                  style={{ paddingLeft: `${indent + 16}px` }}
-                  className={
-                    row.isSubtotal
-                      ? 'font-semibold text-gray-900 dark:text-white'
-                      : 'text-gray-700 dark:text-gray-300'
-                  }
+      <div className={GRID_SCROLLER}>
+        <table className={GRID_TABLE} data-testid="metric-grid">
+          <thead>
+            <tr className={GRID_HEAD_ROW}>
+              <th className={GRID_LABEL_HEAD}>
+                <span className="sr-only">Metric</span>
+              </th>
+              {periods.map((period: EnvelopeRenderingPeriod, i: number) => (
+                <th
+                  key={i}
+                  className={`${GRID_HEAD_CELL} ${columnClasses(i)}`}
+                  title={columnTitle(period, true)}
                 >
-                  {row.elementName}
-                </TableCell>
-                {row.values.map((value, i) => (
-                  <TableCell
-                    key={i}
-                    className="text-right font-mono text-gray-700 dark:text-gray-300"
+                  {columnLabel(period, true)}
+                  {period.forecast && (
+                    <span className="text-primary-500 dark:text-primary-400 ml-1 align-super text-[9px] font-normal uppercase">
+                      f
+                    </span>
+                  )}
+                </th>
+              ))}
+              {showVariance && canShowVariance && (
+                <>
+                  <th className={GRID_HEAD_CELL}>Δ</th>
+                  <th className={GRID_HEAD_CELL}>Δ%</th>
+                </>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {visibleRows.map((row: EnvelopeRenderingRow, idx: number) => {
+              const indent = row.depth * 16
+              const last = row.values[lastIdx] ?? null
+              const prev = row.values[prevIdx] ?? null
+              const delta = last !== null && prev !== null ? last - prev : null
+              const deltaPct =
+                delta !== null && prev !== null && prev !== 0
+                  ? (delta / Math.abs(prev)) * 100
+                  : null
+              const bg = rowBackground(false)
+
+              return (
+                <tr
+                  key={`${row.elementId}-${idx}`}
+                  className={`${GRID_ROW} ${bg.row}`}
+                >
+                  <td
+                    style={{ paddingLeft: `${indent + 16}px` }}
+                    className={`${GRID_LABEL_CELL} ${bg.label} ${
+                      row.isSubtotal
+                        ? 'font-semibold text-gray-900 dark:text-white'
+                        : 'text-gray-700 dark:text-gray-300'
+                    }`}
                   >
-                    {value !== null ? formatCell(row, value) : '—'}
-                  </TableCell>
-                ))}
-                {showVariance && canShowVariance && (
-                  <>
-                    <TableCell className="text-right font-mono text-gray-700 dark:text-gray-300">
-                      {delta !== null ? formatCell(row, delta) : '—'}
-                    </TableCell>
-                    <TableCell
-                      className={`text-right font-mono ${
-                        deltaPct === null
-                          ? 'text-gray-400 dark:text-gray-500'
-                          : deltaPct < 0
-                            ? 'text-red-500'
-                            : 'text-green-600 dark:text-green-400'
-                      }`}
+                    <div className={GRID_LABEL_TEXT}>{row.elementName}</div>
+                  </td>
+                  {row.values.map((value, i) => (
+                    <td
+                      key={i}
+                      className={`${GRID_VALUE_CELL} text-gray-700 dark:text-gray-300 ${columnClasses(i)}`}
                     >
-                      {deltaPct !== null ? formatDeltaPct(deltaPct) : '—'}
-                    </TableCell>
-                  </>
-                )}
-              </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
+                      {value !== null ? formatCell(row, value) : '—'}
+                    </td>
+                  ))}
+                  {showVariance && canShowVariance && (
+                    <>
+                      <td
+                        className={`${GRID_VALUE_CELL} text-gray-700 dark:text-gray-300`}
+                      >
+                        {delta !== null ? formatCell(row, delta) : '—'}
+                      </td>
+                      <td
+                        className={`${GRID_VALUE_CELL} ${
+                          deltaPct === null
+                            ? 'text-gray-400 dark:text-gray-500'
+                            : deltaPct < 0
+                              ? 'text-red-500'
+                              : 'text-green-600 dark:text-green-400'
+                        }`}
+                      >
+                        {deltaPct !== null ? formatDeltaPct(deltaPct) : '—'}
+                      </td>
+                    </>
+                  )}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

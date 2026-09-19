@@ -3,10 +3,26 @@
 import FoldControls from '@/components/FoldControls'
 import FoldLabel from '@/components/FoldLabel'
 import ValidationBanner from '@/components/ValidationBanner'
+import { withoutTaxonomy } from '@/lib/ledger/blockName'
 import { useRowFold } from '@/lib/ledger/rowFold'
 import type { FC } from 'react'
-import { formatCurrency, formatDate, formatMonth } from '../../../utils'
+import { formatCurrency, formatDate } from '../../../utils'
 import PeriodWindowControl from '../PeriodWindowControl'
+import {
+  columnLabel,
+  columnTitle,
+  GRID_HEAD_CELL,
+  GRID_HEAD_ROW,
+  GRID_LABEL_CELL,
+  GRID_LABEL_HEAD,
+  GRID_LABEL_TEXT,
+  GRID_ROW,
+  GRID_SCROLLER,
+  GRID_TABLE,
+  GRID_VALUE_CELL,
+  rowBackground,
+  seamClasses,
+} from '../seriesGrid'
 import type {
   EnvelopeBlock,
   EnvelopeRendering,
@@ -14,6 +30,7 @@ import type {
   EnvelopeRenderingRow,
 } from '../types'
 import {
+  defaultTableWindow,
   sliceRendering,
   usePeriodWindow,
   windowStartIndex,
@@ -79,48 +96,6 @@ const StatementRenderingProjection: FC<StatementRenderingProjectionProps> = ({
   )
 }
 
-// ── Column headers ───────────────────────────────────────────────────
-
-const isMonthEnd = (iso: string): boolean => {
-  const next = new Date(`${iso}T00:00:00Z`)
-  next.setUTCDate(next.getUTCDate() + 1)
-  return next.getUTCDate() === 1
-}
-
-/** One calendar month — as a window (1st → last) or as its closing instant. */
-const isCalendarMonth = (period: EnvelopeRenderingPeriod): boolean =>
-  !!period.start &&
-  !!period.end &&
-  period.start.slice(0, 7) === period.end.slice(0, 7) &&
-  (period.start === period.end || period.start.endsWith('-01')) &&
-  isMonthEnd(period.end)
-
-const periodRange = (
-  period: EnvelopeRenderingPeriod,
-  instant: boolean
-): string =>
-  instant || period.start === period.end
-    ? `As of ${formatDate(period.end)}`
-    : `${formatDate(period.start)} — ${formatDate(period.end)}`
-
-/**
- * Actuals arrive with an empty label (only a scenario's forward months are
- * labelled server-side), and a monthly series spelling out "Jul 1, 2024 —
- * Jul 31, 2024" twenty-five times is most of the table's width. A calendar
- * month says "Jul 2024"; the full window stays on the header's tooltip.
- * " (forecast)" is dropped from server labels — the `f` marker and the seam
- * tint already say it, as on the Plan grid.
- */
-const columnLabel = (
-  period: EnvelopeRenderingPeriod,
-  instant: boolean
-): string => {
-  if (period.label) return period.label.replace(' (forecast)', '')
-  return isCalendarMonth(period)
-    ? formatMonth(period.end)
-    : periodRange(period, instant)
-}
-
 // ── Statement grid ───────────────────────────────────────────────────
 
 interface StatementGridProps {
@@ -137,13 +112,15 @@ const StatementGrid: FC<StatementGridProps> = ({
   rendering,
   entityName,
 }) => {
-  const { window, setWindow } = usePeriodWindow('all')
+  const totalPeriods = rendering.periods.length
+  const { window, setWindow } = usePeriodWindow(
+    defaultTableWindow(totalPeriods)
+  )
 
   // Series reads make statements wide (one column per close-stamped
   // month, plus a scenario's forward months) — the same trailing-window
   // control the metric table uses keeps the recent columns (and the
   // actuals/forecast seam) in view instead of appended off-screen.
-  const totalPeriods = rendering.periods.length
   const windowed = sliceRendering(
     rendering,
     windowStartIndex(totalPeriods, window)
@@ -158,21 +135,7 @@ const StatementGrid: FC<StatementGridProps> = ({
 
   const instant = envelope.blockType === 'balance_sheet'
 
-  // Seam styling keyed off the machine-readable flag (never the label):
-  // tinted forecast columns + a border on the first one. Absent on
-  // actuals-only reads, so single-set statements render exactly as
-  // before.
-  const firstForecast = periods.findIndex((p) => p.forecast)
-  const columnClasses = (index: number): string => {
-    const tint = periods[index].forecast
-      ? 'bg-primary-50/60 dark:bg-primary-900/25'
-      : ''
-    const seam =
-      index === firstForecast && firstForecast > 0
-        ? 'border-l-2 border-primary-300 dark:border-primary-500/60'
-        : ''
-    return `${tint} ${seam}`.trim()
-  }
+  const columnClasses = seamClasses(periods)
 
   return (
     <div>
@@ -185,7 +148,7 @@ const StatementGrid: FC<StatementGridProps> = ({
           </p>
         )}
         <p className="mt-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
-          {envelope.name}
+          {withoutTaxonomy(envelope.name, envelope)}
         </p>
         {periods.length > 0 && periods[0].start && (
           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
@@ -207,23 +170,18 @@ const StatementGrid: FC<StatementGridProps> = ({
         </div>
       )}
 
-      {/* A raw table, as on the Plan grid: flowbite's Table paints its body
-          on a `w-full` layer that is only as wide as the viewport, so a wide
-          series scrolled onto bare background past the first screen. Every
-          row carries its own background, and the label column is sticky with
-          an OPAQUE one so scrolled values pass underneath it. */}
-      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-        <table className="w-full text-sm" data-testid="statement-grid">
+      <div className={GRID_SCROLLER}>
+        <table className={GRID_TABLE} data-testid="statement-grid">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
-              <th className="sticky left-0 z-10 bg-gray-50 px-4 py-2 text-left dark:bg-gray-800">
+            <tr className={GRID_HEAD_ROW}>
+              <th className={GRID_LABEL_HEAD}>
                 <span className="sr-only">Line item</span>
               </th>
               {periods.map((period: EnvelopeRenderingPeriod, i: number) => (
                 <th
                   key={i}
-                  className={`px-4 py-2 text-right font-semibold whitespace-nowrap text-gray-600 dark:text-gray-300 ${columnClasses(i)}`}
-                  title={`${period.forecast ? 'Forecast' : 'Actual'} · ${periodRange(period, instant)}`}
+                  className={`${GRID_HEAD_CELL} ${columnClasses(i)}`}
+                  title={columnTitle(period, instant)}
                 >
                   {columnLabel(period, instant)}
                   {period.forecast && (
@@ -244,23 +202,16 @@ const StatementGrid: FC<StatementGridProps> = ({
               const allZero = row.values.every((v) => (v ?? 0) === 0)
               const canFold = fold.isFoldable(index)
 
-              // The sticky label cell repeats the row's background (opaque,
-              // and via `group-hover` so it tracks the row's hover).
-              const rowBg = isBold
-                ? 'bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700'
-                : 'bg-white hover:bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800'
-              const labelBg = isBold
-                ? 'bg-gray-50 group-hover:bg-gray-100 dark:bg-gray-800 dark:group-hover:bg-gray-700'
-                : 'bg-white group-hover:bg-gray-50 dark:bg-gray-900 dark:group-hover:bg-gray-800'
+              const bg = rowBackground(isBold)
 
               return (
                 <tr
                   key={`${row.elementId}-${index}`}
-                  className={`group border-b border-gray-100 dark:border-gray-700/50 ${rowBg}`}
+                  className={`${GRID_ROW} ${bg.row}`}
                 >
                   <td
                     style={{ paddingLeft: `${indent + 16}px` }}
-                    className={`sticky left-0 z-10 py-2 pr-4 ${labelBg} ${
+                    className={`${GRID_LABEL_CELL} ${bg.label} ${
                       isBold
                         ? 'font-semibold text-gray-900 dark:text-white'
                         : 'text-gray-700 dark:text-gray-300'
@@ -270,11 +221,7 @@ const StatementGrid: FC<StatementGridProps> = ({
                     title={row.elementQname || undefined}
                     onClick={canFold ? () => fold.toggle(index) : undefined}
                   >
-                    {/* Sized to its content up to a cap: an overflowing table
-                        squeezes wrappable text to its narrowest, which broke
-                        ordinary line items across three and four lines. This
-                        keeps them on one; only a monster wraps, at the cap. */}
-                    <div className="w-max max-w-sm">
+                    <div className={GRID_LABEL_TEXT}>
                       <FoldLabel
                         label={row.elementName}
                         canFold={canFold}
@@ -286,7 +233,7 @@ const StatementGrid: FC<StatementGridProps> = ({
                   {row.values.map((value, i) => (
                     <td
                       key={i}
-                      className={`px-4 py-2 text-right font-mono whitespace-nowrap ${
+                      className={`${GRID_VALUE_CELL} ${
                         isBold
                           ? 'font-semibold text-gray-900 dark:text-white'
                           : 'text-gray-700 dark:text-gray-300'
