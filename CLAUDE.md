@@ -57,9 +57,9 @@ npm run format:check # Check code formatting
 | `/entity` `/entities`                     | getEntity, listEntities                                             | shipped                                                                                     |
 | `/connections`                            | listConnections, syncConnection                                     | shipped                                                                                     |
 | `/connections/qb-callback`                | oauthCallback                                                       | shipped                                                                                     |
-| `/connections/sec/setup`                  | createConnection                                                    | shipped                                                                                     |
+| `/connections/mercury-callback`           | oauthCallback                                                       | shipped 2026-09-12 (provider gated on the API; off in prod pending Mercury's review)        |
 | `/ledger/chart-of-accounts`               | getAccountTree, autoMapElements, mapping ops                        | shipped (framework mapping config + AI suggestions + auto-map operator)                     |
-| `/ledger/transactions`                    | listTransactions, getTransaction, createJournalEntry (modal)        | shipped (NewJournalEntryModal 2026-05-14)                                                   |
+| `/ledger/journal`                         | listJournalEntries, listTransactions, createJournalEntry (modal)    | shipped 2026-09-05 (Entries + Source Transactions tabs; `/ledger/transactions` redirects)   |
 | `/ledger/trial-balance`                   | getTrialBalance, getMappedTrialBalance                              | shipped                                                                                     |
 | `/ledger/close`                           | getPeriodCloseStatus, closePeriod, reopenPeriod, listPeriodDrafts   | shipped (also renders schedule/statement/rules blocks via BlockView)                        |
 | `/ledger/statements`                      | live-financial-statement                                            | shipped (live render from OLTP ledger, no close required)                                   |
@@ -97,7 +97,7 @@ Route-level forwards (`/settings`, `/graphs/new`) follow one shape: ref-guarded 
 
 Note the shape it defends against: the SDK facade throws `Error("<label> failed: " + JSON.stringify(error))`, so `err.message` carries a raw `{"detail":"…"}` blob. `extractDetail` unwraps it (including 422 validation lists) before matching. Never surface raw FastAPI detail — or that envelope — to users. Write surfaces predating this still pass raw `err.message` through; convert them as they're touched.
 
-**Refresh patterns.** Mutations that change list state use a `refreshKey` bump on the list component (e.g., transactions list after JE submit) rather than full-page reload. SSE operation streams (materialize, long-running ops) use `useOperationMonitoring` from the shared core library.
+**Refresh patterns.** Mutations that change list state use a `refreshKey` bump on the list component (e.g., the journal's entries list after JE submit) rather than full-page reload. SSE operation streams (materialize, long-running ops) use `useOperationMonitoring` from the shared core library.
 
 **Form validation.** Multi-line balanced-entry forms (NewJournalEntryModal) tally running TOTAL DEBIT / TOTAL CREDIT / BALANCE and disable submit unless `BALANCE === 0`. Server-side errors (unbalanced lines, closed period, missing element) surface in a failure Alert without dismissing the form.
 
@@ -106,6 +106,10 @@ Note the shape it defends against: the SDK facade throws `Error("<label> failed:
 **`page.tsx` vs `content.tsx`.** Each route splits into a thin `page.tsx` entry that delegates to a client `content.tsx`. In practice most `page.tsx` files are themselves `'use client'` wrappers doing `useUser()` auth gating (only `search` and `graphs/new` are true server components exporting `metadata`) — so the split is about keeping route entry separate from route logic, not a server/client boundary. Keep the split — don't inline client logic into `page.tsx`.
 
 **BlockView projections.** Statement / schedule / rules views render through `src/app/(app)/ledger/close/components/blockview/` with one file per projection under `projections/` (FactTable, StatementRendering, ScheduleRendering, BusinessRules, ReportElements, VerificationResults). New view modes land as a new projection file + a ViewModeToggle entry, not as a parallel component tree.
+
+**List pages: filter bar, segmented control, sort.** Don't hand-roll the filter row above a table — eight copies had drifted apart before they were unified. Use `src/components/FilterBar` (`FilterBar`, `SearchField`, `FilterSelect`, `FilterDate`, `FilterField`, `FilterActions`); controls are `sizing="sm"`. Never pad a search input with `className="pl-10"` and a positioned icon: flowbite puts `className` on the wrapper div, not the `<input>`, which strands the icon outside the field — `TextInput`'s `icon` prop is the working path. "Pick one of N" is `src/components/SegmentedControl`, not a Buttons row, pills, or a `ToggleSwitch` labelled on both sides. Click-to-sort is `useTableSort` + `SortableHeadCell`, and **only where the whole list is in the browser** — Journal, Inbox and Agents fetch a capped window, so sorting there would rank only what happened to load.
+
+**Tables.** flowbite-react 0.12's `TableHead` renders a bare `<thead>`: wrap header cells in a plain `<tr>` (not `TableRow`, which would take a `hoverable` table's hover tint). A table that can outgrow the page — a monthly series — is a raw table on `blockview/seriesGrid`'s shell (sticky opaque label column, per-row backgrounds, title and toolbar OUTSIDE the scroller), because flowbite's `Table` paints its body on a viewport-wide layer that a wide table scrolls past. Foldable statement sections come from `src/lib/ledger/rowFold` with `FoldControls` / `FoldLabel`; rows arrive post-order from the server (children, then their subtotal), which is what the fold rule relies on.
 
 **No SWR / React Query.** Data fetching is `useEffect` + `LedgerClient` SDK methods, with `refreshKey` bumps to invalidate. There's no global cache layer and we're not adopting one — don't reach for SWR/TanStack Query when adding a new fetch. If cross-component cache coordination starts hurting, raise it before refactoring.
 
@@ -144,7 +148,8 @@ a long time after the route was deleted; don't reintroduce a second list.)
 **Data Integrations:**
 
 - QuickBooks: OAuth 2.0 driven through the `@robosystems/core` SDK (`SDK.initOAuth` / `SDK.oauthCallback`) for accounting data sync
-- SEC XBRL: CIK-based filing connections with US-GAAP taxonomy data
+- SEC XBRL: no per-graph connection — the SEC connection provider and its UI were removed (2026-08-22). Filings arrive nightly in the shared SEC repository; don't reintroduce `/connections/sec/setup` from old specs.
+- Mercury: bank feed over OAuth (`/connections/mercury-callback`), with a _Post to account_ picker on bank lines in the Inbox. The provider is gated on the API (`CONNECTION_MERCURY_ENABLED`) and off in production until Mercury's compliance review clears.
 - Plaid: **not built / not specced** — the `/plaid-connect` scaffold route and `react-plaid-link` dep were removed pre-1.0.0; only the landing page's "Coming soon" card remains. Likely medium-term. It's a distinct product surface (direct bank feeds), not just another connection on top of the QuickBooks layer, so it isn't advertised in the README and isn't a shipped integration. Don't reintroduce the route from old specs — when Plaid actually lands, it also needs Plaid domains added to the CSP in `src/proxy.ts`.
 
 ## Key Development Patterns
