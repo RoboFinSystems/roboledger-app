@@ -105,7 +105,7 @@ const StructureSidebar: FC<StructureSidebarProps> = ({
 
   if (collapsed) {
     return (
-      <div className="flex shrink-0 flex-col items-center rounded-lg border border-gray-200 bg-white py-2 dark:border-gray-700 dark:bg-gray-800">
+      <div className="flex w-full flex-col items-center rounded-lg border border-gray-200 bg-white py-2 lg:w-auto lg:shrink-0 dark:border-gray-700 dark:bg-gray-800">
         <Button
           size="xs"
           color="light"
@@ -119,7 +119,7 @@ const StructureSidebar: FC<StructureSidebarProps> = ({
   }
 
   return (
-    <div className="w-64 shrink-0 rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <div className="w-full rounded-lg border border-gray-200 bg-white lg:w-64 lg:shrink-0 dark:border-gray-700 dark:bg-gray-800">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
         <span className="text-xs font-semibold tracking-wide text-gray-400 uppercase">
@@ -129,7 +129,7 @@ const StructureSidebar: FC<StructureSidebarProps> = ({
           size="xs"
           color="light"
           onClick={() => setCollapsed(true)}
-          className="border-0 bg-transparent p-1"
+          className="hidden border-0 bg-transparent p-1 lg:flex"
         >
           <HiChevronLeft className="h-4 w-4" />
         </Button>

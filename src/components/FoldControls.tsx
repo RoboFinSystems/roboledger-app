@@ -16,7 +16,7 @@ const BUTTON =
  */
 const FoldControls: FC<FoldControlsProps> = ({ fold }) => (
   <div
-    className="inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+    className="inline-flex max-w-full overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700"
     role="group"
     aria-label="Sections"
   >

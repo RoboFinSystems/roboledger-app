@@ -131,7 +131,7 @@ const BlockPicker: FC<BlockPickerProps> = ({
   }, [blocks, search])
 
   return (
-    <div className="w-64 shrink-0 rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <div className="w-full rounded-lg border border-gray-200 bg-white lg:w-64 lg:shrink-0 dark:border-gray-700 dark:bg-gray-800">
       {/* Header */}
       <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
         <span className="text-xs font-semibold tracking-wide text-gray-400 uppercase">

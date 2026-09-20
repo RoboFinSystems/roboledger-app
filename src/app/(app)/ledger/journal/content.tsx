@@ -322,7 +322,9 @@ const JournalContent: FC = function () {
       {/* Date range is page-level — it scopes both tabs, so it sits above
           them rather than inside either view's own filters. */}
       <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
-        <div className="flex items-end gap-3">
+        {/* Each FilterDate is `w-full sm:w-auto`, so without wrapping two of
+            them ask for twice the row's width on a narrow phone. */}
+        <div className="flex flex-wrap items-end gap-3">
           <FilterDate
             id="startDate"
             label="Start date"
