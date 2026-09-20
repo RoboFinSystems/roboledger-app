@@ -30,7 +30,7 @@ export default function Header() {
   // here costs no request. Optional so the header still renders with no provider around it.
   const auth = useOptionalAuth()
   // False on the server and through hydration. The server HTML is what crawlers and
-  // signed-out visitors get, and it always carries Login and Get Started; a signed-in
+  // signed-out visitors get, and it always carries Login and Register; a signed-in
   // visitor sees them swap for Open app once the page is live.
   const hydrated = useSyncExternalStore(
     subscribeNever,
@@ -89,7 +89,7 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           {/* lg, not md: the full nav needs ~940px, so switching at md (768px)
-              left Login and Get Started clipped off the fixed header between
+              left Login and Register clipped off the fixed header between
               768 and 940px with the hamburger already hidden */}
           <nav className="hidden items-center space-x-5 lg:flex lg:space-x-6">
             {NAV_LINKS.map((link) => (
@@ -131,7 +131,7 @@ export default function Header() {
                   href={REGISTER_PATH}
                   className="from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 rounded-lg bg-linear-to-r px-4 py-2 text-sm font-medium text-white shadow-lg transition-all"
                 >
-                  Get Started
+                  Register
                 </Link>
               </>
             )}
@@ -228,7 +228,7 @@ export default function Header() {
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="from-primary-500 to-secondary-500 shadow-primary-500/25 mx-4 mt-2 block rounded-lg bg-linear-to-r px-4 py-2 text-center text-sm font-medium text-white shadow-lg"
                     >
-                      Get Started
+                      Register
                     </Link>
                   </>
                 )}
