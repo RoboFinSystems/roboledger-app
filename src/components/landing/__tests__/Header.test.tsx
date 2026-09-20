@@ -31,27 +31,27 @@ describe('Header', () => {
     vi.clearAllMocks()
   })
 
-  it('offers Login and Get Started to a signed-out visitor, desktop and mobile', () => {
+  it('offers Login and Register to a signed-out visitor, desktop and mobile', () => {
     mockUseOptionalAuth.mockReturnValue(signedOut)
     render(<Header />)
     openMobileMenu()
 
     expect(hrefsOf('Login')).toEqual(['/login', '/login'])
-    expect(hrefsOf('Get Started')).toEqual(['/register', '/register'])
+    expect(hrefsOf('Register')).toEqual(['/register', '/register'])
     expect(hrefsOf('Open app')).toEqual([])
   })
 
-  it('offers Open app instead of Login and Get Started to a signed-in visitor', () => {
+  it('offers Open app instead of Login and Register to a signed-in visitor', () => {
     mockUseOptionalAuth.mockReturnValue(signedIn)
     render(<Header />)
     openMobileMenu()
 
     expect(hrefsOf('Open app')).toEqual(['/home', '/home'])
     expect(hrefsOf('Login')).toEqual([])
-    expect(hrefsOf('Get Started')).toEqual([])
+    expect(hrefsOf('Register')).toEqual([])
   })
 
-  it('keeps Login and Get Started while the session is still being checked', () => {
+  it('keeps Login and Register while the session is still being checked', () => {
     mockUseOptionalAuth.mockReturnValue({
       isAuthenticated: false,
       isLoading: true,
@@ -62,15 +62,15 @@ describe('Header', () => {
     expect(hrefsOf('Open app')).toEqual([])
   })
 
-  it('renders Login and Get Started with no auth provider around it', () => {
+  it('renders Login and Register with no auth provider around it', () => {
     mockUseOptionalAuth.mockReturnValue(null)
     render(<Header />)
 
-    expect(hrefsOf('Get Started')).toEqual(['/register'])
+    expect(hrefsOf('Register')).toEqual(['/register'])
     expect(hrefsOf('Open app')).toEqual([])
   })
 
-  it('sends Login and Get Started in the server HTML even for a signed-in session', () => {
+  it('sends Login and Register in the server HTML even for a signed-in session', () => {
     mockUseOptionalAuth.mockReturnValue(signedIn)
     const html = renderToString(<Header />)
 

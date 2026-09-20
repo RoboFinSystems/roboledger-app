@@ -22,6 +22,10 @@ const points = [
     body: 'Each company keeps its own books on RoboLedger, run by its own accountant, and its filed reports land in your graph as data, not PDFs. The investor side is early, and we say so.',
   },
   {
+    title: 'We close our own books on it',
+    body: 'Harbinger runs its own month-end close on RoboLedger, and so does RoboSystems. We train the workflow because we work in it every month.',
+  },
+  {
     title: 'Never the pen',
     body: 'Nobody from Harbinger posts, approves or closes a period on your books, or signs in to them. Sign-off is yours, by name.',
   },
