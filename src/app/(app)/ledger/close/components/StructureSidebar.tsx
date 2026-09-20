@@ -129,7 +129,7 @@ const StructureSidebar: FC<StructureSidebarProps> = ({
           size="xs"
           color="light"
           onClick={() => setCollapsed(true)}
-          className="border-0 bg-transparent p-1"
+          className="hidden border-0 bg-transparent p-1 lg:flex"
         >
           <HiChevronLeft className="h-4 w-4" />
         </Button>
