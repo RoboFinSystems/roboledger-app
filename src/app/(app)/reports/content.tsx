@@ -132,7 +132,7 @@ const ReportsContent: FC = function () {
           </>
         }
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link href="/reports/publish-lists">
               <Button color="light">
                 <HiShare className="mr-2 h-5 w-5" />

@@ -342,7 +342,7 @@ const BlockExplorerContent: FC = function () {
           ) : undefined
         }
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {scenarioApplicable && (
               <ScenarioSelect
                 scenarios={scenarios}
@@ -378,7 +378,7 @@ const BlockExplorerContent: FC = function () {
         </Card>
       )}
 
-      <div className="flex gap-6">
+      <div className="flex flex-col gap-6 lg:flex-row">
         <BlockPicker
           blocks={blocks}
           selectedId={selectedId}

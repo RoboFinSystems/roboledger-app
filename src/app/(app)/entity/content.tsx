@@ -509,7 +509,7 @@ const EntityInfoPageContent: FC = function () {
                   <dt className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">
                     Entity ID
                   </dt>
-                  <dd className="font-mono text-sm text-gray-900 dark:text-white">
+                  <dd className="font-mono text-sm break-all text-gray-900 dark:text-white">
                     {entity.id}
                   </dd>
                 </div>
@@ -518,7 +518,7 @@ const EntityInfoPageContent: FC = function () {
                     <dt className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">
                       URI
                     </dt>
-                    <dd className="font-mono text-sm text-gray-900 dark:text-white">
+                    <dd className="font-mono text-sm break-all text-gray-900 dark:text-white">
                       {entity.uri}
                     </dd>
                   </div>
@@ -596,7 +596,9 @@ function EditableField({
       <dt className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">
         {label}
       </dt>
-      <dd className="text-base text-gray-900 dark:text-white">
+      {/* Values here include URLs and `entity_…` identifiers, which are single
+          unbreakable tokens wider than a phone's column. */}
+      <dd className="text-base break-words text-gray-900 dark:text-white">
         {value || <span className="text-gray-400 dark:text-gray-500">--</span>}
       </dd>
     </div>

@@ -212,7 +212,7 @@ const CloseContent: FC = function () {
         </Card>
       )}
 
-      <div className="flex gap-6">
+      <div className="flex flex-col gap-6 lg:flex-row">
         {/* Structure Sidebar */}
         <StructureSidebar
           categories={categories}
