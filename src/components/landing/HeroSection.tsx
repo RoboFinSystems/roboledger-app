@@ -108,10 +108,6 @@ export default function HeroSection() {
               </svg>
               <span>Open source</span>
             </a>
-            <div className="flex items-center gap-2">
-              <span className="bg-primary-400 h-1.5 w-1.5 rounded-full"></span>
-              <span>We close our own books with it</span>
-            </div>
           </div>
 
           {/* Product preview */}
