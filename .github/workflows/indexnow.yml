@@ -1,0 +1,41 @@
+name: IndexNow
+
+# Announces new URLs to Bing (so Copilot and DuckDuckGo), Yandex, Seznam, Naver and Yep.
+# Google ignores IndexNow.
+#
+# Scheduled rather than hooked to a deploy: the posts come from the content machine to
+# S3, on a catalog shared with robosystems.ai where a frontmatter field decides the lane,
+# and the docs from the robosystems repo. Neither deploys this app, and diffing the
+# sitemap catches both; a run with nothing new is a no-op.
+
+on:
+  schedule:
+    # Off the hour: scheduled jobs on the hour queue behind everyone else's.
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Diff and report without submitting'
+        type: boolean
+        default: false
+
+concurrency:
+  group: indexnow-roboledger-ai
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: write # the sitemap snapshot lives in the Actions cache
+    steps:
+      - name: Announce new URLs
+        uses: RoboFinSystems/robosystems/.github/actions/indexnow-ping@main
+        with:
+          host: roboledger.ai
+          # Public once served, so a variable, not a secret. Not committed — the
+          # Dockerfile writes the file, keeping it out of the public self-host image.
+          key: ${{ vars.INDEXNOW_KEY }}
+          dry_run: ${{ inputs.dry_run || false }}

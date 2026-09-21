@@ -99,6 +99,19 @@ RUN chmod +x /app/bin/entrypoint.sh
 # Create cache directory with proper ownership
 RUN mkdir -p /app/.next/cache/images && chown -R appuser:appgroup /app/.next/cache
 
+# IndexNow's key file, served at the host root to prove we control the host. Written
+# from a build arg rather than committed because this same Dockerfile builds the public
+# self-host image: build.yml passes the arg, dockerhub.yml does not. Last in the stage
+# so a rotation doesn't invalidate the cache below it.
+ARG INDEXNOW_KEY=""
+RUN if [ -n "$INDEXNOW_KEY" ]; then \
+  printf '%s' "$INDEXNOW_KEY" > "/app/public/${INDEXNOW_KEY}.txt" && \
+  chown appuser:appgroup "/app/public/${INDEXNOW_KEY}.txt" && \
+  echo "Wrote IndexNow key file for ${INDEXNOW_KEY}"; \
+  else \
+  echo "No INDEXNOW_KEY build arg — no key file (correct for the self-host image)"; \
+  fi
+
 USER appuser
 
 EXPOSE 3000

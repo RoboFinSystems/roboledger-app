@@ -282,6 +282,7 @@ jobs:
               --platform linux/amd64 \
               --push \
               --build-arg CACHE_DATE=$(date -u +%Y%m%d) \
+              --build-arg INDEXNOW_KEY=${{ vars.INDEXNOW_KEY }} \
               --cache-from type=gha,scope=ecr \
               --cache-to type=gha,scope=ecr,mode=max \
               $TAGS \
