@@ -157,9 +157,9 @@ const ReportViewerContent: FC = function () {
   }, [graphId])
 
   // Every flavor resolves to a presigned S3 URL via the GraphQL
-  // `reportDownloadUrl` read: the flat JSON-LD is stamped at publish; the
-  // holon (dataset-form JSON-LD), the Tavi compiled model and the XBRL 2.1
-  // package are materialized + cached server-side on first request.
+  // `reportDownloadUrl` read: the Tavi compiled model is stamped at publish;
+  // the holon (dataset-form JSON-LD) and the XBRL 2.1 package are
+  // materialized + cached server-side on first request.
   // window.location.href (not <a download>) because the URL is cross-origin —
   // the download attribute is ignored cross-origin, but the backend signs
   // Content-Disposition: attachment so the file still saves with a versioned
@@ -385,16 +385,13 @@ const ReportViewerContent: FC = function () {
                 {pkg.generationStatus === 'published' && (
                   <>
                     <DropdownHeader>Download</DropdownHeader>
-                    <DropdownItem onClick={() => handleDownload('JSONLD')}>
-                      JSON-LD bundle
+                    <DropdownItem onClick={() => handleDownload('TAVI')}>
+                      Tavi (JSON)
                     </DropdownItem>
                     <DropdownItem
                       onClick={() => handleDownload('HOLON_JSONLD')}
                     >
                       Holon (JSON-LD)
-                    </DropdownItem>
-                    <DropdownItem onClick={() => handleDownload('TAVI')}>
-                      Tavi (JSON)
                     </DropdownItem>
                     <DropdownItem onClick={() => handleDownload('XBRL_2_1')}>
                       XBRL 2.1 package
