@@ -2,53 +2,113 @@
 export const MAX_HOLON_BYTES = 25 * 1024 * 1024
 
 /**
- * The report artifacts the proxy will fetch, by the suffix of their bundle
- * key: the holon (dataset-form JSON-LD) and the Tavi compiled model (compact
- * JSON). Anything else under the same prefix — the flat JSON-LD, the XBRL zip
- * — is a download, not something the page renders.
+ * The report artifacts the proxy will fetch, keyed by the suffix of their
+ * bundle key, with the content type the proxy answers with. The type comes
+ * from this table, never from the upstream response. Anything else under the
+ * same prefix (the flat JSON-LD, the XBRL zip) is a download, not something
+ * the page renders.
  */
-export const RENDERABLE_SUFFIXES = ['.holon.jsonld', '.tavi.json'] as const
+export const RENDERABLE_ARTIFACTS = {
+  '.holon.jsonld': 'application/ld+json',
+  '.tavi.json': 'application/json',
+} as const
 
-/**
- * AWS-owned hostnames are always acceptable targets: AWS controls the whole
- * `amazonaws.com` namespace, so no name under it can be pointed at VPC-internal
- * services or the link-local instance-metadata endpoint.
- */
-function isAwsHost(hostname: string): boolean {
-  return hostname === 'amazonaws.com' || hostname.endsWith('.amazonaws.com')
+export type RenderableSuffix = keyof typeof RENDERABLE_ARTIFACTS
+
+export const RENDERABLE_SUFFIXES = Object.keys(
+  RENDERABLE_ARTIFACTS
+) as RenderableSuffix[]
+
+/** Every report bundle key starts with this prefix inside the bucket. */
+const BUNDLE_KEY_PREFIX = 'report-bundles/'
+
+/** A region label in an S3 endpoint host (`us-east-1`, `eu-west-2`, …). */
+const REGION = '[a-z0-9-]+'
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 /**
- * Additional hosts this deployment serves bundles from: the S3 endpoint
- * override used by LocalStack in local development. Presigned URLs in staging
- * and production are signed against real AWS endpoints, which `isAwsHost`
- * already covers.
- *
- * Read per call rather than at module load so a runtime env change (and tests)
- * take effect without a rebuild.
+ * The bucket that holds report bundles, from the server-only runtime env.
+ * Read per call so a runtime change (and tests) take effect without a rebuild.
  */
-function configuredHosts(): Set<string> {
-  const hosts = new Set<string>()
+function reportBundleBucket(): string | null {
+  const bucket = process.env.REPORT_BUNDLE_BUCKET?.trim().toLowerCase()
+  return bucket ? bucket : null
+}
+
+/**
+ * The S3 endpoint override used by LocalStack in local development, as a
+ * lowercase `host[:port]`, or null when none is configured.
+ */
+function endpointOverrideHost(): string | null {
   const endpoint = process.env.NEXT_PUBLIC_S3_ENDPOINT_URL
-  if (endpoint) {
-    try {
-      hosts.add(new URL(endpoint).hostname.toLowerCase())
-    } catch {
-      // A malformed endpoint override simply contributes no host.
-    }
+  if (!endpoint) return null
+  try {
+    return new URL(endpoint).host.toLowerCase()
+  } catch {
+    return null
   }
-  return hosts
 }
 
 /**
- * Guard for the report-artifact proxy: accept a URL only if it points at a
- * bundle host we serve from AND looks like a presigned report-bundle holon or
- * Tavi model (path shape + a non-empty AWS signature). The host check is what
- * keeps this from being an SSRF vector — without it the proxy would fetch any
- * URL an unauthenticated caller supplied, including internal addresses.
- * Returns the parsed URL when allowed, else null.
+ * The object key the URL addresses, if its host is one this deployment serves
+ * report bundles from. Returns null for any other host.
+ *
+ * With a bucket configured, only that bucket is accepted, in the AWS forms a
+ * presigned URL takes: virtual-hosted (`<bucket>.s3[.<region>].amazonaws.com`)
+ * and path-style (`s3[.<region>].amazonaws.com/<bucket>/…`), plus path-style
+ * against the endpoint override. Without one, production accepts nothing and
+ * development accepts only the endpoint override.
  */
-export function allowedHolonUrl(raw: string): URL | null {
+function bundleObjectKey(u: URL): string | null {
+  const host = u.hostname.toLowerCase()
+  const bucket = reportBundleBucket()
+  const override = endpointOverrideHost()
+  const isOverride = override !== null && u.host.toLowerCase() === override
+
+  // The path always begins with `/`; strip it to get the key (virtual-hosted)
+  // or `<bucket>/<key>` (path-style).
+  const path = u.pathname.slice(1)
+
+  if (isOverride) {
+    // Fail closed: a production server with no bucket configured serves nothing.
+    if (!bucket && process.env.NODE_ENV === 'production') return null
+    const slash = path.indexOf('/')
+    if (slash <= 0) return null
+    const pathBucket = path.slice(0, slash)
+    if (bucket && pathBucket !== bucket) return null
+    return path.slice(slash + 1)
+  }
+
+  if (!bucket || u.protocol !== 'https:' || u.port !== '') return null
+
+  const virtualHosted = new RegExp(
+    `^${escapeRegExp(bucket)}\\.s3(\\.${REGION})?\\.amazonaws\\.com$`
+  )
+  if (virtualHosted.test(host)) return path
+
+  const pathStyle = new RegExp(`^s3(\\.${REGION})?\\.amazonaws\\.com$`)
+  if (pathStyle.test(host) && path.startsWith(`${bucket}/`)) {
+    return path.slice(bucket.length + 1)
+  }
+
+  return null
+}
+
+export interface AllowedArtifact {
+  url: URL
+  contentType: (typeof RENDERABLE_ARTIFACTS)[RenderableSuffix]
+}
+
+/**
+ * Guard for the report-artifact proxy: accept a URL only if it addresses a
+ * renderable object under the report-bundle prefix of the report-bundle
+ * bucket, and carries a non-empty presigned signature. Returns the parsed URL
+ * and the content type to answer with, else null.
+ */
+export function allowedHolonUrl(raw: string): AllowedArtifact | null {
   let u: URL
   try {
     u = new URL(raw)
@@ -56,34 +116,24 @@ export function allowedHolonUrl(raw: string): URL | null {
     return null
   }
   if (u.protocol !== 'http:' && u.protocol !== 'https:') return null
+  if (u.username || u.password) return null
 
-  // Exact host match only — never a substring/suffix test against the whole
-  // URL, or `https://evil.test/?x=.amazonaws.com` would slip through.
-  const host = u.hostname.toLowerCase()
-  const configured = configuredHosts()
-  const isConfigured = configured.has(host)
-  if (!isAwsHost(host) && !isConfigured) return null
+  const key = bundleObjectKey(u)
+  if (key === null || !key.startsWith(BUNDLE_KEY_PREFIX)) return null
 
-  // Plaintext is tolerated only for an explicitly configured endpoint, which in
-  // practice means LocalStack over loopback in development.
-  if (u.protocol === 'http:' && !isConfigured) return null
-
-  // .../report-bundles/<graph>/<report>/*.holon.jsonld or *.tavi.json
-  if (!u.pathname.includes('/report-bundles/')) return null
-  if (!RENDERABLE_SUFFIXES.some((suffix) => u.pathname.endsWith(suffix))) {
-    return null
-  }
+  const suffix = RENDERABLE_SUFFIXES.find((s) => key.endsWith(s))
+  if (!suffix) return null
 
   // The signature is the caller's actual capability, so require real values —
   // `?X-Amz-Signature=` with an empty value must not count as signed.
   const q = u.searchParams
   const present = (...keys: string[]) =>
-    keys.some((key) => (q.get(key) ?? '') !== '')
+    keys.some((k) => (q.get(k) ?? '') !== '')
   const signed =
     present('Signature', 'X-Amz-Signature') &&
     present('Expires', 'X-Amz-Expires') &&
     present('AWSAccessKeyId', 'X-Amz-Credential')
   if (!signed) return null
 
-  return u
+  return { url: u, contentType: RENDERABLE_ARTIFACTS[suffix] }
 }
