@@ -37,7 +37,7 @@ const steps = [
     number: '05',
     title: 'Generate & file reports',
     description:
-      'Build multi-period, comparative statements with the Report Creator, walk the Draft → Filed lifecycle, export XBRL 2.1 and JSON-LD bundles, and share to stakeholder publish lists.',
+      'Build multi-period, comparative statements with the Report Creator, walk the Draft → Filed lifecycle, export Tavi and XBRL 2.1 reports, and share to stakeholder publish lists.',
     tags: ['Report Creator', 'XBRL 2.1', 'Publish Lists'],
     color: 'orange',
   },

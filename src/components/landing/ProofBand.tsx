@@ -13,7 +13,7 @@ const stats = [
       'Add the SEC graph next to your books and ask how your margins compare to public companies in your niche.',
   },
   {
-    stat: 'XBRL 2.1 + JSON-LD',
+    stat: 'Tavi + XBRL 2.1',
     label: 'Statements export as validated reports, straight from your ledger.',
   },
 ]
