@@ -3,11 +3,11 @@
 import DocsLink from '@/components/DocsLink'
 import ExportMenu, { type ExportMenuGroup } from '@/components/ExportMenu'
 import RefreshControl from '@/components/RefreshControl'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { InformationBlockList } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
-  GraphFilters,
   LoadingState,
   PageHeader,
   PageLayout,
@@ -93,13 +93,7 @@ const PlanContent: FC = function () {
   const [historyWindow, setHistoryWindow] = useState<PeriodWindow>('12')
   const [forecastWindow, setForecastWindow] = useState<PeriodWindow>('all')
 
-  const currentGraph = useMemo(() => {
-    const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
-    return (
-      roboledgerGraphs.find((g) => g.graphId === graphState.currentGraphId) ??
-      roboledgerGraphs[0]
-    )
-  }, [graphState.graphs, graphState.currentGraphId])
+  const { graph: currentGraph } = useLedgerGraph()
 
   const reloadPlan = useCallback(() => {
     if (!currentGraph) return

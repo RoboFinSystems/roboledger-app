@@ -1,6 +1,8 @@
 'use client'
 
-import { SDK, useGraphContext } from '@robosystems/core'
+import { apiErrorMessage } from '@/lib/ledger/errors'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
+import { SDK, unwrapSdk } from '@robosystems/core'
 import { Spinner } from '@robosystems/core/ui-components'
 import { Alert, Button } from 'flowbite-react'
 import Image from 'next/image'
@@ -15,9 +17,7 @@ export default function QuickBooksSetupForm({
   onCancel,
 }: QuickBooksSetupFormProps) {
   const router = useRouter()
-  const {
-    state: { currentGraphId },
-  } = useGraphContext()
+  const currentGraphId = useLedgerGraph().graph?.graphId ?? null
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -32,38 +32,42 @@ export default function QuickBooksSetupForm({
 
     try {
       // Create the connection first
-      const createResponse = await SDK.createConnection({
-        path: { graph_id: currentGraphId },
-        body: {
-          provider: 'quickbooks',
-          entity_id: currentGraphId,
-        },
-      })
+      const created = unwrapSdk(
+        await SDK.createConnection({
+          path: { graph_id: currentGraphId },
+          body: {
+            provider: 'quickbooks',
+            entity_id: currentGraphId,
+          },
+        })
+      )
 
-      const connectionId = (createResponse.data as any)?.connection_id
+      const connectionId = created?.connection_id
       if (!connectionId) {
         throw new Error('Failed to create QuickBooks connection')
       }
 
       // Initiate OAuth flow
-      const oauthResponse = await SDK.initOAuth({
-        path: { graph_id: currentGraphId },
-        body: {
-          connection_id: connectionId,
-          redirect_uri: `${window.location.origin}/connections/qb-callback`,
-        },
-      })
+      const oauth = unwrapSdk(
+        await SDK.initOAuth({
+          path: { graph_id: currentGraphId },
+          body: {
+            connection_id: connectionId,
+            redirect_uri: `${window.location.origin}/connections/qb-callback`,
+          },
+        })
+      )
 
-      const authUrl = (oauthResponse.data as any)?.auth_url
+      const authUrl = oauth?.auth_url
       if (!authUrl) {
         throw new Error('Failed to get QuickBooks authorization URL')
       }
 
       // Redirect to QuickBooks OAuth
       router.push(authUrl)
-    } catch (err: any) {
+    } catch (err) {
       console.error('QuickBooks connection error:', err)
-      setError(err.message || 'Failed to connect to QuickBooks')
+      setError(apiErrorMessage(err, 'Failed to connect to QuickBooks'))
       setLoading(false)
     }
   }

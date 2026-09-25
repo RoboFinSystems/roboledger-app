@@ -131,14 +131,24 @@ export async function POST(request: NextRequest) {
       submittedAt: new Date().toISOString(),
     }
 
-    // Send SNS notification
-    await snsService.publishContactForm({
+    // Send SNS notification. A publish that did not land is a failed
+    // submission, not a sent one: the form must say so.
+    const delivered = await snsService.publishContactForm({
       name: contactSubmission.name,
       email: contactSubmission.email,
       company: contactSubmission.company,
       message: contactSubmission.message,
       formType: contactSubmission.type,
     })
+    if (!delivered) {
+      return NextResponse.json(
+        {
+          error: 'Your message could not be delivered. Please try again later.',
+          code: 'SUBMISSION_NOT_DELIVERED',
+        },
+        { status: 503 }
+      )
+    }
 
     return NextResponse.json(
       {

@@ -1,7 +1,8 @@
 'use client'
 
-import { friendlyError } from '@/lib/ledger/errors'
-import { SDK, useGraphContext } from '@robosystems/core'
+import { apiErrorMessage } from '@/lib/ledger/errors'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
+import { SDK, unwrapSdk } from '@robosystems/core'
 import { Spinner } from '@robosystems/core/ui-components'
 import { Alert, Button, Checkbox, Label, TextInput } from 'flowbite-react'
 import { useRouter } from 'next/navigation'
@@ -29,8 +30,7 @@ const defaultSinceDate = (): string => {
 }
 
 const toMessage = (err: unknown, fallback: string): string => {
-  const raw = err instanceof Error ? err.message : ''
-  const friendly = raw ? friendlyError(raw).message : fallback
+  const friendly = apiErrorMessage(err, fallback)
   const lower = friendly.toLowerCase()
   // CHART_REQUIRED mentions severing QuickBooks as one way to get a chart, so
   // it is tested before the QUICKBOOKS_ACTIVE shape.
@@ -53,9 +53,7 @@ export default function MercurySetupForm({
   onConnected,
 }: MercurySetupFormProps) {
   const router = useRouter()
-  const {
-    state: { currentGraphId },
-  } = useGraphContext()
+  const currentGraphId = useLedgerGraph().graph?.graphId ?? null
   const [sinceDate, setSinceDate] = useState(defaultSinceDate)
   const [includeTreasury, setIncludeTreasury] = useState(true)
   const [apiKey, setApiKey] = useState('')
@@ -73,20 +71,21 @@ export default function MercurySetupForm({
     setError(null)
 
     try {
-      const createResponse = await SDK.createConnection({
-        path: { graph_id: currentGraphId },
-        body: {
-          provider: 'mercury',
-          mercury_config: {
-            since_date: sinceDate || null,
-            include_treasury: includeTreasury,
-            api_key: usingApiKey ? apiKey.trim() : null,
+      const created = unwrapSdk(
+        await SDK.createConnection({
+          path: { graph_id: currentGraphId },
+          body: {
+            provider: 'mercury',
+            mercury_config: {
+              since_date: sinceDate || null,
+              include_treasury: includeTreasury,
+              api_key: usingApiKey ? apiKey.trim() : null,
+            },
           },
-        },
-        throwOnError: true,
-      })
+        })
+      )
 
-      const connectionId = createResponse.data?.connection_id
+      const connectionId = created?.connection_id
       if (!connectionId) {
         throw new Error('Failed to create Mercury connection')
       }
@@ -98,16 +97,17 @@ export default function MercurySetupForm({
         return
       }
 
-      const oauthResponse = await SDK.initOAuth({
-        path: { graph_id: currentGraphId },
-        body: {
-          connection_id: connectionId,
-          redirect_uri: `${window.location.origin}/connections/mercury-callback`,
-        },
-        throwOnError: true,
-      })
+      const oauth = unwrapSdk(
+        await SDK.initOAuth({
+          path: { graph_id: currentGraphId },
+          body: {
+            connection_id: connectionId,
+            redirect_uri: `${window.location.origin}/connections/mercury-callback`,
+          },
+        })
+      )
 
-      const authUrl = oauthResponse.data?.auth_url
+      const authUrl = oauth?.auth_url
       if (!authUrl) {
         throw new Error('Failed to get Mercury authorization URL')
       }

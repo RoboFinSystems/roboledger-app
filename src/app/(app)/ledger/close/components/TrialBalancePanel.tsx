@@ -1,5 +1,6 @@
 'use client'
 
+import { formatDollars } from '@/lib/ledger/formatters'
 import { clients, LoadingState } from '@robosystems/core'
 import {
   Badge,
@@ -84,11 +85,7 @@ function compareTrialBalanceRows(
 // divides by 100 before returning). Do not divide again.
 function formatCurrency(value: number): string {
   if (value === 0) return '–'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(value)
+  return formatDollars(value)
 }
 
 // ── Component ──────────────────────────────────────────────────────────

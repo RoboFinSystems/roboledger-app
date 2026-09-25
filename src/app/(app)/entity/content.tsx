@@ -1,14 +1,9 @@
 'use client'
 
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LedgerEntity } from '@robosystems/client/clients'
 import type { UpdateEntityRequest } from '@robosystems/client/types'
-import {
-  clients,
-  PageHeader,
-  PageLayout,
-  useEntity,
-  useGraphContext,
-} from '@robosystems/core'
+import { clients, PageHeader, PageLayout, useEntity } from '@robosystems/core'
 import {
   Alert,
   Badge,
@@ -22,9 +17,8 @@ import { type FC, useEffect, useRef, useState } from 'react'
 import { HiOfficeBuilding, HiPencil, HiSave, HiX } from 'react-icons/hi'
 
 const EntityInfoPageContent: FC = function () {
-  const { state: graphState } = useGraphContext()
   const { currentEntity, setCurrentEntity } = useEntity()
-  const graphId = graphState.currentGraphId
+  const graphId = useLedgerGraph().graph?.graphId ?? null
 
   const [entity, setEntity] = useState<LedgerEntity | null>(null)
   const [loading, setLoading] = useState(false)

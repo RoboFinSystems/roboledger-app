@@ -1,5 +1,6 @@
+import { ApiError } from '@robosystems/core/lib/sdk-errors'
 import { describe, expect, it } from 'vitest'
-import { extractDetail, friendlyError } from '../errors'
+import { apiErrorMessage, extractDetail, friendlyError } from '../errors'
 
 /** How the SDK facade actually throws: `<label> failed: <JSON.stringify(error)>`. */
 const sdkError = (label: string, body: unknown): string =>
@@ -171,5 +172,66 @@ describe('friendlyError — chart of accounts', () => {
     expect(result.message).toContain('Reload the page')
     expect(result.message).not.toContain('{"detail"')
     expect(result.link).toBeUndefined()
+  })
+})
+
+describe('nested detail and contention', () => {
+  it('unwraps a nested detail.detail', () => {
+    expect(
+      extractDetail(
+        sdkError('Sync', {
+          detail: { detail: 'Connection not found', code: 'NOT_FOUND' },
+        })
+      )
+    ).toBe('Connection not found')
+  })
+
+  it('turns a 409 row-lock into a retry message', () => {
+    expect(
+      friendlyError(
+        'Event evt_1 is being written by another process (most likely a running sync). Retry in a moment.'
+      ).message
+    ).toMatch(/wait a moment and try again/i)
+  })
+})
+
+describe('apiErrorMessage', () => {
+  it('maps an ApiError refusal through friendlyError', () => {
+    const err = new ApiError({ status: 404, detail: 'Connection not found' })
+    expect(apiErrorMessage(err, 'fallback')).toBe('Connection not found')
+  })
+
+  it('uses the fallback for a network failure or a detail-less refusal', () => {
+    expect(
+      apiErrorMessage(
+        new ApiError({ status: 0, detail: 'Unable to reach the server' }),
+        'fallback'
+      )
+    ).toBe('fallback')
+    expect(
+      apiErrorMessage(
+        new ApiError({ status: 500, detail: 'Request failed with status 500' }),
+        'fallback'
+      )
+    ).toBe('fallback')
+    expect(
+      apiErrorMessage(
+        new ApiError({
+          status: 502,
+          detail: '<html><head><title>502 Bad Gateway</title></head></html>',
+        }),
+        'fallback'
+      )
+    ).toBe('fallback')
+    // A 2xx body that failed to parse is not a server refusal.
+    expect(
+      apiErrorMessage(
+        new ApiError({ status: 200, detail: 'Unexpected token < in JSON' }),
+        'fallback'
+      )
+    ).toBe('fallback')
+    expect(apiErrorMessage(new TypeError('x is undefined'), 'fallback')).toBe(
+      'fallback'
+    )
   })
 })

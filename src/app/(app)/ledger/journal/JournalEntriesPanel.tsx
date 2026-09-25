@@ -1,7 +1,7 @@
 'use client'
 
 import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
-import { formatDate } from '@/lib/ledger/formatters'
+import { formatDate, formatDollars } from '@/lib/ledger/formatters'
 import { clients, EmptyState, LoadingState } from '@robosystems/core'
 import {
   Alert,
@@ -79,15 +79,9 @@ interface JournalEntryRow {
  *   `DraftEntry.totalDebit`          / `DraftLineItem.debitAmount`  → Int,   cents    (PeriodClosePanel, which divides by 100)
  *
  * So `formatAmount` from `lib/ledger/formatters` — which takes cents and
- * divides — must NOT be used here; it would render $42.41 as $0.42. Named
- * `formatDollars` rather than `formatCurrency` so the unit is stated at
- * every call site instead of inferred.
+ * divides — must NOT be used here; it would render $42.41 as $0.42. Use
+ * `formatDollars` from the same module, which takes dollars.
  */
-const formatDollars = (amount: number): string =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
 
 interface JournalEntriesPanelProps {
   graphId: string

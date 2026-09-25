@@ -9,7 +9,8 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  sidebarCookie.set({ isCollapsed: Boolean(body?.isCollapsed) })
+  // Awaited: the handler must not return before the cookie is on the response.
+  await sidebarCookie.set({ isCollapsed: Boolean(body?.isCollapsed) })
 
   return Response.json({})
 }

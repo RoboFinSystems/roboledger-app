@@ -2,6 +2,7 @@
 
 import { EntitySelector } from '@/components/EntitySelector'
 import { ErrorBoundary } from '@/components/error/ErrorBoundary'
+import { LedgerGraphGate } from '@/components/LedgerGraphGate'
 import {
   CoreNavbar,
   CoreSidebar,
@@ -77,7 +78,9 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
           borderColorClass="dark:border-gray-800"
         />
         <LayoutContent>
-          <ErrorBoundary>{children}</ErrorBoundary>
+          <ErrorBoundary>
+            <LedgerGraphGate>{children}</LedgerGraphGate>
+          </ErrorBoundary>
         </LayoutContent>
       </div>
       <SupportModal

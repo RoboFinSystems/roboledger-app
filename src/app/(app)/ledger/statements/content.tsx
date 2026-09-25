@@ -13,20 +13,19 @@ import SegmentedControl, {
 } from '@/components/SegmentedControl'
 import ValidationBanner from '@/components/ValidationBanner'
 import { friendlyError, type FriendlyError } from '@/lib/ledger/errors'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
 import {
   clients,
   EmptyState,
-  GraphFilters,
   LoadingState,
   PageHeader,
   PageLayout,
-  useGraphContext,
 } from '@robosystems/core'
 import { Alert, Card } from 'flowbite-react'
 import Link from 'next/link'
 import type { FC } from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
 import { TbReportMoney } from 'react-icons/tb'
 import LiveStatementTable from './components/LiveStatementTable'
@@ -99,14 +98,7 @@ function presetRange(
 }
 
 const LiveStatementsContent: FC = function () {
-  const { state: graphState } = useGraphContext()
-  const currentGraph = useMemo(
-    () =>
-      graphState.graphs
-        .filter(GraphFilters.roboledger)
-        .find((g) => g.graphId === graphState.currentGraphId),
-    [graphState.graphs, graphState.currentGraphId]
-  )
+  const { graph: currentGraph } = useLedgerGraph()
 
   const [statementType, setStatementType] =
     useState<StatementType>('balance_sheet')

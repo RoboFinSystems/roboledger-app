@@ -1,4 +1,4 @@
-import { contactRateLimiter } from '@/lib/rate-limiter'
+import { supportRateLimiter } from '@/lib/rate-limiter'
 import { snsService } from '@/lib/sns'
 import {
   getClientIp,
@@ -8,10 +8,35 @@ import {
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
+const METADATA_KEYS = [
+  'orgName',
+  'orgId',
+  'orgType',
+  'graphName',
+  'graphId',
+  'userRole',
+] as const
+const MAX_METADATA_VALUE = 200
+
+type SupportMetadata = Partial<Record<(typeof METADATA_KEYS)[number], string>>
+
+/** The known context fields, as single-line strings of bounded length. */
+function boundedMetadata(raw: unknown): SupportMetadata {
+  const out: SupportMetadata = {}
+  if (!raw || typeof raw !== 'object') return out
+  for (const key of METADATA_KEYS) {
+    const value = (raw as Record<string, unknown>)[key]
+    if (typeof value !== 'string') continue
+    const line = value.replace(/[\r\n]+/g, ' ').trim()
+    if (line) out[key] = line.slice(0, MAX_METADATA_VALUE)
+  }
+  return out
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Apply rate limiting (5 requests per hour for support)
-    const rateLimitResult = await contactRateLimiter.check(request, 5)
+    const rateLimitResult = await supportRateLimiter.check(request, 5)
 
     if (!rateLimitResult.success) {
       return NextResponse.json(
@@ -95,8 +120,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Build metadata section for the message
-    const metadata = body.metadata || {}
+    // Build metadata section for the message. Only short strings are kept:
+    // the context block is informational, never a second message body.
+    const metadata = boundedMetadata(body.metadata)
     const metadataLines = [
       metadata.orgName && `Organization: ${metadata.orgName}`,
       metadata.orgId && `Org ID: ${metadata.orgId}`,
@@ -111,14 +137,24 @@ export async function POST(request: NextRequest) {
         ? `\n\n--- Context ---\n${metadataLines.join('\n')}`
         : ''
 
-    // Send SNS notification via the contact form publisher
-    await snsService.publishContactForm({
+    // Send SNS notification via the contact form publisher. A publish that
+    // did not land is a failed submission, not a sent one.
+    const delivered = await snsService.publishContactForm({
       name: body.name,
       email: body.email,
       company: metadata.orgName || 'N/A',
       message: `[RoboLedger Support] [Subject: ${body.subject}]\n\n${body.message}${metadataSection}`,
       formType: 'support',
     })
+    if (!delivered) {
+      return NextResponse.json(
+        {
+          error: 'Your message could not be delivered. Please try again later.',
+          code: 'SUBMISSION_NOT_DELIVERED',
+        },
+        { status: 503 }
+      )
+    }
 
     return NextResponse.json(
       { message: 'Support message sent successfully' },

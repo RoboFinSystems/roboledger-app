@@ -6,6 +6,7 @@ import SegmentedControl, {
 } from '@/components/SegmentedControl'
 import SortableHeadCell from '@/components/SortableHeadCell'
 import type { ElementClassification } from '@/lib/ledger'
+import { formatDollars } from '@/lib/ledger/formatters'
 import { type SortColumn, useTableSort } from '@/lib/useTableSort'
 import {
   clients,
@@ -84,14 +85,7 @@ const ACCOUNT_TYPE_ORDER: Record<string, number> = {
   'Other Expense': 14,
 }
 
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount)
-}
+const formatCurrency = (amount: number): string => formatDollars(amount)
 
 type ViewMode = 'coa' | 'usgaap'
 

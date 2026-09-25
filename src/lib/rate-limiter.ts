@@ -76,3 +76,10 @@ export const contactRateLimiter = rateLimit({
   interval: 60 * 60 * 1000, // 1 hour
   uniqueTokenPerInterval: 1000,
 })
+
+// Support has its own counter: sharing the contact one let a few contact
+// submissions from an office's shared address exhaust its support requests.
+export const supportRateLimiter = rateLimit({
+  interval: 60 * 60 * 1000, // 1 hour
+  uniqueTokenPerInterval: 1000,
+})

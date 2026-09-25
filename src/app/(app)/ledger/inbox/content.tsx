@@ -3,15 +3,14 @@
 import DocsLink from '@/components/DocsLink'
 import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
 import { formatAmount, formatDate } from '@/lib/ledger/formatters'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LedgerAgent, LedgerEventBlock } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
-  GraphFilters,
   LoadingState,
   PageHeader,
   PageLayout,
-  useGraphContext,
 } from '@robosystems/core'
 import {
   Alert,
@@ -29,7 +28,7 @@ import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { HiExclamationCircle, HiInbox, HiSearch } from 'react-icons/hi'
 import EventBlockDetailModal from './EventBlockDetailModal'
 
-const EVENT_TYPE_OPTIONS = [
+export const EVENT_TYPE_OPTIONS = [
   { value: '', label: 'All types' },
   { value: 'invoice_issued', label: 'Invoice issued' },
   { value: 'bill_received', label: 'Bill received' },
@@ -37,6 +36,10 @@ const EVENT_TYPE_OPTIONS = [
   { value: 'bill_paid', label: 'Bill paid' },
   { value: 'sales_receipt_recorded', label: 'Sales receipt' },
   { value: 'journal_entry_recorded', label: 'Journal entry' },
+  { value: 'bank_transaction', label: 'Bank transaction' },
+  { value: 'bank_fee', label: 'Bank fee' },
+  { value: 'external_transfer', label: 'External transfer' },
+  { value: 'internal_transfer', label: 'Internal transfer' },
 ]
 
 const STATUS_OPTIONS = [
@@ -47,9 +50,11 @@ const STATUS_OPTIONS = [
   { value: '', label: 'All statuses' },
 ]
 
-const SOURCE_OPTIONS = [
+export const SOURCE_OPTIONS = [
   { value: '', label: 'All sources' },
   { value: 'quickbooks', label: 'QuickBooks' },
+  { value: 'plaid', label: 'Plaid' },
+  { value: 'mercury', label: 'Mercury' },
   { value: 'manual', label: 'Manual' },
   { value: 'schedule', label: 'Schedule' },
   { value: 'system', label: 'System' },
@@ -77,7 +82,6 @@ const STATUS_BADGE_COLOR: Record<string, string> = {
 const EVENTS_LIMIT = 200
 
 const InboxContent: FC = function () {
-  const { state: graphState } = useGraphContext()
   const searchParams = useSearchParams()
 
   const [events, setEvents] = useState<LedgerEventBlock[]>([])
@@ -99,13 +103,7 @@ const InboxContent: FC = function () {
   // Selection (modal)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const currentGraph = useMemo(
-    () =>
-      graphState.graphs
-        .filter(GraphFilters.roboledger)
-        .find((g) => g.graphId === graphState.currentGraphId),
-    [graphState.graphs, graphState.currentGraphId]
-  )
+  const { graph: currentGraph } = useLedgerGraph()
 
   // Index agents by id for the table column.
   const agentById = useMemo(() => {
@@ -204,8 +202,8 @@ const InboxContent: FC = function () {
   // would exclude the new state) or update it in place (if the user is
   // viewing "All statuses" or the post-transition status itself, so the
   // row should remain visible with the new badge).
-  const applyTransition = useCallback(
-    (eventId: string, newStatus: 'committed' | 'voided') => {
+  const updateRow = useCallback(
+    (eventId: string, newStatus: 'classified' | 'committed' | 'voided') => {
       setEvents((prev) => {
         if (status && status !== newStatus) {
           return prev.filter((e) => e.id !== eventId)
@@ -214,9 +212,23 @@ const InboxContent: FC = function () {
           e.id === eventId ? { ...e, status: newStatus } : e
         )
       })
-      setSelectedId(null)
     },
     [status]
+  )
+
+  const applyTransition = useCallback(
+    (eventId: string, newStatus: 'committed' | 'voided') => {
+      updateRow(eventId, newStatus)
+      setSelectedId(null)
+    },
+    [updateRow]
+  )
+
+  // Classify keeps the modal open (the reviewer usually approves next), but
+  // the list must stop showing the row as unreviewed.
+  const onClassified = useCallback(
+    (eventId: string) => updateRow(eventId, 'classified'),
+    [updateRow]
   )
 
   const onApproved = useCallback(
@@ -428,6 +440,7 @@ const InboxContent: FC = function () {
           onClose={() => setSelectedId(null)}
           onApproved={onApproved}
           onRejected={onRejected}
+          onClassified={onClassified}
         />
       )}
     </PageLayout>

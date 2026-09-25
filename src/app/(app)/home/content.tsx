@@ -1,21 +1,21 @@
 'use client'
 
 import { useCreateGraphHandoff } from '@/lib/cross-app'
+import { formatDollars } from '@/lib/ledger/formatters'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import {
   clients,
   customTheme,
-  GraphFilters,
   LoadingState,
   PageHeader,
   PageLayout,
   StatCard,
-  useGraphContext,
 } from '@robosystems/core'
 import { Badge, Button, Card } from 'flowbite-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { FC } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   HiArrowRight,
   HiCollection,
@@ -90,11 +90,7 @@ const topAlignedCardTheme = {
   },
 }
 
-const formatCurrency = (amount: number): string =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
+const formatCurrency = (amount: number): string => formatDollars(amount)
 
 const formatDate = (dateString: string | null | undefined): string => {
   if (!dateString) return '—'
@@ -141,18 +137,10 @@ const INITIAL_STATS: HomeStats = {
 }
 
 const HomePageContent: FC = function () {
-  const { state: graphState } = useGraphContext()
   const router = useRouter()
   const { openCreateGraph } = useCreateGraphHandoff()
 
-  const currentGraph = useMemo(() => {
-    const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
-    return (
-      roboledgerGraphs.find((g) => g.graphId === graphState.currentGraphId) ??
-      roboledgerGraphs[0] ??
-      null
-    )
-  }, [graphState.graphs, graphState.currentGraphId])
+  const { graph: currentGraph } = useLedgerGraph()
 
   const hasQualifyingGraph = currentGraph != null
 

@@ -1,6 +1,8 @@
 'use client'
 
-import { LoadingState, SDK, useGraphContext } from '@robosystems/core'
+import { apiErrorMessage } from '@/lib/ledger/errors'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
+import { LoadingState, SDK, unwrapSdk } from '@robosystems/core'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
@@ -10,9 +12,7 @@ const NO_GRAPH_TIMEOUT_MS = 15_000
 export default function QuickBooksCallbackPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const {
-    state: { currentGraphId },
-  } = useGraphContext()
+  const currentGraphId = useLedgerGraph().graph?.graphId ?? null
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
     'loading'
   )
@@ -74,19 +74,21 @@ export default function QuickBooksCallbackPage() {
         }
 
         // Send callback data to backend
-        const response = await SDK.oauthCallback({
-          path: {
-            graph_id: currentGraphId,
-            provider: 'quickbooks',
-          },
-          body: {
-            code,
-            state,
-            realm_id: realmId,
-          },
-        })
+        const data = unwrapSdk(
+          await SDK.oauthCallback({
+            path: {
+              graph_id: currentGraphId,
+              provider: 'quickbooks',
+            },
+            body: {
+              code,
+              state,
+              realm_id: realmId,
+            },
+          })
+        )
 
-        if (response.data?.success) {
+        if (data?.success) {
           // The authorization code is single-use. Strip it so that refreshing
           // this page during the redirect delay can't resubmit a spent code and
           // turn a connection that already succeeded into "Connection Failed".
@@ -98,19 +100,12 @@ export default function QuickBooksCallbackPage() {
         } else {
           // The response carries a message now that it's typed; prefer it over
           // a generic string when the server explains what went wrong.
-          setError(
-            response.data?.message ??
-              'Failed to establish QuickBooks connection'
-          )
+          setError(data?.message ?? 'Failed to establish QuickBooks connection')
           setStatus('error')
         }
       } catch (err) {
         console.error('QuickBooks callback error:', err)
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Failed to process QuickBooks callback'
-        )
+        setError(apiErrorMessage(err, 'Failed to process QuickBooks callback'))
         setStatus('error')
       }
     }

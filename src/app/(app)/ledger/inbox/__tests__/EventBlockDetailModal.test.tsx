@@ -108,7 +108,7 @@ const tree = {
   ],
 }
 
-const renderModal = () =>
+const renderModal = (onClassified = vi.fn()) =>
   render(
     <EventBlockDetailModal
       graphId="kg_test"
@@ -117,6 +117,7 @@ const renderModal = () =>
       onClose={vi.fn()}
       onApproved={vi.fn()}
       onRejected={vi.fn()}
+      onClassified={onClassified}
     />
   )
 
@@ -270,5 +271,51 @@ describe('EventBlockDetailModal — bank-feed classification', () => {
       event_id: 'evt_bank',
       transition_to: 'committed',
     })
+  })
+
+  it('tells the list when classify moves the event out of captured', async () => {
+    const onClassified = vi.fn()
+    renderModal(onClassified)
+    const select = await screen.findByLabelText('Post to account')
+    await waitFor(() =>
+      expect((select as HTMLSelectElement).value).toBe('elem_office')
+    )
+    fireEvent.click(screen.getByText('Classify'))
+    await waitFor(() => expect(onClassified).toHaveBeenCalledWith('evt_bank'))
+  })
+
+  it.each(['committed', 'pending'])(
+    'offers no Approve on a %s event, which the server cannot commit',
+    async (status) => {
+      mockGetEventBlock.mockResolvedValue(
+        bankEvent({ eventType: 'invoice_issued', status, metadata: {} })
+      )
+      renderModal()
+      await screen.findByText('Reject')
+      expect(screen.queryByText('Approve')).not.toBeInTheDocument()
+    }
+  )
+
+  it('shows the lines of a flat manual journal entry', async () => {
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({
+        eventType: 'journal_entry_recorded',
+        source: 'manual',
+        metadata: {
+          posting_date: '2026-03-31',
+          memo: 'Accrue March rent',
+          line_items: [
+            { element_name: 'Rent Expense', debit_amount: 150000 },
+            { element_name: 'Accrued Liabilities', credit_amount: 150000 },
+          ],
+        },
+      })
+    )
+    renderModal()
+    expect(await screen.findByText('Accrue March rent')).toBeInTheDocument()
+    expect(screen.getByText('Rent Expense')).toBeInTheDocument()
+    expect(
+      screen.queryByText('No journal entries in metadata.')
+    ).not.toBeInTheDocument()
   })
 })

@@ -163,6 +163,22 @@ describe('CloseContent', () => {
     expect(screen.getByText('No Ledger Found')).toBeInTheDocument()
   })
 
+  it('never acts on another ledger graph when the selected one is not a ledger', () => {
+    // A RoboInvestor graph is selected; one ledger graph exists. The page
+    // must not quietly close the books of the ledger graph the header does
+    // not name.
+    mockGetClosingBookStructures.mockClear()
+    const investor = {
+      ...makeGraph('kg_investor'),
+      schemaExtensions: ['roboinvestor'],
+    }
+    mockUseGraphContext.mockReturnValue(
+      makeGraphState([investor, makeGraph('kg_ledger')], 'kg_investor')
+    )
+    render(<CloseContent />)
+    expect(mockGetClosingBookStructures).not.toHaveBeenCalled()
+  })
+
   it('shows spinner while loading sidebar data', () => {
     const graph = makeGraph('kg_test')
     mockUseGraphContext.mockReturnValue(makeGraphState([graph], 'kg_test'))
