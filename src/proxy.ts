@@ -1,6 +1,19 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
+/**
+ * The origin of the API this build talks to. Listed in `connect-src` next to
+ * the RoboSystems hosts so a deployment pointed at its own API (a fork, a
+ * self-hosted image) can reach it. An unparsable value adds nothing.
+ */
+function configuredApiOrigin(): string {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL ?? '').origin
+  } catch {
+    return ''
+  }
+}
+
 export function proxy(request: NextRequest) {
   const response = NextResponse.next()
   const isDevelopment = process.env.NODE_ENV === 'development'
@@ -14,6 +27,7 @@ export function proxy(request: NextRequest) {
   // robosystems-content-machine alongside the post body). Named because two directives
   // need it; robosystems-app's proxy.ts carries the same constant for the same reason.
   const BLOG_ASSETS = 'https://assets.robosystems.ai'
+  const API_ORIGIN = configuredApiOrigin()
 
   // Comprehensive CSP configuration for modern web apps
   const cspDirectives = [
@@ -59,13 +73,15 @@ export function proxy(request: NextRequest) {
         'https://cloudflareinsights.com https://static.cloudflareinsights.com ' +
         'https://www.google-analytics.com https://analytics.google.com ' +
         'https://region1.google-analytics.com https://www.googletagmanager.com ' +
-        'https://tagmanager.google.com wss://ws-us3.pusher.com https://sockjs-us3.pusher.com'
+        'https://tagmanager.google.com wss://ws-us3.pusher.com https://sockjs-us3.pusher.com ' +
+        API_ORIGIN
       : "connect-src 'self' " +
         'https://api.robosystems.ai https://staging.api.robosystems.ai ' +
         'https://cloudflareinsights.com https://static.cloudflareinsights.com ' +
         'https://www.google-analytics.com https://analytics.google.com ' +
         'https://region1.google-analytics.com https://www.googletagmanager.com ' +
-        'https://tagmanager.google.com wss://ws-us3.pusher.com https://sockjs-us3.pusher.com',
+        'https://tagmanager.google.com wss://ws-us3.pusher.com https://sockjs-us3.pusher.com ' +
+        API_ORIGIN,
 
     // Frame sources - Allow Cloudflare CAPTCHA and common embeds
     "frame-src 'self' " +

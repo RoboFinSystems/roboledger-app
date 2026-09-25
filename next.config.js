@@ -36,6 +36,21 @@ const allowedDevOrigins = process.env.NEXT_ALLOWED_DEV_ORIGINS
     ? [tunnelDomain]
     : []
 
+// Hosts whose browser `Origin` may call a Server Action. The public apex is
+// always allowed; the host of the app URL this build targets is added, so a
+// staging build accepts `staging.roboledger.ai` and a fork its own domain. An
+// unparsable value (the Docker Hub placeholder) contributes nothing.
+function serverActionOrigins() {
+  const origins = new Set(['roboledger.ai'])
+  try {
+    const host = new URL(process.env.NEXT_PUBLIC_ROBOLEDGER_APP_URL ?? '').host
+    if (host) origins.add(host)
+  } catch {
+    // Not a URL: keep the apex only.
+  }
+  return [...origins]
+}
+
 const nextConfig = {
   reactStrictMode: true,
   // Server Actions POST to the page route and Next rejects the request unless
@@ -44,10 +59,10 @@ const nextConfig = {
   // `*.awsapprunner.com` host — so Next never sees `roboledger.ai` and every
   // action (graph/entity selection persistence) 500s. Allow the public origin
   // explicitly so the CSRF origin check passes. www redirects to the apex, so
-  // only the apex is listed.
+  // only the apex (plus this build's own app host) is listed.
   experimental: {
     serverActions: {
-      allowedOrigins: ['roboledger.ai'],
+      allowedOrigins: serverActionOrigins(),
     },
   },
   allowedDevOrigins,
