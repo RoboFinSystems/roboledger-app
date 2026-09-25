@@ -1,11 +1,11 @@
 'use client'
 
 import DocsLink from '@/components/DocsLink'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LedgerClosingBookStructures } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
-  GraphFilters,
   LoadingState,
   PageHeader,
   PageLayout,
@@ -13,7 +13,7 @@ import {
 } from '@robosystems/core'
 import { Card } from 'flowbite-react'
 import type { FC } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
 import { TbBook2 } from 'react-icons/tb'
 import AccountRollupsPanel from './components/AccountRollupsPanel'
@@ -76,13 +76,7 @@ const CloseContent: FC = function () {
   const [newScheduleOpen, setNewScheduleOpen] = useState(false)
 
   // Current graph
-  const currentGraph = useMemo(() => {
-    const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
-    return (
-      roboledgerGraphs.find((g) => g.graphId === graphState.currentGraphId) ??
-      roboledgerGraphs[0]
-    )
-  }, [graphState.graphs, graphState.currentGraphId])
+  const { graph: currentGraph } = useLedgerGraph()
 
   // Load sidebar data — single call to closing book structures endpoint.
   // `select` lets callers land on a specific item after the refresh (e.g.

@@ -1,5 +1,6 @@
 'use client'
 
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type {
   LedgerMappingCoverage,
   LedgerMappingInfo,
@@ -7,11 +8,9 @@ import type {
 } from '@robosystems/client/clients'
 import {
   clients,
-  GraphFilters,
   LoadingState,
   PageHeader,
   PageLayout,
-  useGraphContext,
 } from '@robosystems/core'
 import {
   Alert,
@@ -26,7 +25,7 @@ import {
 } from 'flowbite-react'
 import { useRouter } from 'next/navigation'
 import type { FC } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   HiChevronLeft,
   HiExclamationCircle,
@@ -89,7 +88,6 @@ const PRESETS: PresetOption[] = [
 
 const ReportBuilderContent: FC = function () {
   const router = useRouter()
-  const { state: graphState } = useGraphContext()
 
   // Form state
   const [reportName, setReportName] = useState('')
@@ -115,13 +113,7 @@ const ReportBuilderContent: FC = function () {
   const [isAutoMapping, setIsAutoMapping] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const currentGraph = useMemo(() => {
-    const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
-    return (
-      roboledgerGraphs.find((g) => g.graphId === graphState.currentGraphId) ??
-      roboledgerGraphs[0]
-    )
-  }, [graphState.graphs, graphState.currentGraphId])
+  const { graph: currentGraph } = useLedgerGraph()
 
   // Apply preset on mount and when preset changes
   useEffect(() => {

@@ -1,14 +1,13 @@
 'use client'
 
 import DocsLink from '@/components/DocsLink'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import {
   ElementBrowser,
   ElementDetail,
-  GraphFilters,
   LibraryClient,
   LibraryHierarchy,
   PageHeader,
-  useGraphContext,
   type LibraryTaxonomy,
 } from '@robosystems/core'
 import { getValidToken } from '@robosystems/core/auth-core/token-storage'
@@ -19,16 +18,7 @@ import { HiBookOpen, HiInformationCircle } from 'react-icons/hi'
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
 export default function LibraryContent() {
-  const { state: graphState } = useGraphContext()
-
-  const currentGraph = useMemo(() => {
-    const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
-    return (
-      roboledgerGraphs.find((g) => g.graphId === graphState.currentGraphId) ??
-      roboledgerGraphs[0] ??
-      null
-    )
-  }, [graphState.graphs, graphState.currentGraphId])
+  const { graph: currentGraph } = useLedgerGraph()
 
   const graphId = currentGraph?.graphId ?? null
 

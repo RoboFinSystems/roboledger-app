@@ -1,11 +1,11 @@
 'use client'
 
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import {
   EmptyState,
   PageHeader,
   PageLayout,
   SDK,
-  useGraphContext,
   useToast,
 } from '@robosystems/core'
 import { LoadingState, Spinner } from '@robosystems/core/ui-components'
@@ -115,8 +115,7 @@ export default function ModernConnectionsContent() {
   // Which provider setup form to show (null = provider list)
   const [setupProvider, setSetupProvider] = useState<string | null>(null)
   const { showError, showSuccess, ToastContainer } = useToast()
-  const { state: graphState } = useGraphContext()
-  const { currentGraphId } = graphState
+  const currentGraphId = useLedgerGraph().graph?.graphId ?? null
   const searchParams = useSearchParams()
   const router = useRouter()
   const shownSuccessRef = useRef(false)

@@ -4,6 +4,7 @@ import DocsLink from '@/components/DocsLink'
 import { FilterBar, FilterField, SearchField } from '@/components/FilterBar'
 import SegmentedControl from '@/components/SegmentedControl'
 import type { ElementClassification } from '@/lib/ledger'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type {
   LedgerMapping,
   LedgerMappingCoverage,
@@ -12,11 +13,9 @@ import type {
 import {
   clients,
   EmptyState,
-  GraphFilters,
   LoadingState,
   PageHeader,
   PageLayout,
-  useGraphContext,
 } from '@robosystems/core'
 import {
   Badge,
@@ -336,7 +335,6 @@ function GaapDropdown({
 // ── Main Content ──────────────────────────────────────────────────────────
 
 const ChartOfAccountsContent: FC = function () {
-  const { state: graphState } = useGraphContext()
   const [accounts, setAccounts] = useState<AccountRow[]>([])
   // Bumped after `initialize-chart-of-accounts` so the loader below re-runs
   // for the same graph and the new chart replaces the empty state.
@@ -375,13 +373,7 @@ const ChartOfAccountsContent: FC = function () {
   } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
-  const currentGraph = useMemo(() => {
-    const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
-    return (
-      roboledgerGraphs.find((g) => g.graphId === graphState.currentGraphId) ??
-      roboledgerGraphs[0]
-    )
-  }, [graphState.graphs, graphState.currentGraphId])
+  const { graph: currentGraph } = useLedgerGraph()
 
   // Load accounts and mappings
   useEffect(() => {

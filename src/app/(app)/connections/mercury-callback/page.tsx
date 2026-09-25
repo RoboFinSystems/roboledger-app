@@ -1,7 +1,8 @@
 'use client'
 
 import { friendlyError } from '@/lib/ledger/errors'
-import { LoadingState, SDK, useGraphContext } from '@robosystems/core'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
+import { LoadingState, SDK } from '@robosystems/core'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
@@ -14,9 +15,7 @@ const NO_GRAPH_TIMEOUT_MS = 15_000
 export default function MercuryCallbackPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const {
-    state: { currentGraphId },
-  } = useGraphContext()
+  const currentGraphId = useLedgerGraph().graph?.graphId ?? null
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
     'loading'
   )

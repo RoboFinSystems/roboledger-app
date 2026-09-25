@@ -1,7 +1,8 @@
 'use client'
 
 import { friendlyError } from '@/lib/ledger/errors'
-import { SDK, useGraphContext } from '@robosystems/core'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
+import { SDK } from '@robosystems/core'
 import { Spinner } from '@robosystems/core/ui-components'
 import { Alert, Button, Checkbox, Label, TextInput } from 'flowbite-react'
 import { useRouter } from 'next/navigation'
@@ -53,9 +54,7 @@ export default function MercurySetupForm({
   onConnected,
 }: MercurySetupFormProps) {
   const router = useRouter()
-  const {
-    state: { currentGraphId },
-  } = useGraphContext()
+  const currentGraphId = useLedgerGraph().graph?.graphId ?? null
   const [sinceDate, setSinceDate] = useState(defaultSinceDate)
   const [includeTreasury, setIncludeTreasury] = useState(true)
   const [apiKey, setApiKey] = useState('')

@@ -3,15 +3,14 @@
 import DocsLink from '@/components/DocsLink'
 import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
 import { formatAmount, formatDate } from '@/lib/ledger/formatters'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LedgerAgent, LedgerEventBlock } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
-  GraphFilters,
   LoadingState,
   PageHeader,
   PageLayout,
-  useGraphContext,
 } from '@robosystems/core'
 import {
   Alert,
@@ -77,7 +76,6 @@ const STATUS_BADGE_COLOR: Record<string, string> = {
 const EVENTS_LIMIT = 200
 
 const InboxContent: FC = function () {
-  const { state: graphState } = useGraphContext()
   const searchParams = useSearchParams()
 
   const [events, setEvents] = useState<LedgerEventBlock[]>([])
@@ -99,13 +97,7 @@ const InboxContent: FC = function () {
   // Selection (modal)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const currentGraph = useMemo(
-    () =>
-      graphState.graphs
-        .filter(GraphFilters.roboledger)
-        .find((g) => g.graphId === graphState.currentGraphId),
-    [graphState.graphs, graphState.currentGraphId]
-  )
+  const { graph: currentGraph } = useLedgerGraph()
 
   // Index agents by id for the table column.
   const agentById = useMemo(() => {

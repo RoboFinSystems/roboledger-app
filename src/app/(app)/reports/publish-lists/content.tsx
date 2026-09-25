@@ -1,16 +1,15 @@
 'use client'
 
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type {
   PublishList,
   PublishListDetail,
 } from '@robosystems/client/clients'
 import {
   clients,
-  GraphFilters,
   LoadingState,
   PageHeader,
   PageLayout,
-  useGraphContext,
 } from '@robosystems/core'
 import {
   Alert,
@@ -33,7 +32,7 @@ import {
 } from 'flowbite-react'
 import Link from 'next/link'
 import type { FC } from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   HiArrowLeft,
   HiOutlinePlusCircle,
@@ -43,8 +42,6 @@ import {
 } from 'react-icons/hi'
 
 const PublishListsContent: FC = function () {
-  const { state: graphState } = useGraphContext()
-
   const [lists, setLists] = useState<PublishList[]>([])
   const [selectedList, setSelectedList] = useState<PublishListDetail | null>(
     null
@@ -64,13 +61,7 @@ const PublishListsContent: FC = function () {
   const [isAddingMember, setIsAddingMember] = useState(false)
   const [addMemberError, setAddMemberError] = useState<string | null>(null)
 
-  const currentGraph = useMemo(() => {
-    const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
-    return (
-      roboledgerGraphs.find((g) => g.graphId === graphState.currentGraphId) ??
-      roboledgerGraphs[0]
-    )
-  }, [graphState.graphs, graphState.currentGraphId])
+  const { graph: currentGraph } = useLedgerGraph()
 
   const graphId = currentGraph?.graphId
 

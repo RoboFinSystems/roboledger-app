@@ -2,15 +2,14 @@
 
 import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
 import { formatDate } from '@/lib/ledger/formatters'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LedgerAgent } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
-  GraphFilters,
   LoadingState,
   PageHeader,
   PageLayout,
-  useGraphContext,
 } from '@robosystems/core'
 import {
   Alert,
@@ -51,7 +50,6 @@ const TYPE_BADGE_COLOR: Record<string, string> = {
 const AGENTS_LIMIT = 500
 
 const AgentsContent: FC = function () {
-  const { state: graphState } = useGraphContext()
   const searchParams = useSearchParams()
   const initialId = searchParams.get('id')
 
@@ -65,13 +63,7 @@ const AgentsContent: FC = function () {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(initialId)
 
-  const currentGraph = useMemo(
-    () =>
-      graphState.graphs
-        .filter(GraphFilters.roboledger)
-        .find((g) => g.graphId === graphState.currentGraphId),
-    [graphState.graphs, graphState.currentGraphId]
-  )
+  const { graph: currentGraph } = useLedgerGraph()
 
   // Inlined into the effect so the cleanup `cancelled` flag is local to
   // each invocation — prevents a stale response from overwriting state if

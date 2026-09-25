@@ -6,6 +6,7 @@ import {
   FilterSelect,
   SearchField,
 } from '@/components/FilterBar'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import {
   clients,
   EmptyState,
@@ -112,6 +113,7 @@ export const initialViewFromSearch = (search: string): JournalView =>
 
 const JournalContent: FC = function () {
   const { state: graphState } = useGraphContext()
+  const ledgerGraphId = useLedgerGraph().graph?.graphId ?? null
   const [transactions, setTransactions] = useState<TransactionRow[]>([])
   const [totalCount, setTotalCount] = useState<number | null>(null)
   const [lineItemsMap, setLineItemsMap] = useState<
@@ -338,7 +340,7 @@ const JournalContent: FC = function () {
             onChange={(value) => setEndDate(value || null)}
           />
         </div>
-        {graphState.currentGraphId && (
+        {ledgerGraphId && (
           <Button
             color="primary"
             size="sm"
@@ -386,18 +388,18 @@ const JournalContent: FC = function () {
         </nav>
       </div>
 
-      {graphState.currentGraphId && (
+      {ledgerGraphId && (
         <NewJournalEntryModal
-          graphId={graphState.currentGraphId}
+          graphId={ledgerGraphId}
           open={newEntryOpen}
           onClose={() => setNewEntryOpen(false)}
           onCreated={() => setRefreshKey((k) => k + 1)}
         />
       )}
 
-      {activeTab === 'entries' && graphState.currentGraphId ? (
+      {activeTab === 'entries' && ledgerGraphId ? (
         <JournalEntriesPanel
-          graphId={graphState.currentGraphId}
+          graphId={ledgerGraphId}
           startDate={startDate}
           endDate={endDate}
           refreshKey={refreshKey}

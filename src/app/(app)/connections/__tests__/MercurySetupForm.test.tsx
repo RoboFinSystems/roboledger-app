@@ -5,6 +5,21 @@ const mockCreateConnection = vi.fn()
 const mockInitOAuth = vi.fn()
 const mockPush = vi.fn()
 
+// Every graph these tests select is a RoboLedger graph.
+vi.mock('@/lib/useLedgerGraph', async () => {
+  const core = await import('@robosystems/core')
+  return {
+    useLedgerGraph: () => {
+      const id = core.useGraphContext().state.currentGraphId
+      return {
+        graph: id ? { graphId: id } : null,
+        ledgerGraphs: [],
+        mismatch: false,
+      }
+    },
+  }
+})
+
 vi.mock('@robosystems/core', () => ({
   SDK: {
     createConnection: (...args: any[]) => mockCreateConnection(...args),

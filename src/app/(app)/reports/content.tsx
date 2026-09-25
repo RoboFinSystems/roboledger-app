@@ -2,15 +2,14 @@
 
 import DocsLink from '@/components/DocsLink'
 import SegmentedControl from '@/components/SegmentedControl'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { ReportListItem } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
-  GraphFilters,
   LoadingState,
   PageHeader,
   PageLayout,
-  useGraphContext,
 } from '@robosystems/core'
 import {
   Badge,
@@ -25,7 +24,7 @@ import {
 } from 'flowbite-react'
 import Link from 'next/link'
 import type { FC } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   HiDocumentReport,
   HiExclamationCircle,
@@ -77,19 +76,12 @@ interface ReportWithGraph extends ReportListItem {
 }
 
 const ReportsContent: FC = function () {
-  const { state: graphState } = useGraphContext()
   const [reports, setReports] = useState<ReportWithGraph[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<ListView>('current')
 
-  const currentGraph = useMemo(() => {
-    const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
-    return (
-      roboledgerGraphs.find((g) => g.graphId === graphState.currentGraphId) ??
-      roboledgerGraphs[0]
-    )
-  }, [graphState.graphs, graphState.currentGraphId])
+  const { graph: currentGraph } = useLedgerGraph()
 
   useEffect(() => {
     if (!currentGraph) {

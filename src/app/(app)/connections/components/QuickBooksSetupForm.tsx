@@ -1,6 +1,7 @@
 'use client'
 
-import { SDK, useGraphContext } from '@robosystems/core'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
+import { SDK } from '@robosystems/core'
 import { Spinner } from '@robosystems/core/ui-components'
 import { Alert, Button } from 'flowbite-react'
 import Image from 'next/image'
@@ -15,9 +16,7 @@ export default function QuickBooksSetupForm({
   onCancel,
 }: QuickBooksSetupFormProps) {
   const router = useRouter()
-  const {
-    state: { currentGraphId },
-  } = useGraphContext()
+  const currentGraphId = useLedgerGraph().graph?.graphId ?? null
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

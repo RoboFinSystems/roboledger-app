@@ -3,11 +3,11 @@
 import DocsLink from '@/components/DocsLink'
 import ExportMenu, { type ExportMenuGroup } from '@/components/ExportMenu'
 import RefreshControl from '@/components/RefreshControl'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { InformationBlockList } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
-  GraphFilters,
   LoadingState,
   PageHeader,
   PageLayout,
@@ -88,13 +88,7 @@ const BlockExplorerContent: FC = function () {
   const envelopeSeq = useRef(0)
   const refreshForGraphId = useRef<string | null>(null)
 
-  const currentGraph = useMemo(() => {
-    const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
-    return (
-      roboledgerGraphs.find((g) => g.graphId === graphState.currentGraphId) ??
-      roboledgerGraphs[0]
-    )
-  }, [graphState.graphs, graphState.currentGraphId])
+  const { graph: currentGraph } = useLedgerGraph()
 
   const updateUrl = useCallback(
     (blockId: string | null, mode: ViewMode, scenario: string | null) => {

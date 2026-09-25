@@ -2,11 +2,11 @@
 
 import { isGraphAdmin } from '@/lib/graph-role'
 import { friendlyError } from '@/lib/ledger/errors'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { BlockedSourceGraph } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
-  GraphFilters,
   LoadingState,
   PageHeader,
   PageLayout,
@@ -29,7 +29,7 @@ import {
   TableRow,
 } from 'flowbite-react'
 import type { FC } from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { HiBan, HiExclamationCircle } from 'react-icons/hi'
 
 const PAGE_SIZE = 50
@@ -70,13 +70,7 @@ const BlockedSendersContent: FC = function () {
   const [unblockError, setUnblockError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
-  const currentGraph = useMemo(() => {
-    const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
-    return (
-      roboledgerGraphs.find((g) => g.graphId === graphState.currentGraphId) ??
-      roboledgerGraphs[0]
-    )
-  }, [graphState.graphs, graphState.currentGraphId])
+  const { graph: currentGraph } = useLedgerGraph()
 
   const graphId = currentGraph?.graphId
   const isAdmin = isGraphAdmin(graphState.graphs, graphId)

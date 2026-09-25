@@ -5,6 +5,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mockGetEntity = vi.fn()
 const mockUpdateEntity = vi.fn()
 
+// Every graph these tests select is a RoboLedger graph.
+vi.mock('@/lib/useLedgerGraph', async () => {
+  const core = await import('@robosystems/core')
+  return {
+    useLedgerGraph: () => {
+      const id = core.useGraphContext().state.currentGraphId
+      return {
+        graph: id ? { graphId: id } : null,
+        ledgerGraphs: [],
+        mismatch: false,
+      }
+    },
+  }
+})
+
 vi.mock('@robosystems/core', () => ({
   customTheme: { card: {}, alert: {}, textInput: {} },
   PageLayout: ({ children }: { children: React.ReactNode }) => (
