@@ -35,3 +35,23 @@ describe('proxy CSP', () => {
     }
   )
 })
+
+describe('proxy CSP (as the deployed server receives the request)', () => {
+  afterEach(() => vi.unstubAllEnvs())
+
+  // A production server reports its own listen address in nextUrl, whatever
+  // Host the browser sent, so the hostname cannot mean "running locally".
+  it('serves the production policy to a request that reaches it as localhost', () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    const csp =
+      proxy(
+        new NextRequest('http://localhost:3000/home', {
+          headers: { host: 'roboledger.ai' },
+        })
+      ).headers.get('content-security-policy') ?? ''
+    const directive =
+      csp.split(';').find((d) => d.trim().startsWith('connect-src')) ?? ''
+    expect(directive).toContain('https://api.robosystems.ai')
+    expect(directive).not.toContain('http://localhost:*')
+  })
+})
