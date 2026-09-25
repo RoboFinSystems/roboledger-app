@@ -1,6 +1,6 @@
 import { CloudflareAnalytics } from '@/components/analytics/CloudflareAnalytics'
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from '@/lib/site'
-import { organizationJsonLd } from '@/lib/structured-data'
+import { siteJsonLd } from '@/lib/structured-data'
 import { AuthProvider, customTheme } from '@robosystems/core'
 import { ThemeModeScript, ThemeProvider } from 'flowbite-react'
 import type { Metadata, Viewport } from 'next'
@@ -59,7 +59,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationJsonLd).replace(/</g, '\\u003c'),
+            __html: JSON.stringify(siteJsonLd).replace(/</g, '\\u003c'),
           }}
         />
       </head>
