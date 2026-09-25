@@ -293,4 +293,22 @@ describe('NewScheduleModal', () => {
     expect(onCreated).not.toHaveBeenCalled()
     expect(onClose).not.toHaveBeenCalled()
   })
+
+  it('shows the server reason, not the raw error envelope', async () => {
+    mockCreateSchedule.mockRejectedValue(
+      new Error(
+        'Create schedule failed: {"detail":"Posting date falls in a closed period."}'
+      )
+    )
+    renderModal()
+    await fillRequiredFields()
+    fireEvent.click(createButton())
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(/Posting date falls in a closed period/i)
+      ).toBeInTheDocument()
+    )
+    expect(screen.queryByText(/\{"detail"/)).not.toBeInTheDocument()
+  })
 })

@@ -1,5 +1,6 @@
 'use client'
 
+import { extractDetail } from '@/lib/ledger/errors'
 import { formatDollars } from '@/lib/ledger/formatters'
 import { clients } from '@robosystems/core'
 import {
@@ -261,9 +262,11 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
       onCreated?.(created.structureId)
       onClose()
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : 'Failed to create schedule.'
-      setSubmitError(msg)
+      setSubmitError(
+        err instanceof Error
+          ? extractDetail(err.message)
+          : 'Failed to create schedule.'
+      )
     } finally {
       setSubmitting(false)
     }
