@@ -167,7 +167,14 @@ describe('getClientIp', () => {
 
     it('ignores the viewer header without the secret and uses the right-most hop', () => {
       vi.stubEnv('ORIGIN_VERIFY_SECRET', 'edge-secret')
-      for (const verify of [undefined, 'wrong', 'edge-secret-longer', '']) {
+      for (const verify of [
+        undefined,
+        'wrong',
+        'edge-secret-longer',
+        'edge-secre',
+        'x'.repeat(4096),
+        '',
+      ]) {
         const headers: Record<string, string> = {
           'x-forwarded-for': '198.51.100.1, 192.0.2.44',
           'cloudfront-viewer-address': '198.51.100.99:1',

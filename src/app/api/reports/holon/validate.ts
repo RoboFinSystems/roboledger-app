@@ -39,14 +39,14 @@ function reportBundleBucket(): string | null {
 }
 
 /**
- * The S3 endpoint override used by LocalStack in local development, as a
- * lowercase `host[:port]`, or null when none is configured.
+ * The S3 endpoint override used by LocalStack in local development, matched
+ * on protocol, host and port together; null when none is configured.
  */
-function endpointOverrideHost(): string | null {
+function endpointOverride(): URL | null {
   const endpoint = process.env.NEXT_PUBLIC_S3_ENDPOINT_URL
   if (!endpoint) return null
   try {
-    return new URL(endpoint).host.toLowerCase()
+    return new URL(endpoint)
   } catch {
     return null
   }
@@ -65,8 +65,11 @@ function endpointOverrideHost(): string | null {
 function bundleObjectKey(u: URL): string | null {
   const host = u.hostname.toLowerCase()
   const bucket = reportBundleBucket()
-  const override = endpointOverrideHost()
-  const isOverride = override !== null && u.host.toLowerCase() === override
+  const override = endpointOverride()
+  const isOverride =
+    override !== null &&
+    u.protocol === override.protocol &&
+    u.host.toLowerCase() === override.host.toLowerCase()
 
   // The path always begins with `/`; strip it to get the key (virtual-hosted)
   // or `<bucket>/<key>` (path-style).
@@ -80,6 +83,7 @@ function bundleObjectKey(u: URL): string | null {
     return path.slice(slash + 1)
   }
 
+  // Plaintext and explicit ports are tolerated only for the override.
   if (!bucket || u.protocol !== 'https:' || u.port !== '') return null
 
   const virtualHosted = new RegExp(
@@ -118,6 +122,7 @@ export function allowedHolonUrl(raw: string): AllowedArtifact | null {
 
   const key = bundleObjectKey(u)
   if (key === null || !key.startsWith(BUNDLE_KEY_PREFIX)) return null
+  if (key.split('/').some((seg) => seg === '..' || seg === '.')) return null
 
   const suffix = RENDERABLE_SUFFIXES.find((s) => key.endsWith(s))
   if (!suffix) return null

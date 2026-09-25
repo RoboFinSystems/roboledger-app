@@ -95,6 +95,15 @@ describe('allowedHolonUrl', () => {
       ).toBeNull()
     })
 
+    it('rejects trailing-dot hosts', () => {
+      for (const url of [
+        `https://${BUCKET}.s3.amazonaws.com./${KEY}?${SIG}`,
+        `https://s3.amazonaws.com./${BUCKET}/${KEY}?${SIG}`,
+      ]) {
+        expect(allowedHolonUrl(url), url).toBeNull()
+      }
+    })
+
     it('rejects internal addresses and hosts that merely mention AWS', () => {
       for (const url of [
         `http://169.254.169.254/${BUCKET}/${KEY}?${SIG}`,
@@ -120,6 +129,8 @@ describe('allowedHolonUrl', () => {
         'graph-backups/report-bundles/x.holon.jsonld',
         'x/report-bundles/g/r/x.holon.jsonld',
         'report-bundles/../user-staging/x.holon.jsonld',
+        'report-bundles/%2e%2e/user-staging/x.holon.jsonld',
+        'report-bundles/%2E%2E/%2e%2e/graph-backups/x.holon.jsonld',
       ]) {
         const url = `https://${BUCKET}.s3.amazonaws.com/${key}?${SIG}`
         expect(allowedHolonUrl(url), key).toBeNull()
@@ -175,6 +186,10 @@ describe('allowedHolonUrl', () => {
       expect(
         allowedHolonUrl(LOCAL.replace(BUCKET, 'robosystems-user'))
       ).not.toBeNull()
+    })
+
+    it('matches the override on protocol as well as host and port', () => {
+      expect(allowedHolonUrl(LOCAL.replace('http:', 'https:'))).toBeNull()
     })
 
     it('does not extend to another port on the same host', () => {
