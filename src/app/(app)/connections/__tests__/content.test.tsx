@@ -201,4 +201,58 @@ describe('Connections error handling', () => {
       )
     )
   })
+
+  it('a failed reload clears the cards it can no longer vouch for', async () => {
+    mockDeleteConnection.mockResolvedValue({
+      data: {},
+      response: { status: 200 },
+    })
+    await renderLoaded()
+    mockListConnections.mockResolvedValue(refused(500, 'Database unavailable'))
+    fireEvent.click(screen.getByText('open delete'))
+    fireEvent.click(screen.getByText('sever'))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Database unavailable'
+    )
+    expect(screen.queryByText('conn_1')).not.toBeInTheDocument()
+  })
+
+  it('keeps watching a sync through a failed poll', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      mockSyncConnection.mockResolvedValue({
+        data: {},
+        response: { status: 202 },
+      })
+      await renderLoaded()
+      fireEvent.click(screen.getByText('open sync'))
+      fireEvent.click(screen.getByText('start sync'))
+      await waitFor(() =>
+        expect(mockShowSuccess).toHaveBeenCalledWith(
+          'Sync started successfully'
+        )
+      )
+
+      // One poll fails, the next sees the sync land.
+      mockListConnections.mockResolvedValueOnce(refused(503, 'Busy'))
+      await vi.advanceTimersByTimeAsync(3000)
+      mockListConnections.mockResolvedValue({
+        data: [
+          {
+            ...CONNECTION,
+            last_sync: new Date(Date.now() + 1000).toISOString(),
+          },
+        ],
+        response: { status: 200 },
+      })
+      await vi.advanceTimersByTimeAsync(3000)
+
+      await waitFor(() =>
+        expect(mockShowSuccess).toHaveBeenCalledWith('Quickbooks sync complete')
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

@@ -173,11 +173,15 @@ export default function ModernConnectionsContent() {
         }
         const errorMsg = apiErrorMessage(err, 'Failed to load connections')
         if (!background) {
+          // Never leave another graph's cards on screen under this one.
+          setConnections([])
           setError(errorMsg)
           showError(errorMsg)
         }
         console.error('Error loading connections:', err)
-        return [] as ConnectionData[]
+        // null = "no answer", distinct from an empty list: the sync-watch
+        // poller must not read a failed tick as every watched connection gone.
+        return null
       } finally {
         if (!background && loadedGraphIdRef.current === currentGraphId) {
           setLoading(false)
@@ -210,7 +214,7 @@ export default function ModernConnectionsContent() {
       await new Promise((resolve) => setTimeout(resolve, 1500))
       if (cancelled) return
       const list = await loadConnections()
-      if (cancelled || list.length === 0) return
+      if (cancelled || !list || list.length === 0) return
       // Track every connection that hasn't synced yet — typically just the
       // one from this OAuth flow.
       setSyncWatches((prev) => {
@@ -236,6 +240,7 @@ export default function ModernConnectionsContent() {
 
     const interval = setInterval(async () => {
       const list = await loadConnections({ background: true })
+      if (!list) return // a failed tick; try again on the next one
       const now = Date.now()
       setSyncWatches((prev) => {
         const next = new Map(prev)

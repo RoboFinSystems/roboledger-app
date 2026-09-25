@@ -214,6 +214,22 @@ describe('apiErrorMessage', () => {
         'fallback'
       )
     ).toBe('fallback')
+    expect(
+      apiErrorMessage(
+        new ApiError({
+          status: 502,
+          detail: '<html><head><title>502 Bad Gateway</title></head></html>',
+        }),
+        'fallback'
+      )
+    ).toBe('fallback')
+    // A 2xx body that failed to parse is not a server refusal.
+    expect(
+      apiErrorMessage(
+        new ApiError({ status: 200, detail: 'Unexpected token < in JSON' }),
+        'fallback'
+      )
+    ).toBe('fallback')
     expect(apiErrorMessage(new TypeError('x is undefined'), 'fallback')).toBe(
       'fallback'
     )

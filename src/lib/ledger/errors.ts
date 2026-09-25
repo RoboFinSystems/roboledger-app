@@ -191,14 +191,16 @@ export const apiErrorMessage = (err: unknown, fallback: string): string => {
   if (
     err instanceof Error &&
     typeof api?.status === 'number' &&
-    api.status > 0
+    api.status >= 400
   ) {
     const detail = api.detail
     // core's placeholder when the body carried no detail says nothing useful.
+    // A proxy or WAF error page is HTML, not a reason to show a user.
     if (
       typeof detail === 'string' &&
       detail &&
-      !detail.startsWith('Request failed with status')
+      !detail.startsWith('Request failed with status') &&
+      !detail.trimStart().startsWith('<')
     ) {
       return friendlyError(detail).message
     }
