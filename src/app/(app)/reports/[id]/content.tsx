@@ -39,6 +39,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  HiArchive,
   HiBan,
   HiChevronLeft,
   HiCog,
@@ -79,7 +80,7 @@ const PACKAGE_STATUS_BADGE: Record<
   draft: { color: 'gray', label: 'Draft' },
   under_review: { color: 'info', label: 'Under Review' },
   filed: { color: 'success', label: 'Filed' },
-  archived: { color: 'failure', label: 'Archived' },
+  archived: { color: 'gray', label: 'Archived' },
 }
 
 // `ShareReportResponse` (with its typed `results: ShareResultItem[]`)
@@ -141,6 +142,7 @@ const ReportViewerContent: FC = function () {
   const [showSharesModal, setShowSharesModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
   const loadPublishLists = useCallback(async () => {
@@ -227,10 +229,39 @@ const ReportViewerContent: FC = function () {
     }
   }, [graphId, reportId, selectedListId])
 
-  // Removing a copy shared in from another graph. The copy carries the
-  // *sender's* user id in `created_by`, so the ordinary owner rule can never
-  // match anyone here — the receiving graph's admin is who gets to delete it.
-  const handleDeleteCopy = useCallback(async () => {
+  // Archive / unarchive a filed report. A filed report is a record: archiving
+  // takes it off the current list without deleting it, and is reversible.
+  const handleFilingTransition = useCallback(
+    async (target: 'archived' | 'filed') => {
+      if (!graphId || !reportId) return
+      try {
+        setIsTransitioning(true)
+        setActionError(null)
+        const updated = await clients.reports.transitionFilingStatus(
+          graphId,
+          reportId,
+          target
+        )
+        setPkg((prev) =>
+          prev ? { ...prev, filingStatus: updated.filing_status } : prev
+        )
+      } catch (err) {
+        console.error('Filing status change failed:', err)
+        const message =
+          err instanceof Error ? err.message : 'Failed to update the report.'
+        setActionError(friendlyError(message).message)
+      } finally {
+        setIsTransitioning(false)
+      }
+    },
+    [graphId, reportId]
+  )
+
+  // Deletes an unfiled report of this graph's own, or a copy shared in from
+  // another graph. The copy carries the *sender's* user id in `created_by`,
+  // so the ordinary owner rule can never match anyone here — the receiving
+  // graph's admin is who gets to delete it.
+  const handleDelete = useCallback(async () => {
     if (!graphId || !reportId) return
     try {
       setIsDeleting(true)
@@ -354,6 +385,15 @@ const ReportViewerContent: FC = function () {
 
   const filingBadge =
     PACKAGE_STATUS_BADGE[pkg.filingStatus] ?? PACKAGE_STATUS_BADGE.draft
+  // Filing actions on this graph's own reports, for their author (the API
+  // enforces the same rule). Filed reports are archived, never deleted.
+  const isAuthor = !pkg.sourceGraphId && pkg.createdBy === user?.id
+  const canArchive = isAuthor && pkg.filingStatus === 'filed'
+  const canUnarchive = isAuthor && pkg.filingStatus === 'archived'
+  const canDelete =
+    isAuthor &&
+    (pkg.filingStatus === 'draft' || pkg.filingStatus === 'under_review')
+  const hasLifecycleAction = canArchive || canUnarchive || canDelete
 
   return (
     <PageLayout>
@@ -368,14 +408,16 @@ const ReportViewerContent: FC = function () {
                 that never published would otherwise strand its recipient with
                 no way to block or remove it. So the menu opens for any
                 received report too. */}
-            {(pkg.generationStatus === 'published' || pkg.sourceGraphId) && (
+            {(pkg.generationStatus === 'published' ||
+              pkg.sourceGraphId ||
+              hasLifecycleAction) && (
               <Dropdown
                 color="light"
                 size="sm"
                 arrowIcon={false}
-                disabled={downloading !== null}
+                disabled={downloading !== null || isTransitioning}
                 label={
-                  downloading !== null ? (
+                  downloading !== null || isTransitioning ? (
                     <Spinner size="sm" />
                   ) : (
                     <HiDotsVertical className="h-5 w-5" />
@@ -399,28 +441,61 @@ const ReportViewerContent: FC = function () {
                   </>
                 )}
                 {!pkg.sourceGraphId ? (
-                  pkg.generationStatus === 'published' && (
-                    <>
-                      <DropdownDivider />
-                      <DropdownItem
-                        icon={HiShare}
-                        onClick={() => {
-                          setShareResult(null)
-                          setSelectedListId(null)
-                          loadPublishLists()
-                          setShowShareModal(true)
-                        }}
-                      >
-                        Share
-                      </DropdownItem>
-                      <DropdownItem
-                        icon={HiCog}
-                        onClick={() => setShowSharesModal(true)}
-                      >
-                        Manage shares
-                      </DropdownItem>
-                    </>
-                  )
+                  <>
+                    {pkg.generationStatus === 'published' && (
+                      <>
+                        <DropdownDivider />
+                        <DropdownItem
+                          icon={HiShare}
+                          onClick={() => {
+                            setShareResult(null)
+                            setSelectedListId(null)
+                            loadPublishLists()
+                            setShowShareModal(true)
+                          }}
+                        >
+                          Share
+                        </DropdownItem>
+                        <DropdownItem
+                          icon={HiCog}
+                          onClick={() => setShowSharesModal(true)}
+                        >
+                          Manage shares
+                        </DropdownItem>
+                      </>
+                    )}
+                    {hasLifecycleAction && (
+                      <>
+                        {pkg.generationStatus === 'published' && (
+                          <DropdownDivider />
+                        )}
+                        {canArchive && (
+                          <DropdownItem
+                            icon={HiArchive}
+                            onClick={() => handleFilingTransition('archived')}
+                          >
+                            Archive
+                          </DropdownItem>
+                        )}
+                        {canUnarchive && (
+                          <DropdownItem
+                            icon={HiArchive}
+                            onClick={() => handleFilingTransition('filed')}
+                          >
+                            Unarchive
+                          </DropdownItem>
+                        )}
+                        {canDelete && (
+                          <DropdownItem
+                            icon={HiTrash}
+                            onClick={() => setShowDeleteConfirm(true)}
+                          >
+                            Delete report
+                          </DropdownItem>
+                        )}
+                      </>
+                    )}
+                  </>
                 ) : (
                   <>
                     {pkg.generationStatus === 'published' && (
@@ -720,34 +795,43 @@ const ReportViewerContent: FC = function () {
         />
       )}
 
-      {/* Deleting a received copy is irreversible and the sender is not
-          notified, so it gets an explicit confirm rather than riding the
+      {/* Deleting is irreversible (and for a received copy the sender is not
+          notified), so it gets an explicit confirm rather than riding the
           dropdown click. */}
       <Modal
         show={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         size="md"
       >
-        <ModalHeader>Delete this copy?</ModalHeader>
+        <ModalHeader>
+          {pkg.sourceGraphId ? 'Delete this copy?' : 'Delete this report?'}
+        </ModalHeader>
         <ModalBody>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            This removes the copy of{' '}
-            <span className="font-medium text-gray-900 dark:text-white">
-              {pkg.name}
-            </span>{' '}
-            that was shared into this graph, along with its facts. It cannot be
-            undone, and the sender is not notified. To stop them sending more,
-            block the sender as well.
-          </p>
+          {pkg.sourceGraphId ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              This removes the copy of{' '}
+              <span className="font-medium text-gray-900 dark:text-white">
+                {pkg.name}
+              </span>{' '}
+              that was shared into this graph, along with its facts. It cannot
+              be undone, and the sender is not notified. To stop them sending
+              more, block the sender as well.
+            </p>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              This removes{' '}
+              <span className="font-medium text-gray-900 dark:text-white">
+                {pkg.name}
+              </span>{' '}
+              and its facts. It cannot be undone. Only reports that have not
+              been filed can be deleted; a filed report is archived instead.
+            </p>
+          )}
         </ModalBody>
         <ModalFooter>
-          <Button
-            color="failure"
-            onClick={handleDeleteCopy}
-            disabled={isDeleting}
-          >
+          <Button color="failure" onClick={handleDelete} disabled={isDeleting}>
             {isDeleting ? <Spinner size="sm" className="mr-2" /> : null}
-            Delete copy
+            {pkg.sourceGraphId ? 'Delete copy' : 'Delete report'}
           </Button>
           <Button
             color="gray"

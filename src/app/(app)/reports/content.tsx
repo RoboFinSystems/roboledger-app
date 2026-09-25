@@ -1,7 +1,7 @@
 'use client'
 
 import DocsLink from '@/components/DocsLink'
-import type { Report } from '@robosystems/client/clients'
+import type { ReportListItem } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
@@ -41,6 +41,15 @@ const STATUS_COLORS: Record<string, string> = {
   failed: 'failure',
 }
 
+const FILING_BADGE: Record<string, { color: string; label: string }> = {
+  draft: { color: 'gray', label: 'Draft' },
+  under_review: { color: 'info', label: 'Under Review' },
+  filed: { color: 'success', label: 'Filed' },
+  archived: { color: 'gray', label: 'Archived' },
+}
+
+type ListView = 'current' | 'archived'
+
 const formatPeriodType = (periodType: string | null): string | null => {
   if (!periodType) return null
   return periodType.charAt(0).toUpperCase() + periodType.slice(1)
@@ -56,7 +65,7 @@ const formatDate = (dateString: string | null): string => {
   })
 }
 
-interface ReportWithGraph extends Report {
+interface ReportWithGraph extends ReportListItem {
   _graphId: string
   _graphName: string
 }
@@ -66,6 +75,7 @@ const ReportsContent: FC = function () {
   const [reports, setReports] = useState<ReportWithGraph[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [view, setView] = useState<ListView>('current')
 
   const currentGraph = useMemo(() => {
     const roboledgerGraphs = graphState.graphs.filter(GraphFilters.roboledger)
@@ -89,7 +99,8 @@ const ReportsContent: FC = function () {
         setError(null)
 
         const reportList = await clients.reports.listReports(
-          currentGraph.graphId
+          currentGraph.graphId,
+          { lifecycle: view === 'archived' ? 'ARCHIVED' : 'CURRENT' }
         )
         if (cancelled) return
 
@@ -118,7 +129,7 @@ const ReportsContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph])
+  }, [currentGraph, view])
 
   return (
     <PageLayout>
@@ -159,22 +170,47 @@ const ReportsContent: FC = function () {
       )}
 
       <Card>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            color={view === 'current' ? 'primary' : 'light'}
+            onClick={() => setView('current')}
+          >
+            Current
+          </Button>
+          <Button
+            size="sm"
+            color={view === 'archived' ? 'primary' : 'light'}
+            onClick={() => setView('archived')}
+          >
+            Archived
+          </Button>
+        </div>
         <div className="overflow-x-auto">
           {isLoading ? (
             <LoadingState />
           ) : reports.length === 0 ? (
-            <EmptyState
-              icon={HiDocumentReport}
-              title="No Reports Found"
-              description="Create your first financial report to get started."
-            />
+            view === 'archived' ? (
+              <EmptyState
+                icon={HiDocumentReport}
+                title="No Archived Reports"
+                description="Filed reports you archive appear here. Archiving takes a report off the current list without deleting it."
+              />
+            ) : (
+              <EmptyState
+                icon={HiDocumentReport}
+                title="No Reports Found"
+                description="Create your first financial report to get started."
+              />
+            )
           ) : (
             <Table>
               <TableHead>
                 <tr>
                   <TableHeadCell>Report Name</TableHeadCell>
                   <TableHeadCell>Period</TableHeadCell>
-                  <TableHeadCell>Status</TableHeadCell>
+                  <TableHeadCell>Filing</TableHeadCell>
+                  <TableHeadCell>Generation</TableHeadCell>
                   <TableHeadCell>Structures</TableHeadCell>
                   <TableHeadCell className="w-24"></TableHeadCell>
                 </tr>
@@ -205,6 +241,17 @@ const ReportsContent: FC = function () {
                           </Badge>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        color={
+                          FILING_BADGE[report.filingStatus]?.color ?? 'gray'
+                        }
+                        size="sm"
+                      >
+                        {FILING_BADGE[report.filingStatus]?.label ??
+                          report.filingStatus}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge
