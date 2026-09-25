@@ -1,6 +1,7 @@
 'use client'
 
 import DocsLink from '@/components/DocsLink'
+import SegmentedControl from '@/components/SegmentedControl'
 import type { ReportListItem } from '@robosystems/client/clients'
 import {
   clients,
@@ -49,6 +50,11 @@ const FILING_BADGE: Record<string, { color: string; label: string }> = {
 }
 
 type ListView = 'current' | 'archived'
+
+const LIST_VIEWS = [
+  { value: 'current', label: 'Current' },
+  { value: 'archived', label: 'Archived' },
+] as const
 
 const formatPeriodType = (periodType: string | null): string | null => {
   if (!periodType) return null
@@ -170,21 +176,14 @@ const ReportsContent: FC = function () {
       )}
 
       <Card>
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            color={view === 'current' ? 'primary' : 'light'}
-            onClick={() => setView('current')}
-          >
-            Current
-          </Button>
-          <Button
-            size="sm"
-            color={view === 'archived' ? 'primary' : 'light'}
-            onClick={() => setView('archived')}
-          >
-            Archived
-          </Button>
+        <div>
+          <SegmentedControl
+            options={LIST_VIEWS}
+            value={view}
+            onChange={setView}
+            ariaLabel="Which reports to show"
+            size="compact"
+          />
         </div>
         <div className="overflow-x-auto">
           {isLoading ? (
