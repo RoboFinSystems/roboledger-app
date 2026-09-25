@@ -2,6 +2,7 @@
 
 import FoldControls from '@/components/FoldControls'
 import FoldLabel from '@/components/FoldLabel'
+import { formatDollars } from '@/lib/ledger/formatters'
 import { useRowFold } from '@/lib/ledger/rowFold'
 import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
 import {
@@ -21,25 +22,13 @@ import {
   type StatementRow,
 } from '../statementModel'
 
-const formatCurrency = (amount: number): string =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount)
+const formatCurrency = (amount: number): string => formatDollars(amount)
 
 // Change is signed but deliberately uncoloured: whether a rise is good news
 // depends on the line (revenue vs. expense, asset vs. liability), and a
 // green/red tint would assert a judgement the statement doesn't make.
 const formatSignedCurrency = (amount: number): string =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-    signDisplay: 'exceptZero',
-  }).format(amount)
+  formatDollars(amount, undefined, { signDisplay: 'exceptZero' })
 
 const formatSignedPercent = (ratio: number): string =>
   new Intl.NumberFormat('en-US', {

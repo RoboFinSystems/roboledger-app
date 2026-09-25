@@ -1,5 +1,6 @@
 'use client'
 
+import { formatDollars } from '@/lib/ledger/formatters'
 import { clients } from '@robosystems/core'
 import {
   Alert,
@@ -63,10 +64,7 @@ const lifeEndDate = (start: string, monthsAhead: number): string => {
   return `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 }
 
-const formatCents = (cents: number): string =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
-    cents / 100
-  )
+const formatCents = (cents: number): string => formatDollars(cents / 100)
 
 /**
  * Typed schedule creation form — the first human authoring surface for

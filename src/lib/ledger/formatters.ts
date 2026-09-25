@@ -34,6 +34,26 @@ export function formatDateTime(iso: string | null | undefined): string {
   })
 }
 
+/**
+ * A dollar amount (not cents) as money. The one money formatter for the
+ * aggregated views (trial balance, statements, journal): the currency is a
+ * parameter so a non-USD reporting currency threads through one place. The
+ * ledger reads carry no currency today, so callers pass none and get USD.
+ */
+export function formatDollars(
+  amount: number,
+  currency?: string | null,
+  options: Intl.NumberFormatOptions = {}
+): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency || 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    ...options,
+  }).format(amount)
+}
+
 export function formatAmount(
   cents: number | null | undefined,
   currency: string | null | undefined

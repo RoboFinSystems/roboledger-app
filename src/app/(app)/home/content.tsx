@@ -1,6 +1,7 @@
 'use client'
 
 import { useCreateGraphHandoff } from '@/lib/cross-app'
+import { formatDollars } from '@/lib/ledger/formatters'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import {
   clients,
@@ -89,11 +90,7 @@ const topAlignedCardTheme = {
   },
 }
 
-const formatCurrency = (amount: number): string =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
+const formatCurrency = (amount: number): string => formatDollars(amount)
 
 const formatDate = (dateString: string | null | undefined): string => {
   if (!dateString) return '—'

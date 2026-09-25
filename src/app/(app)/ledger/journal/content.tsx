@@ -6,6 +6,7 @@ import {
   FilterSelect,
   SearchField,
 } from '@/components/FilterBar'
+import { formatDollars } from '@/lib/ledger/formatters'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import {
   clients,
@@ -80,12 +81,7 @@ interface LineItemRow {
   description: string | null
 }
 
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
-}
+const formatCurrency = (amount: number): string => formatDollars(amount)
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString + 'T00:00:00')

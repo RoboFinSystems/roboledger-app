@@ -9,6 +9,7 @@ import {
   formatAmount,
   formatDate,
   formatDateTime,
+  formatDollars,
 } from '../formatters'
 
 describe('formatDate', () => {
@@ -79,5 +80,15 @@ describe('formatAddress', () => {
   it('returns an em dash for a missing address', () => {
     expect(formatAddress(null)).toBe('—')
     expect(formatAddress(undefined)).toBe('—')
+  })
+})
+
+describe('formatDollars', () => {
+  it('formats dollars, not cents, in the given currency', () => {
+    expect(formatDollars(1234.5)).toBe('$1,234.50')
+    expect(formatDollars(1234.5, 'EUR')).toBe('€1,234.50')
+    expect(formatDollars(-12, null, { signDisplay: 'exceptZero' })).toBe(
+      '-$12.00'
+    )
   })
 })

@@ -1,5 +1,6 @@
 'use client'
 
+import { formatDollars } from '@/lib/ledger/formatters'
 import { clients } from '@robosystems/core'
 import {
   Alert,
@@ -62,10 +63,7 @@ const todayLocal = (): string => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-const formatBalance = (cents: number): string =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
-    cents / 100
-  )
+const formatBalance = (cents: number): string => formatDollars(cents / 100)
 
 // §3.10 — Manual journal entry creation modal with running DR/CR balance check.
 export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
