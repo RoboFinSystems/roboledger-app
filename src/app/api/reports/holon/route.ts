@@ -38,7 +38,12 @@ function isJsonRequest(req: Request): boolean {
   return mediaType === 'application/json'
 }
 
-function hasBearer(req: Request): boolean {
+/**
+ * Whether the request carries a Bearer Authorization header. The token is not
+ * validated here: a cross-site form cannot set this header, which is all this
+ * guards. The presigned signature is the access control.
+ */
+function hasBearerHeader(req: Request): boolean {
   return /^Bearer\s+\S+/i.test(req.headers.get('authorization') ?? '')
 }
 
@@ -78,8 +83,8 @@ export async function POST(req: NextRequest) {
   if (!isJsonRequest(req)) {
     return jsonError('Unsupported content type', 415)
   }
-  if (!hasBearer(req)) {
-    return jsonError('Unauthorized', 401)
+  if (!hasBearerHeader(req)) {
+    return jsonError('Bearer Authorization header required', 401)
   }
 
   let body: { url?: unknown }
