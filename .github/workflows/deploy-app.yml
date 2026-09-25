@@ -254,10 +254,18 @@ jobs:
           cat /tmp/cfn-params.json
 
           # Appended after the listing so the value never reaches the log. When
-          # the secret is not set the parameter keeps its empty default.
+          # the GitHub secret is missing, a stack that already has the parameter
+          # keeps its previous value rather than silently resetting to empty.
           if [ -n "$ORIGIN_VERIFY_SECRET" ]; then
             jq --arg v "$ORIGIN_VERIFY_SECRET" \
               '. + [{"ParameterKey": "OriginVerifySecret", "ParameterValue": $v}]' \
+              /tmp/cfn-params.json > /tmp/cfn-params.next.json
+            mv /tmp/cfn-params.next.json /tmp/cfn-params.json
+          elif [ "$STACK_ACTION" = "update-stack" ] && aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.stack_name }} \
+            --query "Stacks[0].Parameters[?ParameterKey=='OriginVerifySecret'].ParameterKey" \
+            --output text | grep -q OriginVerifySecret; then
+            jq '. + [{"ParameterKey": "OriginVerifySecret", "UsePreviousValue": true}]' \
               /tmp/cfn-params.json > /tmp/cfn-params.next.json
             mv /tmp/cfn-params.next.json /tmp/cfn-params.json
           fi

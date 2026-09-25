@@ -554,6 +554,28 @@ Resources:
               - HEAD
             Compress: false
             CachePolicyId: !Ref SocialCardCachePolicy
+          - PathPattern: /blog/opengraph-image*
+            TargetOriginId: AppRunner-Dynamic-Content
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: false
+            CachePolicyId: !Ref SocialCardCachePolicy
+          - PathPattern: /blog/twitter-image*
+            TargetOriginId: AppRunner-Dynamic-Content
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: false
+            CachePolicyId: !Ref SocialCardCachePolicy
           - PathPattern: /opengraph-image*
             TargetOriginId: AppRunner-Dynamic-Content
             ViewerProtocolPolicy: redirect-to-https

@@ -170,18 +170,11 @@ describe('allowedHolonUrl', () => {
       expect(allowedHolonUrl(LOCAL.replace(BUCKET, 'other'))).toBeNull()
     })
 
-    it('accepts any bucket on the override in development with none configured', () => {
+    it('accepts any bucket on the override with none configured', () => {
       vi.stubEnv('REPORT_BUNDLE_BUCKET', '')
-      vi.stubEnv('NODE_ENV', 'development')
       expect(
         allowedHolonUrl(LOCAL.replace(BUCKET, 'robosystems-user'))
       ).not.toBeNull()
-    })
-
-    it('fails closed in production with no bucket configured', () => {
-      vi.stubEnv('REPORT_BUNDLE_BUCKET', '')
-      vi.stubEnv('NODE_ENV', 'production')
-      expect(allowedHolonUrl(LOCAL)).toBeNull()
     })
 
     it('does not extend to another port on the same host', () => {

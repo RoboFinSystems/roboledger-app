@@ -59,8 +59,8 @@ function endpointOverrideHost(): string | null {
  * With a bucket configured, only that bucket is accepted, in the AWS forms a
  * presigned URL takes: virtual-hosted (`<bucket>.s3[.<region>].amazonaws.com`)
  * and path-style (`s3[.<region>].amazonaws.com/<bucket>/…`), plus path-style
- * against the endpoint override. Without one, production accepts nothing and
- * development accepts only the endpoint override.
+ * against the endpoint override. Without one, only the endpoint override is
+ * accepted — and production builds carry no override, so they accept nothing.
  */
 function bundleObjectKey(u: URL): string | null {
   const host = u.hostname.toLowerCase()
@@ -73,8 +73,6 @@ function bundleObjectKey(u: URL): string | null {
   const path = u.pathname.slice(1)
 
   if (isOverride) {
-    // Fail closed: a production server with no bucket configured serves nothing.
-    if (!bucket && process.env.NODE_ENV === 'production') return null
     const slash = path.indexOf('/')
     if (slash <= 0) return null
     const pathBucket = path.slice(0, slash)
