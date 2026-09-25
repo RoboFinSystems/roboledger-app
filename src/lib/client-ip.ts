@@ -1,3 +1,5 @@
+import { createHash, timingSafeEqual } from 'crypto'
+
 /**
  * Client IP resolution for requests arriving through a proxy chain.
  *
@@ -23,6 +25,12 @@
  * states it. The default of 1 is kept for the fallback path because that path
  * only runs when the request did *not* come through CloudFront, where a second
  * appended hop should not be assumed.
+ *
+ * The header is only CloudFront's when the request came through CloudFront.
+ * When `ORIGIN_VERIFY_SECRET` is configured, CloudFront sends it as
+ * `X-Origin-Verify`, and the viewer header is trusted only on a request that
+ * carries it. Unset, the header is trusted as before, so a deploy that
+ * precedes the secret changes nothing.
  */
 const DEFAULT_TRUSTED_PROXY_HOPS = 1
 
@@ -31,6 +39,20 @@ function trustedProxyHops(): number {
   return Number.isInteger(configured) && configured > 0
     ? configured
     : DEFAULT_TRUSTED_PROXY_HOPS
+}
+
+function sha256(value: string): Buffer {
+  return createHash('sha256').update(value).digest()
+}
+
+/** Whether the request proved it came through CloudFront (see above). */
+function cameThroughCloudFront(request: Request): boolean {
+  const secret = process.env.ORIGIN_VERIFY_SECRET
+  if (!secret) return true
+  const presented = request.headers.get('x-origin-verify')
+  if (!presented) return false
+  // Hashing gives both sides one length, which timingSafeEqual requires.
+  return timingSafeEqual(sha256(presented), sha256(secret))
 }
 
 /**
@@ -52,7 +74,9 @@ function cloudfrontViewerIp(request: Request): string | undefined {
  * header is present (e.g. a direct request in local development).
  */
 export function getClientIp(request: Request): string | undefined {
-  const viewerIp = cloudfrontViewerIp(request)
+  const viewerIp = cameThroughCloudFront(request)
+    ? cloudfrontViewerIp(request)
+    : undefined
   if (viewerIp) return viewerIp
 
   const forwardedFor = request.headers.get('x-forwarded-for')

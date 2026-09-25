@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getClientIp } from '../client-ip'
 
 function requestWith(headers: Record<string, string>): Request {
@@ -145,5 +145,50 @@ describe('getClientIp', () => {
         })
       )
     ).toBe('203.0.113.7')
+  })
+  describe('origin verification', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs()
+    })
+
+    const viaEdge = {
+      'x-forwarded-for': '203.0.113.7, 15.158.61.134',
+      'cloudfront-viewer-address': '203.0.113.7:54969',
+    }
+
+    it('trusts the viewer header when the origin secret matches', () => {
+      vi.stubEnv('ORIGIN_VERIFY_SECRET', 'edge-secret')
+      expect(
+        getClientIp(
+          requestWith({ ...viaEdge, 'x-origin-verify': 'edge-secret' })
+        )
+      ).toBe('203.0.113.7')
+    })
+
+    it('ignores the viewer header without the secret and uses the right-most hop', () => {
+      vi.stubEnv('ORIGIN_VERIFY_SECRET', 'edge-secret')
+      for (const verify of [
+        undefined,
+        'wrong',
+        'edge-secret-longer',
+        'edge-secre',
+        'x'.repeat(4096),
+        '',
+      ]) {
+        const headers: Record<string, string> = {
+          'x-forwarded-for': '198.51.100.1, 192.0.2.44',
+          'cloudfront-viewer-address': '198.51.100.99:1',
+        }
+        if (verify !== undefined) headers['x-origin-verify'] = verify
+        expect(getClientIp(requestWith(headers)), String(verify)).toBe(
+          '192.0.2.44'
+        )
+      }
+    })
+
+    it('keeps trusting the viewer header while no secret is configured', () => {
+      vi.stubEnv('ORIGIN_VERIFY_SECRET', '')
+      expect(getClientIp(requestWith(viaEdge))).toBe('203.0.113.7')
+    })
   })
 })

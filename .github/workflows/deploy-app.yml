@@ -143,6 +143,8 @@ jobs:
 
       - name: Deploy RoboLedger CloudFormation Stack
         id: deploy-stack
+        env:
+          ORIGIN_VERIFY_SECRET: ${{ secrets.ORIGIN_VERIFY_SECRET }}
         run: |
           # Look up hosted zone ID only for public mode (requires custom domain)
           HOSTED_ZONE_ID=""
@@ -250,6 +252,23 @@ jobs:
 
           echo "Parameters:"
           cat /tmp/cfn-params.json
+
+          # Appended after the listing so the value never reaches the log. When
+          # the GitHub secret is missing, a stack that already has the parameter
+          # keeps its previous value rather than silently resetting to empty.
+          if [ -n "$ORIGIN_VERIFY_SECRET" ]; then
+            jq --arg v "$ORIGIN_VERIFY_SECRET" \
+              '. + [{"ParameterKey": "OriginVerifySecret", "ParameterValue": $v}]' \
+              /tmp/cfn-params.json > /tmp/cfn-params.next.json
+            mv /tmp/cfn-params.next.json /tmp/cfn-params.json
+          elif [ "$STACK_ACTION" = "update-stack" ] && aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.stack_name }} \
+            --query "Stacks[0].Parameters[?ParameterKey=='OriginVerifySecret'].ParameterKey" \
+            --output text | grep -q OriginVerifySecret; then
+            jq '. + [{"ParameterKey": "OriginVerifySecret", "UsePreviousValue": true}]' \
+              /tmp/cfn-params.json > /tmp/cfn-params.next.json
+            mv /tmp/cfn-params.next.json /tmp/cfn-params.json
+          fi
 
           # Deploy or update the stack
           if [ "$STACK_ACTION" = "create-stack" ]; then

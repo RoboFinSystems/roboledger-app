@@ -128,6 +128,13 @@ Parameters:
     Default: ''
     Description: Email address for admin notifications (leave empty to skip SNS setup)
 
+  # CloudFront → App Runner origin verification
+  OriginVerifySecret:
+    Type: String
+    Default: ''
+    NoEcho: true
+    Description: Shared secret CloudFront sends to the App Runner origin (leave empty to disable)
+
   # Tagging Configuration
   ServiceTag:
     Type: String
@@ -148,6 +155,11 @@ Conditions:
   CreateSNSTopic: !Not
     - !Equals
       - !Ref NotificationEmail
+      - ''
+
+  HasOriginVerifySecret: !Not
+    - !Equals
+      - !Ref OriginVerifySecret
       - ''
 
   # Production + public mode: enables www.domain.com redirect to domain.com
@@ -320,6 +332,11 @@ Resources:
                 Value: !If [CreateSNSTopic, !Ref ContactFormTopic, '']
               - Name: REQUIRE_CAPTCHA
                 Value: 'true'
+              # Bucket holding report bundles; the holon proxy fetches only from it.
+              - Name: REPORT_BUNDLE_BUCKET
+                Value: !Sub robosystems-${AWS::AccountId}-user-${Environment}
+              - Name: ORIGIN_VERIFY_SECRET
+                Value: !Ref OriginVerifySecret
             RuntimeEnvironmentSecrets:
               - Name: TURNSTILE_SECRET_KEY
                 Value: !Sub '${RoboSystemsSecretsArn}:TURNSTILE_SECRET_KEY::'
@@ -388,6 +405,60 @@ Resources:
         SigningBehavior: always
         SigningProtocol: sigv4
 
+  # Cache policy for the next/image optimizer (`/_next/image?url=…&w=…&q=…`).
+  # The default behavior is CachingDisabled, so without this every optimized
+  # image would reach App Runner. Key on the optimizer's query and on Accept
+  # (it serves webp to browsers that accept it and answers `Vary: Accept`),
+  # and honor its `max-age` (14400s by default).
+  NextImageCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Sub roboledger-${Environment}-next-image
+        Comment: next/image optimizer responses keyed on url/w/q and Accept
+        MinTTL: 1
+        DefaultTTL: 14400
+        MaxTTL: 31536000
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingGzip: true
+          EnableAcceptEncodingBrotli: true
+          CookiesConfig:
+            CookieBehavior: none
+          HeadersConfig:
+            HeaderBehavior: whitelist
+            Headers:
+              - Accept
+          QueryStringsConfig:
+            QueryStringBehavior: whitelist
+            QueryStrings:
+              - url
+              - w
+              - q
+
+  # Cache policy for the social cards (the blog post card at its stable
+  # og.png URL and the opengraph-image / twitter-image conventions). A card
+  # changes only when a post's title or excerpt does. The conventions answer
+  # `max-age=0`, so the floor is set here rather than taken from the origin;
+  # nothing but the path identifies a card, so nothing else is in the key.
+  SocialCardCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Sub roboledger-${Environment}-social-card
+        Comment: Social card images keyed on path only
+        MinTTL: 3600
+        DefaultTTL: 86400
+        MaxTTL: 604800
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingGzip: false
+          EnableAcceptEncodingBrotli: false
+          CookiesConfig:
+            CookieBehavior: none
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
+
   # CloudFront Distribution
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
@@ -421,6 +492,11 @@ Resources:
           # App Runner always uses HTTPS
           - Id: AppRunner-Dynamic-Content
             DomainName: !GetAtt AppRunnerService.ServiceUrl
+            OriginCustomHeaders: !If
+              - HasOriginVerifySecret
+              - - HeaderName: X-Origin-Verify
+                  HeaderValue: !Ref OriginVerifySecret
+              - !Ref AWS::NoValue
             CustomOriginConfig:
               HTTPSPort: 443
               OriginProtocolPolicy: https-only
@@ -444,6 +520,97 @@ Resources:
           CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled managed policy
           OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader managed policy
         CacheBehaviors:
+          # Social cards: rendered on App Runner, so served from the edge.
+          - PathPattern: /blog/*/og.png
+            TargetOriginId: AppRunner-Dynamic-Content
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: false
+            CachePolicyId: !Ref SocialCardCachePolicy
+          - PathPattern: /blog/*/opengraph-image*
+            TargetOriginId: AppRunner-Dynamic-Content
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: false
+            CachePolicyId: !Ref SocialCardCachePolicy
+          - PathPattern: /blog/*/twitter-image*
+            TargetOriginId: AppRunner-Dynamic-Content
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: false
+            CachePolicyId: !Ref SocialCardCachePolicy
+          - PathPattern: /blog/opengraph-image*
+            TargetOriginId: AppRunner-Dynamic-Content
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: false
+            CachePolicyId: !Ref SocialCardCachePolicy
+          - PathPattern: /blog/twitter-image*
+            TargetOriginId: AppRunner-Dynamic-Content
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: false
+            CachePolicyId: !Ref SocialCardCachePolicy
+          - PathPattern: /opengraph-image*
+            TargetOriginId: AppRunner-Dynamic-Content
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: false
+            CachePolicyId: !Ref SocialCardCachePolicy
+          - PathPattern: /twitter-image*
+            TargetOriginId: AppRunner-Dynamic-Content
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: false
+            CachePolicyId: !Ref SocialCardCachePolicy
+          # next/image optimizer output. Only the cache-key parts (url/w/q,
+          # Accept) are forwarded; the optimizer needs nothing else.
+          - PathPattern: /_next/image*
+            TargetOriginId: AppRunner-Dynamic-Content
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: true
+            CachePolicyId: !Ref NextImageCachePolicy
           # Cache behavior for static assets
           - PathPattern: /images/*
             TargetOriginId: S3-Static-Assets

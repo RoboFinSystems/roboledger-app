@@ -70,16 +70,8 @@ const nextConfig = {
       },
     ]
   },
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '*',
-        port: '',
-        pathname: '/**',
-      },
-    ],
-  },
+  // No `images.remotePatterns`: every next/image source is local, so the
+  // optimizer accepts only this app's own files.
 }
 
 export default withFlowbiteReact(nextConfig)

@@ -1,6 +1,6 @@
 'use client'
 
-import { clients } from '@robosystems/core'
+import { clients, getAuthHeader } from '@robosystems/core'
 import type { NormalizedReport } from '@robosystems/report-components'
 import {
   ReportView,
@@ -82,9 +82,14 @@ export default function HolonReportView({
         { format }
       )
       if (!resp) return null
+      // The proxy answers only the app's own call, which carries the session
+      // bearer; a missing token is refused there like any other caller.
       const proxied = await fetch('/api/reports/holon', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          authorization: getAuthHeader() ?? '',
+        },
         body: JSON.stringify({ url: resp.downloadUrl }),
       })
       if (!proxied.ok) {

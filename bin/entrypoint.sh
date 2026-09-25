@@ -77,6 +77,7 @@ validate_env_vars() {
         echo "  NEXT_PUBLIC_MAINTENANCE_MODE      - Enable maintenance mode (default: false)"
         echo "  NEXT_PUBLIC_TURNSTILE_SITE_KEY    - Cloudflare Turnstile site key"
         echo "  NEXT_PUBLIC_S3_ENDPOINT_URL       - S3 endpoint URL (for LocalStack)"
+        echo "  REPORT_BUNDLE_BUCKET              - Bucket holding report bundles (required to view reports on AWS S3)"
         echo ""
         echo "Example:"
         echo "  docker run -e NEXT_PUBLIC_ROBOSYSTEMS_API_URL=http://localhost:8000 \\"

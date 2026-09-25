@@ -5,6 +5,7 @@ const mockGetReportDownloadUrl = vi.fn()
 const mockParseReportDocument = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
+  getAuthHeader: () => 'Bearer session-token',
   clients: {
     reports: {
       getReportDownloadUrl: (...args: any[]) =>
@@ -82,6 +83,20 @@ describe('HolonReportView', () => {
     expect(mockParseReportDocument).toHaveBeenCalledWith(
       '{"from":"https://s3/tavi"}'
     )
+  })
+
+  it('calls the proxy as JSON with the session bearer', async () => {
+    mockGetReportDownloadUrl.mockResolvedValue({
+      downloadUrl: 'https://s3/tavi',
+    })
+
+    render(<HolonReportView graphId="kg_1" reportId="rpt_1" published />)
+
+    await waitFor(() => expect(screen.getByTestId('report-view')).toBeTruthy())
+    const [url, init] = (globalThis.fetch as any).mock.calls[0]
+    expect(url).toBe('/api/reports/holon')
+    expect(init.headers['content-type']).toBe('application/json')
+    expect(init.headers.authorization).toBe('Bearer session-token')
   })
 
   it('falls back to the holon when the Tavi is not available', async () => {

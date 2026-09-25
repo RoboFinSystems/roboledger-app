@@ -10,15 +10,42 @@ import { allowedHolonUrl, MAX_HOLON_BYTES } from './validate'
  * client obtains the presigned URL via the authenticated SDK
  * (`getReportDownloadUrl`, format `TAVI` or `HOLON_JSONLD`) and hands it
  * here; the server fetches it (server→S3 isn't subject to browser CORS) and
- * streams the body back same-origin, with the upstream content type, so
- * `parseReportDocument` can consume it.
+ * streams the body back same-origin so `parseReportDocument` can consume it.
  *
- * The proxy is deliberately narrow: `allowedHolonUrl` pins the target to a
- * bundle host (see ./validate), redirects are not followed so a 3xx cannot
- * walk the fetch off that host, and the body is capped while streaming. The
- * presigned signature remains the caller's capability — this endpoint grants
- * no access to a bundle whose signed URL the caller doesn't already hold.
+ * The proxy is deliberately narrow. It answers only the app's own JSON call
+ * carrying the session bearer; `allowedHolonUrl` pins the target to the
+ * report-bundle objects (see ./validate); redirects are not followed; the body
+ * is capped while streaming; and the response is typed by the artifact suffix
+ * and served inert. The presigned signature remains the caller's capability.
  */
+
+/** Headers on every response from this route, success or refusal. */
+const INERT_HEADERS = {
+  'x-content-type-options': 'nosniff',
+  'content-security-policy': "default-src 'none'; sandbox",
+  'cache-control': 'private, no-store',
+} as const
+
+function jsonError(error: string, status: number): Response {
+  return Response.json({ error }, { status, headers: INERT_HEADERS })
+}
+
+function isJsonRequest(req: Request): boolean {
+  const mediaType = (req.headers.get('content-type') ?? '')
+    .split(';')[0]
+    .trim()
+    .toLowerCase()
+  return mediaType === 'application/json'
+}
+
+/**
+ * Whether the request carries a Bearer Authorization header. The token is not
+ * validated here: a cross-site form cannot set this header, which is all this
+ * guards. The presigned signature is the access control.
+ */
+function hasBearerHeader(req: Request): boolean {
+  return /^Bearer\s+\S+/i.test(req.headers.get('authorization') ?? '')
+}
 
 /**
  * Read the body while counting bytes, aborting as soon as the cap is exceeded
@@ -53,76 +80,57 @@ async function readCapped(
 }
 
 export async function POST(req: NextRequest) {
-  let body: { url?: string }
-  try {
-    body = (await req.json()) as { url?: string }
-  } catch {
-    return Response.json({ error: 'Invalid request body' }, { status: 400 })
+  if (!isJsonRequest(req)) {
+    return jsonError('Unsupported content type', 415)
+  }
+  if (!hasBearerHeader(req)) {
+    return jsonError('Bearer Authorization header required', 401)
   }
 
-  if (!body.url) {
-    return Response.json({ error: 'Missing url' }, { status: 400 })
+  let body: { url?: unknown }
+  try {
+    body = (await req.json()) as { url?: unknown }
+  } catch {
+    return jsonError('Invalid request body', 400)
+  }
+
+  if (typeof body?.url !== 'string' || !body.url) {
+    return jsonError('Missing url', 400)
   }
 
   const target = allowedHolonUrl(body.url)
   if (!target) {
-    return Response.json(
-      { error: 'URL is not an allowed report artifact URL' },
-      { status: 400 }
-    )
+    return jsonError('URL is not an allowed report artifact URL', 400)
   }
 
   let upstream: Response
   try {
     // `manual` keeps a redirect from relocating the fetch to a host that
     // allowedHolonUrl never vetted; a 3xx simply fails the !ok check below.
-    upstream = await fetch(target.toString(), { redirect: 'manual' })
-  } catch (err) {
-    return Response.json(
-      {
-        error: `Upstream fetch failed: ${
-          err instanceof Error ? err.message : String(err)
-        }`,
-      },
-      { status: 502 }
-    )
+    upstream = await fetch(target.url.toString(), { redirect: 'manual' })
+  } catch {
+    return jsonError('Upstream fetch failed', 502)
   }
 
   if (!upstream.ok) {
-    return Response.json(
-      { error: `Upstream returned ${upstream.status}` },
-      { status: 502 }
-    )
+    return jsonError(`Upstream returned ${upstream.status}`, 502)
   }
 
   const declaredLen = Number(upstream.headers.get('content-length') ?? '0')
   if (declaredLen > MAX_HOLON_BYTES) {
-    return Response.json(
-      { error: 'Report artifact exceeds size limit' },
-      { status: 413 }
-    )
+    return jsonError('Report artifact exceeds size limit', 413)
   }
 
   const text = await readCapped(upstream, MAX_HOLON_BYTES)
   if (text === null) {
-    return Response.json(
-      { error: 'Report artifact exceeds size limit' },
-      { status: 413 }
-    )
+    return jsonError('Report artifact exceeds size limit', 413)
   }
-
-  // The presigned URL carries the response content type the backend signed
-  // (`application/ld+json` for a holon, `application/json` for a Tavi); pass
-  // it through so a reader can tell the two apart from the header as well as
-  // the body.
-  const contentType =
-    upstream.headers.get('content-type') ?? 'application/json; charset=utf-8'
 
   return new Response(text, {
     status: 200,
     headers: {
-      'content-type': contentType,
-      'cache-control': 'private, no-store',
+      ...INERT_HEADERS,
+      'content-type': `${target.contentType}; charset=utf-8`,
     },
   })
 }
