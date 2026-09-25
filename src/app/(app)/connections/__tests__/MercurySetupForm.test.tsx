@@ -20,13 +20,18 @@ vi.mock('@/lib/useLedgerGraph', async () => {
   }
 })
 
-vi.mock('@robosystems/core', () => ({
-  SDK: {
-    createConnection: (...args: any[]) => mockCreateConnection(...args),
-    initOAuth: (...args: any[]) => mockInitOAuth(...args),
-  },
-  useGraphContext: () => ({ state: { currentGraphId: 'kg_test' } }),
-}))
+vi.mock('@robosystems/core', async () => {
+  // The real error seam, so a refusal travels the path it does in the app.
+  const errors = await vi.importActual<any>('@robosystems/core/lib/sdk-errors')
+  return {
+    SDK: {
+      createConnection: (...args: any[]) => mockCreateConnection(...args),
+      initOAuth: (...args: any[]) => mockInitOAuth(...args),
+    },
+    unwrapSdk: errors.unwrapSdk,
+    useGraphContext: () => ({ state: { currentGraphId: 'kg_test' } }),
+  }
+})
 
 vi.mock('@robosystems/core/ui-components', () => ({
   Spinner: () => <span>spinner</span>,
@@ -69,9 +74,12 @@ vi.mock('flowbite-react', () => ({
 
 import MercurySetupForm from '../components/MercurySetupForm'
 
-// The SDK facade throws `Error("<label> failed: " + JSON.stringify(error))`.
-const sdkError = (detail: string) =>
-  new Error(`Create connection failed: ${JSON.stringify({ detail })}`)
+// A refusal as the generated SDK really delivers it: resolved, not thrown.
+const sdkError = (detail: string, status = 409) => ({
+  data: undefined,
+  error: { detail },
+  response: { status },
+})
 
 describe('MercurySetupForm', () => {
   beforeEach(() => {
@@ -163,7 +171,7 @@ describe('MercurySetupForm', () => {
   })
 
   it('explains the QuickBooks conflict in plain words', async () => {
-    mockCreateConnection.mockRejectedValue(
+    mockCreateConnection.mockResolvedValue(
       sdkError(
         'Sever the quickbooks connection first — a bank feed is native accounting, and while it is connected the synced ledger is the source of truth for bank transactions.'
       )
@@ -179,7 +187,7 @@ describe('MercurySetupForm', () => {
   })
 
   it('points a graph with no chart at the templates', async () => {
-    mockCreateConnection.mockRejectedValue(
+    mockCreateConnection.mockResolvedValue(
       sdkError(
         'Initialize a chart of accounts first (from a template, or by severing a synced QuickBooks connection to keep its chart).'
       )

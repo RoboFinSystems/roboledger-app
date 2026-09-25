@@ -63,6 +63,11 @@ export const extractDetail = (raw: string): string => {
     if (typeof detail === 'string') return detail
     // 422 validation errors arrive as a list of {loc, msg, type}.
     if (Array.isArray(detail)) return joinValidationMessages(detail) ?? raw
+    // Some routers nest it: `{"detail": {"detail": "…", "code": "…"}}`.
+    if (typeof detail === 'object' && detail !== null) {
+      const inner = (detail as { detail?: unknown }).detail
+      if (typeof inner === 'string') return inner
+    }
   }
 
   return raw
@@ -77,6 +82,15 @@ export const extractDetail = (raw: string): string => {
 export const friendlyError = (raw: string): FriendlyError => {
   const detail = extractDetail(raw)
   const lower = detail.toLowerCase()
+
+  // 409 RowLockedError: a sync or sweep holds the rows this write needs.
+  // Retryable, and not the user's mistake.
+  if (lower.includes('being written by another process')) {
+    return {
+      message:
+        'Another process (usually a running sync) is writing this right now. Wait a moment and try again.',
+    }
+  }
 
   if (lower.includes('closed period')) {
     return {
@@ -161,4 +175,33 @@ export const friendlyError = (raw: string): FriendlyError => {
   }
 
   return { message: detail }
+}
+
+/**
+ * User-facing copy for a failed call. An `ApiError` (what core's `unwrapSdk`
+ * throws) carries the server's refusal as `detail`, which is mapped through
+ * `friendlyError`; anything else — a network failure, a thrown TypeError —
+ * gets the caller's fallback, never a raw message.
+ *
+ * Duck-typed rather than `isApiError` so this module stays free of a core
+ * import (it is imported by surfaces whose tests mock core wholesale).
+ */
+export const apiErrorMessage = (err: unknown, fallback: string): string => {
+  const api = err as { status?: unknown; detail?: unknown } | null
+  if (
+    err instanceof Error &&
+    typeof api?.status === 'number' &&
+    api.status > 0
+  ) {
+    const detail = api.detail
+    // core's placeholder when the body carried no detail says nothing useful.
+    if (
+      typeof detail === 'string' &&
+      detail &&
+      !detail.startsWith('Request failed with status')
+    ) {
+      return friendlyError(detail).message
+    }
+  }
+  return fallback
 }

@@ -1,11 +1,13 @@
 'use client'
 
+import { apiErrorMessage } from '@/lib/ledger/errors'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import {
   EmptyState,
   PageHeader,
   PageLayout,
   SDK,
+  unwrapSdk,
   useToast,
 } from '@robosystems/core'
 import { LoadingState, Spinner } from '@robosystems/core/ui-components'
@@ -150,13 +152,13 @@ export default function ModernConnectionsContent() {
         if (!background) setLoading(true)
         if (!currentGraphId) return [] as ConnectionData[]
 
-        const response = await SDK.listConnections({
-          path: { graph_id: currentGraphId },
-        })
+        const data = unwrapSdk(
+          await SDK.listConnections({
+            path: { graph_id: currentGraphId },
+          })
+        )
 
-        const list = (
-          Array.isArray(response.data) ? response.data : []
-        ) as ConnectionData[]
+        const list = (Array.isArray(data) ? data : []) as ConnectionData[]
         // A slow response from the previously selected graph must not render
         // (or seed the sync-watch poller) under the new one.
         if (loadedGraphIdRef.current !== currentGraphId) {
@@ -169,7 +171,7 @@ export default function ModernConnectionsContent() {
         if (loadedGraphIdRef.current !== currentGraphId) {
           return [] as ConnectionData[]
         }
-        const errorMsg = 'Failed to load connections'
+        const errorMsg = apiErrorMessage(err, 'Failed to load connections')
         if (!background) {
           setError(errorMsg)
           showError(errorMsg)
@@ -273,17 +275,17 @@ export default function ModernConnectionsContent() {
     if (!currentGraphId) return
     setProvidersLoading(true)
     try {
-      const response = await SDK.getConnectionOptions({
-        path: { graph_id: currentGraphId },
-      })
-      if (response.data?.providers) {
-        setAvailableProviders(
-          response.data.providers as ConnectionProviderInfo[]
-        )
+      const data = unwrapSdk(
+        await SDK.getConnectionOptions({
+          path: { graph_id: currentGraphId },
+        })
+      )
+      if (data?.providers) {
+        setAvailableProviders(data.providers as ConnectionProviderInfo[])
       }
     } catch (err) {
       console.error('Failed to load connection options:', err)
-      showError('Failed to load available connections')
+      showError(apiErrorMessage(err, 'Failed to load available connections'))
     } finally {
       setProvidersLoading(false)
     }
@@ -318,15 +320,16 @@ export default function ModernConnectionsContent() {
       return
     }
     try {
-      const response = await SDK.initOAuth({
-        path: { graph_id: currentGraphId },
-        body: {
-          connection_id: connection.connection_id,
-          redirect_uri: `${window.location.origin}${callbackPath}`,
-        },
-        throwOnError: true,
-      })
-      const authUrl = response.data?.auth_url
+      const data = unwrapSdk(
+        await SDK.initOAuth({
+          path: { graph_id: currentGraphId },
+          body: {
+            connection_id: connection.connection_id,
+            redirect_uri: `${window.location.origin}${callbackPath}`,
+          },
+        })
+      )
+      const authUrl = data?.auth_url
       if (!authUrl) {
         throw new Error('No authorization URL returned')
       }
@@ -334,7 +337,10 @@ export default function ModernConnectionsContent() {
     } catch (err) {
       console.error('Continue OAuth error:', err)
       showError(
-        'Failed to resume sign-in — delete the connection and add it again'
+        apiErrorMessage(
+          err,
+          'Failed to resume sign-in — delete the connection and add it again'
+        )
       )
     }
   }
@@ -359,13 +365,15 @@ export default function ModernConnectionsContent() {
       }
 
       const startedAt = Date.now()
-      await SDK.syncConnection({
-        path: {
-          graph_id: currentGraphId,
-          connection_id: connectionId,
-        },
-        body: options,
-      })
+      unwrapSdk(
+        await SDK.syncConnection({
+          path: {
+            graph_id: currentGraphId,
+            connection_id: connectionId,
+          },
+          body: options,
+        })
+      )
 
       // Watch the connection list for ``last_sync`` to advance past
       // ``startedAt`` — the SSE operation surface isn't wired up for QB
@@ -374,7 +382,7 @@ export default function ModernConnectionsContent() {
       setSyncWatches((prev) => new Map(prev).set(connectionId, { startedAt }))
       showSuccess('Sync started successfully')
     } catch (err) {
-      showError('Failed to start sync')
+      showError(apiErrorMessage(err, 'Failed to start sync'))
       console.error('Error syncing:', err)
     }
   }
@@ -395,13 +403,15 @@ export default function ModernConnectionsContent() {
     if (!connectionToDelete || !currentGraphId) return
 
     try {
-      await SDK.deleteConnection({
-        path: {
-          graph_id: currentGraphId,
-          connection_id: connectionToDelete.connection_id,
-        },
-        query: { disposition },
-      })
+      unwrapSdk(
+        await SDK.deleteConnection({
+          path: {
+            graph_id: currentGraphId,
+            connection_id: connectionToDelete.connection_id,
+          },
+          query: { disposition },
+        })
+      )
       showSuccess(
         disposition === 'sever'
           ? 'Connection severed — this graph now keeps its books natively'
@@ -410,7 +420,7 @@ export default function ModernConnectionsContent() {
       void loadConnections()
     } catch (err) {
       console.error('Delete connection error:', err)
-      showError('Failed to delete connection')
+      showError(apiErrorMessage(err, 'Failed to delete connection'))
     } finally {
       setDeleteModalOpen(false)
       setConnectionToDelete(null)
@@ -430,10 +440,12 @@ export default function ModernConnectionsContent() {
   ) => {
     if (!currentGraphId) return
     try {
-      await SDK.setConnectionWritePolicy({
-        path: { graph_id: currentGraphId, connection_id: connectionId },
-        body: { write_policy: writePolicy },
-      })
+      unwrapSdk(
+        await SDK.setConnectionWritePolicy({
+          path: { graph_id: currentGraphId, connection_id: connectionId },
+          body: { write_policy: writePolicy },
+        })
+      )
       showSuccess(
         `Write-back policy set to ${WRITE_POLICY_LABELS[writePolicy] ?? writePolicy}`
       )
@@ -441,7 +453,7 @@ export default function ModernConnectionsContent() {
     } catch (err) {
       // Re-throw so the card can revert its optimistic Select value.
       console.error('Set write policy error:', err)
-      showError('Failed to update write-back policy')
+      showError(apiErrorMessage(err, 'Failed to update write-back policy'))
       throw err
     }
   }
@@ -550,7 +562,7 @@ export default function ModernConnectionsContent() {
             />
           ))}
 
-          {connections.length === 0 && (
+          {connections.length === 0 && !error && (
             <Card>
               <EmptyState
                 icon={HiLink}

@@ -1,8 +1,8 @@
 'use client'
 
-import { friendlyError } from '@/lib/ledger/errors'
+import { apiErrorMessage } from '@/lib/ledger/errors'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
-import { LoadingState, SDK } from '@robosystems/core'
+import { LoadingState, SDK, unwrapSdk } from '@robosystems/core'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
@@ -70,12 +70,14 @@ export default function MercuryCallbackPage() {
           return
         }
 
-        const response = await SDK.oauthCallback({
-          path: { graph_id: currentGraphId, provider: 'mercury' },
-          body: { code, state },
-        })
+        const data = unwrapSdk(
+          await SDK.oauthCallback({
+            path: { graph_id: currentGraphId, provider: 'mercury' },
+            body: { code, state },
+          })
+        )
 
-        if (response.data?.success) {
+        if (data?.success) {
           // The authorization code is single-use; strip it so a refresh
           // cannot resubmit a spent code and report a failure after success.
           window.history.replaceState({}, '', '/connections/mercury-callback')
@@ -84,19 +86,12 @@ export default function MercuryCallbackPage() {
             router.push('/connections?success=mercury-connected')
           }, 2000)
         } else {
-          setError(
-            response.data?.message ?? 'Failed to establish Mercury connection'
-          )
+          setError(data?.message ?? 'Failed to establish Mercury connection')
           setStatus('error')
         }
       } catch (err) {
         console.error('Mercury callback error:', err)
-        // The SDK's error carries FastAPI's JSON envelope; never show it raw.
-        setError(
-          err instanceof Error
-            ? friendlyError(err.message).message
-            : 'Failed to process Mercury callback'
-        )
+        setError(apiErrorMessage(err, 'Failed to process Mercury callback'))
         setStatus('error')
       }
     }
