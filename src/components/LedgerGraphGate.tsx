@@ -19,9 +19,16 @@ const GRAPH_INDEPENDENT_ROUTES = [
   '/search',
 ]
 
+/** A report's own page names its graph in the URL (`?graph=`), not the selector. */
+const REPORT_DETAIL =
+  /^\/reports\/(?!new$|publish-lists$|blocked-senders$)[^/]+$/
+
 function isGraphIndependent(pathname: string): boolean {
-  return GRAPH_INDEPENDENT_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  return (
+    REPORT_DETAIL.test(pathname) ||
+    GRAPH_INDEPENDENT_ROUTES.some(
+      (route) => pathname === route || pathname.startsWith(`${route}/`)
+    )
   )
 }
 

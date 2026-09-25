@@ -66,10 +66,23 @@ describe('LedgerGraphGate', () => {
     expect(mockSetCurrentGraph).toHaveBeenCalledWith('kg_ledger')
   })
 
-  it('leaves graph-independent routes alone', () => {
-    withSelected('kg_investor')
-    mockPathname = '/entities'
-    render(<LedgerGraphGate>page</LedgerGraphGate>)
-    expect(screen.getByText('page')).toBeInTheDocument()
-  })
+  it.each(['/entities', '/reports/rpt_1'])(
+    'leaves %s alone (its graph does not come from the selector)',
+    (path) => {
+      withSelected('kg_investor')
+      mockPathname = path
+      render(<LedgerGraphGate>page</LedgerGraphGate>)
+      expect(screen.getByText('page')).toBeInTheDocument()
+    }
+  )
+
+  it.each(['/reports', '/reports/new', '/reports/publish-lists'])(
+    'gates %s',
+    (path) => {
+      withSelected('kg_investor')
+      mockPathname = path
+      render(<LedgerGraphGate>page</LedgerGraphGate>)
+      expect(screen.queryByText('page')).not.toBeInTheDocument()
+    }
+  )
 })

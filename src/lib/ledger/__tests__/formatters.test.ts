@@ -87,6 +87,7 @@ describe('formatDollars', () => {
   it('formats dollars, not cents, in the given currency', () => {
     expect(formatDollars(1234.5)).toBe('$1,234.50')
     expect(formatDollars(1234.5, 'EUR')).toBe('€1,234.50')
+    expect(formatDollars(1234, 'JPY')).toBe('¥1,234')
     expect(formatDollars(-12, null, { signDisplay: 'exceptZero' })).toBe(
       '-$12.00'
     )

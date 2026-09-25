@@ -263,8 +263,22 @@ describe('NewScheduleModal', () => {
 
     expect(createButton()).toBeDisabled()
     expect(
-      screen.getByText(/salvage value must be less than the original cost/i)
+      screen.getByText(/salvage value must be at least zero/i)
     ).toBeInTheDocument()
+  })
+
+  it('blocks submit for a salvage value with no original cost', async () => {
+    renderModal()
+    await fillRequiredFields()
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /asset & depreciation details/i })
+    )
+    fireEvent.change(screen.getByLabelText(/salvage value/i), {
+      target: { value: '100' },
+    })
+
+    expect(createButton()).toBeDisabled()
   })
 
   it('surfaces a submit error without closing', async () => {

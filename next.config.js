@@ -43,8 +43,9 @@ const allowedDevOrigins = process.env.NEXT_ALLOWED_DEV_ORIGINS
 function serverActionOrigins() {
   const origins = new Set(['roboledger.ai'])
   try {
-    const host = new URL(process.env.NEXT_PUBLIC_ROBOLEDGER_APP_URL ?? '').host
-    if (host) origins.add(host)
+    const url = new URL(process.env.NEXT_PUBLIC_ROBOLEDGER_APP_URL ?? '')
+    // A plain host only: `*` is a wildcard to Next's origin check.
+    if (/^[a-z0-9.-]+(:\d+)?$/i.test(url.host)) origins.add(url.host)
   } catch {
     // Not a URL: keep the apex only.
   }

@@ -174,7 +174,12 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
   const residualCents = parseMoney(residualValue)
   // The server books `original − residual`; salvage is never written off.
   const depreciableCents = originalCents - residualCents
-  const residualTooHigh = originalCents > 0 && residualCents >= originalCents
+  // The server refuses a negative salvage, a salvage with no cost basis, and
+  // a salvage at or above the cost.
+  const residualTooHigh =
+    residualCents < 0 ||
+    (residualCents > 0 && originalCents <= 0) ||
+    (originalCents > 0 && residualCents >= originalCents)
   const months =
     periodStart && periodEnd && periodEnd >= periodStart
       ? monthsBetween(periodStart, periodEnd)
@@ -474,6 +479,7 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
                     <TextInput
                       id="sched-residual"
                       type="number"
+                      min="0"
                       step="0.01"
                       placeholder="0.00"
                       value={residualValue}
@@ -545,7 +551,8 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
               )}
               {residualTooHigh && (
                 <Alert color="warning" className="mt-2">
-                  The salvage value must be less than the original cost.
+                  The salvage value must be at least zero, needs an original
+                  cost, and must be less than it.
                 </Alert>
               )}
               {overDepreciated && (

@@ -45,11 +45,10 @@ export function formatDollars(
   currency?: string | null,
   options: Intl.NumberFormatOptions = {}
 ): string {
+  // The currency's own minor units (2 for USD, 0 for JPY) unless overridden.
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency || 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
     ...options,
   }).format(amount)
 }

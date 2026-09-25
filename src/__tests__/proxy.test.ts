@@ -23,4 +23,15 @@ describe('proxy CSP', () => {
     vi.stubEnv('NEXT_PUBLIC_ROBOSYSTEMS_API_URL', '__PLACEHOLDER__')
     expect(connectSrc()).not.toContain('__PLACEHOLDER__')
   })
+
+  it.each(['https://*', 'https://a;b.com', "https://x.com'unsafe-eval'"])(
+    'keeps %s out of the policy',
+    (value) => {
+      vi.stubEnv('NEXT_PUBLIC_ROBOSYSTEMS_API_URL', value)
+      const directive = connectSrc()
+      expect(directive).not.toContain('https://*')
+      expect(directive).not.toContain('a;b')
+      expect(directive).not.toContain("'unsafe-eval'")
+    }
+  )
 })

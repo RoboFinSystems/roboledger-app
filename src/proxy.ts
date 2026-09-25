@@ -8,7 +8,12 @@ import { NextResponse } from 'next/server'
  */
 function configuredApiOrigin(): string {
   try {
-    return new URL(process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL ?? '').origin
+    const u = new URL(process.env.NEXT_PUBLIC_ROBOSYSTEMS_API_URL ?? '')
+    // Only a plain http(s) host may enter the policy: a stray `*`, `;` or
+    // quote would widen or break it.
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return ''
+    if (!/^[a-z0-9.-]+$/i.test(u.hostname)) return ''
+    return u.origin
   } catch {
     return ''
   }
