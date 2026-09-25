@@ -127,11 +127,11 @@ function buildPeriods(preset: PresetKey): {
       // Assumes Jan–Dec fiscal year. Non-standard fiscal years will need
       // a user-configurable fiscal year end setting in the future.
       const periods: PeriodSpecInput[] = [
-        { start: `${year}-01-01`, end: `${year}-12-31`, label: `FY ${year}` },
+        { start: `${year}-01-01`, end: `${year}-12-31`, label: `${year}` },
         {
           start: `${year - 1}-01-01`,
           end: `${year - 1}-12-31`,
-          label: `FY ${year - 1}`,
+          label: `${year - 1}`,
         },
       ]
       return {

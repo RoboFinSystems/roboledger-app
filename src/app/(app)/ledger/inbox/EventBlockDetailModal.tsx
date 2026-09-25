@@ -47,6 +47,30 @@ interface LineItem {
   description?: string
 }
 
+/** Statuses the server lets move to `committed` (what Approve does). */
+const APPROVABLE_STATUSES = new Set(['captured', 'classified'])
+
+/**
+ * The journal entries an event carries. The server accepts either an
+ * `entries` list or one flat entry (`posting_date` / `memo` / `line_items`),
+ * and a manual journal entry arrives flat.
+ */
+function journalEntries(metadata: unknown): Entry[] | undefined {
+  const m = metadata as (Entry & { entries?: Entry[] }) | null | undefined
+  if (!m) return undefined
+  if (Array.isArray(m.entries)) return m.entries
+  if (Array.isArray(m.line_items)) {
+    return [
+      {
+        posting_date: m.posting_date,
+        memo: m.memo,
+        line_items: m.line_items,
+      },
+    ]
+  }
+  return undefined
+}
+
 // `PreviewEventBlockResponse` is exported by the SDK since 0.3.20 — the
 // previous hand-rolled `PreviewResult` mistyped `interpolated_debit_amount`
 // and `interpolated_credit_amount` as `number` when the server returns the
@@ -107,6 +131,8 @@ interface Props {
   onClose: () => void
   onApproved: (eventId: string) => void
   onRejected: (eventId: string) => void
+  /** The event moved `captured → classified` without posting. */
+  onClassified?: (eventId: string) => void
 }
 
 // Local alias kept so existing call sites read naturally; the shared
@@ -129,6 +155,7 @@ const EventBlockDetailModal: FC<Props> = function ({
   onClose,
   onApproved,
   onRejected,
+  onClassified,
 }) {
   const [event, setEvent] = useState<LedgerEventBlockDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -318,6 +345,7 @@ const EventBlockDetailModal: FC<Props> = function ({
         ...(event.status === 'captured' ? { transition_to: 'classified' } : {}),
         metadata_patch: classificationPatch,
       })
+      if (event.status === 'captured') onClassified?.(event.id)
       await loadEvent()
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -325,7 +353,7 @@ const EventBlockDetailModal: FC<Props> = function ({
     } finally {
       setActionInFlight(null)
     }
-  }, [event, graphId, classificationPatch, loadEvent])
+  }, [event, graphId, classificationPatch, loadEvent, onClassified])
 
   const handleReject = useCallback(async () => {
     if (!event) return
@@ -347,11 +375,12 @@ const EventBlockDetailModal: FC<Props> = function ({
   }, [event, graphId, onRejected])
 
   const agent = event?.agentId ? agentById[event.agentId] : null
-  const entries = (event?.metadata as { entries?: Entry[] } | undefined)
-    ?.entries
+  const entries = journalEntries(event?.metadata)
 
   const isTerminal =
     event && ['voided', 'fulfilled', 'superseded'].includes(event.status)
+  // Approve commits the event; only these statuses can move to `committed`.
+  const canApprove = !!event && APPROVABLE_STATUSES.has(event.status)
 
   return (
     <Modal show onClose={onClose} size="4xl">
@@ -750,14 +779,16 @@ const EventBlockDetailModal: FC<Props> = function ({
                 {actionInFlight === 'classify' ? 'Saving…' : 'Classify'}
               </Button>
             )}
-            <Button
-              color="success"
-              onClick={handleApprove}
-              disabled={actionInFlight !== null}
-            >
-              <HiCheck className="mr-2 h-4 w-4" />
-              {actionInFlight === 'approve' ? 'Approving…' : 'Approve'}
-            </Button>
+            {canApprove && (
+              <Button
+                color="success"
+                onClick={handleApprove}
+                disabled={actionInFlight !== null}
+              >
+                <HiCheck className="mr-2 h-4 w-4" />
+                {actionInFlight === 'approve' ? 'Approving…' : 'Approve'}
+              </Button>
+            )}
           </div>
         )}
         <Button color="gray" onClick={onClose}>

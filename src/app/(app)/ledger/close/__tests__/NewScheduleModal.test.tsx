@@ -161,7 +161,7 @@ describe('NewScheduleModal', () => {
     fireEvent.click(
       screen.getByRole('button', { name: /asset & depreciation details/i })
     )
-    fireEvent.change(screen.getByLabelText(/total to write off/i), {
+    fireEvent.change(screen.getByLabelText(/original cost/i), {
       target: { value: '24000' },
     })
     fireEvent.change(screen.getByLabelText(/useful life/i), {
@@ -179,7 +179,7 @@ describe('NewScheduleModal', () => {
     fireEvent.click(
       screen.getByRole('button', { name: /asset & depreciation details/i })
     )
-    fireEvent.change(screen.getByLabelText(/total to write off/i), {
+    fireEvent.change(screen.getByLabelText(/original cost/i), {
       target: { value: '24000' },
     })
     fireEvent.change(screen.getByLabelText(/useful life/i), {
@@ -208,7 +208,7 @@ describe('NewScheduleModal', () => {
     fireEvent.click(
       screen.getByRole('button', { name: /asset & depreciation details/i })
     )
-    fireEvent.change(screen.getByLabelText(/total to write off/i), {
+    fireEvent.change(screen.getByLabelText(/original cost/i), {
       target: { value: '24000' },
     })
     fireEvent.change(screen.getByLabelText(/useful life/i), {
@@ -222,6 +222,49 @@ describe('NewScheduleModal', () => {
 
     expect(createButton()).toBeDisabled()
     expect(screen.getByText(/over-writes the total/i)).toBeInTheDocument()
+  })
+
+  it('deducts the salvage value from the pre-fill and the preview total', async () => {
+    renderModal()
+    await fillRequiredFields()
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /asset & depreciation details/i })
+    )
+    fireEvent.change(screen.getByLabelText(/original cost/i), {
+      target: { value: '12000' },
+    })
+    fireEvent.change(screen.getByLabelText(/salvage value/i), {
+      target: { value: '2400' },
+    })
+    fireEvent.change(screen.getByLabelText(/useful life/i), {
+      target: { value: '12' },
+    })
+
+    // The server books 12,000 − 2,400 = 9,600 over 12 months.
+    expect(screen.getByLabelText(/monthly amount/i)).toHaveValue(800)
+    expect(screen.getByText('$9,600.00')).toBeInTheDocument()
+    expect(createButton()).not.toBeDisabled()
+  })
+
+  it('blocks submit when the salvage value is not below the cost', async () => {
+    renderModal()
+    await fillRequiredFields()
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /asset & depreciation details/i })
+    )
+    fireEvent.change(screen.getByLabelText(/original cost/i), {
+      target: { value: '12000' },
+    })
+    fireEvent.change(screen.getByLabelText(/salvage value/i), {
+      target: { value: '12000' },
+    })
+
+    expect(createButton()).toBeDisabled()
+    expect(
+      screen.getByText(/salvage value must be less than the original cost/i)
+    ).toBeInTheDocument()
   })
 
   it('surfaces a submit error without closing', async () => {

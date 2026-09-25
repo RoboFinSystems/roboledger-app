@@ -133,12 +133,12 @@ export function buildPresetPeriods(
         {
           start: `${year}-01-01`,
           end: `${year}-12-31`,
-          label: `FY ${year}`,
+          label: `${year}`,
         },
         {
           start: `${year - 1}-01-01`,
           end: `${year - 1}-12-31`,
-          label: `FY ${year - 1}`,
+          label: `${year - 1}`,
         },
       ]
       return {

@@ -126,12 +126,12 @@ describe('buildPresetPeriods', () => {
       expect(r.periods?.[0]).toMatchObject({
         start: '2026-01-01',
         end: '2026-12-31',
-        label: 'FY 2026',
+        label: '2026',
       })
       expect(r.periods?.[1]).toMatchObject({
         start: '2025-01-01',
         end: '2025-12-31',
-        label: 'FY 2025',
+        label: '2025',
       })
     })
   })

@@ -158,17 +158,25 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
   // When both the write-off total and useful life are known, pre-fill the
   // monthly amount and end date from straight-line math. Both stay
   // editable — this only fires from the two driving fields' onChange.
-  const applyStraightLineMath = (nextOriginal: string, nextLife: string) => {
-    const originalCents = parseMoney(nextOriginal)
+  const applyStraightLineMath = (
+    nextOriginal: string,
+    nextLife: string,
+    nextResidual: string
+  ) => {
+    const baseCents = parseMoney(nextOriginal) - parseMoney(nextResidual)
     const life = Number(nextLife)
-    if (originalCents > 0 && Number.isInteger(life) && life > 0) {
-      setMonthlyAmount((originalCents / 100 / life).toFixed(2))
+    if (baseCents > 0 && Number.isInteger(life) && life > 0) {
+      setMonthlyAmount((baseCents / 100 / life).toFixed(2))
       setPeriodEnd(lifeEndDate(periodStart, life))
     }
   }
 
   const monthlyCents = parseMoney(monthlyAmount)
   const originalCents = parseMoney(originalAmount)
+  const residualCents = parseMoney(residualValue)
+  // The server books `original − residual`; salvage is never written off.
+  const depreciableCents = originalCents - residualCents
+  const residualTooHigh = originalCents > 0 && residualCents >= originalCents
   const months =
     periodStart && periodEnd && periodEnd >= periodStart
       ? monthsBetween(periodStart, periodEnd)
@@ -176,13 +184,16 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
 
   // Mirror the server's straight-line generator: every period fires the
   // monthly amount, except the final period absorbs rounding so the sum
-  // equals `original_amount` exactly (when provided).
+  // equals the depreciable base (`original_amount − residual_value`) exactly
+  // (when an original amount is provided).
   const finalMonthCents =
     originalCents > 0 && months > 1
-      ? originalCents - monthlyCents * (months - 1)
+      ? depreciableCents - monthlyCents * (months - 1)
       : monthlyCents
-  const totalCents = originalCents > 0 ? originalCents : monthlyCents * months
-  const overDepreciated = originalCents > 0 && finalMonthCents < 0
+  const totalCents =
+    originalCents > 0 ? depreciableCents : monthlyCents * months
+  const overDepreciated =
+    originalCents > 0 && !residualTooHigh && finalMonthCents < 0
 
   const accountLabel = (id: string): string => {
     const a = accounts.find((acc) => acc.id === id)
@@ -199,14 +210,14 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
     debitElementId !== creditElementId &&
     months > 0 &&
     monthlyCents > 0 &&
-    !overDepreciated
+    !overDepreciated &&
+    !residualTooHigh
 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit) return
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const residualCents = parseMoney(residualValue)
       const lifeMonths = Number(usefulLifeMonths) || 0
       const hasMetadata =
         originalCents > 0 ||
@@ -265,7 +276,7 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
     originalCents,
     entryType,
     memoTemplate,
-    residualValue,
+    residualCents,
     usefulLifeMonths,
     assetElementId,
     onClose,
@@ -417,9 +428,7 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
               <div className="space-y-4 border-t border-gray-200 p-3 dark:border-gray-700">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div>
-                    <Label htmlFor="sched-original">
-                      Total to write off ($)
-                    </Label>
+                    <Label htmlFor="sched-original">Original cost ($)</Label>
                     <TextInput
                       id="sched-original"
                       type="number"
@@ -428,12 +437,16 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
                       value={originalAmount}
                       onChange={(e) => {
                         setOriginalAmount(e.target.value)
-                        applyStraightLineMath(e.target.value, usefulLifeMonths)
+                        applyStraightLineMath(
+                          e.target.value,
+                          usefulLifeMonths,
+                          residualValue
+                        )
                       }}
                       disabled={submitting}
                     />
                     <p className="mt-1 text-xs text-gray-500">
-                      Depreciable base — written off in full over the life
+                      Written off over the life, less salvage value
                     </p>
                   </div>
                   <div>
@@ -446,7 +459,11 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
                       value={usefulLifeMonths}
                       onChange={(e) => {
                         setUsefulLifeMonths(e.target.value)
-                        applyStraightLineMath(originalAmount, e.target.value)
+                        applyStraightLineMath(
+                          originalAmount,
+                          e.target.value,
+                          residualValue
+                        )
                       }}
                       disabled={submitting}
                     />
@@ -462,11 +479,18 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
                       step="0.01"
                       placeholder="0.00"
                       value={residualValue}
-                      onChange={(e) => setResidualValue(e.target.value)}
+                      onChange={(e) => {
+                        setResidualValue(e.target.value)
+                        applyStraightLineMath(
+                          originalAmount,
+                          usefulLifeMonths,
+                          e.target.value
+                        )
+                      }}
                       disabled={submitting}
                     />
                     <p className="mt-1 text-xs text-gray-500">
-                      Informational — not deducted from the write-off
+                      Deducted from the cost; never written off
                     </p>
                   </div>
                 </div>
@@ -520,6 +544,11 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
                   Dr {accountLabel(debitElementId)} / Cr{' '}
                   {accountLabel(creditElementId)}
                 </p>
+              )}
+              {residualTooHigh && (
+                <Alert color="warning" className="mt-2">
+                  The salvage value must be less than the original cost.
+                </Alert>
               )}
               {overDepreciated && (
                 <Alert color="warning" className="mt-2">
