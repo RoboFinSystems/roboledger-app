@@ -56,6 +56,32 @@ describe('allowedHolonUrl', () => {
     })
   })
 
+  describe('the fetch target', () => {
+    it('refuses a regional host outside the deployment region', () => {
+      expect(
+        allowedHolonUrl(
+          `https://${BUCKET}.s3.eu-west-1.amazonaws.com/${KEY}?${SIG}`
+        )
+      ).toBeNull()
+    })
+
+    it('follows AWS_REGION for the regional host', () => {
+      vi.stubEnv('AWS_REGION', 'eu-west-1')
+      expect(
+        allowedHolonUrl(
+          `https://${BUCKET}.s3.eu-west-1.amazonaws.com/${KEY}?${SIG}`
+        )
+      ).not.toBeNull()
+    })
+
+    it.each([
+      `https://${BUCKET}.s3.amazonaws.com/${KEY}?${SIG}`,
+      `https://s3.us-east-1.amazonaws.com/${BUCKET}/${KEY}?${SIG}`,
+    ])('returns the URL unchanged so its signature still holds: %s', (url) => {
+      expect(allowedHolonUrl(url)?.url.toString()).toBe(url)
+    })
+  })
+
   describe('host pinning', () => {
     it('rejects any other bucket, in either form', () => {
       for (const url of [

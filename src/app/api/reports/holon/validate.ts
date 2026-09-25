@@ -22,11 +22,9 @@ export const RENDERABLE_SUFFIXES = Object.keys(
 /** Every report bundle key starts with this prefix inside the bucket. */
 const BUNDLE_KEY_PREFIX = 'report-bundles/'
 
-/** A region label in an S3 endpoint host (`us-east-1`, `eu-west-2`, …). */
-const REGION = '[a-z0-9-]+'
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+/** The deployment's region; presigned URLs may use its regional S3 host. */
+function deploymentRegion(): string {
+  return (process.env.AWS_REGION || 'us-east-1').trim().toLowerCase()
 }
 
 /**
@@ -86,17 +84,49 @@ function bundleObjectKey(u: URL): string | null {
   // Plaintext and explicit ports are tolerated only for the override.
   if (!bucket || u.protocol !== 'https:' || u.port !== '') return null
 
-  const virtualHosted = new RegExp(
-    `^${escapeRegExp(bucket)}\\.s3(\\.${REGION})?\\.amazonaws\\.com$`
-  )
-  if (virtualHosted.test(host)) return path
+  const region = deploymentRegion()
+  if (
+    host === `${bucket}.s3.amazonaws.com` ||
+    host === `${bucket}.s3.${region}.amazonaws.com`
+  ) {
+    return path
+  }
 
-  const pathStyle = new RegExp(`^s3(\\.${REGION})?\\.amazonaws\\.com$`)
-  if (pathStyle.test(host) && path.startsWith(`${bucket}/`)) {
+  if (
+    (host === 's3.amazonaws.com' || host === `s3.${region}.amazonaws.com`) &&
+    path.startsWith(`${bucket}/`)
+  ) {
     return path.slice(bucket.length + 1)
   }
 
   return null
+}
+
+/**
+ * The origin the proxy may fetch from for this URL, built only from server
+ * configuration (bucket, region, endpoint override) and never from the
+ * request; null when the host is not one of them.
+ */
+function trustedOrigin(u: URL): string | null {
+  const override = endpointOverride()
+  if (
+    override !== null &&
+    u.protocol === override.protocol &&
+    u.host.toLowerCase() === override.host.toLowerCase()
+  ) {
+    return override.origin
+  }
+  const bucket = reportBundleBucket()
+  if (!bucket) return null
+  const region = deploymentRegion()
+  const hosts = [
+    `${bucket}.s3.amazonaws.com`,
+    `${bucket}.s3.${region}.amazonaws.com`,
+    's3.amazonaws.com',
+    `s3.${region}.amazonaws.com`,
+  ]
+  const host = hosts.find((h) => h === u.hostname.toLowerCase())
+  return host ? `https://${host}` : null
 }
 
 export interface AllowedArtifact {
@@ -138,5 +168,13 @@ export function allowedHolonUrl(raw: string): AllowedArtifact | null {
     present('AWSAccessKeyId', 'X-Amz-Credential')
   if (!signed) return null
 
-  return { url: u, contentType: RENDERABLE_ARTIFACTS[suffix] }
+  // Rebuild the target on a configured origin so the host that is fetched
+  // never comes from the request. Path and query are kept byte for byte: the
+  // presigned signature covers them.
+  const origin = trustedOrigin(u)
+  if (!origin) return null
+  return {
+    url: new URL(`${origin}${u.pathname}${u.search}`),
+    contentType: RENDERABLE_ARTIFACTS[suffix],
+  }
 }
