@@ -51,7 +51,7 @@ const spotlights: Spotlight[] = [
       'Render Balance Sheet and Income Statement straight from the ledger — no close required — with Cash Flow and Equity as your transactions are classified, then generate validated report packages.',
     bullets: [
       'Multi-period and comparative reports with a Draft → Under Review → Filed lifecycle',
-      'Export XBRL 2.1 and JSON-LD bundles; verification view checks US-GAAP concept relations',
+      'Export Tavi and XBRL 2.1 reports; verification view checks US-GAAP concept relations',
       'Distribute snapshots to stakeholders with publish lists',
     ],
     caption: 'Ledger › Statements',
@@ -313,7 +313,7 @@ function StatementsPreview() {
           XBRL 2.1
         </span>
         <span className="rounded border border-gray-700 px-2 py-1 text-gray-400">
-          JSON-LD
+          Tavi
         </span>
         <span className="text-primary-300 border-primary-500/30 rounded border px-2 py-1">
           Publish list →
