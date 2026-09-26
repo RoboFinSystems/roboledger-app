@@ -15,49 +15,20 @@ interface Spotlight {
   demoLabel: string
 }
 
+// Ordered for the finance lead, not the bookkeeper: read the numbers, question them, plan
+// from them, ask in plain English; the close and the inbox, where the team does the entries
+// and the lead approves them, come last.
 const spotlights: Spotlight[] = [
-  {
-    id: 'inbox',
-    label: 'Event-driven ledger',
-    title: 'An inbox for your books',
-    description:
-      'Every transaction lands as a typed business event — captured, classified, then committed. AI proposes the entry; you stay in control.',
-    bullets: [
-      'AI pre-classifies invoices, bills, payments, and receipts',
-      'Preview exactly what would post — matched handler, planned journal entries, validation errors — before it hits the GL',
-      'Approve or reject in one click — or enable autopilot for trusted sources',
-    ],
-    caption: 'Ledger › Inbox',
-    demo: 'inbox',
-    demoLabel:
-      'A customer payment arriving in the inbox, classified by AI, previewed as a balanced entry, and committed by a person.',
-  },
-  {
-    id: 'close',
-    label: 'Period close',
-    title: 'Close the period with guard rails',
-    description:
-      'A guided, sequential close backed by a fiscal calendar and a rule engine — so you never lock an unbalanced or out-of-order period.',
-    bullets: [
-      'Fiscal-calendar bootstrap with human-readable blockers (period incomplete, sync stale, out of sequence)',
-      'Schedules post depreciation & prepaid entries to draft; balanced-draft gating before you lock',
-      'Optional write-back to QuickBooks on close, and reopen-with-audit-reason',
-    ],
-    caption: 'Ledger › Closing Book',
-    demo: 'close',
-    demoLabel:
-      'Schedule entries drafting, every close check passing, and the period closing after a person approves.',
-  },
   {
     id: 'reporting',
     label: 'Reporting & XBRL',
     title: 'Live statements & validated reports',
     description:
-      'Render Balance Sheet and Income Statement straight from the ledger — no close required — with Cash Flow and Equity as your transactions are classified, then generate validated report packages.',
+      'See the Balance Sheet and Income Statement straight from the ledger on any day of the month, no close required, with Cash Flow and Equity as your transactions are classified. When it is time to send, generate a validated report package.',
     bullets: [
       'Multi-period and comparative reports with a Draft → Under Review → Filed lifecycle',
       'Export Tavi and XBRL 2.1 reports; verification view checks US-GAAP concept relations',
-      'Distribute snapshots to stakeholders with publish lists',
+      'Share snapshots with your board, lenders, and investors through publish lists',
     ],
     caption: 'Ledger › Statements',
     demo: 'statements',
@@ -65,27 +36,11 @@ const spotlights: Spotlight[] = [
       'A balance sheet and income statement rendered live from the ledger, then a report package moving from draft to filed.',
   },
   {
-    id: 'plan',
-    label: 'Planning & forecast',
-    title: 'Plan forward from the books you just closed',
-    description:
-      'Your closed months and your forecast in one monthly grid. The Plan surface reads statements in series across the actuals/forecast seam, with the scenario’s own assumptions sitting right beneath them.',
-    bullets: [
-      'Income Statement, Balance Sheet, and Cash Flow month by month — actuals and forward columns in the same row',
-      'Switch scenarios in place; the assumption levers driving the forecast render in the same grid',
-      'Trailing-window control, CSV export, and shareable scenario links',
-    ],
-    caption: 'Plan',
-    demo: 'plan',
-    demoLabel:
-      'The plan grid rolling forward from actuals as one payment-terms assumption changes.',
-  },
-  {
     id: 'explorer',
     label: 'Block Explorer',
     title: 'Open up any number and see how it was built',
     description:
-      'Every statement, schedule, metric, and disclosure is an Information Block. The Explorer renders any of them through the same set of view projections — so the rendered figure and the facts behind it are one toggle apart.',
+      'When someone asks where a number came from, open it. Every statement, schedule, metric, and disclosure is an Information Block, and the Explorer renders any of them through the same view projections, so the rendered figure and the facts behind it are one toggle apart.',
     bullets: [
       'Six views per block: rendered, chart, facts, elements, validation, and business rules',
       'Compute a metric for a new period on the spot and watch its time series extend',
@@ -97,11 +52,27 @@ const spotlights: Spotlight[] = [
       'The Gross Margin block opened through its rendered, chart, facts and validation views.',
   },
   {
+    id: 'plan',
+    label: 'Planning & forecast',
+    title: 'Plan forward from the books you just closed',
+    description:
+      'Your closed months and your forecast in one monthly grid. Change an assumption and see what it does to cash, with the scenario’s levers sitting right beneath the statements they drive.',
+    bullets: [
+      'Income Statement, Balance Sheet, and Cash Flow month by month — actuals and forward columns in the same row',
+      'Switch scenarios in place; the assumption levers driving the forecast render in the same grid',
+      'Trailing-window control, CSV export, and shareable scenario links',
+    ],
+    caption: 'Plan',
+    demo: 'plan',
+    demoLabel:
+      'The plan grid rolling forward from actuals as one payment-terms assumption changes.',
+  },
+  {
     id: 'console',
     label: 'Natural language',
     title: 'Ask about your books in plain English',
     description:
-      'Query your ledger in the AI Console, or connect Claude, ChatGPT, or any MCP client to help drive your month-end close from the chat you already use.',
+      'Get the answer yourself instead of waiting on a report. Query your ledger in the AI Console, or connect Claude, ChatGPT, or any MCP client and ask from the chat you already use.',
     bullets: [
       'Natural language → Cypher, with the generated query shown and results one copy away',
       'Grounded in your actual ledger — transactions, trial balance, statements',
@@ -111,6 +82,38 @@ const spotlights: Spotlight[] = [
     demo: 'console',
     demoLabel:
       'The AI Console answering which customers owe the most, with the generated query and the result.',
+  },
+  {
+    id: 'close',
+    label: 'Period close',
+    title: 'Close the period with guard rails',
+    description:
+      'The entries get drafted; you review and approve. A guided, sequential close backed by a fiscal calendar and a rule engine, so no one locks an unbalanced or out-of-order period.',
+    bullets: [
+      'Fiscal-calendar bootstrap with human-readable blockers (period incomplete, sync stale, out of sequence)',
+      'Schedules post depreciation & prepaid entries to draft; balanced-draft gating before you lock',
+      'Optional write-back to QuickBooks on close, and reopen-with-audit-reason',
+    ],
+    caption: 'Ledger › Closing Book',
+    demo: 'close',
+    demoLabel:
+      'Schedule entries drafting, every close check passing, and the period closing after a person approves.',
+  },
+  {
+    id: 'inbox',
+    label: 'Event-driven ledger',
+    title: 'An inbox for your books',
+    description:
+      'Every transaction lands as a typed business event — captured, classified, then committed. AI proposes the entry; you set the rules and nothing posts without a decision.',
+    bullets: [
+      'AI pre-classifies invoices, bills, payments, and receipts',
+      'Preview exactly what would post — matched handler, planned journal entries, validation errors — before it hits the GL',
+      'Approve or reject in one click — or enable autopilot for trusted sources',
+    ],
+    caption: 'Ledger › Inbox',
+    demo: 'inbox',
+    demoLabel:
+      'A customer payment arriving in the inbox, classified by AI, previewed as a balanced entry, and committed by a person.',
   },
 ]
 
