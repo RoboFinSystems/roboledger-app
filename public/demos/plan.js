@@ -14,7 +14,9 @@ import {
   pageHeader,
   PHONE_APP_CSS,
   pointer,
+  push,
   seg,
+  swap,
 } from './kit.js'
 
 const COLS = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov']
@@ -64,11 +66,9 @@ const css = `
 .ah { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
 .ar { display: flex; justify-content: space-between; font-size: 17px; padding: 8px 0; border-top: 1px solid var(--line); }
 .ar b { font-family: var(--mono); font-weight: 600; }
-.flash { box-shadow: inset 0 0 0 2px var(--f400); }
 .scn { flex-wrap: wrap; justify-content: flex-end; }
 .menu { position: absolute; right: 0; top: 40px; width: 250px; padding: 6px; opacity: 0; z-index: 3; box-shadow: 0 16px 40px rgba(0,0,0,.6); }
 .menu div { font-size: 15px; padding: 8px 10px; border-radius: 7px; }
-.menu div.hov { background: rgba(139,92,246,.25); color: var(--v300); }
 .src { font-size: 13px; color: var(--dim); margin-top: 6px; opacity: 0; }
 `
 
@@ -76,15 +76,16 @@ function setup(ctx) {
   const { $ } = ctx
   ctx.nav('plan')
   return (t) => {
-    const opened = pointer(ctx, $('cur'), $('scn'), t, 1.0, 1.6, { out: 0 })
-    const picked = pointer(ctx, $('cur2'), $('alt'), t, 1.75, 2.35, {
+    pointer(ctx, $('cur'), $('scn'), t, 1.0, 1.6, { out: 0 })
+    pointer(ctx, $('cur2'), $('alt'), t, 1.75, 2.35, {
       from: [0, -60],
     })
-    $('menu').style.opacity = opened && !picked ? 1 : 0
-    $('alt').className = t > 1.9 && !picked ? 'hov' : ''
-    const alt = picked
-    $('tv').textContent = alt ? '30 days' : '90 days'
-    $('terms').className = 'ar' + (alt && t < 5.5 ? ' flash' : '')
+    $('menu').style.opacity =
+      eo(seg(t, 1.6, 1.75)) * (1 - eo(seg(t, 2.35, 2.5)))
+    $('alt').style.background = `rgba(139,92,246,${0.25 * seg(t, 1.85, 2.0)})`
+    swap($('tv'), t, 2.35, '90 days', '30 days')
+    const ring = seg(t, 2.35, 2.6) * (1 - seg(t, 5.2, 5.6))
+    $('terms').style.boxShadow = `inset 0 0 0 2px rgba(232,121,249,${ring})`
     $('src').style.opacity = eo(seg(t, 2.6, 3.0))
     const roll = eio(seg(t, 2.8, 4.0))
     ROWS.forEach((r, ri) => {
@@ -97,8 +98,8 @@ function setup(ctx) {
           p > 0.02 ? (r[0] === 'Cash' ? 'var(--good)' : 'var(--v300)') : ''
       })
     })
-    $('scn').textContent = alt ? 'Summit on 30-day terms ▾' : 'Base ▾'
-    $('scn').style.opacity = eo(seg(t, 0, 0.3))
+    swap($('scn'), t, 2.35, 'Base ▾', 'Summit on 30-day terms ▾')
+    push($('main'), t, 9, 620, 260)
   }
 }
 const clamp = (x) => Math.max(0, Math.min(1, x))

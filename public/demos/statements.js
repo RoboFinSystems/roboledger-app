@@ -10,8 +10,11 @@ import {
   pageHeader,
   PHONE_APP_CSS,
   pointer,
+  push,
   rise,
   seg,
+  steps,
+  swap,
 } from './kit.js'
 
 const BS = [
@@ -67,32 +70,30 @@ function setup(ctx) {
   const { $ } = ctx
   ctx.nav('statements')
   return (t) => {
-    const onIS = pointer(ctx, $('cur'), $('ti'), t, 1.6, 2.3)
+    pointer(ctx, $('cur'), $('ti'), t, 1.6, 2.3)
     const x = eo(seg(t, 2.3, 2.7))
     $('bs').style.opacity = 1 - x
     $('is').style.opacity = x
-    $('tb').className = 'tab' + (onIS ? '' : ' on')
-    $('ti').className = 'tab' + (onIS ? ' on' : '')
+    swap($('tb'), t, 2.3, null, null, ['tab on', 'tab'])
+    swap($('ti'), t, 2.3, null, null, ['tab', 'tab on'])
+    push($('main'), t, TOTAL, 480, 330)
     const made = pointer(ctx, $('cur2'), $('mk'), t, 4.6, 5.3, {
       from: [-200, 180],
     })
     rise($('rep'), made ? eo(seg(t, 5.4, 5.9)) : 0, 30)
-    const stage = t < 6.6 ? 0 : t < 7.8 ? 1 : 2
-    STEPS.forEach((_, i) => {
-      const b = $('st' + i)
-      b.className =
-        'badge ' +
-        (i < stage
-          ? 'b-v'
-          : i === stage
-            ? i === 2
-              ? 'b-good'
-              : 'b-warn'
-            : 'b-mute')
-    })
-    const valid = t > 8.4
-    $('xb').className = 'badge ' + (valid ? 'b-good' : 'b-mute')
-    $('xb').textContent = valid ? 'XBRL 2.1 ✓ valid' : 'XBRL 2.1'
+    // Draft, then Under Review, then Filed: each badge lights as the report reaches it
+    const lit = ['badge b-warn', 'badge b-v']
+    steps($('st0'), t, [6.6], null, lit)
+    steps($('st1'), t, [6.6, 7.8], null, [
+      'badge b-mute',
+      'badge b-warn',
+      'badge b-v',
+    ])
+    steps($('st2'), t, [7.8], null, ['badge b-mute', 'badge b-good'])
+    swap($('xb'), t, 8.4, 'XBRL 2.1', 'XBRL 2.1 ✓ valid', [
+      'badge b-mute',
+      'badge b-good',
+    ])
   }
 }
 

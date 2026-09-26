@@ -4,7 +4,7 @@
  * them. Figures are the three demo companies' compiled reports: Driftline and
  * Cadence Labs for FY ending 2026-08-31, Cascade Advisory for FY2025.
  */
-import { eo, rise, seg, spin, tile, typed } from './kit.js'
+import { dip, eo, rise, seg, spin, tile, typed } from './kit.js'
 
 const COS = [
   {
@@ -50,6 +50,7 @@ const A = [
 ]
 
 const html = `
+<div data-loop>
 <div class="chat" id="chat">
   <div class="hd"><div class="t">Your AI chat · 3 companies connected over MCP</div>
     ${COS.map((c) => `<span class="chip"><span class="dot"></span>RoboLedger · ${c.short}</span>`).join('')}</div>
@@ -65,6 +66,7 @@ const html = `
     <tr><th>Company</th><th class="n">Revenue</th><th class="n">Gross margin</th><th class="n">Net income</th><th class="n">Cash</th></tr>
     ${COS.map((c, i) => `<tr id="r${i}"><td>${c.id}</td><td class="n">${c.rev}</td><td class="n">${c.gm}</td><td class="n" id="ni${i}">${c.ni}</td><td class="n" id="ca${i}">${c.cash}</td></tr>`).join('')}
   </table>
+</div>
 </div>`
 
 const css = `
@@ -83,7 +85,7 @@ const css = `
 .sh { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
 .sh b { font-size: 22px; } .sh span:not(.tile) { color: var(--muted); font-size: 15px; margin-left: auto; }
 .snap td { font-size: 17px; }
-td.warn { color: var(--bad); box-shadow: inset 0 0 0 2px rgba(248,113,113,.6); }
+
 `
 
 function setup(ctx) {
@@ -98,6 +100,7 @@ function setup(ctx) {
         t > t0 + 0.9
           ? '<span style="color:var(--good)">✓ done</span>'
           : `<span style="color:var(--muted)">${spin(t)} running</span>`
+      $('ts' + i).style.opacity = dip(t, t0 + 0.9)
       rise($('r' + i), eo(seg(t, t0 + 0.9, t0 + 1.3)), 10)
     })
     rise($('snap'), eo(seg(t, 2.6, 3.1)), 30)
@@ -109,10 +112,17 @@ function setup(ctx) {
       left -= rest.length
       return (b ? `<b>${b}</b>` : '') + r
     }).join('')
+    // the flagged figures turn red and get a ring as the answer names them
     COS.forEach((c, i) => {
-      $('ni' + i).className = 'n' + (c.flag === 'ni' && t > 4.6 ? ' warn' : '')
-      $('ca' + i).className =
-        'n' + (c.flag === 'cash' && t > 5.6 ? ' warn' : '')
+      const w = (at, on) => (on ? seg(t, at, at + 0.3) : 0)
+      const ni = w(4.6, c.flag === 'ni')
+      const ca = w(5.6, c.flag === 'cash')
+      $('ni' + i).style.boxShadow =
+        `inset 0 0 0 2px rgba(248,113,113,${0.6 * ni})`
+      $('ni' + i).style.color = ni ? `rgba(248,113,113,${0.4 + 0.6 * ni})` : ''
+      $('ca' + i).style.boxShadow =
+        `inset 0 0 0 2px rgba(248,113,113,${0.6 * ca})`
+      $('ca' + i).style.color = ca ? `rgba(248,113,113,${0.4 + 0.6 * ca})` : ''
     })
   }
 }

@@ -6,12 +6,16 @@
 import {
   appChrome,
   CURSOR,
+  dip,
   eo,
   pageHeader,
   PHONE_APP_CSS,
   pointer,
+  push,
   rise,
   seg,
+  steps,
+  swap,
 } from './kit.js'
 
 const SCHED = [
@@ -48,23 +52,26 @@ function setup(ctx) {
   const { $ } = ctx
   ctx.nav('close')
   return (t) => {
-    const posted = pointer(ctx, $('cur'), $('cp'), t, 4.2, 4.9)
-    SCHED.forEach((_, i) => {
-      const drafted = t > 0.6 + i * 0.35
-      const b = $('sb' + i)
-      const done = posted && t > 5.2 + i * 0.12
-      b.textContent = done ? 'posted' : drafted ? 'drafted' : 'pending'
-      b.className = 'badge ' + (done ? 'b-good' : drafted ? 'b-v' : 'b-mute')
-    })
+    pointer(ctx, $('cur'), $('cp'), t, 4.2, 4.9)
+    SCHED.forEach((_, i) =>
+      steps(
+        $('sb' + i),
+        t,
+        [0.6 + i * 0.35, 5.2 + i * 0.12],
+        ['pending', 'drafted', 'posted'],
+        ['badge b-mute', 'badge b-v', 'badge b-good']
+      )
+    )
+    push($('main'), t, 9.5, 700, 420)
     const n = Math.min(CHECKS, Math.max(0, Math.floor((t - 1.8) * 9)))
     $('chk').textContent = t < 1.8 ? '-' : `${n} / ${CHECKS} pass`
     $('chk').style.color = n === CHECKS ? 'var(--good)' : ''
-    const closed = t > 5.7
-    $('thru').textContent = closed ? '🔒 August 2026' : '🔒 July 2026'
+    const closed = swap($('thru'), t, 5.7, '🔒 July 2026', '🔒 August 2026')
     $('thru').style.color = closed ? 'var(--f400)' : ''
-    $('tgt').textContent = closed ? 'September 2026' : 'August 2026'
-    $('cp').style.opacity = n === CHECKS ? 1 : 0.4
-    $('cp').textContent = closed ? 'Closed ✓' : 'Close Period'
+    swap($('tgt'), t, 5.7, 'August 2026', 'September 2026')
+    swap($('cp'), t, 5.7, 'Close Period', 'Closed ✓')
+    // dimmed until the checks pass; the swap's dip applies on top
+    $('cp').style.opacity = (0.4 + 0.6 * eo(seg(t, 2.8, 3.2))) * dip(t, 5.7)
     rise($('gc'), eo(seg(t, 0.2, 0.7)), 16)
   }
 }
