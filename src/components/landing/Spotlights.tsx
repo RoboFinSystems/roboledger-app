@@ -56,7 +56,7 @@ const spotlights: Spotlight[] = [
     label: 'Planning & forecast',
     title: 'Plan forward from the books you just closed',
     description:
-      'Your closed months and your forecast in one monthly grid. Change an assumption and see what it does to cash, with the scenario’s levers sitting right beneath the statements they drive.',
+      'Your closed months and your forecast in one monthly grid. Switch to a scenario and see what it does to cash, with its levers sitting right beneath the statements they drive.',
     bullets: [
       'Income Statement, Balance Sheet, and Cash Flow month by month — actuals and forward columns in the same row',
       'Switch scenarios in place; the assumption levers driving the forecast render in the same grid',
@@ -124,15 +124,15 @@ export default function Spotlights() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-16 text-center">
           <div className="bg-primary-500/20 text-primary-400 mb-4 inline-block rounded-full px-4 py-1 text-sm font-semibold">
-            Built for the close
+            Inside RoboLedger
           </div>
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-            AI on both sides of the ledger
+            From the first question to the close
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Six capabilities that make RoboLedger different from a spreadsheet
-            and a bookkeeping app alike — from the first transaction through the
-            close, the report, and the forecast that follows it.
+            Six views of the same live books. Read the statements, open any
+            number, plan forward, and ask in plain English. When you trust it,
+            the close and the inbox are there too.
           </p>
         </div>
 

@@ -15,9 +15,10 @@ const faqs: { q: string; a: ReactNode }[] = [
         >
           QuickBooks
         </a>{' '}
-        chart of accounts and transactions and can write approved entries back
-        to QuickBooks when you close. It's an AI layer on top of your books, not
-        a replacement for them.
+        chart of accounts and transactions. Reading, analysis, and planning
+        write nothing back; approved entries go back to QuickBooks only when you
+        post them. It's an AI layer on top of your books, not a replacement for
+        them.
       </>
     ),
   },
@@ -46,10 +47,12 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: 'What does the AI actually do?',
     a: (
       <>
-        It triages every transaction in the inbox, proposes account mappings,
-        and answers questions about your books in natural language. You stay in
-        control at every step — one-click approve/reject, dry-run previews of
-        what would post, and balanced-entry checks before anything commits.
+        It answers questions about your books in plain English, opens any number
+        down to the facts behind it, rolls plans forward, and compares you to
+        public companies. When you&apos;re ready, it also triages each
+        transaction in the inbox and drafts the close. You stay in control at
+        every step — one-click approve/reject, dry-run previews of what would
+        post, and balanced-entry checks before anything commits.
       </>
     ),
   },
@@ -80,13 +83,14 @@ const faqs: { q: string; a: ReactNode }[] = [
     ),
   },
   {
-    q: 'I keep books for several companies — can I manage them all here?',
+    q: 'I look after several companies. Can I see them all here?',
     a: (
       <>
         Yes. Each company&apos;s books live in their own isolated graph —
-        connect QuickBooks per company, close each period independently, and
-        switch between them from one account. It&apos;s built for accountants
-        and bookkeepers who run more than one set of books.{' '}
+        connect QuickBooks per company and switch between them from one account.
+        In your AI chat, add the RoboLedger connector once per company and ask
+        across all of them. It&apos;s built for fractional CFOs, controllers,
+        and firms who look after more than one company.{' '}
         <a
           href={HARBINGER_URL}
           target="_blank"
