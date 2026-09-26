@@ -197,26 +197,26 @@ const ReportBuilderContent: FC = function () {
     try {
       setIsAutoMapping(true)
       setError(null)
-      await clients.ledger.autoMapElements(currentGraph.graphId, {
-        mapping_id: selectedMappingId,
-      })
-      // Refresh coverage after auto-map completes
-      // The agent runs async, so we poll for updated coverage
-      setTimeout(async () => {
-        try {
-          const result = await clients.ledger.getMappingCoverage(
-            currentGraph.graphId,
-            selectedMappingId
-          )
-          setCoverage(result)
-        } catch {
-          // ignore
+      const { operationId, status } = await clients.ledger.autoMapElements(
+        currentGraph.graphId,
+        { mapping_id: selectedMappingId }
+      )
+      if (status !== 'completed') {
+        const outcome = await clients.operations.monitorOperation(operationId)
+        if (!outcome.success) {
+          setError(outcome.error || 'Auto-mapping failed. Please try again.')
         }
-        setIsAutoMapping(false)
-      }, 5000)
+      }
+      setCoverage(
+        await clients.ledger.getMappingCoverage(
+          currentGraph.graphId,
+          selectedMappingId
+        )
+      )
     } catch (err) {
       console.error('Auto-map failed:', err)
       setError('Auto-mapping failed. Please try again.')
+    } finally {
       setIsAutoMapping(false)
     }
   }, [currentGraph, selectedMappingId])

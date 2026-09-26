@@ -645,18 +645,21 @@ const ChartOfAccountsContent: FC = function () {
     try {
       setIsAutoMapping(true)
       setError(null)
-      await clients.ledger.autoMapElements(currentGraph.graphId, {
-        mapping_id: selectedMappingId,
-      })
-
-      // Poll for updated data after agent completes
-      setTimeout(async () => {
-        await refreshMappingData()
-        setIsAutoMapping(false)
-      }, 5000)
+      const { operationId, status } = await clients.ledger.autoMapElements(
+        currentGraph.graphId,
+        { mapping_id: selectedMappingId }
+      )
+      if (status !== 'completed') {
+        const outcome = await clients.operations.monitorOperation(operationId)
+        if (!outcome.success) {
+          setError(outcome.error || 'Auto-mapping failed. Please try again.')
+        }
+      }
+      await refreshMappingData()
     } catch (err) {
       console.error('Auto-map failed:', err)
       setError('Auto-mapping failed. Please try again.')
+    } finally {
       setIsAutoMapping(false)
     }
   }, [currentGraph, selectedMappingId, refreshMappingData])
