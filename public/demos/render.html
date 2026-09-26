@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <title>RoboLedger demo render</title>
+    <style>
+      @font-face {
+        font-family: 'Space Grotesk';
+        src: url('/fonts/SpaceGrotesk/SpaceGrotesk-VariableFont_wght.ttf')
+          format('truetype');
+        font-weight: 300 700;
+      }
+      @font-face {
+        font-family: 'Orbitron';
+        src: url('/fonts/Orbitron/Orbitron-VariableFont_wght.ttf')
+          format('truetype');
+        font-weight: 400 900;
+      }
+      html,
+      body {
+        margin: 0;
+        background: #000;
+      }
+      #host {
+        position: relative;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="host"></div>
+    <script type="module">
+      // Renderer harness for the content machine: /demos/render.html?demo=hero poses
+      // one demo at native size and exposes the __init / __total / __seek contract.
+      import { mount } from './kit.js'
+      const name = new URLSearchParams(location.search).get('demo') || 'hero'
+      const def = (await import(`./${name}.js`)).default
+      const host = document.getElementById('host')
+      host.style.width = def.width + 'px'
+      host.style.height = def.height + 'px'
+      let seek
+      window.__init = async () => {
+        await Promise.all(
+          [
+            '700 40px Orbitron',
+            '400 40px "Space Grotesk"',
+            '600 40px "Space Grotesk"',
+          ].map((f) => document.fonts.load(f))
+        )
+        await document.fonts.ready
+        seek = mount(host, def, { autoplay: false }).seek
+        window.__READY = true
+      }
+      window.__total = () => def.total
+      window.__seek = (t) => seek(t)
+    </script>
+  </body>
+</html>

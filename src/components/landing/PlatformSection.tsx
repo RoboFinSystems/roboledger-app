@@ -225,7 +225,7 @@ export default function PlatformSection() {
                     <div className="font-semibold text-white">MCP Tools</div>
                   </div>
                   <p className="text-xs text-gray-400">
-                    Month-end close from Claude, ChatGPT, or any MCP client
+                    Ask, plan, and close from Claude, ChatGPT, or any MCP client
                   </p>
                 </div>
 
