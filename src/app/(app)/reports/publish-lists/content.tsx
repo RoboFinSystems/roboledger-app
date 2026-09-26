@@ -61,6 +61,10 @@ const PublishListsContent: FC = function () {
   const [isAddingMember, setIsAddingMember] = useState(false)
   const [addMemberError, setAddMemberError] = useState<string | null>(null)
 
+  // Delete list confirmation
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   const { graph: currentGraph } = useLedgerGraph()
 
   const graphId = currentGraph?.graphId
@@ -139,12 +143,16 @@ const PublishListsContent: FC = function () {
     async (listId: string) => {
       if (!graphId) return
       try {
+        setIsDeleting(true)
         await clients.reports.deletePublishList(graphId, listId)
         if (selectedList?.id === listId) setSelectedList(null)
         await loadLists()
       } catch (err) {
         console.error('Failed to delete list:', err)
         setError('Failed to delete publish list.')
+      } finally {
+        setIsDeleting(false)
+        setConfirmDeleteOpen(false)
       }
     },
     [graphId, selectedList, loadLists]
@@ -301,7 +309,8 @@ const PublishListsContent: FC = function () {
                   <Button
                     size="sm"
                     color="failure"
-                    onClick={() => handleDeleteList(selectedList.id)}
+                    aria-label="Delete publish list"
+                    onClick={() => setConfirmDeleteOpen(true)}
                   >
                     <HiOutlineTrash className="h-4 w-4" />
                   </Button>
@@ -415,6 +424,38 @@ const PublishListsContent: FC = function () {
           </Button>
           <Button color="gray" onClick={() => setShowCreateModal(false)}>
             Cancel
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Delete list confirmation */}
+      <Modal
+        show={confirmDeleteOpen && selectedList !== null}
+        onClose={() => setConfirmDeleteOpen(false)}
+        size="md"
+      >
+        <ModalHeader>Delete publish list</ModalHeader>
+        <ModalBody>
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Delete <span className="font-semibold">{selectedList?.name}</span>?
+            Its recipients are removed with it. Reports already shared to them
+            keep their copies.
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            color="gray"
+            onClick={() => setConfirmDeleteOpen(false)}
+            disabled={isDeleting}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="failure"
+            onClick={() => selectedList && handleDeleteList(selectedList.id)}
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Deleting…' : 'Delete'}
           </Button>
         </ModalFooter>
       </Modal>

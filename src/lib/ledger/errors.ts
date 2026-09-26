@@ -16,6 +16,8 @@
 export interface FriendlyError {
   message: string
   link?: { href: string; label: string }
+  /** The same request can succeed if sent again — offer a retry. */
+  retryable?: boolean
 }
 
 /** Index of the first `{` or `[`, or -1 when the string carries no JSON. */
@@ -85,10 +87,14 @@ export const friendlyError = (raw: string): FriendlyError => {
 
   // 409 RowLockedError: a sync or sweep holds the rows this write needs.
   // Retryable, and not the user's mistake.
-  if (lower.includes('being written by another process')) {
+  if (
+    lower.includes('being written by another process') ||
+    lower.includes('being closed or reopened by another process')
+  ) {
     return {
       message:
         'Another process (usually a running sync) is writing this right now. Wait a moment and try again.',
+      retryable: true,
     }
   }
 

@@ -148,6 +148,8 @@ const formatCurrency = (
   }).format(cents / 100)
 }
 
+type Action = 'preview' | 'approve' | 'reject' | 'classify'
+
 const EventBlockDetailModal: FC<Props> = function ({
   graphId,
   eventId,
@@ -159,10 +161,9 @@ const EventBlockDetailModal: FC<Props> = function ({
 }) {
   const [event, setEvent] = useState<LedgerEventBlockDetail | null>(null)
   const [loading, setLoading] = useState(true)
-  const [actionInFlight, setActionInFlight] = useState<
-    'preview' | 'approve' | 'reject' | 'classify' | null
-  >(null)
+  const [actionInFlight, setActionInFlight] = useState<Action | null>(null)
   const [error, setError] = useState<FriendlyError | null>(null)
+  const [failedAction, setFailedAction] = useState<Action | null>(null)
   const [preview, setPreview] = useState<PreviewResult | null>(null)
   const [confirmReject, setConfirmReject] = useState(false)
   // Bank-feed classification: the account the line posts against. Seeded
@@ -302,6 +303,7 @@ const EventBlockDetailModal: FC<Props> = function ({
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       setError(friendlyError(message))
+      setFailedAction('preview')
     } finally {
       setActionInFlight(null)
     }
@@ -328,6 +330,7 @@ const EventBlockDetailModal: FC<Props> = function ({
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       setError(friendlyError(message))
+      setFailedAction('approve')
     } finally {
       setActionInFlight(null)
     }
@@ -350,6 +353,7 @@ const EventBlockDetailModal: FC<Props> = function ({
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       setError(friendlyError(message))
+      setFailedAction('classify')
     } finally {
       setActionInFlight(null)
     }
@@ -368,11 +372,19 @@ const EventBlockDetailModal: FC<Props> = function ({
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       setError(friendlyError(message))
+      setFailedAction('reject')
     } finally {
       setActionInFlight(null)
       setConfirmReject(false)
     }
   }, [event, graphId, onRejected])
+
+  const retry: Record<Action, () => void> = {
+    preview: handlePreview,
+    approve: handleApprove,
+    classify: handleClassify,
+    reject: handleReject,
+  }
 
   const agent = event?.agentId ? agentById[event.agentId] : null
   const entries = journalEntries(event?.metadata)
@@ -713,6 +725,17 @@ const EventBlockDetailModal: FC<Props> = function ({
                   >
                     {error.link.label} →
                   </Link>
+                )}
+                {error.retryable && failedAction && (
+                  <Button
+                    size="xs"
+                    color="light"
+                    className="mt-2"
+                    disabled={actionInFlight !== null}
+                    onClick={() => retry[failedAction]()}
+                  >
+                    Try again
+                  </Button>
                 )}
               </Alert>
             )}

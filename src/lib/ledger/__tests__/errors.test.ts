@@ -186,12 +186,24 @@ describe('nested detail and contention', () => {
     ).toBe('Connection not found')
   })
 
-  it('turns a 409 row-lock into a retry message', () => {
+  it('turns a 409 row-lock into a retryable message', () => {
+    const mapped = friendlyError(
+      'Event evt_1 is being written by another process (most likely a running sync). Retry in a moment.'
+    )
+    expect(mapped.message).toMatch(/wait a moment and try again/i)
+    expect(mapped.retryable).toBe(true)
+  })
+
+  it('treats a period close or reopen in flight as retryable', () => {
     expect(
       friendlyError(
-        'Event evt_1 is being written by another process (most likely a running sync). Retry in a moment.'
-      ).message
-    ).toMatch(/wait a moment and try again/i)
+        'Period 2026-08 is being closed or reopened by another process. Retry in a moment.'
+      ).retryable
+    ).toBe(true)
+  })
+
+  it('does not offer a retry for a refusal', () => {
+    expect(friendlyError('Connection not found').retryable).toBeUndefined()
   })
 })
 
