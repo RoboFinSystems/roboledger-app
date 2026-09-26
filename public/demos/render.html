@@ -32,7 +32,8 @@
     <script type="module">
       // Renderer harness for the content machine: /demos/render.html?demo=hero poses
       // one demo at native size and exposes the __init / __total / __seek contract.
-      import { mount } from './kit.js'
+      // &phone=1 poses its phone layout instead (a vertical cut).
+      import { mount, variant } from './kit.js'
       const DEMOS = [
         'hero',
         'contrast',
@@ -51,9 +52,11 @@
         )
       }
       const def = (await import(`./${name}.js`)).default
+      const phone = new URLSearchParams(location.search).get('phone') === '1'
+      const v = variant(def, phone)
       const host = document.getElementById('host')
-      host.style.width = def.width + 'px'
-      host.style.height = def.height + 'px'
+      host.style.width = v.width + 'px'
+      host.style.height = v.height + 'px'
       let seek
       window.__init = async () => {
         await Promise.all(
@@ -64,7 +67,7 @@
           ].map((f) => document.fonts.load(f))
         )
         await document.fonts.ready
-        seek = mount(host, def, { autoplay: false }).seek
+        seek = mount(host, def, { autoplay: false, phone }).seek
         window.__READY = true
       }
       window.__total = () => def.total

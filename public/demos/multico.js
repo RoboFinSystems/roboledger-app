@@ -117,6 +117,18 @@ function setup(ctx) {
   }
 }
 
+// Phone layout: larger type in a narrower stage.
+const phoneCss = `
+.chat { left: 20px; top: 10px; width: 680px; height: 600px; }
+.hd { padding: 16px 20px; } .hd .t { font-size: 17px; } .chip { font-size: 15px; padding: 5px 11px; }
+.body { padding: 18px 20px; gap: 12px; }
+.ub { font-size: 22px; } .ans { font-size: 21px; }
+.snap { left: 20px; right: auto; top: 630px; width: 680px; padding: 16px; }
+.sh span:not(.tile) { display: none; }
+.snap th { padding: 9px 8px; font-size: 12px; }
+.snap td { padding: 10px 8px; font-size: 15px; }
+`
+
 export default {
   width: 1600,
   height: 760,
@@ -125,4 +137,5 @@ export default {
   css,
   html,
   setup,
+  mobile: { width: 720, height: 940, css: phoneCss },
 }

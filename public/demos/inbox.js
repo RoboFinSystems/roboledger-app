@@ -3,7 +3,16 @@
  * AI classifies it, the preview shows the planned entry, and a person commits
  * it. Driftline demo company, August 2026.
  */
-import { appChrome, CURSOR, eo, pageHeader, pointer, rise, seg } from './kit.js'
+import {
+  appChrome,
+  CURSOR,
+  eo,
+  pageHeader,
+  PHONE_APP_CSS,
+  pointer,
+  rise,
+  seg,
+} from './kit.js'
 
 const ROWS = [
   [
@@ -90,6 +99,14 @@ function setup(ctx) {
   }
 }
 
+// Phone layout: larger type in a narrower stage.
+const phoneCss = `
+#list td { font-size: 14px; padding: 10px 8px; } #list th { padding: 9px 8px; font-size: 12px; }
+#list th:first-child, #list td:first-child { display: none; }
+.ai { font-size: 10px; padding: 1px 5px; }
+.pv { top: 270px; width: 440px; }
+`
+
 export default {
   width: 1200,
   height: 750,
@@ -100,4 +117,5 @@ export default {
     appChrome({ active: 'inbox', main }) +
     CURSOR.replace('class="cursor"', 'class="cursor" id="cur"'),
   setup,
+  mobile: { width: 720, height: 740, css: PHONE_APP_CSS + phoneCss },
 }

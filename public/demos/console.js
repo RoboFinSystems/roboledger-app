@@ -4,7 +4,15 @@
  * Driftline demo company: receivables of $153,333 at 2026-08-31, $128,000 of it
  * Summit Markets; the split across the three café accounts is illustrative.
  */
-import { appChrome, eo, pageHeader, rise, seg, typed } from './kit.js'
+import {
+  appChrome,
+  eo,
+  pageHeader,
+  PHONE_APP_CSS,
+  rise,
+  seg,
+  typed,
+} from './kit.js'
 
 const Q = 'Which customers owe us the most?'
 const CY = [
@@ -64,6 +72,14 @@ function setup(ctx) {
   }
 }
 
+// Phone layout: larger type in a narrower stage.
+const phoneCss = `
+.ask { font-size: 18px; padding: 12px 14px; }
+pre { font-size: 13px; }
+.sh { width: 110px; }
+#res td { font-size: 15px; }
+`
+
 export default {
   width: 1200,
   height: 750,
@@ -72,4 +88,5 @@ export default {
   css,
   html: appChrome({ active: 'console', main }),
   setup,
+  mobile: { width: 720, height: 740, css: PHONE_APP_CSS + phoneCss },
 }

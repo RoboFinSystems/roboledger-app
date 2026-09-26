@@ -6,7 +6,16 @@
  * and the forecast columns roll. Jun to Aug are Driftline's ledger; Sep
  * to Nov are the plan, and illustrative.
  */
-import { appChrome, CURSOR, eio, eo, pageHeader, pointer, seg } from './kit.js'
+import {
+  appChrome,
+  CURSOR,
+  eio,
+  eo,
+  pageHeader,
+  PHONE_APP_CSS,
+  pointer,
+  seg,
+} from './kit.js'
 
 const COLS = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov']
 // [label, actual Jun..Aug, forecast Sep..Nov (90-day terms), forecast (30-day terms), bold]
@@ -94,6 +103,15 @@ function setup(ctx) {
 }
 const clamp = (x) => Math.max(0, Math.min(1, x))
 
+// Phone layout: larger type in a narrower stage.
+const phoneCss = `
+.vh p { display: none; }
+#grid td { padding: 10px 8px; font-size: 15px; } #grid th { padding: 9px 8px; }
+.scn { right: 22px; top: 30px; } .scn .lbl { display: none; }
+.menu { width: 230px; }
+.asm { margin-top: 12px; padding: 10px 14px; } .ar { font-size: 15px; padding: 7px 0; }
+`
+
 export default {
   width: 1200,
   height: 750,
@@ -105,4 +123,5 @@ export default {
     CURSOR.replace('class="cursor"', 'class="cursor" id="cur"') +
     CURSOR.replace('class="cursor"', 'class="cursor" id="cur2"'),
   setup,
+  mobile: { width: 720, height: 740, css: PHONE_APP_CSS + phoneCss },
 }
