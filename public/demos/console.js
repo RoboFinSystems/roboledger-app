@@ -69,8 +69,6 @@ export default {
   height: 750,
   total: 9.5,
   poster: 7,
-  label:
-    'The RoboLedger AI Console answering which customers owe the most, showing the generated query and the result.',
   css,
   html: appChrome({ active: 'console', main }),
   setup,

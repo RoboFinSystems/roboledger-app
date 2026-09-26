@@ -50,8 +50,9 @@ export default function LiveDemo({
       if (cancelled || !host.current) return
       handle = kit.mount(host.current, demo.default)
     }
-    load().catch(() => {
-      // A demo that fails to load leaves the reserved frame empty; the page stands without it.
+    load().catch((err) => {
+      // The page stands without the demo, but a broken module should still show up.
+      console.error(`LiveDemo "${name}" failed to load`, err)
     })
     return () => {
       cancelled = true

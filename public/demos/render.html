@@ -33,7 +33,23 @@
       // Renderer harness for the content machine: /demos/render.html?demo=hero poses
       // one demo at native size and exposes the __init / __total / __seek contract.
       import { mount } from './kit.js'
+      const DEMOS = [
+        'hero',
+        'contrast',
+        'multico',
+        'statements',
+        'explorer',
+        'plan',
+        'console',
+        'close',
+        'inbox',
+      ]
       const name = new URLSearchParams(location.search).get('demo') || 'hero'
+      if (!DEMOS.includes(name)) {
+        throw new Error(
+          `unknown demo "${name}"; expected one of ${DEMOS.join(', ')}`
+        )
+      }
       const def = (await import(`./${name}.js`)).default
       const host = document.getElementById('host')
       host.style.width = def.width + 'px'

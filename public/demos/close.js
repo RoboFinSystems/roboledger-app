@@ -65,8 +65,6 @@ export default {
   height: 750,
   total: 9.5,
   poster: 7.5,
-  label:
-    'RoboLedger drafting schedule entries, passing every close check, and closing August 2026 after a person approves.',
   css,
   html:
     appChrome({ active: 'close', main }) +

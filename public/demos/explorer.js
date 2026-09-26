@@ -115,8 +115,6 @@ export default {
   height: 750,
   total: 10,
   poster: 8.4,
-  label:
-    'The RoboLedger Explorer opening the Gross Margin block through its rendered, chart, facts and validation views.',
   css,
   html:
     appChrome({ active: 'explorer', main }) +

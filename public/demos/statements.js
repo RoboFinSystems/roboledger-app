@@ -92,8 +92,6 @@ export default {
   height: 750,
   total: TOTAL,
   poster: 9.5,
-  label:
-    'RoboLedger rendering a balance sheet and income statement live from the ledger, then filing a validated report package.',
   css,
   html:
     appChrome({ active: 'statements', main }) +

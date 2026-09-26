@@ -540,8 +540,6 @@ export default {
   height: 1080,
   total: TOTAL,
   poster: 22.6,
-  label:
-    "An AI chat answering a finance lead's questions while RoboLedger shows the statements, the shared report, the plan, the peer comparison and the approved close.",
   css,
   html,
   setup,

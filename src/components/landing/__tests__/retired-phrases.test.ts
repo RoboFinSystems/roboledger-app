@@ -41,11 +41,16 @@ const RETIRED = [
 ]
 
 const landingDir = path.resolve(__dirname, '..')
+const demosDir = path.resolve(__dirname, '../../../../public/demos')
 const files = [
   ...readdirSync(landingDir)
     .filter((f) => f.endsWith('.tsx') || f.endsWith('.ts'))
     .map((f) => path.join(landingDir, f)),
   path.resolve(__dirname, '../../../app/(landing)/metadata.ts'),
+  // The animated demos carry landing copy of their own.
+  ...readdirSync(demosDir)
+    .filter((f) => f.endsWith('.js'))
+    .map((f) => path.join(demosDir, f)),
   // Everything else that describes the homepage to a crawler or a shared link.
   ...[
     'app/layout.tsx',
@@ -61,6 +66,7 @@ describe('landing copy', () => {
     expect(files.length).toBeGreaterThan(10)
     expect(files.some((f) => f.endsWith('metadata.ts'))).toBe(true)
     expect(files.some((f) => f.endsWith('site.ts'))).toBe(true)
+    expect(files.some((f) => f.endsWith('hero.js'))).toBe(true)
   })
 
   it.each(RETIRED)('no longer says "%s"', (phrase) => {

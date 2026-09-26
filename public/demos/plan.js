@@ -99,8 +99,6 @@ export default {
   height: 750,
   total: 9,
   poster: 6,
-  label:
-    'The RoboLedger plan grid rolling Driftline forward from actuals as one payment-terms assumption changes.',
   css,
   html:
     appChrome({ active: 'plan', main }) +

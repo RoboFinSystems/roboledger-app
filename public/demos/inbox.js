@@ -95,8 +95,6 @@ export default {
   height: 750,
   total: 9.5,
   poster: 3.8,
-  label:
-    'A customer payment arriving in the RoboLedger inbox, classified by AI, previewed as a balanced entry, and committed by a person.',
   css,
   html:
     appChrome({ active: 'inbox', main }) +
