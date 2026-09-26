@@ -1,5 +1,6 @@
 import { McpLogo } from '@/components/mcp/McpLogo'
 import FloatingElementsVariant from './FloatingElementsVariant'
+import LiveDemo from './LiveDemo'
 
 /**
  * The agent-first section: capabilities that ship through MCP before they
@@ -80,6 +81,18 @@ export default function AgentSurface() {
           </p>
         </div>
 
+        <div className="mb-14">
+          <LiveDemo
+            name="multico"
+            aspect={1600 / 760}
+            label="One AI chat with three companies' books connected, reading each and answering which client needs attention this month."
+          />
+          <p className="mt-4 text-center text-sm text-gray-400">
+            One connector per company, side by side in the same chat. Your AI
+            reads each set of books and answers across all of them.
+          </p>
+        </div>
+
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {capabilities.map((c) => (
             <div
@@ -117,10 +130,11 @@ export default function AgentSurface() {
               </div>
               <p className="text-sm leading-relaxed text-gray-400">
                 Add this address as a connector in Claude, ChatGPT, or any MCP
-                client, sign in, and choose your graph. It can read your books
-                and drive these tools directly — with you approving each write.
-                No install, no key to paste. The same tools back the in-app AI
-                Console, so nothing is locked behind a desktop app.
+                client, sign in, and choose the company. Add it again for each
+                company you look after. It can read your books and drive these
+                tools directly — with you approving each write. No install, no
+                key to paste. The same tools back the in-app AI Console, so
+                nothing is locked behind a desktop app.
               </p>
             </div>
             <div className="w-full shrink-0 lg:w-auto">

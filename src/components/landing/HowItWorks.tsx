@@ -1,101 +1,55 @@
 import FloatingElementsVariant from './FloatingElementsVariant'
 
+// Three steps in the order of the arc: read the books first, the close last. The
+// spotlights below carry the detail, so this stays short.
 const steps = [
   {
     number: '01',
-    title: 'Connect your sources',
+    title: 'Connect your books',
     description:
-      'Link QuickBooks with one-click OAuth and connect SEC EDGAR by CIK. Customers, vendors, and employees resolve into counterparties automatically.',
-    tags: ['QuickBooks', 'SEC EDGAR', 'Auto-resolve'],
+      'Link QuickBooks with one-click OAuth, then add one MCP address to Claude, ChatGPT, or any MCP client and sign in. Add the SEC filings connector beside it to compare against public companies.',
+    tags: ['QuickBooks', 'MCP', 'SEC filings'],
     color: 'violet',
   },
   {
     number: '02',
-    title: 'Triage the inbox',
+    title: 'Ask, share, plan',
     description:
-      'Every transaction arrives as a typed business event, pre-classified by AI. Approve in one click, reject, or preview exactly what would post to the GL first.',
-    tags: ['Event Inbox', 'AI Classify', 'Preview Post'],
+      'Ask why a number moved and open it down to the facts behind it. Send the board a statement that ties, roll a plan forward from your actuals, and see where you stand against peers.',
+    tags: ['Live Statements', 'Explorer', 'Plan'],
     color: 'purple',
   },
   {
     number: '03',
-    title: 'Review your ledger',
+    title: 'Approve the close',
     description:
-      'Drill into journal-entry line items, validate the trial balance in CoA or US-GAAP view, and watch Balance Sheet, Income Statement, Cash Flow & Equity take shape as you go — no close required.',
-    tags: ['Transactions', 'Trial Balance', 'Live Statements'],
+      'When you trust it, the entries arrive drafted and the rule engine checks the period. You review and approve; nothing writes back to QuickBooks until you post an entry.',
+    tags: ['Inbox', 'Closing Book', 'Rule Engine'],
     color: 'pink',
-  },
-  {
-    number: '04',
-    title: 'Close the period',
-    description:
-      'Step through a guided close: bootstrap the fiscal calendar, post depreciation & prepaid schedules to draft, clear rule-engine blockers, then lock — with optional write-back to QuickBooks.',
-    tags: ['Schedules', 'Rule Engine', 'QB Write-back'],
-    color: 'green',
-  },
-  {
-    number: '05',
-    title: 'Generate & file reports',
-    description:
-      'Build multi-period, comparative statements with the Report Creator, walk the Draft → Filed lifecycle, export Tavi and XBRL 2.1 reports, and share to stakeholder publish lists.',
-    tags: ['Report Creator', 'XBRL 2.1', 'Publish Lists'],
-    color: 'orange',
-  },
-  {
-    number: '06',
-    title: 'Plan forward',
-    description:
-      'Roll the closed months into a forecast. The Plan grid puts statements and the scenario’s assumptions side by side across the actuals/forecast seam, and the Block Explorer opens any figure down to the facts behind it.',
-    tags: ['Scenarios', 'Forecast Seam', 'Block Explorer'],
-    color: 'cyan',
   },
 ]
 
 const colorClasses: Record<
   string,
-  { border: string; bg: string; number: string; tag: string; dot: string }
+  { border: string; bg: string; number: string; tag: string }
 > = {
   violet: {
     border: 'border-primary-500/30',
     bg: 'from-primary-500/10',
     number: 'text-primary-400',
     tag: 'bg-primary-950/50 text-primary-300',
-    dot: 'bg-primary-500',
   },
   purple: {
     border: 'border-secondary-500/30',
     bg: 'from-secondary-500/10',
     number: 'text-secondary-400',
     tag: 'bg-secondary-950/50 text-secondary-300',
-    dot: 'bg-secondary-500',
   },
   pink: {
     border: 'border-pink-500/30',
     bg: 'from-pink-500/10',
     number: 'text-pink-400',
     tag: 'bg-pink-950/50 text-pink-300',
-    dot: 'bg-pink-500',
-  },
-  green: {
-    border: 'border-green-500/30',
-    bg: 'from-green-500/10',
-    number: 'text-green-400',
-    tag: 'bg-green-950/50 text-green-300',
-    dot: 'bg-green-500',
-  },
-  orange: {
-    border: 'border-orange-500/30',
-    bg: 'from-orange-500/10',
-    number: 'text-orange-400',
-    tag: 'bg-orange-950/50 text-orange-300',
-    dot: 'bg-orange-500',
-  },
-  cyan: {
-    border: 'border-cyan-500/30',
-    bg: 'from-cyan-500/10',
-    number: 'text-cyan-400',
-    tag: 'bg-cyan-950/50 text-cyan-300',
-    dot: 'bg-cyan-500',
   },
 }
 
@@ -107,70 +61,51 @@ export default function HowItWorks() {
     >
       <FloatingElementsVariant variant="features" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-16 text-center">
+        <div className="mb-12 text-center">
           <div className="bg-primary-500/20 text-primary-400 mb-4 inline-block rounded-full px-4 py-1 text-sm font-semibold">
-            End-to-end workflow
+            How it works
           </div>
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-            From raw data to published reports — and the plan after them
+            Start with the answers. The close comes last.
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            RoboLedger covers the whole close cycle — connect your sources,
-            triage events, close the period, publish statements, and plan the
-            months ahead, all in one place.
+            Reading your books writes nothing back, so you can put RoboLedger to
+            work on questions today and hand it the close once you trust it.
           </p>
         </div>
 
-        <div className="relative">
-          {/* Vertical connector line (desktop) */}
-          <div className="from-primary-500/30 via-secondary-500/20 absolute top-0 bottom-0 left-1/2 hidden w-px -translate-x-1/2 bg-linear-to-b to-transparent lg:block"></div>
-
-          <div className="space-y-6">
-            {steps.map((step, idx) => {
-              const c = colorClasses[step.color]
-              const isLeft = idx % 2 === 0
-              return (
+        <div className="grid gap-6 lg:grid-cols-3">
+          {steps.map((step) => {
+            const c = colorClasses[step.color]
+            return (
+              <div
+                key={step.number}
+                className={`rounded-2xl border ${c.border} bg-linear-to-br ${c.bg} to-zinc-900 p-6`}
+              >
                 <div
-                  key={step.number}
-                  className={`relative flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-0 ${isLeft ? 'lg:flex-row' : 'lg:flex-row-reverse'}`}
+                  className={`mb-1 text-4xl font-extrabold ${c.number} opacity-40`}
                 >
-                  <div
-                    className={`w-full rounded-2xl border ${c.border} bg-linear-to-br ${c.bg} to-zinc-900 p-6 transition-all duration-300 lg:w-[45%]`}
-                  >
-                    <div
-                      className={`mb-1 text-4xl font-extrabold ${c.number} opacity-40`}
-                    >
-                      {step.number}
-                    </div>
-                    <h3 className="mb-2 text-xl font-bold text-white">
-                      {step.title}
-                    </h3>
-                    <p className="mb-4 text-sm leading-relaxed text-gray-400">
-                      {step.description}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {step.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className={`rounded-full px-3 py-1 text-xs font-medium ${c.tag}`}
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="hidden lg:flex lg:w-[10%] lg:justify-center">
-                    <div
-                      className={`h-4 w-4 rounded-full ring-4 ring-black ${c.dot}`}
-                    ></div>
-                  </div>
-
-                  <div className="hidden lg:block lg:w-[45%]"></div>
+                  {step.number}
                 </div>
-              )
-            })}
-          </div>
+                <h3 className="mb-2 text-xl font-bold text-white">
+                  {step.title}
+                </h3>
+                <p className="mb-4 text-sm leading-relaxed text-gray-400">
+                  {step.description}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {step.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${c.tag}`}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
     </section>
