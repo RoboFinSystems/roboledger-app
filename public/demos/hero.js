@@ -194,11 +194,11 @@ const html = `
 </div>
 
 <div class="scene" id="s2b">
-  <div class="file" id="f1" style="left:320px;top:250px"><div class="xl">X</div>trial_balance_export.xlsx</div>
-  <div class="file" id="f2" style="left:360px;top:410px"><div class="xl">X</div>coa_mapping_v7.xlsx</div>
-  <div class="file" id="f3" style="left:400px;top:570px"><div class="xl">X</div>board_pack_FINAL_v3.xlsx</div>
-  <div id="sheet"></div>
-  <div class="caption" id="c2b">The answer is three exports and a spreadsheet away.</div>
+  <div class="cal card" id="cal">
+    <div class="calh"><b>September 2026</b><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span></div>
+    <div class="calg" id="calg"></div>
+  </div>
+  <div class="caption" id="c2b">The real numbers show up after the close. <em>The meeting is Thursday.</em></div>
 </div>
 
 <div class="scene" id="s2c">
@@ -263,11 +263,18 @@ const css = `
 .av { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 22px; }
 .who b { font-size: 26px; } .who span { color: var(--muted); font-size: 22px; }
 .msg p { font-size: 36px; line-height: 1.35; min-height: 48px; }
-.file { position: absolute; width: 520px; height: 120px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; display: flex; align-items: center; gap: 22px; padding: 0 28px; font: 26px var(--mono); box-shadow: 0 20px 60px rgba(0,0,0,.5); }
-.xl { flex-shrink: 0; width: 58px; height: 58px; border-radius: 12px; background: #1d6f42; display: grid; place-items: center; font: 700 26px var(--body); color: #fff; }
-#sheet { position: absolute; left: 1060px; top: 230px; display: grid; grid-template-columns: repeat(6, 120px); gap: 4px; }
-#sheet div { height: 54px; background: #15151b; border: 1px solid #22222a; font: 500 19px var(--mono); color: #7d7a8c; display: grid; place-items: center; }
-#sheet div.ref { color: var(--bad); background: rgba(248,113,113,.12); border-color: rgba(248,113,113,.5); font-weight: 700; }
+.cal { position: absolute; left: 410px; top: 150px; width: 1100px; padding: 28px 26px 26px; border-radius: 24px; box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+.calh { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 14px; color: var(--muted); font-size: 20px; }
+.calh b { grid-column: 1 / -1; color: var(--ink); font: 700 30px var(--display); margin-bottom: 10px; }
+.calg { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.day { position: relative; height: 118px; border-radius: 14px; background: #17161c; border: 1px solid #25242c; padding: 12px 14px; font: 600 24px var(--body); color: #cfcbdc; }
+.day.out { color: #4a4757; }
+.day.past { background: #1f1c29; }
+.day.now { background: rgba(139,92,246,.22); border-color: var(--v500); }
+.tag { position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 7px 10px; border-radius: 9px; font-size: 17px; font-weight: 700; opacity: 0; }
+.tag.meet { background: rgba(139,92,246,.25); color: var(--v300); }
+.tag.miss { background: rgba(248,113,113,.18); color: var(--bad); }
+.tag.close { background: rgba(251,191,36,.18); color: var(--warn); }
 .gchat { position: absolute; left: 460px; top: 230px; width: 1000px; height: 440px; background: #111016; border: 1px solid var(--line); border-radius: 24px; padding: 40px; }
 .attach { display: inline-flex; gap: 12px; padding: 12px 18px; margin-bottom: 12px; border: 1px solid var(--line); border-radius: 14px; font: 22px var(--mono); color: var(--muted); }
 .node { padding: 22px 34px; border-radius: 18px; border: 1px solid var(--line); background: var(--card); font-size: 30px; font-weight: 600; display: flex; align-items: center; gap: 16px; }
@@ -305,7 +312,12 @@ const B = [18.8, 23.2, 27.6, 32.0, 36.4]
 const S4 = [18.8, 41.6],
   S5 = [41.6, 46.2]
 const TOTAL = 46.2
-const REF = new Set([3, 8, 14, 21, 26, 33])
+// Mon..Fri of Aug 31 to Sep 25, 2026: the board meets Thursday the 3rd, the books close Tuesday the 15th.
+const DAYS = [
+  31, 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25,
+]
+const MEET = 3
+const CLOSE = 11
 
 function win(el, t, [a, b], fi = 0.45, fo = 0.4, first = false) {
   const v =
@@ -330,15 +342,18 @@ function answer(parts, n) {
 
 function setup(ctx) {
   const { $, root } = ctx
-  const sheet = $('sheet')
-  for (let i = 0; i < 36; i++) {
-    const d = document.createElement('div')
-    d.textContent =
-      i % 5 === 0 ? '' : (Math.abs(Math.sin(i * 7.3)) * 90000).toFixed(0)
-    if (REF.has(i)) d.dataset.ref = '1'
-    sheet.appendChild(d)
-  }
-  const cells = [...sheet.children]
+  $('calg').innerHTML = DAYS.map(
+    (d, i) =>
+      `<div class="day${i === 0 ? ' out' : ''}" id="d${i}">${d}` +
+      (i === MEET
+        ? '<span class="tag meet" id="tmeet">Board meeting</span>'
+        : '') +
+      (i === CLOSE
+        ? '<span class="tag close" id="tclose">Books close</span>'
+        : '') +
+      '</div>'
+  ).join('')
+  const days = DAYS.map((_, i) => $('d' + i))
   const cmpRows = [...root.getElementById('cmp').rows]
 
   return (t) => {
@@ -356,22 +371,23 @@ function setup(ctx) {
     rise($('c2a'), eo(seg(lt, 2.6, 3.1)), 20)
 
     lt = win($('s2b'), t, S2B)
-    ;['f1', 'f2', 'f3'].forEach((f, i) => {
-      const p = eo(seg(lt, 0.1 + i * 0.35, 0.6 + i * 0.35))
-      $(f).style.opacity = p
-      $(f).style.transform =
-        `translateX(${(1 - p) * -80}px) rotate(${(i - 1) * -2 * p}deg)`
+    rise($('cal'), eo(seg(lt, 0.05, 0.5)), 40)
+    rise($('tmeet'), eo(seg(lt, 0.5, 0.8)), 10)
+    rise($('tclose'), eo(seg(lt, 0.8, 1.1)), 10)
+    // today walks from Sep 1 toward the close; the meeting goes by on the way
+    const now = 1 + (CLOSE - 1) * eio(seg(lt, 1.2, 2.6))
+    days.forEach((d, i) => {
+      if (i === 0) return
+      d.className =
+        'day' +
+        (i < Math.floor(now) ? ' past' : i === Math.floor(now) ? ' now' : '')
     })
-    cells.forEach((d, i) => {
-      const o = (i % 6) * 0.05 + Math.floor(i / 6) * 0.06
-      d.style.opacity = eo(seg(lt, 0.3 + o, 0.7 + o))
-      if (d.dataset.ref) {
-        const on = lt > 1.4 + (i % 4) * 0.18
-        d.className = on ? 'ref' : ''
-        d.textContent = on ? '#REF!' : '0.00'
-      }
-    })
-    rise($('c2b'), eo(seg(lt, 1.6, 2.1)), 20)
+    const missed = now >= MEET + 1
+    $('tmeet').className = 'tag ' + (missed ? 'miss' : 'meet')
+    $('tmeet').textContent = missed ? 'No numbers yet' : 'Board meeting'
+    $('tmeet').style.transform =
+      `scale(${lt > 0.5 && lt < 1.2 ? 1 + 0.04 * Math.sin(lt * 14) : 1})`
+    rise($('c2b'), eo(seg(lt, 1.7, 2.2)), 20)
 
     lt = win($('s2c'), t, S2C)
     rise($('gc'), eo(seg(lt, 0, 0.5)), 30)
