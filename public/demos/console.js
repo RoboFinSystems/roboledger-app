@@ -9,6 +9,7 @@ import {
   eo,
   pageHeader,
   PHONE_APP_CSS,
+  push,
   rise,
   seg,
   typed,
@@ -57,8 +58,7 @@ function setup(ctx) {
   ctx.nav('console')
   return (t) => {
     $('q').textContent = typed(Q, t, 0.3, 26)
-    $('caret').style.opacity =
-      t < 1.9 && Math.floor(t * 3) % 2 === 0 ? 1 : t < 1.9 ? 0.2 : 0
+    $('caret').style.opacity = 1 - seg(t, 1.8, 2.0)
     $('send').style.transform = `scale(${t > 1.9 && t < 2.1 ? 0.94 : 1})`
     rise($('code'), eo(seg(t, 2.2, 2.6)), 12)
     $('cy').textContent = typed(CY, t, 2.5, 95)
@@ -68,7 +68,8 @@ function setup(ctx) {
       $('s' + i).style.width = r[2] * p + '%'
     })
     $('r0').cells[0].style.boxShadow =
-      t > 5.8 ? 'inset 4px 0 0 var(--f400)' : ''
+      `inset 4px 0 0 rgba(232,121,249,${seg(t, 5.8, 6.1)})`
+    push($('main'), t, 9.5, 520, 420)
   }
 }
 

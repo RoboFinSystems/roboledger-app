@@ -7,8 +7,10 @@
  */
 import {
   appChrome,
+  blurIn,
   clamp01,
   CURSOR,
+  dip,
   eio,
   eo,
   pageHeader,
@@ -17,6 +19,8 @@ import {
   rise,
   seg,
   spin,
+  steps,
+  swap,
   tile,
   typed,
 } from './kit.js'
@@ -113,9 +117,19 @@ function chartSvg() {
   return `<svg width="${CH.w}" height="${CH.h}" viewBox="0 0 ${CH.w} ${CH.h}">${s}</svg>`
 }
 
+// The step label sits at the head of each exchange, where the eye already is.
+const STEP = [
+  '<i>01</i>Ask why.',
+  '<i>02</i>Share it.',
+  '<i>03</i>Plan from it.',
+  '<i>04</i>Compare it.',
+  '<i>05</i>Close it. <em class="grad">You approve.</em>',
+]
+
 const chatGroups = BEATS.map(
   (b, i) => `
   <div class="grp" id="g${i}">
+    <div class="step">${STEP[i]}</div>
     <div class="ub" id="q${i}"></div>
     <div class="tool" id="tl${i}"><div class="tn"><span>${b.sec ? 'sec · ' : ''}${b.tool}</span><span class="st" id="ts${i}"></span></div><div class="tr" id="tr${i}"></div></div>
     <div class="ans" id="an${i}"></div>
@@ -178,8 +192,8 @@ const html = `
 <div class="bg"></div><div class="gridbg"></div>
 
 <div class="scene" id="s1"><div class="center">
-  <div class="eyebrow">CFO · Fractional CFO · Controller</div>
-  <div class="big" style="margin-top:34px">You own the <span class="grad" id="w4">numbers.</span></div>
+  <div class="eyebrow" id="eb">CFO · Fractional CFO · Controller</div>
+  <div class="big" style="margin-top:34px"><span class="wd" id="w1">You</span> <span class="wd" id="w2">own</span> <span class="wd" id="w3">the</span> <span class="wd grad" id="w4">numbers.</span></div>
 </div></div>
 
 <div class="scene" id="s2a">
@@ -220,13 +234,6 @@ const html = `
 </div></div>
 
 <div class="scene" id="s4">
-  <div id="cap">
-    <span id="k1"><i>01</i>Ask why.</span>
-    <span id="k2"><i>02</i>Share it.</span>
-    <span id="k3"><i>03</i>Plan from it.</span>
-    <span id="k4"><i>04</i>Compare it.</span>
-    <span id="k5"><i>05</i>Close it. <em class="grad">You approve.</em></span>
-  </div>
   <div id="chat">
     <div class="hd"><div class="t">Your AI chat · connected over MCP</div>
       <span class="chip"><span class="dot"></span>RoboLedger · Driftline</span><span class="chip"><span class="dot"></span>SEC filings</span></div>
@@ -243,35 +250,32 @@ const html = `
   <div id="cw" style="font-size:28px;color:var(--muted);margin-top:26px">Works with Claude, ChatGPT, or any MCP client</div>
   <div id="cd" style="position:absolute;bottom:40px;font-size:18px;color:var(--dim)">Driftline Coffee Roasters is a demo company.</div>
 </div></div>
-<div id="blackout"></div>`
+`
 
 const css = `
 .stage { background: var(--bg); }
 .bg { position: absolute; inset: 0;
-  background: radial-gradient(900px 700px at 12% 8%, rgba(124,58,237,.30), transparent 70%),
-              radial-gradient(900px 700px at 92% 96%, rgba(217,70,239,.16), transparent 70%); }
+  background: linear-gradient(135deg, rgba(76,29,149,.22), rgba(88,28,135,.14) 50%, rgba(112,26,117,.16)); }
 .gridbg { position: absolute; inset: 0; opacity: .07;
   background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px);
-  background-size: 64px 64px; -webkit-mask-image: radial-gradient(900px 600px at 50% 50%, #000, transparent); }
+  background-size: 64px 64px; }
 .scene { position: absolute; inset: 0; opacity: 0; display: none; }
 .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .eyebrow { font: 600 24px var(--display); letter-spacing: .32em; color: var(--v300); text-transform: uppercase; }
 .big { font: 800 118px/1.04 var(--display); letter-spacing: -.01em; }
 .caption { position: absolute; left: 0; right: 0; bottom: 96px; text-align: center; font-size: 46px; font-weight: 600; }
 .caption em { font-style: normal; color: var(--f400); }
-.msg { position: absolute; width: 900px; background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 30px 36px; box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+.msg { position: absolute; width: 900px; background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 30px 36px; }
 .who { display: flex; align-items: center; gap: 18px; margin-bottom: 16px; }
 .av { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 22px; }
 .who b { font-size: 26px; } .who span { color: var(--muted); font-size: 22px; }
 .msg p { font-size: 36px; line-height: 1.35; min-height: 48px; }
-.cal { position: absolute; left: 410px; top: 150px; width: 1100px; padding: 28px 26px 26px; border-radius: 24px; box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+.cal { position: absolute; left: 410px; top: 150px; width: 1100px; padding: 28px 26px 26px; border-radius: 24px; }
 .calh { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 14px; color: var(--muted); font-size: 20px; }
 .calh b { grid-column: 1 / -1; color: var(--ink); font: 700 30px var(--display); margin-bottom: 10px; }
 .calg { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
 .day { position: relative; height: 118px; border-radius: 14px; background: #17161c; border: 1px solid #25242c; padding: 12px 14px; font: 600 24px var(--body); color: #cfcbdc; }
 .day.out { color: #4a4757; }
-.day.past { background: #1f1c29; }
-.day.now { background: rgba(139,92,246,.22); border-color: var(--v500); }
 .tag { position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 7px 10px; border-radius: 9px; font-size: 17px; font-weight: 700; opacity: 0; }
 .tag.meet { background: rgba(139,92,246,.25); color: var(--v300); }
 .tag.miss { background: rgba(248,113,113,.18); color: var(--bad); }
@@ -281,11 +285,11 @@ const css = `
 .node { padding: 22px 34px; border-radius: 18px; border: 1px solid var(--line); background: var(--card); font-size: 30px; font-weight: 600; display: flex; align-items: center; gap: 16px; }
 .wire { width: 150px; height: 3px; background: linear-gradient(90deg, var(--v500), var(--f500)); transform-origin: left; }
 
-#cap { position: absolute; left: 0; right: 0; top: 46px; height: 60px; text-align: center; font: 700 44px var(--display); }
-#cap > span { position: absolute; left: 0; right: 0; opacity: 0; }
-#cap i { font-style: normal; font-size: 22px; color: var(--muted); letter-spacing: .3em; margin-right: 22px; vertical-align: middle; }
-#cap em { font-style: normal; }
-#chat { position: absolute; left: 70px; top: 150px; width: 700px; height: 870px; background: #0f0e14; border: 1px solid var(--line); border-radius: 26px; overflow: hidden; box-shadow: 0 40px 100px rgba(0,0,0,.55); }
+.step { font: 700 34px var(--display); margin-bottom: 4px; }
+.step i { font-style: normal; font-size: 18px; color: var(--muted); letter-spacing: .3em; margin-right: 16px; vertical-align: middle; }
+.step em { font-style: normal; }
+.wd { display: inline-block; }
+#chat { position: absolute; left: 70px; top: 80px; width: 700px; height: 920px; background: #0f0e14; border: 1px solid var(--line); border-radius: 26px; overflow: hidden; }
 #chat .hd { height: 120px; border-bottom: 1px solid var(--line); padding: 22px 30px; }
 #chat .hd .t { font-size: 22px; color: var(--muted); margin-bottom: 14px; }
 .chip { display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card2); font-size: 19px; margin-right: 10px; }
@@ -294,14 +298,13 @@ const css = `
 .grp { position: absolute; left: 30px; right: 30px; top: 34px; display: none; flex-direction: column; gap: 22px; }
 .approve { display: flex; gap: 14px; }
 .btn.lg { padding: 14px 28px; font-size: 23px; border-radius: 12px; }
-#app { position: absolute; left: 810px; top: 150px; width: 1040px; height: 870px; border: 1px solid var(--line); border-radius: 26px; overflow: hidden; box-shadow: 0 40px 100px rgba(0,0,0,.55); }
+#app { position: absolute; left: 810px; top: 80px; width: 1040px; height: 920px; border: 1px solid var(--line); border-radius: 26px; overflow: hidden; }
 .view { position: absolute; inset: 0; padding: 26px 30px; opacity: 0; }
 .rcard { padding: 20px 24px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
 .rcard b { font-size: 21px; } .rcard span:not(.badge) { display: block; color: var(--muted); font-size: 16px; margin-top: 6px; }
 .strip { display: flex; gap: 44px; padding: 18px 24px; margin-bottom: 18px; }
 .strip label { display: block; font-size: 13px; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
 .strip div { font-size: 22px; font-weight: 700; }
-#blackout { position: absolute; inset: 0; background: #000; opacity: 0; z-index: 50; }
 `
 
 const S1 = [0, 3.6],
@@ -341,6 +344,14 @@ function answer(parts, n) {
   return out
 }
 
+// Blend two #rrggbb colours, so a highlight arrives instead of popping.
+const mix = (a, b, p) => {
+  const c = (h, i) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16)
+  return `rgb(${[0, 1, 2].map((i) => Math.round(c(a, i) + (c(b, i) - c(a, i)) * clamp01(p))).join(',')})`
+}
+// When "today" passes the board meeting on the calendar walk below.
+const MISSED_AT = 1.2 + 1.4 * 0.4217
+
 function setup(ctx) {
   const { $, root } = ctx
   $('calg').innerHTML = DAYS.map(
@@ -360,10 +371,11 @@ function setup(ctx) {
   return (t) => {
     t = Math.max(0, Math.min(TOTAL, t))
 
-    let lt = win($('s1'), t, S1, 0.45, 0.4, true)
-    $('w4').style.transform =
-      `scale(${1 + 0.04 * Math.sin(clamp01(lt / 3.2) * Math.PI)})`
-    $('w4').style.display = 'inline-block'
+    let lt = win($('s1'), t, S1, 0.45, 0.4)
+    blurIn($('eb'), seg(lt, 0.05, 0.6), 12)
+    ;['w1', 'w2', 'w3', 'w4'].forEach((w, i) =>
+      blurIn($(w), seg(lt, 0.25 + i * 0.08, 0.85 + i * 0.08))
+    )
 
     lt = win($('s2a'), t, S2A)
     rise($('bm'), eo(seg(lt, 0.2, 0.8)))
@@ -376,18 +388,19 @@ function setup(ctx) {
     rise($('tmeet'), eo(seg(lt, 0.5, 0.8)), 10)
     rise($('tclose'), eo(seg(lt, 0.8, 1.1)), 10)
     // today walks from Sep 1 toward the close; the meeting goes by on the way
+    // cells shade continuously as today passes them, rather than switching
     const now = 1 + (CLOSE - 1) * eio(seg(lt, 1.2, 2.6))
     days.forEach((d, i) => {
       if (i === 0) return
-      d.className =
-        'day' +
-        (i < Math.floor(now) ? ' past' : i === Math.floor(now) ? ' now' : '')
+      const past = clamp01(now - i)
+      const here = clamp01(1 - Math.abs(now - i))
+      d.style.background = mix(mix('#17161c', '#1f1c29', past), '#2c2342', here)
+      d.style.borderColor = mix('#25242c', '#8b5cf6', here)
     })
-    const missed = now >= MEET + 1
+    const missed = lt >= MISSED_AT
     $('tmeet').className = 'tag ' + (missed ? 'miss' : 'meet')
     $('tmeet').textContent = missed ? 'No numbers yet' : 'Board meeting'
-    $('tmeet').style.transform =
-      `scale(${lt > 0.5 && lt < 1.2 ? 1 + 0.04 * Math.sin(lt * 14) : 1})`
+    if (lt > 1.2) $('tmeet').style.opacity = dip(lt, MISSED_AT)
     rise($('c2b'), eo(seg(lt, 1.7, 2.2)), 20)
 
     lt = win($('s2c'), t, S2C)
@@ -402,8 +415,8 @@ function setup(ctx) {
     rise($('c2c'), eo(seg(lt, 2.5, 3.0)), 20)
 
     lt = win($('s3'), t, S3)
-    rise($('t1'), eo(seg(lt, 0.1, 0.6)))
-    rise($('t2'), eo(seg(lt, 0.6, 1.1)))
+    blurIn($('t1'), seg(lt, 0.1, 0.7))
+    blurIn($('t2'), seg(lt, 0.6, 1.2))
     rise($('n1'), eo(seg(lt, 1.2, 1.6)), 20)
     $('wr1').style.transform = `scaleX(${eo(seg(lt, 1.5, 1.9))})`
     rise($('n2'), eo(seg(lt, 1.8, 2.2)), 20)
@@ -419,16 +432,6 @@ function setup(ctx) {
       for (let i = 0; i < B.length; i++) if (t >= B[i]) bi = i
       const bt = t - B[bi]
 
-      for (let i = 0; i < 5; i++) {
-        const c = $('k' + (i + 1))
-        if (i === bi) rise(c, eo(seg(bt, 0.05, 0.45)), 16)
-        else if (i === bi - 1) {
-          const q = seg(bt, 0, 0.3)
-          c.style.opacity = 1 - q
-          c.style.transform = `translateY(${-16 * q}px)`
-        } else c.style.opacity = 0
-      }
-
       BEATS.forEach((b, i) => {
         const g = $('g' + i)
         if (i === bi) {
@@ -440,20 +443,23 @@ function setup(ctx) {
           $('ts' + i).innerHTML = done
             ? '<span style="color:var(--good)">✓ done</span>'
             : `<span style="color:var(--muted)">${spin(bt)} running</span>`
-          $('tr' + i).textContent = done ? b.res : ''
+          $('ts' + i).style.opacity = dip(bt, 1.75)
+          $('tr' + i).textContent = b.res
+          $('tr' + i).style.opacity = seg(bt, 1.75, 2.05)
           $('an' + i).innerHTML = answer(b.a, Math.floor((bt - 1.85) * 70))
           if (b.approve) {
             rise($('ap'), eo(seg(bt, 2.9, 3.2)), 10)
-            const pressed = pointer(ctx, $('cursor'), $('apgo'), bt, 3.0, 3.5)
-            $('apgo').textContent = pressed ? 'Approved ✓' : 'Approve and close'
+            pointer(ctx, $('cursor'), $('apgo'), bt, 3.0, 3.5)
+            swap($('apgo'), bt, 3.55, 'Approve and close', 'Approved ✓')
             rise($('tl5'), eo(seg(bt, 3.75, 4.0)), 12)
             const cd = bt > 4.15
             $('ts5').innerHTML = cd
               ? '<span style="color:var(--good)">✓ done</span>'
               : `<span style="color:var(--muted)">${spin(bt)} running</span>`
-            $('tr5').textContent = cd
-              ? 'Posted 3 entries · closed through August 2026'
-              : ''
+            $('ts5').style.opacity = dip(bt, 4.15)
+            $('tr5').textContent =
+              'Posted 3 entries · closed through August 2026'
+            $('tr5').style.opacity = seg(bt, 4.15, 4.45)
           }
         } else if (i === bi - 1 && bt < 0.35) {
           g.style.display = 'flex'
@@ -468,30 +474,44 @@ function setup(ctx) {
       const vi = bt >= 1.0 || bi === 0 ? bi : bi - 1
       const vt =
         bt >= 1.0 ? bt - 1.0 : bi === 0 ? 0 : bt + (B[bi] - B[bi - 1]) - 1.0
+      // crossfade: the previous screen fades out as the next fades in
+      const f = bi === 0 ? 1 : eio(seg(vt, 0, 0.45))
       for (let i = 0; i < 5; i++) {
         const v = $('v' + (i + 1))
-        const p =
-          i === vi ? (bi === 0 && bt < 1.0 ? 1 : eo(seg(vt, 0, 0.35))) : 0
+        const p = i === vi ? f : i === vi - 1 ? 1 - f : 0
         v.style.opacity = p
-        v.style.transform = `translateX(${(1 - p) * 30}px)`
+        v.style.transform = `translateX(${(1 - p) * (i === vi ? 30 : -30)}px)`
       }
       ctx.nav(
         BEATS[vi].k,
         vi > 0 ? BEATS[vi - 1].k : BEATS[vi].k,
-        seg(vt, 0, 0.35)
+        seg(vt, 0, 0.7)
       )
 
       ctx.ring($('hl1'), $('arrow'), vi === 0 ? eo(seg(vt, 0.85, 1.2)) : 0)
-      $('cashc').style.color = vi === 0 && vt > 0.85 ? 'var(--bad)' : ''
+      $('cashc').style.color = mix(
+        '#f4f2fb',
+        '#f87171',
+        vi === 0 ? seg(vt, 0.85, 1.15) : 0
+      )
       if (vi === 1) {
-        const s = vt > 0.75
         rise($('rnew'), eo(seg(vt, 0.05, 0.4)), 20)
-        $('rbadge').textContent = s ? 'Shared' : 'Draft'
-        $('rbadge').className = 'badge ' + (s ? 'b-good' : 'b-warn')
-        $('rsub').textContent = s
-          ? 'Shared · Board · 3 recipients'
-          : 'Generated from the ledger · ties to trial balance'
-        $('rnew').style.borderColor = s ? 'var(--f400)' : ''
+        swap($('rbadge'), vt, 0.75, 'Draft', 'Shared', [
+          'badge b-warn',
+          'badge b-good',
+        ])
+        swap(
+          $('rsub'),
+          vt,
+          0.75,
+          'Generated from the ledger · ties to trial balance',
+          'Shared · Board · 3 recipients'
+        )
+        $('rnew').style.borderColor = mix(
+          '#2a2833',
+          '#e879f9',
+          seg(vt, 0.75, 1.05)
+        )
       }
       if (vi === 2) {
         const d = eio(seg(vt, 0.2, 1.4))
@@ -507,32 +527,39 @@ function setup(ctx) {
         ctx.ring($('hl4'), $('dso'), eo(seg(vt, 0.9, 1.2)))
       } else $('hl4').style.opacity = 0
       if (vi === 4) {
-        const posted = bi === 4 && bt > 4.15
-        SCHED.forEach((_, i) => {
-          const drafted = vt > 0.3 + i * 0.15
-          const b = $('sb' + i)
-          b.textContent = posted ? 'posted' : drafted ? 'drafted' : 'pending'
-          b.className =
-            'badge ' + (posted ? 'b-good' : drafted ? 'b-v' : 'b-mute')
-        })
-        $('chk').textContent = vt > 0.9 ? '12 / 12 pass' : '-'
-        $('chk').style.color = vt > 0.9 ? 'var(--good)' : ''
-        $('cthru').textContent = posted ? '🔒 August 2026' : '🔒 July 2026'
+        // in this beat vt = bt - 1, so the close posts at vt 3.15
+        SCHED.forEach((_, i) =>
+          steps(
+            $('sb' + i),
+            vt,
+            [0.3 + i * 0.15, 3.15],
+            ['pending', 'drafted', 'posted'],
+            ['badge b-mute', 'badge b-v', 'badge b-good']
+          )
+        )
+        const ok = swap($('chk'), vt, 0.9, '-', '12 / 12 pass')
+        $('chk').style.color = ok ? 'var(--good)' : ''
+        const posted = swap(
+          $('cthru'),
+          vt,
+          3.15,
+          '🔒 July 2026',
+          '🔒 August 2026'
+        )
         $('cthru').style.color = posted ? 'var(--f400)' : ''
-        $('ctgt').textContent = posted ? 'September 2026' : 'August 2026'
+        swap($('ctgt'), vt, 3.15, 'August 2026', 'September 2026')
       }
     }
 
-    lt = win($('s5'), t, S5, 0.5, 0.01)
+    // the end card fades into the background and the loop opens on the first scene:
+    // no black dip
+    lt = win($('s5'), t, S5, 0.5, 0.6)
     rise($('cl'), eo(seg(lt, 0.1, 0.5)), 20)
-    rise($('cu'), eo(seg(lt, 0.3, 0.8)), 30)
+    blurIn($('cu'), seg(lt, 0.3, 0.9), 30)
     rise($('cn'), eo(seg(lt, 0.9, 1.3)), 20)
     rise($('cw'), eo(seg(lt, 1.3, 1.7)), 20)
     $('cd').style.opacity = seg(lt, 1.6, 2.0)
     $('cl').style.display = 'inline-block'
-
-    const fs = TOTAL - 0.6
-    $('blackout').style.opacity = t > fs ? eio((t - fs) / 0.6) : 0
   }
 }
 
@@ -558,19 +585,18 @@ const phoneCss = `
 #s3 .center > div:last-child { flex-direction: column; margin-top: 50px !important; }
 .wire { width: 3px; height: 34px; }
 .node { font-size: 26px; padding: 16px 26px; }
-#cap { top: 26px; font-size: 32px; }
-#cap i { font-size: 15px; margin-right: 12px; }
-#chat { left: 20px; top: 92px; width: 680px; height: 500px; }
+.step { font-size: 24px; margin-bottom: 0; } .step i { font-size: 13px; margin-right: 10px; }
+#chat { left: 20px; top: 20px; width: 680px; height: 560px; }
 #chat .hd { height: 96px; padding: 14px 20px; }
 #chat .hd .t { font-size: 17px; margin-bottom: 10px; }
 .chip { font-size: 16px; padding: 6px 12px; }
 #chatbody { top: 96px; }
-.grp { left: 20px; right: 20px; top: 18px; gap: 14px; }
+.grp { left: 20px; right: 20px; top: 14px; gap: 10px; }
 .ub { font-size: 24px; padding: 14px 18px; min-height: 56px; }
 .tool { padding: 11px 14px; } .tool .tn { font-size: 17px; } .tool .tr { font-size: 18px; margin-top: 6px; }
 .ans { font-size: 24px; }
 .btn.lg { font-size: 20px; padding: 11px 20px; }
-#app { left: 20px; top: 606px; width: 680px; height: 454px; }
+#app { left: 20px; top: 594px; width: 680px; height: 470px; }
 .view { padding: 16px 18px; }
 .rcard { padding: 14px 16px; margin-bottom: 10px; } .rcard b { font-size: 18px; }
 .strip { gap: 22px; padding: 12px 16px; margin-bottom: 12px; } .strip div { font-size: 18px; }

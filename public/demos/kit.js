@@ -31,6 +31,54 @@ export function rise(el, p, dy = 40) {
   el.style.transform = `translateY(${(1 - p) * dy}px)`
 }
 
+/* Opacity for an element whose content changes at `at`: dips through 0.15 over `d` seconds. */
+export const dip = (t, at, d = 0.3) =>
+  Math.min(1, 0.15 + 0.85 * (Math.abs(t - at) / (d / 2)))
+
+/*
+ * Change a label or badge without a one-frame pop: before `at` it shows `a`,
+ * after it `b` (text, and optional class names), with an opacity dip across
+ * the change.
+ */
+export function swap(el, t, at, a, b, cls) {
+  const after = t >= at
+  if (a != null) el.textContent = after ? b : a
+  if (cls) el.className = after ? cls[1] : cls[0]
+  el.style.opacity = dip(t, at)
+  return after
+}
+
+/* A badge that moves through states at `times`: texts[k] and classes[k], dipping at each change. */
+export function steps(el, t, times, texts, classes) {
+  let k = 0
+  times.forEach((x) => (k += t >= x ? 1 : 0))
+  if (texts) el.textContent = texts[k]
+  if (classes) el.className = classes[k]
+  el.style.opacity = Math.min(1, ...times.map((x) => dip(t, x)))
+  return k
+}
+
+/* Headline entrance: blur to sharp, rising, as p goes 0 to 1. */
+export function blurIn(el, p, dy = 24) {
+  const e = eo(p)
+  el.style.opacity = clamp01(p * 1.4)
+  el.style.filter = e < 1 ? `blur(${(1 - e) * 14}px)` : ''
+  el.style.transform = `translateY(${(1 - e) * dy}px)`
+}
+
+/*
+ * A slow camera push over the loop toward (ox, oy), in stage px, easing back
+ * before the loop wraps, so no screen sits still like a slide.
+ */
+export function push(el, t, total, ox, oy, amount = 0.04) {
+  const k =
+    amount *
+    eio(seg(t, 0.4, total - 1.2)) *
+    (1 - eio(seg(t, total - 1.2, total)))
+  el.style.transformOrigin = `${ox}px ${oy}px`
+  el.style.transform = `scale(${1 + k})`
+}
+
 /* A drawn pointer that travels from `from` to the centre of `el`, presses, and fades out. */
 export function pointer(
   ctx,
@@ -88,7 +136,7 @@ export function appChrome({
   return `<div class="rl-app"${id ? ` id="${id}"` : ''}>
     <div class="rl-top">${tile(36, 10)}<span class="wm">RoboLedger</span><span class="co">${company}</span></div>
     <div class="rl-side"><div class="pill"></div>${nav}</div>
-    <div class="rl-main">${main}</div>
+    <div class="rl-main" id="main" data-loop>${main}</div>
   </div>`
 }
 
@@ -157,7 +205,7 @@ tr.tot td { font-weight: 700; }
 .b-mute { background: #2e2d35; color: #cfcbdc; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
 .hl { position: absolute; border: 2px solid var(--f400); border-radius: 10px;
-  box-shadow: 0 0 36px rgba(232,121,249,.35); pointer-events: none; opacity: 0; z-index: 5; }
+  pointer-events: none; opacity: 0; z-index: 5; }
 
 .ub { align-self: flex-end; max-width: 520px; background: #2a2340; border: 1px solid #3b3158;
   border-radius: 22px 22px 6px 22px; padding: 16px 22px; font-size: 26px; line-height: 1.35; min-height: 66px; }
@@ -184,6 +232,11 @@ function makeCtx(root, stage, getScale) {
   }
   /* ring `hl` (absolutely positioned in its offsetParent) around `target` */
   const ring = (hl, target, p, pad = 6) => {
+    // a hidden scene has no layout to measure; skip rather than throw
+    if (!hl.offsetParent) {
+      hl.style.opacity = 0
+      return
+    }
     const a = rel(target)
     const b = rel(hl.offsetParent)
     hl.style.left = a.x - b.x - pad + 'px'
@@ -199,11 +252,18 @@ function makeCtx(root, stage, getScale) {
     const y = (key) => side.querySelector(`[data-k="${key}"]`).offsetTop
     side.querySelector('.pill').style.top =
       y(from) + (y(k) - y(from)) * eio(m) + 'px'
-    side
-      .querySelectorAll('.nv')
-      .forEach((d) =>
-        d.classList.toggle('on', d.dataset.k === (m > 0.5 ? k : from))
-      )
+    // the active item's colour blends across the move instead of switching
+    const w = eio(m)
+    side.querySelectorAll('.nv').forEach((d) => {
+      const key = d.dataset.k
+      const on = (key === k ? w : 0) + (key === from && from !== k ? 1 - w : 0)
+      const rest = d.classList.contains('sub')
+        ? [207, 203, 220]
+        : [230, 228, 238]
+      const c = rest.map((v, i) => Math.round(v + ([124, 58, 237][i] - v) * on))
+      d.classList.remove('on')
+      d.style.color = `rgb(${c.join(',')})`
+    })
   }
   return { $, root, stage, rel, ring, nav }
 }
@@ -250,7 +310,16 @@ export function mount(host, def, { autoplay = true, phone = false } = {}) {
     root.innerHTML = `<style>${CSS}${v.css || ''}</style>
     <div class="stage" style="width:${v.width}px;height:${v.height}px">${v.html}</div>`
     stage = root.querySelector('.stage')
-    seek = v.setup(makeCtx(root, stage, () => scale))
+    const pose = v.setup(makeCtx(root, stage, () => scale))
+    // [data-loop] content fades in at the start of the loop and out at its end,
+    // so the wrap back to the first frame is a dissolve, not a jump.
+    const looped = [...root.querySelectorAll('[data-loop]')]
+    const total = v.total
+    seek = (t) => {
+      pose(t)
+      const f = Math.min(seg(t, 0, 0.35), 1 - seg(t, total - 0.35, total))
+      looped.forEach((el) => (el.style.opacity = f))
+    }
   }
   const poster = def.poster ?? 0
 

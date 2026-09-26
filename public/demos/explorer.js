@@ -6,11 +6,14 @@
 import {
   appChrome,
   CURSOR,
+  eio,
   eo,
   pageHeader,
   PHONE_APP_CSS,
   pointer,
+  push,
   seg,
+  steps,
 } from './kit.js'
 
 const VIEWS = ['Rendered', 'Chart', 'Facts', 'Elements', 'Validation', 'Rules']
@@ -99,15 +102,35 @@ function setup(ctx) {
         at = tc
       }
     })
-    VIEWS.forEach(
-      (_, i) => ($('vt' + i).className = 'tab' + (i === cur ? ' on' : ''))
-    )
-    ;[0, 1, 2, 4].forEach((i) => {
-      const v = $('v' + i)
-      const p = i === cur ? eo(seg(t, at, at + 0.35)) : 0
-      v.style.opacity = i === 0 && cur === 0 ? 1 : p
-      v.style.transform = `translateY(${(1 - (i === 0 && cur === 0 ? 1 : p)) * 12}px)`
+    // each view is on from its click until the next one, crossfading at the changes
+    const spans = [
+      [0, 0, PICKS[0][1]],
+      ...PICKS.map(([vi, tc], i) => [
+        vi,
+        tc,
+        PICKS[i + 1] ? PICKS[i + 1][1] : 1e9,
+      ]),
+    ]
+    VIEWS.forEach((_, i) => ($('vt' + i).className = 'tab'))
+    spans.forEach(([vi, on, off]) => {
+      if (t >= on - 0.15 && t < off + 0.15) {
+        steps(
+          $('vt' + vi),
+          t,
+          [on, off].filter((x) => x > 0 && x < 1e9),
+          null,
+          on > 0 ? ['tab', 'tab on', 'tab'] : ['tab on', 'tab']
+        )
+      }
+      const v = $('v' + vi)
+      if (!v) return
+      const p =
+        (on === 0 ? 1 : eio(seg(t, on, on + 0.45))) *
+        (1 - eio(seg(t, off, off + 0.4)))
+      v.style.opacity = p
+      v.style.transform = `translateY(${(1 - p) * 12}px)`
     })
+    push($('main'), t, 10, 640, 360)
     if (cur === 1) {
       MONTHS.forEach((m, i) => {
         const g = eo(seg(t, at + 0.1 + i * 0.1, at + 0.7 + i * 0.1))

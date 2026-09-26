@@ -10,8 +10,11 @@ import {
   pageHeader,
   PHONE_APP_CSS,
   pointer,
+  push,
   rise,
   seg,
+  steps,
+  swap,
 } from './kit.js'
 
 const ROWS = [
@@ -78,7 +81,6 @@ function setup(ctx) {
   ctx.nav('inbox')
   return (t) => {
     rise($('nr'), eo(seg(t, 0.4, 0.9)), -20)
-    const classified = t > 2.0
     $('acct').innerHTML =
       t < 1.3
         ? '<span class="muted">unclassified</span>'
@@ -86,15 +88,15 @@ function setup(ctx) {
     $('acct').style.opacity = t < 1.3 ? 1 : eo(seg(t, 1.3, 1.7))
     rise($('pv'), eo(seg(t, 2.6, 3.1)), 20)
     const committed = pointer(ctx, $('cur'), $('cm'), t, 4.4, 5.1)
-    const st = $('st')
-    st.textContent = committed
-      ? 'committed'
-      : classified
-        ? 'classified'
-        : 'captured'
-    st.className =
-      'badge ' + (committed ? 'b-good' : classified ? 'b-v' : 'b-warn')
-    $('cm').textContent = committed ? 'Committed ✓' : 'Commit'
+    steps(
+      $('st'),
+      t,
+      [2.0, 5.1],
+      ['captured', 'classified', 'committed'],
+      ['badge b-warn', 'badge b-v', 'badge b-good']
+    )
+    swap($('cm'), t, 5.1, 'Commit', 'Committed ✓')
+    push($('main'), t, 9.5, 640, 300)
     if (committed) $('pv').style.opacity = 1 - eo(seg(t, 6.6, 7.1))
   }
 }
