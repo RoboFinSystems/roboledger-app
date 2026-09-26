@@ -1,11 +1,10 @@
 'use client'
 
 import { McpLogo } from '@/components/mcp/McpLogo'
-import { AnimatedLogo } from '@robosystems/core/ui-components'
+import { AnimatedLogo, LiveDemo } from '@robosystems/core/ui-components'
 import Link from 'next/link'
 import { GITHUB_URL, REGISTER_PATH, ROBOSYSTEMS_URL } from './constants'
 import FloatingElementsVariant from './FloatingElementsVariant'
-import LiveDemo from './LiveDemo'
 
 export default function HeroSection() {
   return (

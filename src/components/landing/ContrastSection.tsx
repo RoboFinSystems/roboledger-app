@@ -1,5 +1,5 @@
+import { LiveDemo } from '@robosystems/core/ui-components'
 import FloatingElementsVariant from './FloatingElementsVariant'
-import LiveDemo from './LiveDemo'
 
 // The contrast is a snapshot against a live ledger: an export keeps the numbers and loses
 // the accounting behind them, so every board pack is out of date the day it ships. The demo

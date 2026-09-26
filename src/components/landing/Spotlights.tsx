@@ -1,5 +1,5 @@
+import { LiveDemo } from '@robosystems/core/ui-components'
 import FloatingElementsVariant from './FloatingElementsVariant'
-import LiveDemo from './LiveDemo'
 import ProductShot from './ProductShot'
 
 interface Spotlight {
