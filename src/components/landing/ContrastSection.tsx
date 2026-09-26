@@ -31,6 +31,7 @@ export default function ContrastSection() {
           <LiveDemo
             name="contrast"
             aspect={1600 / 720}
+            phoneAspect={720 / 1060}
             label="A board pack exported on August 3 goes stale over a month while the same numbers stay live in RoboLedger, which then explains why receivables rose."
           />
         </div>

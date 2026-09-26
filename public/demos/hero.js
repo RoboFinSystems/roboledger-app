@@ -12,6 +12,7 @@ import {
   eio,
   eo,
   pageHeader,
+  PHONE_APP_CSS,
   pointer,
   rise,
   seg,
@@ -535,6 +536,51 @@ function setup(ctx) {
   }
 }
 
+// Phone layout: a 720-wide portrait stage, the chat stacked over the app,
+// larger type throughout, and the connector flow turned vertical.
+const phoneCss = `
+.big { font-size: 74px; }
+.eyebrow { font-size: 17px; letter-spacing: .18em; }
+.caption { font-size: 34px; bottom: 64px; padding: 0 36px; line-height: 1.25; }
+#bm { left: 40px !important; top: 190px !important; }
+#rm { left: 40px !important; top: 520px !important; }
+.msg { width: 640px; padding: 24px 28px; }
+.msg p { font-size: 32px; }
+.cal { left: 24px; top: 130px; width: 672px; padding: 20px 18px; }
+.calh { gap: 8px; font-size: 16px; } .calh b { font-size: 26px; }
+.calg { gap: 8px; }
+.day { height: 118px; padding: 8px 10px; font-size: 22px; }
+.tag { left: 6px; right: 6px; bottom: 6px; padding: 5px 7px; font-size: 17px; line-height: 1.15; }
+.gchat { left: 24px; top: 220px; width: 672px; height: 400px; padding: 28px; }
+.gchat .ub { font-size: 26px; }
+.gchat .ans { font-size: 26px; }
+#s3 .big { font-size: 54px !important; }
+#s3 .center > div:last-child { flex-direction: column; margin-top: 50px !important; }
+.wire { width: 3px; height: 34px; }
+.node { font-size: 26px; padding: 16px 26px; }
+#cap { top: 26px; font-size: 32px; }
+#cap i { font-size: 15px; margin-right: 12px; }
+#chat { left: 20px; top: 92px; width: 680px; height: 500px; }
+#chat .hd { height: 96px; padding: 14px 20px; }
+#chat .hd .t { font-size: 17px; margin-bottom: 10px; }
+.chip { font-size: 16px; padding: 6px 12px; }
+#chatbody { top: 96px; }
+.grp { left: 20px; right: 20px; top: 18px; gap: 14px; }
+.ub { font-size: 24px; padding: 14px 18px; min-height: 56px; }
+.tool { padding: 11px 14px; } .tool .tn { font-size: 17px; } .tool .tr { font-size: 18px; margin-top: 6px; }
+.ans { font-size: 24px; }
+.btn.lg { font-size: 20px; padding: 11px 20px; }
+#app { left: 20px; top: 606px; width: 680px; height: 454px; }
+.view { padding: 16px 18px; }
+.rcard { padding: 14px 16px; margin-bottom: 10px; } .rcard b { font-size: 18px; }
+.strip { gap: 22px; padding: 12px 16px; margin-bottom: 12px; } .strip div { font-size: 18px; }
+#v3 svg { width: 100%; height: 290px; }
+#v3 .card { padding: 12px 14px !important; }
+#cu { font-size: 84px !important; }
+#cn { font-size: 30px !important; padding: 0 30px; }
+#cw { font-size: 22px !important; }
+`
+
 export default {
   width: 1920,
   height: 1080,
@@ -543,4 +589,5 @@ export default {
   css,
   html,
   setup,
+  mobile: { width: 720, height: 1080, css: PHONE_APP_CSS + phoneCss },
 }

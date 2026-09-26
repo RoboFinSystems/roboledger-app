@@ -1,12 +1,17 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { type CSSProperties, useEffect, useRef } from 'react'
 
 interface LiveDemoProps {
   /** Demo module name under /public/demos (e.g. "hero", "inbox"). */
   name: string
   /** Stage aspect ratio as width / height, reserved before the demo loads. */
   aspect: number
+  /**
+   * The phone layout's aspect ratio (the demo module's `mobile` width / height),
+   * used below the sm breakpoint, where kit.js mounts that layout.
+   */
+  phoneAspect?: number
   /** What the animation shows, for screen readers. */
   label: string
   className?: string
@@ -27,6 +32,7 @@ export default function LiveDemo({
   name,
   aspect,
   label,
+  phoneAspect,
   className = '',
 }: LiveDemoProps) {
   const host = useRef<HTMLDivElement>(null)
@@ -65,8 +71,13 @@ export default function LiveDemo({
       ref={host}
       role="img"
       aria-label={label}
-      className={`relative w-full overflow-hidden ${className}`}
-      style={{ aspectRatio: aspect }}
+      className={`relative aspect-(--aspect) w-full overflow-hidden max-sm:aspect-(--phone-aspect) ${className}`}
+      style={
+        {
+          '--aspect': aspect,
+          '--phone-aspect': phoneAspect ?? aspect,
+        } as CSSProperties
+      }
     />
   )
 }

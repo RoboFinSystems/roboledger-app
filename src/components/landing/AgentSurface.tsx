@@ -85,6 +85,7 @@ export default function AgentSurface() {
           <LiveDemo
             name="multico"
             aspect={1600 / 760}
+            phoneAspect={720 / 940}
             label="One AI chat with three companies' books connected, reading each and answering which client needs attention this month."
           />
           <p className="mt-4 text-center text-sm text-gray-400">

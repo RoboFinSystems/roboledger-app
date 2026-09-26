@@ -139,6 +139,27 @@ function setup(ctx) {
   }
 }
 
+// Phone layout: larger type in a narrower stage.
+const phoneCss = `
+#lh { left: 20px; top: 0; width: 680px; }
+#rh { left: 20px; right: auto; top: 530px; width: 680px; }
+.cap { font-size: 28px; margin: 4px 0 12px; }
+.viewer { height: 400px; }
+.vbar { height: 44px; font-size: 15px; }
+.paper { margin-top: 20px; width: 580px; height: 320px; padding: 24px 30px; }
+.ph { font-size: 21px; } .ps { font-size: 14px; margin: 4px 0 14px; }
+.pl { font-size: 19px; padding: 10px 0; }
+.age { margin-top: 10px; font-size: 19px; }
+.win { height: 470px; }
+.wbar { height: 52px; }
+.wbody { padding: 16px 18px; }
+.wl { font-size: 19px; padding: 10px 14px; margin-bottom: 6px; }
+.feed { height: 96px; margin: 10px 0; }
+.ev { font-size: 15px; padding: 5px 10px; }
+.ask { font-size: 18px; padding: 10px 14px; min-height: 44px; }
+.ans { font-size: 18px; margin-top: 8px; }
+`
+
 export default {
   width: 1600,
   height: 720,
@@ -147,4 +168,5 @@ export default {
   css,
   html,
   setup,
+  mobile: { width: 720, height: 1060, css: phoneCss },
 }

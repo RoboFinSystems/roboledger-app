@@ -3,7 +3,16 @@
  * checks tick through, a person clicks Close Period, and "closed through"
  * advances. Driftline's three real schedules for August 2026.
  */
-import { appChrome, CURSOR, eo, pageHeader, pointer, rise, seg } from './kit.js'
+import {
+  appChrome,
+  CURSOR,
+  eo,
+  pageHeader,
+  PHONE_APP_CSS,
+  pointer,
+  rise,
+  seg,
+} from './kit.js'
 
 const SCHED = [
   ['Roasting & Packaging Line Depreciation', '$1,071.43'],
@@ -60,6 +69,13 @@ function setup(ctx) {
   }
 }
 
+// Phone layout: larger type in a narrower stage.
+const phoneCss = `
+.strip { gap: 18px; padding: 12px 14px; flex-wrap: wrap; }
+.strip label { font-size: 11px; } .strip div { font-size: 17px; }
+.go-close { padding: 14px 16px; } .go-close b { font-size: 17px; } .go-close span:not(.btn) { font-size: 13px; }
+`
+
 export default {
   width: 1200,
   height: 750,
@@ -70,4 +86,5 @@ export default {
     appChrome({ active: 'close', main }) +
     CURSOR.replace('class="cursor"', 'class="cursor" id="cur"'),
   setup,
+  mobile: { width: 720, height: 740, css: PHONE_APP_CSS + phoneCss },
 }

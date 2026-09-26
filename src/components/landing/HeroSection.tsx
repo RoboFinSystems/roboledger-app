@@ -115,6 +115,7 @@ export default function HeroSection() {
             <LiveDemo
               name="hero"
               aspect={16 / 9}
+              phoneAspect={720 / 1080}
               label="A finance lead asks their AI why cash is down, shares the balance sheet with the board, plans next quarter, compares against public peers, and approves the close, while RoboLedger updates beside the chat."
               className="rounded-2xl border border-gray-800 bg-black shadow-2xl"
             />

@@ -180,6 +180,7 @@ export default function Spotlights() {
                 <LiveDemo
                   name={s.demo}
                   aspect={1200 / 750}
+                  phoneAspect={720 / 740}
                   label={s.demoLabel}
                 />
               </ProductShot>

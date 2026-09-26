@@ -208,30 +208,64 @@ function makeCtx(root, stage, getScale) {
   return { $, root, stage, rel, ring, nav }
 }
 
+/* The phone layout of a demo: its `mobile` block overrides the stage size and adds CSS. */
+export function variant(def, phone) {
+  if (!phone || !def.mobile) return def
+  return {
+    ...def,
+    ...def.mobile,
+    css: (def.css || '') + (def.mobile.css || ''),
+  }
+}
+
+/* Shared phone CSS for the app-screen spotlights: no sidebar, larger type. */
+export const PHONE_APP_CSS = `
+.rl-side { display: none; }
+.rl-main { left: 0; padding: 20px 22px; }
+.rl-top { height: 58px; } .rl-main { top: 58px; }
+.rl-top .co { font-size: 15px; padding: 7px 12px; }
+.vh { margin-bottom: 16px; } .vh h2 { font-size: 28px; } .vh p { font-size: 14px; }
+th { padding: 10px 12px; font-size: 13px; }
+td { padding: 11px 12px; font-size: 17px; } td.n { font-size: 16px; white-space: nowrap; }
+`
+
+/* Phones: screens narrower than Tailwind's sm breakpoint get a demo's phone layout. */
+const PHONE = '(max-width: 639px)'
+
 /*
  * Mount a demo into `host` (a shadow root keeps its CSS off the page). With
- * autoplay it scales to the host's width, loops while on screen, and holds the
- * poster frame for reduced motion; without, it sits at native size for the renderer.
+ * autoplay it scales to the host's width, uses the phone layout on narrow
+ * screens, loops while on screen, and holds the poster frame for reduced
+ * motion; without, it sits at native size for the renderer (`phone` picks the
+ * phone layout there).
  */
-export function mount(host, def, { autoplay = true } = {}) {
+export function mount(host, def, { autoplay = true, phone = false } = {}) {
   const root = host.shadowRoot || host.attachShadow({ mode: 'open' })
-  root.innerHTML = `<style>${CSS}${def.css || ''}</style>
-    <div class="stage" style="width:${def.width}px;height:${def.height}px">${def.html}</div>`
-  const stage = root.querySelector('.stage')
   let scale = 1
-  const ctx = makeCtx(root, stage, () => scale)
-  const seek = def.setup(ctx)
+  let v
+  let stage
+  let seek
+  const build = (isPhone) => {
+    v = variant(def, isPhone)
+    root.innerHTML = `<style>${CSS}${v.css || ''}</style>
+    <div class="stage" style="width:${v.width}px;height:${v.height}px">${v.html}</div>`
+    stage = root.querySelector('.stage')
+    seek = v.setup(makeCtx(root, stage, () => scale))
+  }
   const poster = def.poster ?? 0
 
   if (!autoplay) {
+    build(phone)
     seek(poster)
-    return { seek, destroy() {} }
+    return { seek: (t) => seek(t), destroy() {} }
   }
 
+  const phoneQuery = matchMedia(PHONE)
   const fit = () => {
-    scale = host.clientWidth / def.width || 1
+    scale = host.clientWidth / v.width || 1
     stage.style.transform = `scale(${scale})`
   }
+  build(phoneQuery.matches)
   fit()
   const ro = new ResizeObserver(fit)
   ro.observe(host)
@@ -264,7 +298,12 @@ export function mount(host, def, { autoplay = true } = {}) {
         t = 0
       }
       raf = requestAnimationFrame(loop)
-    }
+    } else seek(t)
+  }
+  const relayout = () => {
+    build(phoneQuery.matches)
+    fit()
+    update()
   }
   const io = new IntersectionObserver(
     ([e]) => {
@@ -276,15 +315,17 @@ export function mount(host, def, { autoplay = true } = {}) {
   io.observe(host)
   document.addEventListener('visibilitychange', update)
   reduce.addEventListener('change', update)
+  phoneQuery.addEventListener('change', relayout)
 
   return {
-    seek,
+    seek: (x) => seek(x),
     destroy() {
       cancelAnimationFrame(raf)
       io.disconnect()
       ro.disconnect()
       document.removeEventListener('visibilitychange', update)
       reduce.removeEventListener('change', update)
+      phoneQuery.removeEventListener('change', relayout)
     },
   }
 }

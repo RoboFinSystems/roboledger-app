@@ -3,7 +3,15 @@
  * block, toggled through its projections: rendered, chart, facts, validation.
  * Driftline demo company, FY ending 2026-08-31; monthly margins from the ledger.
  */
-import { appChrome, CURSOR, eo, pageHeader, pointer, seg } from './kit.js'
+import {
+  appChrome,
+  CURSOR,
+  eo,
+  pageHeader,
+  PHONE_APP_CSS,
+  pointer,
+  seg,
+} from './kit.js'
 
 const VIEWS = ['Rendered', 'Chart', 'Facts', 'Elements', 'Validation', 'Rules']
 const MONTHS = [
@@ -110,6 +118,15 @@ function setup(ctx) {
   }
 }
 
+// Phone layout: larger type in a narrower stage.
+const phoneCss = `
+.ex { grid-template-columns: 1fr; } .blocks { display: none; }
+.tabs { flex-wrap: wrap; gap: 6px; } .tab { padding: 7px 10px; font-size: 13px; }
+.bars { height: 260px; gap: 14px; }
+.facts td { font-size: 13px; padding: 9px 8px; }
+.rule { font-size: 16px; padding: 11px 12px; }
+`
+
 export default {
   width: 1200,
   height: 750,
@@ -124,4 +141,5 @@ export default {
       )
       .join(''),
   setup,
+  mobile: { width: 720, height: 740, css: PHONE_APP_CSS + phoneCss },
 }

@@ -3,7 +3,16 @@
  * income statement, then a report package walking Draft, Under Review, Filed.
  * Figures: Driftline demo company, FY ending 2026-08-31.
  */
-import { appChrome, CURSOR, eo, pageHeader, pointer, rise, seg } from './kit.js'
+import {
+  appChrome,
+  CURSOR,
+  eo,
+  pageHeader,
+  PHONE_APP_CSS,
+  pointer,
+  rise,
+  seg,
+} from './kit.js'
 
 const BS = [
   ['Cash and Cash Equivalents', '$31,166.49', '$71,944.40'],
@@ -87,6 +96,16 @@ function setup(ctx) {
   }
 }
 
+// Phone layout: larger type in a narrower stage.
+const phoneCss = `
+.tabs { flex-wrap: wrap; gap: 8px; } .tab { font-size: 14px; padding: 8px 12px; }
+.tabs .tab:nth-child(3) { display: none; }
+.btn { font-size: 15px; padding: 8px 14px; }
+.tblwrap { height: 400px; }
+.rep { left: 22px; right: 22px; bottom: 18px; flex-wrap: wrap; gap: 10px; padding: 14px 16px; }
+.steps { margin-left: 0; } .rep b { font-size: 17px; }
+`
+
 export default {
   width: 1200,
   height: 750,
@@ -98,4 +117,5 @@ export default {
     CURSOR.replace('class="cursor"', 'class="cursor" id="cur"') +
     CURSOR.replace('class="cursor"', 'class="cursor" id="cur2"'),
   setup,
+  mobile: { width: 720, height: 740, css: PHONE_APP_CSS + phoneCss },
 }
