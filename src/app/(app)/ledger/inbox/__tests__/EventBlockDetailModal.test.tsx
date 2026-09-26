@@ -273,6 +273,52 @@ describe('EventBlockDetailModal — bank-feed classification', () => {
     })
   })
 
+  it('offers a retry when a sync holds the event, and retries the approve', async () => {
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({
+        eventType: 'invoice_issued',
+        source: 'quickbooks',
+        metadata: {},
+      })
+    )
+    mockUpdateEventBlock
+      .mockRejectedValueOnce(
+        new Error(
+          'Update event block failed: {"detail":"Event evt_bank is being written by another process (most likely a running sync). Retry in a moment."}'
+        )
+      )
+      .mockResolvedValueOnce({})
+    renderModal()
+    fireEvent.click(await screen.findByText('Approve'))
+
+    fireEvent.click(await screen.findByText('Try again'))
+    await waitFor(() => expect(mockUpdateEventBlock).toHaveBeenCalledTimes(2))
+    expect(mockUpdateEventBlock.mock.calls[1][1]).toEqual({
+      event_id: 'evt_bank',
+      transition_to: 'committed',
+    })
+    await waitFor(() =>
+      expect(screen.queryByText('Try again')).not.toBeInTheDocument()
+    )
+  })
+
+  it('offers no retry for a refusal', async () => {
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({
+        eventType: 'invoice_issued',
+        source: 'quickbooks',
+        metadata: {},
+      })
+    )
+    mockUpdateEventBlock.mockRejectedValueOnce(
+      new Error('Update event block failed: {"detail":"Event not found"}')
+    )
+    renderModal()
+    fireEvent.click(await screen.findByText('Approve'))
+    await screen.findByText(/Event not found/)
+    expect(screen.queryByText('Try again')).not.toBeInTheDocument()
+  })
+
   it('tells the list when classify moves the event out of captured', async () => {
     const onClassified = vi.fn()
     renderModal(onClassified)
