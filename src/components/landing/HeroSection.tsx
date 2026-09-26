@@ -4,9 +4,8 @@ import { McpLogo } from '@/components/mcp/McpLogo'
 import { AnimatedLogo } from '@robosystems/core/ui-components'
 import Link from 'next/link'
 import { GITHUB_URL, REGISTER_PATH, ROBOSYSTEMS_URL } from './constants'
-import CoworkDemo from './CoworkDemo'
 import FloatingElementsVariant from './FloatingElementsVariant'
-import ProductShot from './ProductShot'
+import LiveDemo from './LiveDemo'
 
 export default function HeroSection() {
   return (
@@ -111,14 +110,14 @@ export default function HeroSection() {
           </div>
 
           {/* Product preview */}
-          <div className="mx-auto mt-14 max-w-4xl md:mt-20">
-            <ProductShot
-              alt="An AI assistant working the books with a human in the loop, calling RoboLedger tools over MCP"
-              caption="AI assistant · MCP › roboledger"
-              aspect="aspect-[4/3]"
-            >
-              <CoworkDemo />
-            </ProductShot>
+          <div className="relative mx-auto mt-14 max-w-6xl md:mt-20">
+            <div className="from-primary-500/20 to-accent-500/20 absolute -inset-1 rounded-3xl bg-linear-to-br opacity-50 blur-xl"></div>
+            <LiveDemo
+              name="hero"
+              aspect={16 / 9}
+              label="A finance lead asks their AI why cash is down, shares the balance sheet with the board, plans next quarter, compares against public peers, and approves the close, while RoboLedger updates beside the chat."
+              className="rounded-2xl border border-gray-800 bg-black shadow-2xl"
+            />
           </div>
         </div>
       </div>
