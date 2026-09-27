@@ -1,6 +1,6 @@
 import { McpLogo } from '@/components/mcp/McpLogo'
+import { LiveDemo } from '@robosystems/core/ui-components'
 import FloatingElementsVariant from './FloatingElementsVariant'
-import LiveDemo from './LiveDemo'
 
 /**
  * The agent-first section: capabilities that ship through MCP before they

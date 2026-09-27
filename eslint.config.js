@@ -19,6 +19,8 @@ export default [
       'build/',
       'out/',
       '.flowbite-react/',
+      // compiled from @robosystems/core; refreshed by npm run sync:demos
+      'public/demos/runtime.js',
       // design-sync (claude.ai/design) tooling + generated artifacts
       'ds-bundle/',
       '.ds-sync/',
