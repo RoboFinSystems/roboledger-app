@@ -4,8 +4,11 @@ import {
   buildPlanCsv,
   buildPlanJson,
   composePlan,
+  defaultPlanScale,
+  formatPlanMoney,
   slicePlan,
   slicePlanSeam,
+  type PlanModel,
 } from '../planModel'
 
 const envelope = (
@@ -495,5 +498,57 @@ describe('buildPlanJson', () => {
     expect(
       buildPlanJson(composePlan([]), { entityName: null, scenarioName: null })
     ).toBeNull()
+  })
+})
+
+describe('plan money scale', () => {
+  const grid = (values: number[]): PlanModel => ({
+    columns: values.map((_, i) => ({
+      end: `2026-0${i + 1}-28`,
+      label: null,
+      forecast: false,
+    })),
+    sections: [
+      {
+        title: 'Income Statement',
+        rows: [
+          {
+            key: 'rev',
+            label: 'Revenues',
+            itemType: null,
+            isSubtotal: true,
+            depth: 0,
+            values,
+          },
+          {
+            key: 'growth',
+            label: 'Growth',
+            itemType: 'percent',
+            isSubtotal: false,
+            depth: 0,
+            values: values.map(() => 500_000),
+          },
+        ],
+      },
+    ],
+  })
+
+  it('rounds to thousands once the typical money line reaches $10,000', () => {
+    expect(defaultPlanScale(grid([140_760, 143_575, 9_000]))).toBe('thousands')
+  })
+
+  it('keeps whole dollars for a small company, ignoring non-money rows', () => {
+    expect(defaultPlanScale(grid([4_200, 3_900, 5_100]))).toBe('ones')
+  })
+
+  it('uses the median, so one large balance does not flip the scale', () => {
+    expect(defaultPlanScale(grid([2_000, 3_000, 1_812_000]))).toBe('ones')
+  })
+
+  it('formats whole units with accounting negatives and an optional $', () => {
+    expect(formatPlanMoney(140_759.92, 'thousands', true)).toBe('$141')
+    expect(formatPlanMoney(-105_628.76, 'thousands', false)).toBe('(106)')
+    expect(formatPlanMoney(-105_628.76, 'ones', true)).toBe('$(105,629)')
+    expect(formatPlanMoney(-0.4, 'ones', false)).toBe('0')
   })
 })

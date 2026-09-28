@@ -29,12 +29,15 @@ import {
 import type { EnvelopeBlock } from '../ledger/close/components/blockview/types'
 import type { PeriodWindow } from '../ledger/close/components/blockview/usePeriodWindow'
 import PlanGrid from './components/PlanGrid'
+import PlanScaleControl from './components/PlanScaleControl'
 import PlanWindowControl from './components/PlanWindowControl'
 import {
   buildPlanCsv,
   buildPlanJson,
   composePlan,
+  defaultPlanScale,
   slicePlanSeam,
+  type PlanScale,
 } from './planModel'
 
 /**
@@ -93,6 +96,7 @@ const PlanContent: FC = function () {
   // horizon ahead.
   const [historyWindow, setHistoryWindow] = useState<PeriodWindow>('12')
   const [forecastWindow, setForecastWindow] = useState<PeriodWindow>('all')
+  const [scaleChoice, setScaleChoice] = useState<PlanScale | null>(null)
 
   const { graph: currentGraph } = useLedgerGraph()
 
@@ -314,6 +318,8 @@ const PlanContent: FC = function () {
   )
 
   const model = useMemo(() => composePlan(envelopes), [envelopes])
+  // From the whole model, so windowing never flips the units.
+  const scale = scaleChoice ?? defaultPlanScale(model)
   const windowed = useMemo(
     () =>
       slicePlanSeam(
@@ -485,15 +491,20 @@ const PlanContent: FC = function () {
             disabled={!currentGraph}
           />
         </div>
-        {model.columns.length > 3 && (
-          <PlanWindowControl
-            history={historyWindow}
-            forecast={forecastWindow}
-            onHistoryChange={setHistoryWindow}
-            onForecastChange={setForecastWindow}
-            forecastEnabled={scenarioId !== null && scenarioId !== undefined}
-          />
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          {model.columns.length > 0 && (
+            <PlanScaleControl scale={scale} onChange={setScaleChoice} />
+          )}
+          {model.columns.length > 3 && (
+            <PlanWindowControl
+              history={historyWindow}
+              forecast={forecastWindow}
+              onHistoryChange={setHistoryWindow}
+              onForecastChange={setForecastWindow}
+              forecastEnabled={scenarioId !== null && scenarioId !== undefined}
+            />
+          )}
+        </div>
       </div>
 
       <Card>
@@ -546,7 +557,7 @@ const PlanContent: FC = function () {
                 forward columns.
               </div>
             )}
-            <PlanGrid model={windowed} />
+            <PlanGrid model={windowed} scale={scale} />
           </div>
         )}
       </Card>
