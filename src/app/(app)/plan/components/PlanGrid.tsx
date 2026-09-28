@@ -2,7 +2,14 @@
 
 import { formatMetricValue } from '@robosystems/report-components'
 import type { FC } from 'react'
-import type { PlanColumn, PlanModel, PlanRow } from '../planModel'
+import {
+  formatPlanMoney,
+  isMonetaryRow,
+  type PlanColumn,
+  type PlanModel,
+  type PlanRow,
+  type PlanScale,
+} from '../planModel'
 
 /**
  * The Plan grid — the workbook's FOP tab as one scrollable table:
@@ -11,7 +18,9 @@ import type { PlanColumn, PlanModel, PlanRow } from '../planModel'
  * actuals/forecast seam. Sticky row-label column + sticky header for
  * wide horizontal scroll; forecast columns are tinted, with a seam
  * border on the first one; per-row formatting by item-type family
- * (lever rows are percent/days, statement rows monetary).
+ * (lever rows are percent/days, statement rows monetary). Money is
+ * rounded to the grid's scale, with the $ only on each section's first
+ * monetary row and on subtotals, the way a printed statement carries it.
  */
 
 const monthLabel = (column: PlanColumn): string => {
@@ -23,16 +32,24 @@ const monthLabel = (column: PlanColumn): string => {
   })
 }
 
-const cellText = (row: PlanRow, value: number | null): string =>
-  value === null || value === undefined
-    ? '—'
-    : formatMetricValue(row.itemType ?? 'monetary', value)
+const cellText = (
+  row: PlanRow,
+  value: number | null,
+  scale: PlanScale,
+  withSymbol: boolean
+): string => {
+  if (value === null || value === undefined) return '—'
+  return isMonetaryRow(row)
+    ? formatPlanMoney(value, scale, withSymbol)
+    : formatMetricValue(row.itemType, value)
+}
 
 interface PlanGridProps {
   model: PlanModel
+  scale?: PlanScale
 }
 
-const PlanGrid: FC<PlanGridProps> = ({ model }) => {
+const PlanGrid: FC<PlanGridProps> = ({ model, scale = 'ones' }) => {
   const { columns, sections } = model
   const firstForecast = columns.findIndex((c) => c.forecast)
 
@@ -57,6 +74,14 @@ const PlanGrid: FC<PlanGridProps> = ({ model }) => {
           <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
             <th className="sticky left-0 z-10 min-w-56 bg-gray-50 px-4 py-2 text-left font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
               Line Item
+              {scale === 'thousands' && (
+                <span
+                  className="block text-[10px] font-normal text-gray-500 dark:text-gray-400"
+                  data-testid="plan-scale-caption"
+                >
+                  In thousands
+                </span>
+              )}
             </th>
             {columns.map((column, i) => (
               <th
@@ -82,6 +107,7 @@ const PlanGrid: FC<PlanGridProps> = ({ model }) => {
               rows={section.rows}
               columns={columns}
               columnClasses={columnClasses}
+              scale={scale}
             />
           ))}
         </tbody>
@@ -95,42 +121,51 @@ const SectionRows: FC<{
   rows: PlanRow[]
   columns: PlanColumn[]
   columnClasses: (index: number) => string
-}> = ({ title, rows, columns, columnClasses }) => (
-  <>
-    <tr className="border-y border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800/80">
-      <td
-        className="sticky left-0 z-10 bg-gray-100 px-4 py-1.5 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:bg-gray-800 dark:text-gray-400"
-        data-testid={`plan-section-${title}`}
-      >
-        {title}
-      </td>
-      <td colSpan={columns.length} />
-    </tr>
-    {rows.map((row) => (
-      <tr
-        key={row.key}
-        className={`border-b border-gray-100 dark:border-gray-700/50 ${
-          row.isSubtotal ? 'font-semibold' : ''
-        }`}
-      >
+  scale: PlanScale
+}> = ({ title, rows, columns, columnClasses, scale }) => {
+  const firstMoneyRow = rows.find(isMonetaryRow)?.key
+  return (
+    <>
+      <tr className="border-y border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800/80">
         <td
-          className="sticky left-0 z-10 max-w-72 truncate bg-white px-4 py-1.5 text-gray-700 dark:bg-gray-900 dark:text-gray-200"
-          style={{ paddingLeft: `${16 + row.depth * 16}px` }}
-          title={row.label}
+          className="sticky left-0 z-10 bg-gray-100 px-4 py-1.5 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:bg-gray-800 dark:text-gray-400"
+          data-testid={`plan-section-${title}`}
         >
-          {row.label}
+          {title}
         </td>
-        {row.values.map((value, i) => (
-          <td
-            key={columns[i].end}
-            className={`px-3 py-1.5 text-right whitespace-nowrap text-gray-700 tabular-nums dark:text-gray-200 ${columnClasses(i)}`}
-          >
-            {cellText(row, value)}
-          </td>
-        ))}
+        <td colSpan={columns.length} />
       </tr>
-    ))}
-  </>
-)
+      {rows.map((row) => (
+        <tr
+          key={row.key}
+          className={`border-b border-gray-100 dark:border-gray-700/50 ${
+            row.isSubtotal ? 'font-semibold' : ''
+          }`}
+        >
+          <td
+            className="sticky left-0 z-10 max-w-72 truncate bg-white px-4 py-1.5 text-gray-700 dark:bg-gray-900 dark:text-gray-200"
+            style={{ paddingLeft: `${16 + row.depth * 16}px` }}
+            title={row.label}
+          >
+            {row.label}
+          </td>
+          {row.values.map((value, i) => (
+            <td
+              key={columns[i].end}
+              className={`px-3 py-1.5 text-right whitespace-nowrap text-gray-700 tabular-nums dark:text-gray-200 ${columnClasses(i)}`}
+            >
+              {cellText(
+                row,
+                value,
+                scale,
+                row.key === firstMoneyRow || row.isSubtotal
+              )}
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
+  )
+}
 
 export default PlanGrid

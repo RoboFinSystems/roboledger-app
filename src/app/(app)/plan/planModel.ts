@@ -289,3 +289,41 @@ export function buildPlanCsv(model: PlanModel): string | null {
 function csvField(value: string): string {
   return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
 }
+
+/** How the grid rounds monetary cells for reading. Exports keep full values. */
+export type PlanScale = 'ones' | 'thousands'
+
+const THOUSANDS_THRESHOLD = 10_000
+
+export const isMonetaryRow = (row: PlanRow): boolean =>
+  row.itemType === null || row.itemType === 'monetary'
+
+/**
+ * The materiality scale: thousands once the typical monetary line reaches
+ * $10,000, whole dollars below that. The median, so one large balance such
+ * as cash does not push a small company's statements into thousands.
+ */
+export function defaultPlanScale(model: PlanModel): PlanScale {
+  const amounts = model.sections
+    .flatMap((section) => section.rows)
+    .filter(isMonetaryRow)
+    .flatMap((row) => row.values)
+    .filter((v): v is number => v !== null && v !== 0)
+    .map(Math.abs)
+    .sort((a, b) => a - b)
+  if (amounts.length === 0) return 'ones'
+  const median = amounts[Math.floor(amounts.length / 2)]
+  return median >= THOUSANDS_THRESHOLD ? 'thousands' : 'ones'
+}
+
+/** Whole units at the scale, negatives in parentheses, the symbol only when asked. */
+export function formatPlanMoney(
+  value: number,
+  scale: PlanScale,
+  withSymbol: boolean
+): string {
+  const rounded = Math.round(scale === 'thousands' ? value / 1000 : value)
+  const abs = Math.abs(rounded).toLocaleString('en-US')
+  const symbol = withSymbol ? '$' : ''
+  return rounded < 0 ? `${symbol}(${abs})` : `${symbol}${abs}`
+}

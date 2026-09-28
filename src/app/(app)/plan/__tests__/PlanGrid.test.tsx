@@ -72,4 +72,48 @@ describe('PlanGrid', () => {
     expect(forecastHeader?.className).toContain('dark:bg-primary-900/25')
     expect(forecastHeader?.className).toContain('border-l-2')
   })
+
+  it('puts $ only on the first money row and subtotals, rounded to the scale', () => {
+    const model: PlanModel = {
+      columns: [{ end: '2026-05-31', label: null, forecast: false }],
+      sections: [
+        {
+          title: 'Income Statement',
+          rows: [
+            {
+              key: 'rev',
+              label: 'Revenue',
+              itemType: null,
+              isSubtotal: false,
+              depth: 1,
+              values: [140759.92],
+            },
+            {
+              key: 'cogs',
+              label: 'Cost',
+              itemType: null,
+              isSubtotal: false,
+              depth: 1,
+              values: [30000],
+            },
+            {
+              key: 'gp',
+              label: 'Gross Profit',
+              itemType: null,
+              isSubtotal: true,
+              depth: 0,
+              values: [110759.92],
+            },
+          ],
+        },
+      ],
+    }
+    render(<PlanGrid model={model} scale="thousands" />)
+    expect(screen.getByText('$141')).toBeInTheDocument()
+    expect(screen.getByText('30')).toBeInTheDocument()
+    expect(screen.getByText('$111')).toBeInTheDocument()
+    expect(screen.getByTestId('plan-scale-caption')).toHaveTextContent(
+      'In thousands'
+    )
+  })
 })
