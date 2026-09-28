@@ -13,6 +13,7 @@ import {
   PageHeader,
   PageLayout,
   useGraphContext,
+  useGraphWrites,
 } from '@robosystems/core'
 import { Button, Card } from 'flowbite-react'
 import Link from 'next/link'
@@ -107,6 +108,8 @@ const PlanContent: FC = function () {
   }, [currentGraph])
 
   useRefetchOnFocus(reloadPlan)
+  // A /do in the console drawer that changed this graph.
+  useGraphWrites(currentGraph?.graphId, reloadPlan)
 
   // Block list — statement blocks (fact-bearing) + forecast scenarios.
   // `reloadKey` re-runs the same path without unmounting a populated grid.

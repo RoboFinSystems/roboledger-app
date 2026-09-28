@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockListInformationBlocks = vi.fn()
@@ -10,7 +10,13 @@ const mockReplace = vi.fn()
 // Mutable per-test URL params — content seeds selection/view from these.
 let searchParams = new URLSearchParams()
 
+// The console drawer's write callback, captured so a test can fire it.
+let onGraphWrites: (() => void) | undefined
+
 vi.mock('@robosystems/core', () => ({
+  useGraphWrites: (_graphId: string, cb: () => void) => {
+    onGraphWrites = cb
+  },
   customTheme: { card: {} },
   clients: {
     ledger: {
@@ -380,6 +386,20 @@ describe('BlockExplorerContent', () => {
       )
     )
     expect(screen.getByTestId('block-view')).toBeInTheDocument()
+  })
+
+  it('reloads when the console changes this graph', async () => {
+    render(<BlockExplorerContent />)
+    await screen.findByTestId('block-view')
+    const listCalls = mockListInformationBlocks.mock.calls.length
+
+    act(() => onGraphWrites?.())
+
+    await waitFor(() =>
+      expect(mockListInformationBlocks.mock.calls.length).toBeGreaterThan(
+        listCalls
+      )
+    )
   })
 
   it('keeps the envelope mounted while a refresh loads', async () => {

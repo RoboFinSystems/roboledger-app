@@ -13,6 +13,7 @@ import {
   PageHeader,
   PageLayout,
   useGraphContext,
+  useGraphWrites,
 } from '@robosystems/core'
 import { Card } from 'flowbite-react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -112,6 +113,8 @@ const BlockExplorerContent: FC = function () {
   }, [currentGraph])
 
   useRefetchOnFocus(reloadExplorer)
+  // A /do in the console drawer that changed this graph.
+  useGraphWrites(currentGraph?.graphId, reloadExplorer)
 
   // Load the block list. Inlined so the `cancelled` flag is local to each
   // invocation — a stale response can't overwrite a newer graph's list.

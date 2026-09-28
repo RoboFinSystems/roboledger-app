@@ -16,6 +16,7 @@ const mockReplace = vi.fn()
 let searchParams = new URLSearchParams()
 
 vi.mock('@robosystems/core', () => ({
+  useGraphWrites: vi.fn(),
   customTheme: { card: {} },
   clients: {
     ledger: {
