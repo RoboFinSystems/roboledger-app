@@ -8,7 +8,6 @@ import {
   HiOutlineOfficeBuilding,
   HiSearch,
   HiTable,
-  HiTerminal,
   HiUserGroup,
 } from 'react-icons/hi'
 import { MdOutlineAccountBalanceWallet } from 'react-icons/md'
@@ -81,11 +80,6 @@ export const getNavigationItems = (
           icon: HiBookOpen,
           label: 'Library',
           href: '/library',
-        },
-        {
-          icon: HiTerminal,
-          label: 'Console',
-          href: '/console',
         },
         {
           icon: HiSearch,

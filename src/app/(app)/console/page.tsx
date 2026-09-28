@@ -1,14 +1,18 @@
 'use client'
-import { useUser } from '@robosystems/core'
-import { Spinner } from '@robosystems/core/ui-components'
-import ConsolePageContent from './content'
 
+import { openConsoleDrawer } from '@robosystems/core'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+
+// The console lives in the bottom drawer on every page. This route stays so
+// old links and bookmarks still land on it: open the drawer, go home.
 export default function ConsolePage() {
-  const { user, isLoading } = useUser()
+  const router = useRouter()
 
-  if (isLoading || !user) {
-    return <Spinner size="xl" fullScreen />
-  }
+  useEffect(() => {
+    openConsoleDrawer()
+    router.replace('/home')
+  }, [router])
 
-  return <ConsolePageContent />
+  return null
 }
