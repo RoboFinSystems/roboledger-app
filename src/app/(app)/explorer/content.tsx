@@ -4,6 +4,7 @@ import DocsLink from '@/components/DocsLink'
 import ExportMenu, { type ExportMenuGroup } from '@/components/ExportMenu'
 import RefreshControl from '@/components/RefreshControl'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
+import { useRefetchOnFocus } from '@/lib/useRefetchOnFocus'
 import type { InformationBlockList } from '@robosystems/client/clients'
 import {
   clients,
@@ -109,6 +110,8 @@ const BlockExplorerContent: FC = function () {
     refreshForGraphId.current = currentGraph.graphId
     setReloadKey((k) => k + 1)
   }, [currentGraph])
+
+  useRefetchOnFocus(reloadExplorer)
 
   // Load the block list. Inlined so the `cancelled` flag is local to each
   // invocation — a stale response can't overwrite a newer graph's list.

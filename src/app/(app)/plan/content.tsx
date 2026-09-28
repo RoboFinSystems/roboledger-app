@@ -4,6 +4,7 @@ import DocsLink from '@/components/DocsLink'
 import ExportMenu, { type ExportMenuGroup } from '@/components/ExportMenu'
 import RefreshControl from '@/components/RefreshControl'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
+import { useRefetchOnFocus } from '@/lib/useRefetchOnFocus'
 import type { InformationBlockList } from '@robosystems/client/clients'
 import {
   clients,
@@ -100,6 +101,8 @@ const PlanContent: FC = function () {
     refreshForGraphId.current = currentGraph.graphId
     setReloadKey((k) => k + 1)
   }, [currentGraph])
+
+  useRefetchOnFocus(reloadPlan)
 
   // Block list — statement blocks (fact-bearing) + forecast scenarios.
   // `reloadKey` re-runs the same path without unmounting a populated grid.
