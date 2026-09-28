@@ -1,4 +1,4 @@
-Description: RoboLedger App Service - AWS App Runner
+Description: RoboLedger App Service - Amazon ECS Express Mode
 
 Parameters:
   # Environment & AWS Configuration
@@ -71,27 +71,38 @@ Parameters:
     MaxValue: 65535
     Description: Port the container listens on
 
-  # App Runner Compute Configuration
+  # ECS Express Compute Configuration (Fargate task sizes; not every
+  # CPU/memory pairing is valid, e.g. 512 CPU needs at least 1024 MiB)
   Cpu:
     Type: String
-    Default: '0.25 vCPU'
-    Description: CPU for App Runner instance
+    Default: '256'
+    Description: CPU units for the ECS task (256 = 0.25 vCPU)
     AllowedValues:
-      - '0.25 vCPU'
-      - '0.5 vCPU'
-      - '1 vCPU'
-      - '2 vCPU'
+      - '256'
+      - '512'
+      - '1024'
+      - '2048'
 
   Memory:
     Type: String
-    Default: '0.5 GB'
-    Description: Memory for App Runner instance
+    Default: '512'
+    Description: Memory in MiB for the ECS task
     AllowedValues:
-      - '0.5 GB'
-      - '1 GB'
-      - '2 GB'
-      - '3 GB'
-      - '4 GB'
+      - '512'
+      - '1024'
+      - '2048'
+      - '3072'
+      - '4096'
+
+  # Network Configuration
+  Subnets:
+    Type: CommaDelimitedList
+    Default: ''
+    Description: |
+      Public subnet IDs for the service and its load balancer, across at least
+      two AZs. Leave empty to use the default VPC's public subnets; required in
+      an account without a default VPC. Every Express service in a VPC must use
+      subnets in the AZs of the load balancer they share.
 
   # Auto-scaling Configuration
   CapacityMin:
@@ -99,21 +110,14 @@ Parameters:
     Default: 1
     MinValue: 1
     MaxValue: 25
-    Description: Minimum number of instances for auto scaling
+    Description: Minimum number of tasks for auto scaling
 
   CapacityMax:
     Type: Number
     Default: 10
     MinValue: 1
     MaxValue: 25
-    Description: Maximum number of instances for auto scaling
-
-  MaxConcurrency:
-    Type: Number
-    Default: 100
-    MinValue: 1
-    MaxValue: 200
-    Description: Maximum concurrent requests per instance before scaling
+    Description: Maximum number of tasks for auto scaling
 
   # Secrets Configuration
   RoboSystemsSecretsArn:
@@ -128,12 +132,12 @@ Parameters:
     Default: ''
     Description: Email address for admin notifications (leave empty to skip SNS setup)
 
-  # CloudFront → App Runner origin verification
+  # CloudFront → origin verification
   OriginVerifySecret:
     Type: String
     Default: ''
     NoEcho: true
-    Description: Shared secret CloudFront sends to the App Runner origin (leave empty to disable)
+    Description: Shared secret CloudFront sends to the ECS origin (leave empty to disable)
 
   # Tagging Configuration
   ServiceTag:
@@ -166,6 +170,11 @@ Conditions:
   IsProductionPublic: !And
     - !Equals [!Ref Environment, 'prod']
     - !Equals [!Ref AppAccessMode, 'public']
+
+  HasSubnets: !Not
+    - !Equals
+      - !Join ['', !Ref Subnets]
+      - ''
 
 Resources:
   # ACM Certificate (only for public mode with custom domain)
@@ -219,59 +228,24 @@ Resources:
       TopicArn: !Ref ContactFormTopic
       Endpoint: !Ref NotificationEmail
 
-  # IAM Role for App Runner to access ECR
-  AppRunnerAccessRole:
+  # Task execution role: pulls the image, writes logs, and resolves the
+  # container's secrets at task start
+  ECSTaskExecutionRole:
     Type: AWS::IAM::Role
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Properties:
-      RoleName: !Sub roboledger-${Environment}-apprunner-access
+      RoleName: !Sub roboledger-${Environment}-ecs-execution
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
-              Service: build.apprunner.amazonaws.com
+              Service: ecs-tasks.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
-      Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Service
-          Value: !Ref ServiceTag
-        - Key: Component
-          Value: !Ref ComponentTag
-        - Key: CreatedBy
-          Value: CloudFormation
-
-  # IAM Role for App Runner instance (if app needs AWS service access)
-  AppRunnerInstanceRole:
-    Type: AWS::IAM::Role
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Retain
-    Properties:
-      RoleName: !Sub roboledger-${Environment}-apprunner-instance
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: tasks.apprunner.amazonaws.com
-            Action: sts:AssumeRole
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
       Policies:
-        - !If
-          - CreateSNSTopic
-          - PolicyName: SNSPublishPolicy
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - sns:Publish
-                  Resource:
-                    - !Ref ContactFormTopic
-          - !Ref AWS::NoValue
         - PolicyName: SecretsManagerAccess
           PolicyDocument:
             Version: '2012-10-17'
@@ -291,14 +265,33 @@ Resources:
         - Key: CreatedBy
           Value: CloudFormation
 
-  # Auto Scaling Configuration
-  AppRunnerAutoScaling:
-    Type: AWS::AppRunner::AutoScalingConfiguration
+  # Task role: what the running app itself may call (contact-form mail)
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
     Properties:
-      AutoScalingConfigurationName: !Sub roboledger-${Environment}-autoscaling
-      MaxConcurrency: !Ref MaxConcurrency
-      MaxSize: !Ref CapacityMax
-      MinSize: !Ref CapacityMin
+      RoleName: !Sub roboledger-${Environment}-ecs-task
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - !If
+          - CreateSNSTopic
+          - PolicyName: SNSPublishPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - sns:Publish
+                  Resource:
+                    - !Ref ContactFormTopic
+          - !Ref AWS::NoValue
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -309,54 +302,75 @@ Resources:
         - Key: CreatedBy
           Value: CloudFormation
 
-  # App Runner Service
-  AppRunnerService:
-    Type: AWS::AppRunner::Service
+  # Infrastructure role: lets ECS provision the load balancer, security
+  # groups, certificate and scaling policies Express Mode manages
+  ECSInfrastructureRole:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      RoleName: !Sub roboledger-${Environment}-ecs-infrastructure
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRoleforExpressGatewayServices
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceTag
+        - Key: Component
+          Value: !Ref ComponentTag
+        - Key: CreatedBy
+          Value: CloudFormation
+
+  # ECS Express Mode Service. Public subnets (the default VPC's unless
+  # Subnets is set) give an internet-facing ALB, shared by up to 25 Express
+  # services in the VPC; private subnets would give an internal ALB that
+  # CloudFront cannot reach. Tags cannot change after create: editing them
+  # replaces the service.
+  ECSExpressService:
+    Type: AWS::ECS::ExpressGatewayService
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Properties:
       ServiceName: !Sub roboledger-${Environment}
-      SourceConfiguration:
-        AuthenticationConfiguration:
-          AccessRoleArn: !GetAtt AppRunnerAccessRole.Arn
-        AutoDeploymentsEnabled: false
-        ImageRepository:
-          ImageIdentifier: !Sub ${AWSAccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:${ECRImageTag}
-          ImageRepositoryType: ECR
-          ImageConfiguration:
-            Port: !Ref ContainerPort
-            RuntimeEnvironmentVariables:
-              - Name: NODE_ENV
-                Value: production
-              - Name: SNS_CONTACT_TOPIC_ARN
-                Value: !If [CreateSNSTopic, !Ref ContactFormTopic, '']
-              - Name: REQUIRE_CAPTCHA
-                Value: 'true'
-              # Bucket holding report bundles; the holon proxy fetches only from it.
-              - Name: REPORT_BUNDLE_BUCKET
-                Value: !Sub robosystems-${AWS::AccountId}-user-${Environment}
-              - Name: ORIGIN_VERIFY_SECRET
-                Value: !Ref OriginVerifySecret
-            RuntimeEnvironmentSecrets:
-              - Name: TURNSTILE_SECRET_KEY
-                Value: !Sub '${RoboSystemsSecretsArn}:TURNSTILE_SECRET_KEY::'
-      InstanceConfiguration:
-        Cpu: !Ref Cpu
-        Memory: !Ref Memory
-        InstanceRoleArn: !GetAtt AppRunnerInstanceRole.Arn
-      HealthCheckConfiguration:
-        Protocol: HTTP
-        Path: /api/utilities/health
-        Interval: 10
-        Timeout: 5
-        HealthyThreshold: 1
-        UnhealthyThreshold: 5
-      AutoScalingConfigurationArn: !GetAtt AppRunnerAutoScaling.AutoScalingConfigurationArn
-      NetworkConfiguration:
-        EgressConfiguration:
-          EgressType: DEFAULT
-      ObservabilityConfiguration:
-        ObservabilityEnabled: false
+      ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+      InfrastructureRoleArn: !GetAtt ECSInfrastructureRole.Arn
+      TaskRoleArn: !GetAtt ECSTaskRole.Arn
+      Cpu: !Ref Cpu
+      Memory: !Ref Memory
+      HealthCheckPath: /api/utilities/health
+      NetworkConfiguration: !If
+        - HasSubnets
+        - Subnets: !Ref Subnets
+        - !Ref AWS::NoValue
+      PrimaryContainer:
+        Image: !Sub ${AWSAccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:${ECRImageTag}
+        ContainerPort: !Ref ContainerPort
+        Environment:
+          - Name: NODE_ENV
+            Value: production
+          - Name: SNS_CONTACT_TOPIC_ARN
+            Value: !If [CreateSNSTopic, !Ref ContactFormTopic, '']
+          - Name: REQUIRE_CAPTCHA
+            Value: 'true'
+          # Bucket holding report bundles; the holon proxy fetches only from it.
+          - Name: REPORT_BUNDLE_BUCKET
+            Value: !Sub robosystems-${AWS::AccountId}-user-${Environment}
+          - Name: ORIGIN_VERIFY_SECRET
+            Value: !Ref OriginVerifySecret
+        Secrets:
+          - Name: TURNSTILE_SECRET_KEY
+            ValueFrom: !Sub '${RoboSystemsSecretsArn}:TURNSTILE_SECRET_KEY::'
+      ScalingTarget:
+        MinTaskCount: !Ref CapacityMin
+        MaxTaskCount: !Ref CapacityMax
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -407,7 +421,7 @@ Resources:
 
   # Cache policy for the next/image optimizer (`/_next/image?url=…&w=…&q=…`).
   # The default behavior is CachingDisabled, so without this every optimized
-  # image would reach App Runner. Key on the optimizer's query and on Accept
+  # image would reach the app. Key on the optimizer's query and on Accept
   # (it serves webp to browsers that accept it and answers `Vary: Accept`),
   # and honor its `max-age` (14400s by default).
   NextImageCachePolicy:
@@ -488,10 +502,14 @@ Resources:
             S3OriginConfig:
               OriginAccessIdentity: ''
             OriginAccessControlId: !Ref CloudFrontOAC
-          # Origin for dynamic content (App Runner)
-          # App Runner always uses HTTPS
-          - Id: AppRunner-Dynamic-Content
-            DomainName: !GetAtt AppRunnerService.ServiceUrl
+          # Origin for dynamic content (ECS Express)
+          # The Express endpoint always uses HTTPS
+          - Id: App-Dynamic-Content
+            DomainName:
+              !Join [
+                '',
+                !Split ['https://', !GetAtt ECSExpressService.Endpoint],
+              ]
             OriginCustomHeaders: !If
               - HasOriginVerifySecret
               - - HeaderName: X-Origin-Verify
@@ -503,7 +521,7 @@ Resources:
               OriginSSLProtocols:
                 - TLSv1.2
         DefaultCacheBehavior:
-          TargetOriginId: AppRunner-Dynamic-Content
+          TargetOriginId: App-Dynamic-Content
           ViewerProtocolPolicy: redirect-to-https
           AllowedMethods:
             - DELETE
@@ -520,9 +538,9 @@ Resources:
           CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled managed policy
           OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader managed policy
         CacheBehaviors:
-          # Social cards: rendered on App Runner, so served from the edge.
+          # Social cards: rendered by the app, so served from the edge.
           - PathPattern: /blog/*/og.png
-            TargetOriginId: AppRunner-Dynamic-Content
+            TargetOriginId: App-Dynamic-Content
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods:
               - GET
@@ -533,7 +551,7 @@ Resources:
             Compress: false
             CachePolicyId: !Ref SocialCardCachePolicy
           - PathPattern: /blog/*/opengraph-image*
-            TargetOriginId: AppRunner-Dynamic-Content
+            TargetOriginId: App-Dynamic-Content
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods:
               - GET
@@ -544,7 +562,7 @@ Resources:
             Compress: false
             CachePolicyId: !Ref SocialCardCachePolicy
           - PathPattern: /blog/*/twitter-image*
-            TargetOriginId: AppRunner-Dynamic-Content
+            TargetOriginId: App-Dynamic-Content
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods:
               - GET
@@ -555,7 +573,7 @@ Resources:
             Compress: false
             CachePolicyId: !Ref SocialCardCachePolicy
           - PathPattern: /blog/opengraph-image*
-            TargetOriginId: AppRunner-Dynamic-Content
+            TargetOriginId: App-Dynamic-Content
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods:
               - GET
@@ -566,7 +584,7 @@ Resources:
             Compress: false
             CachePolicyId: !Ref SocialCardCachePolicy
           - PathPattern: /blog/twitter-image*
-            TargetOriginId: AppRunner-Dynamic-Content
+            TargetOriginId: App-Dynamic-Content
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods:
               - GET
@@ -577,7 +595,7 @@ Resources:
             Compress: false
             CachePolicyId: !Ref SocialCardCachePolicy
           - PathPattern: /opengraph-image*
-            TargetOriginId: AppRunner-Dynamic-Content
+            TargetOriginId: App-Dynamic-Content
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods:
               - GET
@@ -588,7 +606,7 @@ Resources:
             Compress: false
             CachePolicyId: !Ref SocialCardCachePolicy
           - PathPattern: /twitter-image*
-            TargetOriginId: AppRunner-Dynamic-Content
+            TargetOriginId: App-Dynamic-Content
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods:
               - GET
@@ -601,7 +619,7 @@ Resources:
           # next/image optimizer output. Only the cache-key parts (url/w/q,
           # Accept) are forwarded; the optimizer needs nothing else.
           - PathPattern: /_next/image*
-            TargetOriginId: AppRunner-Dynamic-Content
+            TargetOriginId: App-Dynamic-Content
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods:
               - GET
@@ -717,7 +735,11 @@ Resources:
         Origins:
           # Dummy origin - required by CloudFront but never hit because the function redirects
           - Id: Dummy-Origin
-            DomainName: !GetAtt AppRunnerService.ServiceUrl
+            DomainName:
+              !Join [
+                '',
+                !Split ['https://', !GetAtt ECSExpressService.Endpoint],
+              ]
             CustomOriginConfig:
               HTTPSPort: 443
               OriginProtocolPolicy: https-only
@@ -789,27 +811,13 @@ Outputs:
       - !Sub https://${DomainName}
       - !Sub https://${CloudFrontDistribution.DomainName}
 
-  AppRunnerServiceUrl:
-    Description: App Runner service URL (direct access)
-    Value: !GetAtt AppRunnerService.ServiceUrl
-
-  AppRunnerServiceArn:
-    Description: App Runner service ARN
-    Value: !GetAtt AppRunnerService.ServiceArn
-
-  AppRunnerServiceId:
-    Description: App Runner service ID
-    Value: !GetAtt AppRunnerService.ServiceId
-
-  # Route-neutral names the deploy workflow reads (the ECS Express template
-  # emits the same pair)
   ServiceUrl:
-    Description: App Runner service URL (direct access)
-    Value: !GetAtt AppRunnerService.ServiceUrl
+    Description: ECS Express service endpoint (direct access)
+    Value: !Join ['', !Split ['https://', !GetAtt ECSExpressService.Endpoint]]
 
   ServiceArn:
-    Description: App Runner service ARN
-    Value: !GetAtt AppRunnerService.ServiceArn
+    Description: ECS Express service ARN
+    Value: !GetAtt ECSExpressService.ServiceArn
 
   CertificateArn:
     Condition: IsPublicMode
@@ -857,7 +865,7 @@ Outputs:
       URL: https://${DomainName}
 
       CloudFront Distribution: ${CloudFrontDistribution.DomainName}
-      App Runner Service: ${AppRunnerService.ServiceUrl}
+      ECS Express Service: ${ECSExpressService.Endpoint}
 
   PublicHttpAccessInstructions:
     Condition: IsPublicHttpMode
@@ -868,7 +876,7 @@ Outputs:
       URL: https://${CloudFrontDistribution.DomainName}
 
       This uses CloudFront's default domain with HTTPS.
-      App Runner Service: ${AppRunnerService.ServiceUrl}
+      ECS Express Service: ${ECSExpressService.Endpoint}
 
       LIMITATIONS (public-http mode):
       - No custom domain - uses CloudFront's d123.cloudfront.net domain
