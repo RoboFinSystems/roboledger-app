@@ -374,9 +374,11 @@ jobs:
       - name: Get Service Info
         id: get-service-info
         run: |
+          # ServiceArn/ServiceUrl are the route-neutral outputs; a stack last
+          # updated before they existed still has only the AppRunner* pair.
           SERVICE_ARN=$(aws cloudformation describe-stacks \
             --stack-name ${{ inputs.stack_name }} \
-            --query "Stacks[0].Outputs[?OutputKey=='ServiceArn'].OutputValue" \
+            --query "Stacks[0].Outputs[?OutputKey=='ServiceArn' || OutputKey=='AppRunnerServiceArn'].OutputValue | [0]" \
             --output text)
 
           echo "service_arn=$SERVICE_ARN" >> $GITHUB_OUTPUT
@@ -384,7 +386,7 @@ jobs:
 
           SERVICE_URL=$(aws cloudformation describe-stacks \
             --stack-name ${{ inputs.stack_name }} \
-            --query "Stacks[0].Outputs[?OutputKey=='ServiceUrl'].OutputValue" \
+            --query "Stacks[0].Outputs[?OutputKey=='ServiceUrl' || OutputKey=='AppRunnerServiceUrl'].OutputValue | [0]" \
             --output text)
           SERVICE_URL="${SERVICE_URL#https://}"
 
