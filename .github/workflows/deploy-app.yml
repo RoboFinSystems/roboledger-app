@@ -62,14 +62,29 @@ on:
         required: true
         type: string
 
-      # App Runner Compute Configuration
+      # Compute Configuration
+      app_compute:
+        description: |
+          Compute route for the app service:
+          - apprunner: AWS App Runner (cloudformation/template.yaml)
+          - ecs-express: Amazon ECS Express Mode (cloudformation/template-ecs-express.yaml).
+            Use this in an AWS account that has never used App Runner, which is
+            closed to new customers.
+        required: false
+        type: string
+        default: 'apprunner'
+      ecs_subnets:
+        description: 'Comma-separated public subnet IDs for ecs-express (empty = default VPC)'
+        required: false
+        type: string
+        default: ''
       cpu:
-        description: 'CPU for App Runner instance'
+        description: 'CPU in App Runner form ("0.25 vCPU"); translated to task CPU units for ecs-express'
         required: false
         type: string
         default: '0.25 vCPU'
       memory:
-        description: 'Memory for App Runner instance'
+        description: 'Memory in App Runner form ("0.5 GB"); translated to MiB for ecs-express'
         required: false
         type: string
         default: '0.5 GB'
@@ -86,7 +101,7 @@ on:
         type: string
         default: '10'
       max_concurrency:
-        description: 'Maximum concurrent requests per instance before scaling'
+        description: 'Maximum concurrent requests per instance before scaling (apprunner only)'
         required: false
         type: string
         default: '100'
@@ -112,7 +127,7 @@ on:
 jobs:
   deploy:
     runs-on: ${{ fromJSON(inputs.runner_config) }}
-    timeout-minutes: 20
+    timeout-minutes: 30
     permissions:
       id-token: write
       contents: read
@@ -146,6 +161,43 @@ jobs:
         env:
           ORIGIN_VERIFY_SECRET: ${{ secrets.ORIGIN_VERIFY_SECRET }}
         run: |
+          # Pick the template and translate task sizing for the compute route
+          case "${{ inputs.app_compute }}" in
+            apprunner)
+              TEMPLATE_FILE=cloudformation/template.yaml
+              CPU="${{ inputs.cpu }}"
+              MEMORY="${{ inputs.memory }}"
+              ;;
+            ecs-express)
+              TEMPLATE_FILE=cloudformation/template-ecs-express.yaml
+              case "${{ inputs.cpu }}" in
+                '0.25 vCPU'|256) CPU=256 ;;
+                '0.5 vCPU'|512) CPU=512 ;;
+                '1 vCPU'|1024) CPU=1024 ;;
+                '2 vCPU'|2048) CPU=2048 ;;
+                *) echo "ERROR: unsupported cpu '${{ inputs.cpu }}' for ecs-express"; exit 1 ;;
+              esac
+              case "${{ inputs.memory }}" in
+                '0.5 GB'|512) MEMORY=512 ;;
+                '1 GB'|1024) MEMORY=1024 ;;
+                '2 GB'|2048) MEMORY=2048 ;;
+                '3 GB'|3072) MEMORY=3072 ;;
+                '4 GB'|4096) MEMORY=4096 ;;
+                *) echo "ERROR: unsupported memory '${{ inputs.memory }}' for ecs-express"; exit 1 ;;
+              esac
+              # Fargate accepts only these pairings; fail here, not mid-stack
+              case "$CPU/$MEMORY" in
+                256/512|256/1024|256/2048|512/1024|512/2048|512/3072|512/4096|1024/2048|1024/3072|1024/4096|2048/4096) ;;
+                *) echo "ERROR: Fargate has no task size with $CPU CPU and $MEMORY MiB"; exit 1 ;;
+              esac
+              ;;
+            *)
+              echo "ERROR: app_compute must be apprunner or ecs-express, got '${{ inputs.app_compute }}'"
+              exit 1
+              ;;
+          esac
+          echo "Compute route: ${{ inputs.app_compute }} ($TEMPLATE_FILE, cpu=$CPU, memory=$MEMORY)"
+
           # Look up hosted zone ID only for public mode (requires custom domain)
           HOSTED_ZONE_ID=""
           if [ "${{ inputs.app_access_mode }}" = "public" ]; then
@@ -228,14 +280,11 @@ jobs:
             {"ParameterKey": "RoboSystemsSecretsArn", "ParameterValue": "${{ steps.get-arns.outputs.robosystems_secrets_arn }}"},
             {"ParameterKey": "ECRRepository", "ParameterValue": "${{ inputs.ecr_repository }}"},
             {"ParameterKey": "ECRImageTag", "ParameterValue": "${{ inputs.ecr_image_tag }}"},
-            {"ParameterKey": "Cpu", "ParameterValue": "${{ inputs.cpu }}"},
-            {"ParameterKey": "Memory", "ParameterValue": "${{ inputs.memory }}"},
             {"ParameterKey": "StaticAssetsBucketName", "ParameterValue": "${{ inputs.static_assets_bucket_name }}"},
             {"ParameterKey": "StaticAssetsBucketArn", "ParameterValue": "${{ inputs.static_assets_bucket_arn }}"},
             {"ParameterKey": "StaticAssetsBucketDomainName", "ParameterValue": "${{ inputs.static_assets_bucket_domain }}"},
             {"ParameterKey": "CapacityMin", "ParameterValue": "${{ inputs.capacity_min }}"},
             {"ParameterKey": "CapacityMax", "ParameterValue": "${{ inputs.capacity_max }}"},
-            {"ParameterKey": "MaxConcurrency", "ParameterValue": "${{ inputs.max_concurrency }}"},
             {"ParameterKey": "NotificationEmail", "ParameterValue": "${{ inputs.notification_email }}"}
           ]
           PARAMS_EOF
@@ -248,6 +297,27 @@ jobs:
             {"ParameterKey": "HostedZoneId", "ParameterValue": "$HOSTED_ZONE_ID"}
           ]
           DOMAIN_EOF
+          fi
+
+          jq --arg cpu "$CPU" --arg memory "$MEMORY" \
+            '. + [{"ParameterKey": "Cpu", "ParameterValue": $cpu},
+                  {"ParameterKey": "Memory", "ParameterValue": $memory}]' \
+            /tmp/cfn-params.json > /tmp/cfn-params.next.json
+          mv /tmp/cfn-params.next.json /tmp/cfn-params.json
+
+          if [ "${{ inputs.app_compute }}" = "ecs-express" ] && [ -n "${{ inputs.ecs_subnets }}" ]; then
+            jq --arg v "${{ inputs.ecs_subnets }}" \
+              '. + [{"ParameterKey": "Subnets", "ParameterValue": $v}]' \
+              /tmp/cfn-params.json > /tmp/cfn-params.next.json
+            mv /tmp/cfn-params.next.json /tmp/cfn-params.json
+          fi
+
+          # Concurrency-based scaling exists only on App Runner
+          if [ "${{ inputs.app_compute }}" = "apprunner" ]; then
+            jq --arg v "${{ inputs.max_concurrency }}" \
+              '. + [{"ParameterKey": "MaxConcurrency", "ParameterValue": $v}]' \
+              /tmp/cfn-params.json > /tmp/cfn-params.next.json
+            mv /tmp/cfn-params.next.json /tmp/cfn-params.json
           fi
 
           echo "Parameters:"
@@ -275,14 +345,14 @@ jobs:
             # Create new stack
             aws cloudformation $STACK_ACTION \
               --stack-name ${{ inputs.stack_name }} \
-              --template-body file://cloudformation/template.yaml \
+              --template-body file://$TEMPLATE_FILE \
               --capabilities CAPABILITY_NAMED_IAM \
               --parameters file:///tmp/cfn-params.json
           else
             # Update existing stack, handling "No updates" error
             UPDATE_OUTPUT=$(aws cloudformation $STACK_ACTION \
               --stack-name ${{ inputs.stack_name }} \
-              --template-body file://cloudformation/template.yaml \
+              --template-body file://$TEMPLATE_FILE \
               --capabilities CAPABILITY_NAMED_IAM \
               --parameters file:///tmp/cfn-params.json 2>&1) || true
 
@@ -306,28 +376,30 @@ jobs:
           timeout: '1800'
           interval: '10'
 
-      - name: Get App Runner Service Info
+      - name: Get Service Info
         id: get-service-info
         run: |
-          # Get the App Runner service ARN from stack outputs
+          # ServiceArn/ServiceUrl are the route-neutral outputs; a stack last
+          # updated before they existed still has only the AppRunner* pair.
           SERVICE_ARN=$(aws cloudformation describe-stacks \
             --stack-name ${{ inputs.stack_name }} \
-            --query "Stacks[0].Outputs[?OutputKey=='AppRunnerServiceArn'].OutputValue" \
+            --query "Stacks[0].Outputs[?OutputKey=='ServiceArn' || OutputKey=='AppRunnerServiceArn'].OutputValue | [0]" \
             --output text)
 
           echo "service_arn=$SERVICE_ARN" >> $GITHUB_OUTPUT
-          echo "App Runner Service ARN: $SERVICE_ARN"
+          echo "Service ARN: $SERVICE_ARN"
 
-          # Get the service URL
           SERVICE_URL=$(aws cloudformation describe-stacks \
             --stack-name ${{ inputs.stack_name }} \
-            --query "Stacks[0].Outputs[?OutputKey=='AppRunnerServiceUrl'].OutputValue" \
+            --query "Stacks[0].Outputs[?OutputKey=='ServiceUrl' || OutputKey=='AppRunnerServiceUrl'].OutputValue | [0]" \
             --output text)
+          SERVICE_URL="${SERVICE_URL#https://}"
 
           echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
-          echo "App Runner Service URL: $SERVICE_URL"
+          echo "Service URL: $SERVICE_URL"
 
       - name: Wait for App Runner Deployment
+        if: inputs.app_compute == 'apprunner'
         run: |
           SERVICE_ARN="${{ steps.get-service-info.outputs.service_arn }}"
           MAX_ATTEMPTS=60
@@ -353,6 +425,56 @@ jobs:
 
             if [ $i -eq $MAX_ATTEMPTS ]; then
               echo "ERROR: Timeout waiting for App Runner service to become ready"
+              exit 1
+            fi
+
+            sleep $SLEEP_INTERVAL
+          done
+
+      # The Express service reports only ACTIVE/DRAINING/INACTIVE, and ACTIVE
+      # says nothing about the rollout, so watch the ECS service it manages
+      # until its primary deployment completes (canary rollouts take a while).
+      - name: Wait for ECS Express Deployment
+        if: inputs.app_compute == 'ecs-express'
+        run: |
+          SERVICE_ARN="${{ steps.get-service-info.outputs.service_arn }}"
+          MAX_ATTEMPTS=90
+          SLEEP_INTERVAL=10
+
+          read -r STATUS CLUSTER SERVICE_NAME < <(aws ecs describe-express-gateway-service \
+            --service-arn "$SERVICE_ARN" \
+            --query "[service.status.statusCode, service.cluster, service.serviceName]" \
+            --output text)
+          echo "Express service $SERVICE_NAME on cluster $CLUSTER is $STATUS"
+          if [ "$STATUS" != "ACTIVE" ]; then
+            echo "ERROR: Express service is not ACTIVE"
+            exit 1
+          fi
+
+          echo "Waiting for the ECS deployment to complete..."
+
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            read -r DEPLOYMENTS ROLLOUT < <(aws ecs describe-services \
+              --cluster "$CLUSTER" \
+              --services "$SERVICE_NAME" \
+              --query "services[0].[length(deployments), deployments[?status=='PRIMARY'] | [0].rolloutState]" \
+              --output text)
+
+            echo "Attempt $i/$MAX_ATTEMPTS: primary rollout $ROLLOUT, $DEPLOYMENTS deployment(s)"
+
+            if [ "$ROLLOUT" = "COMPLETED" ] && [ "$DEPLOYMENTS" = "1" ]; then
+              echo "ECS Express deployment completed!"
+              break
+            elif [ "$ROLLOUT" = "FAILED" ]; then
+              echo "ERROR: ECS deployment failed:"
+              aws ecs describe-services --cluster "$CLUSTER" --services "$SERVICE_NAME" \
+                --query "services[0].deployments[?status=='PRIMARY'] | [0].rolloutStateReason" \
+                --output text
+              exit 1
+            fi
+
+            if [ $i -eq $MAX_ATTEMPTS ]; then
+              echo "ERROR: Timeout waiting for the ECS deployment to complete"
               exit 1
             fi
 
@@ -396,4 +518,4 @@ jobs:
           fi
 
           echo ""
-          echo "App Runner Service URL: ${{ steps.get-service-info.outputs.service_url }}"
+          echo "Service URL (${{ inputs.app_compute }}): ${{ steps.get-service-info.outputs.service_url }}"

@@ -129,7 +129,7 @@ Shared modules consumed as an npm package across RoboSystems frontend apps:
 
 **Infrastructure:**
 
-- AWS App Runner with auto-scaling
+- AWS App Runner or Amazon ECS Express Mode with auto-scaling, chosen by the `APP_COMPUTE` GitHub variable (`apprunner` by default; per environment with `APP_COMPUTE_PROD` / `APP_COMPUTE_STAGING`). App Runner is closed to new AWS customers, so an account that has never used it must set `APP_COMPUTE=ecs-express`. Without a default VPC, also set `ECS_SUBNETS` to comma-separated public subnet IDs in at least two AZs.
 - S3 + CloudFront for static asset hosting
 - CloudFormation templates in `/cloudformation/`
 
