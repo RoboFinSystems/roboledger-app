@@ -185,6 +185,11 @@ jobs:
                 '4 GB'|4096) MEMORY=4096 ;;
                 *) echo "ERROR: unsupported memory '${{ inputs.memory }}' for ecs-express"; exit 1 ;;
               esac
+              # Fargate accepts only these pairings; fail here, not mid-stack
+              case "$CPU/$MEMORY" in
+                256/512|256/1024|256/2048|512/1024|512/2048|512/3072|512/4096|1024/2048|1024/3072|1024/4096|2048/4096) ;;
+                *) echo "ERROR: Fargate has no task size with $CPU CPU and $MEMORY MiB"; exit 1 ;;
+              esac
               ;;
             *)
               echo "ERROR: app_compute must be apprunner or ecs-express, got '${{ inputs.app_compute }}'"
