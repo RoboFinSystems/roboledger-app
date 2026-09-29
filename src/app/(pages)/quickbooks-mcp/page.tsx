@@ -53,7 +53,7 @@ const capabilities = [
   },
   {
     title: 'Compare',
-    body: 'Add the SEC filings graph as a second connection and put your margins and growth next to public companies in your industry. It is a separate subscription.',
+    body: 'Add a second connection at https://api.robosystems.ai/v1/mcp and choose the SEC filings graph, then put your margins and growth next to public companies in your industry. It is a separate subscription.',
   },
   {
     title: 'Close',
