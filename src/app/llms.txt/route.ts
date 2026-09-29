@@ -1,6 +1,7 @@
 import { getAllPosts } from '@/lib/blog'
 import type { DocsPage } from '@/lib/docs'
 import { DOCS_SITE, getDocsCatalog, getDocsNav } from '@/lib/docs'
+import { PRODUCT_PAGES, productPageUrl } from '@/lib/product-pages'
 import { SITE_DESCRIPTION, SITE_NAME } from '@/lib/site'
 
 // llms.txt (llmstxt.org): a plain-markdown map of the site for language models. Built from
@@ -34,6 +35,11 @@ export async function GET() {
     `> ${SITE_DESCRIPTION}`,
     '',
     'RoboLedger is a finance layer on top of QuickBooks, not a replacement ledger. It syncs the books into a knowledge graph that Claude, ChatGPT, or any MCP client can query at https://api.robosystems.ai/v1/mcp/roboledger: financial statements, forecasts that roll off actuals, comparisons with public companies from their SEC filings, and a month-end close that is drafted for review. Nothing is written back to QuickBooks until a person posts it. It is built on RoboSystems (https://robosystems.ai), open source under Apache 2.0, by RFS LLC.',
+    '',
+    '## Product',
+    ...PRODUCT_PAGES.map((page) =>
+      link(page.navLabel, productPageUrl(page), page.description)
+    ),
     '',
     '## Docs',
     ...docsLinks(docs),

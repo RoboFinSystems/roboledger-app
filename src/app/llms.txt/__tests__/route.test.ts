@@ -69,6 +69,9 @@ describe('GET /llms.txt', () => {
     expect(body).toContain(
       '- [QuickBooks MCP](https://roboledger.ai/blog/quickbooks-mcp): The excerpt.'
     )
+    expect(body).toContain(
+      '- [QuickBooks MCP](https://roboledger.ai/quickbooks-mcp): '
+    )
     expect(body).toContain('https://robosystems.ai/about')
   })
 
