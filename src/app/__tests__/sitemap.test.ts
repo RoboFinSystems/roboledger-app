@@ -14,6 +14,7 @@ vi.mock('@/lib/docs', async (importOriginal) => ({
 }))
 
 import type { DocsCatalog, DocsPage } from '@/lib/docs'
+import { PRODUCT_PAGES } from '@/lib/product-pages'
 import sitemap from '../sitemap'
 
 const posts = [
@@ -108,6 +109,18 @@ describe('sitemap', () => {
 
     expect(urls.some((u) => u.includes('/docs'))).toBe(false)
     expect(urls).toContain('https://roboledger.ai/blog/claude-ledger')
+  })
+
+  it('lists every product page, dated by its last edit', async () => {
+    mockGetAllPosts.mockResolvedValue(posts)
+    mockGetDocsCatalog.mockResolvedValue(null)
+    const byUrl = new Map((await sitemap()).map((e) => [e.url, e]))
+
+    for (const page of PRODUCT_PAGES) {
+      expect(
+        byUrl.get(`https://roboledger.ai${page.path}`)?.lastModified
+      ).toEqual(new Date(page.updated))
+    }
   })
 
   it('sends no lastmod for the homepage', async () => {

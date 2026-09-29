@@ -1,5 +1,6 @@
 import { getAllPosts } from '@/lib/blog'
 import { DOCS_SITE, getDocsCatalog, getDocsNav } from '@/lib/docs'
+import { PRODUCT_PAGES, productPageUrl } from '@/lib/product-pages'
 import type { MetadataRoute } from 'next'
 
 /**
@@ -15,7 +16,7 @@ function latestDate(dates: (string | undefined)[]): Date | undefined {
   return ts.length ? new Date(Math.max(...ts)) : undefined
 }
 
-// RoboLedger's public surface is the marketing homepage, the docs and the blog. Everything else is
+// RoboLedger's public surface is the marketing homepage, the product pages, the docs and the blog. Everything else is
 // behind auth in the (app) route group (see robots.ts); /register is de-indexed ahead of
 // the centralized-login flip (registration lives on the login home), and /pages/privacy +
 // /pages/terms are server redirects to the consolidated RoboSystems legal docs, so they
@@ -57,6 +58,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.9,
     },
+    ...PRODUCT_PAGES.map((page) => ({
+      url: productPageUrl(page),
+      lastModified: new Date(page.updated),
+      changeFrequency: 'monthly' as const,
+      priority: 0.9,
+    })),
     ...docsPages,
     ...blogPosts,
   ]

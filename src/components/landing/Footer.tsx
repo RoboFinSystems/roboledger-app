@@ -1,5 +1,6 @@
 'use client'
 
+import { PRODUCT_PAGES } from '@/lib/product-pages'
 import { LandingFooter } from '@robosystems/core'
 import { HARBINGER_URL } from './constants'
 import ContactModal from './ContactModal'
@@ -15,6 +16,10 @@ export default function Footer() {
         { label: 'Implementation', href: HARBINGER_URL },
         { label: 'FAQ', href: '/#faq' },
         { label: 'Docs', href: '/docs' },
+        ...PRODUCT_PAGES.map((page) => ({
+          label: page.navLabel,
+          href: page.path,
+        })),
       ]}
       // The Company column's Blog link goes to this site's own lane (core 0.8.8).
       blogHref="/blog"
