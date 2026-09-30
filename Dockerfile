@@ -5,8 +5,12 @@
 # for the full retry window. Only the runtime stage is the target platform, and
 # it never runs Node at build time.
 
+# The ECR build pulls from ECR Public (logged in); the Docker Hub build passes
+# docker.io/library so its pulls ride the Hub login. Same image digest.
+ARG NODE_REGISTRY=public.ecr.aws/docker/library
+
 # --- Build Stage ---
-FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/node:24.19.0-alpine3.24 AS builder
+FROM --platform=$BUILDPLATFORM ${NODE_REGISTRY}/node:24.19.0-alpine3.24 AS builder
 WORKDIR /app
 
 # Install git for private repository access
@@ -45,7 +49,7 @@ RUN if [ -f next-build.tar.gz ]; then \
 # Nested lockfiles shipped inside package tarballs (demo/playground dirs) are
 # never read at runtime, but container scanners parse them as installed
 # dependencies and flag phantom CVEs.
-FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/node:24.19.0-alpine3.24 AS deps
+FROM --platform=$BUILDPLATFORM ${NODE_REGISTRY}/node:24.19.0-alpine3.24 AS deps
 ARG TARGETARCH
 WORKDIR /app
 RUN npm install -g npm@12.0.2
@@ -59,7 +63,7 @@ RUN case "$TARGETARCH" in \
   find node_modules -mindepth 2 -name package-lock.json -delete
 
 # --- Production Stage ---
-FROM public.ecr.aws/docker/library/node:24.19.0-alpine3.24 AS runner
+FROM ${NODE_REGISTRY}/node:24.19.0-alpine3.24 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
