@@ -55,7 +55,7 @@ jobs:
         env:
           DOCKERHUB_OIDC_CONNECTIONID: ${{ vars.DOCKERHUB_OIDC_CONNECTION_ID }}
         with:
-          username: robofinsystems
+          username: ${{ vars.DOCKERHUB_USERNAME }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
