@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 # Multi-arch note: the Docker Hub image is built for linux/amd64 and linux/arm64
 # on one x86 runner. Every stage that runs Node is pinned to the build platform
 # (--platform=$BUILDPLATFORM) so nothing executes under QEMU emulation: an
