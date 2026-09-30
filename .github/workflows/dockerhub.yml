@@ -117,6 +117,7 @@ jobs:
           max_attempts: 2
           retry_on: any
           command: |
+            set -eo pipefail
             export DOCKER_BUILDKIT=1
             export COMPOSE_DOCKER_CLI_BUILD=1
 
