@@ -12,7 +12,7 @@ on:
         required: false
         type: string
         description: 'Runner configuration JSON (from runner availability check)'
-        default: '["ubuntu-latest"]'
+        default: '["ubuntu-24.04"]'
 
 jobs:
   dockerhub-build:
