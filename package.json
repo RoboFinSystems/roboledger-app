@@ -38,14 +38,14 @@
     "sync:demos": "cp node_modules/@robosystems/core/demos/runtime.js public/demos/runtime.js"
   },
   "dependencies": {
-    "@aws-sdk/client-sns": "^3.1121.0",
+    "@aws-sdk/client-sns": "^3.1141.0",
     "@robosystems/client": "^2.3.0",
     "@robosystems/core": "^0.13.3",
     "@robosystems/report-components": "^0.8.0",
     "flowbite": "^3.1",
     "flowbite-react": "^0.12.5",
     "github-slugger": "^2.0.0",
-    "lru-cache": "^11.5.1",
+    "lru-cache": "^11.5.3",
     "next": "^16.3.8",
     "react": "^19",
     "react-dom": "^19",
