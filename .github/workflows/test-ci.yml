@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   runner:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       runners_available: ${{ steps.check.outputs.runners_available }}
@@ -50,7 +50,7 @@ jobs:
   # approver in a single-maintainer repository.
   change-classification:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: read

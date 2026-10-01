@@ -7,7 +7,7 @@ on:
         required: false
         type: string
         description: 'Runner configuration JSON (from runner availability check)'
-        default: '["ubuntu-latest"]'
+        default: '["ubuntu-24.04"]'
       environment:
         required: true
         type: string
@@ -66,7 +66,7 @@ jobs:
   # Resolve - image tag, and whether this commit's image still needs building
   # ===========================================================================
   resolve:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       id-token: write
@@ -384,7 +384,7 @@ jobs:
   # ===========================================================================
   scan:
     needs: ecr-build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       id-token: write
