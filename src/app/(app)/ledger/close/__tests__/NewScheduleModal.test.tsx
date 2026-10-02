@@ -201,6 +201,23 @@ describe('NewScheduleModal', () => {
     })
   })
 
+  it('sends the day the cost was booked when it is before the first period', async () => {
+    renderModal()
+    await fillRequiredFields()
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /asset & depreciation details/i })
+    )
+    fireEvent.change(screen.getByLabelText(/cost booked on/i), {
+      target: { value: '2025-12-15' },
+    })
+
+    fireEvent.click(createButton())
+    await waitFor(() => expect(mockCreateSchedule).toHaveBeenCalledTimes(1))
+    const [, payload] = mockCreateSchedule.mock.calls[0]
+    expect(payload.scheduleMetadata).toMatchObject({ bookedOn: '2025-12-15' })
+  })
+
   it('blocks submit when the monthly amount over-writes the total', async () => {
     renderModal()
     await fillRequiredFields()

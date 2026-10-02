@@ -37,7 +37,8 @@ const describeError = (err: unknown, fallback: string): string =>
 const STATUS_BADGES: Record<string, { label: string; color: string }> = {
   not_started: { label: 'Not run', color: 'gray' },
   unreconciled: { label: 'Does not tie', color: 'failure' },
-  explained: { label: 'Explained', color: 'warning' },
+  // The books changed after it was compared; running them again clears it.
+  stale: { label: 'Out of date', color: 'warning' },
   reconciled: { label: 'Reconciled', color: 'success' },
   reviewed: { label: 'Reviewed', color: 'info' },
 }

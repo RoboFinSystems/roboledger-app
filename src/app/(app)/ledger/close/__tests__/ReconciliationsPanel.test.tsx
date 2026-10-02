@@ -148,6 +148,14 @@ describe('ReconciliationsPanel', () => {
     expect(screen.getByText('Against its schedules')).toBeInTheDocument()
   })
 
+  it('marks a comparison the books have moved past as out of date', async () => {
+    mockListReconciliations.mockResolvedValue(listOf(rec({ status: 'stale' })))
+    render(<ReconciliationsPanel graphId="kg1" />)
+
+    expect(await screen.findByText('Out of date')).toBeInTheDocument()
+    expect(screen.queryByText('Sign off')).not.toBeInTheDocument()
+  })
+
   it('says what running them does when nothing has been reconciled', async () => {
     mockListReconciliations.mockResolvedValue(listOf())
     render(<ReconciliationsPanel graphId="kg1" />)
