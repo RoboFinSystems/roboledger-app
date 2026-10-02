@@ -200,6 +200,56 @@ describe('ReconciliationsPanel', () => {
     )
   })
 
+  it("does not show one period's rows under another while it loads", async () => {
+    render(<ReconciliationsPanel graphId="kg1" />)
+    await screen.findByText('Sign off')
+
+    // The next period's read never answers.
+    mockListReconciliations.mockReturnValue(new Promise(() => {}))
+    fireEvent.change(screen.getByRole('combobox'), {
+      target: { value: '2026-07' },
+    })
+
+    await waitFor(() =>
+      expect(screen.queryByText('Sign off')).not.toBeInTheDocument()
+    )
+    expect(mockSignOffReconciliation).not.toHaveBeenCalled()
+  })
+
+  it('drops a run that finishes after the period changed', async () => {
+    let finishRun: (value: unknown) => void = () => {}
+    mockRefreshReconciliations.mockReturnValue(
+      new Promise((resolve) => {
+        finishRun = resolve
+      })
+    )
+    render(<ReconciliationsPanel graphId="kg1" />)
+    await screen.findByText('Prepaid Insurance (schedules)')
+    fireEvent.click(screen.getByText('Run reconciliations'))
+
+    mockListReconciliations.mockResolvedValue({
+      ...listOf(rec({ name: 'Equipment Loan (statement)', period: '2026-07' })),
+      period: '2026-07',
+    })
+    fireEvent.change(screen.getByRole('combobox'), {
+      target: { value: '2026-07' },
+    })
+    await screen.findByText('Equipment Loan (statement)')
+
+    finishRun({
+      ...listOf(rec({ status: 'unreconciled' })),
+      notes: ['Source ledger (QuickBooks) was not compared.'],
+    })
+
+    await waitFor(() =>
+      expect(screen.getByText('Run reconciliations')).not.toBeDisabled()
+    )
+    expect(screen.getByText('Equipment Loan (statement)')).toBeInTheDocument()
+    expect(
+      screen.queryByText('Source ledger (QuickBooks) was not compared.')
+    ).not.toBeInTheDocument()
+  })
+
   it('releases a reconciliation from the close', async () => {
     mockSetReconciliationPolicy.mockResolvedValue({})
     render(<ReconciliationsPanel graphId="kg1" />)

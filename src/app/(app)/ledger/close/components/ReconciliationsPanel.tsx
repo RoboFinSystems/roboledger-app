@@ -141,6 +141,9 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({ graphId }) => {
 
   const handleRun = useCallback(async () => {
     if (!period) return
+    // The same ticket a load takes: a run that finishes after the period
+    // changed must not put its results under the new period.
+    const seq = ++loadSeq.current
     try {
       setIsRunning(true)
       setError(null)
@@ -148,9 +151,11 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({ graphId }) => {
         graphId,
         period
       )
+      if (seq !== loadSeq.current) return
       setList(result)
       setNotes(result.notes)
     } catch (err) {
+      if (seq !== loadSeq.current) return
       setError(describeError(err, 'Reconciliations could not be run.'))
     } finally {
       setIsRunning(false)
@@ -163,10 +168,11 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({ graphId }) => {
       try {
         setBusyId(rec.structureId)
         setError(null)
+        // The row's own period: the sign-off is for what the row shows.
         await clients.ledger.signOffReconciliation(
           graphId,
           rec.structureId,
-          period
+          rec.period
         )
         await load()
       } catch (err) {
@@ -213,7 +219,10 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({ graphId }) => {
     [period, load]
   )
 
-  const reconciliations = list?.reconciliations ?? []
+  // Only rows for the period on screen: while another period loads, the
+  // last one's rows are not shown under its name.
+  const shown = list && list.period === period ? list : null
+  const reconciliations = shown?.reconciliations ?? []
 
   return (
     <div className="space-y-4">
@@ -280,7 +289,7 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({ graphId }) => {
         </div>
       ))}
 
-      {isLoading && !list ? (
+      {isLoading && !shown ? (
         <LoadingState size="lg" className="py-16" />
       ) : reconciliations.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-gray-600 dark:text-gray-400">
