@@ -185,6 +185,7 @@ describe('PeriodClosePanel — close success', () => {
     expect(mockClosePeriod).toHaveBeenCalledWith('kg1', '2026-05', {
       allowStaleSync: false,
       allowStrandedObligations: false,
+      allowUnreconciledAccounts: false,
     })
   })
 
@@ -406,6 +407,39 @@ describe('PeriodClosePanel — close overrides', () => {
       expect(mockClosePeriod).toHaveBeenCalledWith('kg1', '2026-05', {
         allowStaleSync: false,
         allowStrandedObligations: true,
+        allowUnreconciledAccounts: false,
+      })
+    )
+  })
+
+  it('names what is unreconciled and lets the close go ahead without it', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['unreconciled_accounts'],
+      unreconciledAccountCount: 1,
+      unreconciledAccountSample: [
+        'Prepaid Insurance (schedules): unreconciled',
+      ],
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    expect(
+      await screen.findByText('Prepaid Insurance (schedules): unreconciled')
+    ).toBeInTheDocument()
+    expect(screen.queryByText('unreconciled_accounts')).not.toBeInTheDocument()
+
+    const button = (await screen.findByText('Close Period')).closest('button')!
+    expect(button).toBeDisabled()
+    fireEvent.click(await screen.findByLabelText('Close without reconciling'))
+    await waitFor(() => expect(button).not.toBeDisabled())
+    fireEvent.click(button)
+
+    await waitFor(() =>
+      expect(mockClosePeriod).toHaveBeenCalledWith('kg1', '2026-05', {
+        allowStaleSync: false,
+        allowStrandedObligations: false,
+        allowUnreconciledAccounts: true,
       })
     )
   })

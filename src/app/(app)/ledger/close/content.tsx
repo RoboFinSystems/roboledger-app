@@ -19,6 +19,7 @@ import { TbBook2 } from 'react-icons/tb'
 import AccountRollupsPanel from './components/AccountRollupsPanel'
 import { NewScheduleModal } from './components/NewScheduleModal'
 import PeriodClosePanel from './components/PeriodClosePanel'
+import ReconciliationsPanel from './components/ReconciliationsPanel'
 import SchedulePanel from './components/SchedulePanel'
 import StatementPanel from './components/StatementPanel'
 import StructureSidebar, {
@@ -34,13 +35,18 @@ type ClosingBookCategories = LedgerClosingBookStructures['categories']
  * Whether a selection still refers to something in the freshly loaded
  * structures. Statements, schedules and rollups are identified by an id that is
  * per-graph, so a selection made before a graph switch must not be carried
- * over; the hub and trial balance always exist.
+ * over; the hub, the trial balance and the reconciliations worklist are not
+ * tied to an id.
  */
 function selectionExists(
   selected: SelectedItem,
   categories: ClosingBookCategories
 ): boolean {
-  if (selected.type === 'period_close' || selected.type === 'trial_balance') {
+  if (
+    selected.type === 'period_close' ||
+    selected.type === 'trial_balance' ||
+    selected.type === 'reconciliations'
+  ) {
     return true
   }
   const id =
@@ -250,6 +256,8 @@ const CloseContent: FC = function () {
               />
             ) : selectedItem.type === 'trial_balance' && currentGraph ? (
               <TrialBalancePanel graphId={currentGraph.graphId} />
+            ) : selectedItem.type === 'reconciliations' && currentGraph ? (
+              <ReconciliationsPanel graphId={currentGraph.graphId} />
             ) : selectedItem.type === 'period_close' && currentGraph ? (
               <PeriodClosePanel
                 graphId={currentGraph.graphId}

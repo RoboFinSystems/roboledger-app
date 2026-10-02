@@ -69,6 +69,8 @@ const BLOCKER_MESSAGES: Record<string, string> = {
     'Some scheduled entries were promoted but never drafted, so closing now would omit them. Re-run promotion with handler dispatch, or void the obligations.',
   reconciling_items:
     'Transactions edited in QuickBooks after they were synced are still awaiting a decision. Review each one and choose how to treat it — restate the original months, book a catch-up entry, or record that you already handled it — then close.',
+  unreconciled_accounts:
+    'A reconciliation this close waits on does not tie for the period, or has not been run for it. Open Reconciliations to see what is different, clear it, and run them again.',
 }
 
 /**
@@ -106,6 +108,18 @@ function obligationDetailFor(
       <div className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
         {calendar.syncStaleDays} day
         {calendar.syncStaleDays === 1 ? '' : 's'} behind this period
+      </div>
+    )
+  }
+
+  // Each entry already reads "<reconciliation>: <where it stands>".
+  if (code === 'unreconciled_accounts') {
+    if (calendar.unreconciledAccountCount === 0) return null
+    return (
+      <div className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
+        {calendar.unreconciledAccountSample.join('; ')}
+        {calendar.unreconciledAccountCount >
+          calendar.unreconciledAccountSample.length && <> and others</>}
       </div>
     )
   }
@@ -174,6 +188,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   const [isInitializing, setIsInitializing] = useState(false)
   const [allowStaleSync, setAllowStaleSync] = useState(false)
   const [allowStrandedObligations, setAllowStrandedObligations] =
+    useState(false)
+  const [allowUnreconciledAccounts, setAllowUnreconciledAccounts] =
     useState(false)
 
   // Reopen modal
@@ -277,11 +293,12 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
 
   useEffect(() => {
     if (selectedPeriod) {
-      // Reset both close overrides when the user moves between periods.
+      // Reset the close overrides when the user moves between periods.
       // They are intentionally opt-in per period so that enabling one for
       // a close doesn't silently carry over to the next.
       setAllowStaleSync(false)
       setAllowStrandedObligations(false)
+      setAllowUnreconciledAccounts(false)
       loadCloseStatus()
       loadDrafts()
     } else {
@@ -344,6 +361,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       const result = await clients.ledger.closePeriod(graphId, period, {
         allowStaleSync,
         allowStrandedObligations,
+        allowUnreconciledAccounts,
       })
       setCalendar(result.fiscalCalendar)
       // Show what the close did — the close is the act that stamps the
@@ -395,6 +413,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     selectedPeriod,
     allowStaleSync,
     allowStrandedObligations,
+    allowUnreconciledAccounts,
     onEntryCreated,
   ])
 
@@ -640,6 +659,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
           onToggleStaleSync={setAllowStaleSync}
           allowStrandedObligations={allowStrandedObligations}
           onToggleStrandedObligations={setAllowStrandedObligations}
+          allowUnreconciledAccounts={allowUnreconciledAccounts}
+          onToggleUnreconciledAccounts={setAllowUnreconciledAccounts}
           onClose={handleClosePeriod}
         />
       )}
@@ -995,6 +1016,8 @@ interface ClosePeriodActionProps {
   onToggleStaleSync: (value: boolean) => void
   allowStrandedObligations: boolean
   onToggleStrandedObligations: (value: boolean) => void
+  allowUnreconciledAccounts: boolean
+  onToggleUnreconciledAccounts: (value: boolean) => void
   onClose: () => void
 }
 
@@ -1007,6 +1030,8 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
   onToggleStaleSync,
   allowStrandedObligations,
   onToggleStrandedObligations,
+  allowUnreconciledAccounts,
+  onToggleUnreconciledAccounts,
   onClose,
 }) => {
   const blocked = !calendar.closeableNow
@@ -1018,9 +1043,11 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
     blocked && calendar.blockers.length === 1 && calendar.blockers[0] === code
   const syncStaleOnly = onlyBlocker('sync_stale')
   const strandedOnly = onlyBlocker('stranded_obligations')
+  const unreconciledOnly = onlyBlocker('unreconciled_accounts')
   const overridden =
     (syncStaleOnly && allowStaleSync) ||
-    (strandedOnly && allowStrandedObligations)
+    (strandedOnly && allowStrandedObligations) ||
+    (unreconciledOnly && allowUnreconciledAccounts)
   const hasUnbalancedDrafts = drafts ? !drafts.allBalanced : false
 
   return (
@@ -1064,6 +1091,20 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
                 className="rounded border-amber-400"
               />
               Close without the undrafted entries
+            </label>
+          )}
+          {/* The books close with a balance nothing outside them has
+              confirmed. The API records the override in the close audit
+              note; clearing the difference is the better path. */}
+          {unreconciledOnly && (
+            <label className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
+              <input
+                type="checkbox"
+                checked={allowUnreconciledAccounts}
+                onChange={(e) => onToggleUnreconciledAccounts(e.target.checked)}
+                className="rounded border-amber-400"
+              />
+              Close without reconciling
             </label>
           )}
           <Button
