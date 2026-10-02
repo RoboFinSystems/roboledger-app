@@ -15,8 +15,9 @@ import { HiExclamationCircle } from 'react-icons/hi'
 /**
  * Comparison renderer: this Report rendered through the shared
  * ``@robosystems/report-components`` library instead of the in-app
- * ``BlockView``. The report's Tavi compiled model (compact JSON, the same
- * file the SEC surface renders) is normalized by ``parseReportDocument`` and
+ * ``BlockView``. The report's holon (the JSON-LD the report is published as,
+ * and the one file that carries all of it) is normalized by
+ * ``parseReportDocument`` and
  * ``<ReportView>`` reconstructs the statement tables + fact inspector,
  * identically to the standalone xbrlkit viewer and RoboInvestor's SEC path. A
  * section sidebar (``reportSections`` / ``sliceReportSection``) renders one
@@ -24,11 +25,10 @@ import { HiExclamationCircle } from 'react-icons/hi'
  *
  * The document loads automatically: the client mints the presigned S3 URL via
  * the SDK, then reads it through the same-origin ``/api/reports/holon`` proxy
- * (the S3 bucket has no CORS, so a direct browser fetch is blocked). The Tavi
- * is asked for first; a report whose Tavi is not available — a received copy
- * whose sender shared it before the flavor existed — falls back to the holon
- * JSON-LD, which the same parser reads (through RDF, more slowly). Either
- * exists only once the report is published.
+ * (the S3 bucket has no CORS, so a direct browser fetch is blocked). The holon
+ * is asked for first; a report whose holon is not available falls back to the
+ * Tavi compiled model, which the same parser reads. Either exists only once
+ * the report is published.
  */
 interface HolonReportViewProps {
   graphId: string | null
@@ -38,7 +38,7 @@ interface HolonReportViewProps {
 }
 
 /** The renderable flavors, in the order they are tried. */
-const RENDER_FORMATS = ['TAVI', 'HOLON_JSONLD'] as const
+const RENDER_FORMATS = ['HOLON_JSONLD', 'TAVI'] as const
 
 export default function HolonReportView({
   graphId,
@@ -108,13 +108,12 @@ export default function HolonReportView({
     setIsLoading(true)
     setError(null)
     try {
-      // The Tavi first; the holon only when the Tavi is not available. The SDK
+      // The holon first; the Tavi only when the holon is not available. The SDK
       // resolves to null only when the report itself does not exist, so that
       // ends the search; a flavor that is not materialized (the
-      // REPORT_BUNDLE_NOT_AVAILABLE answer for a received copy whose sender
-      // shared it before the Tavi existed) arrives as a thrown GraphQL error,
-      // and any failure on the Tavi — that one, or a transient fault — moves
-      // on to the holon, whose own failure is the one reported.
+      // REPORT_BUNDLE_NOT_AVAILABLE answer) arrives as a thrown GraphQL error,
+      // and any failure on the holon — that one, or a transient fault — moves
+      // on to the Tavi, whose own failure is the one reported.
       let text: string | null = null
       let missing = false
       for (const [index, format] of RENDER_FORMATS.entries()) {

@@ -71,23 +71,23 @@ describe('HolonReportView', () => {
     globalThis.fetch = originalFetch
   })
 
-  it('renders from the Tavi and never asks for the holon', async () => {
+  it('renders from the holon and never asks for the Tavi', async () => {
     mockGetReportDownloadUrl.mockResolvedValue({
-      downloadUrl: 'https://s3/tavi',
+      downloadUrl: 'https://s3/holon',
     })
 
     render(<HolonReportView graphId="kg_1" reportId="rpt_1" published />)
 
     await waitFor(() => expect(screen.getByTestId('report-view')).toBeTruthy())
-    expect(formatsRequested()).toEqual(['TAVI'])
+    expect(formatsRequested()).toEqual(['HOLON_JSONLD'])
     expect(mockParseReportDocument).toHaveBeenCalledWith(
-      '{"from":"https://s3/tavi"}'
+      '{"from":"https://s3/holon"}'
     )
   })
 
   it('calls the proxy as JSON with the session bearer', async () => {
     mockGetReportDownloadUrl.mockResolvedValue({
-      downloadUrl: 'https://s3/tavi',
+      downloadUrl: 'https://s3/holon',
     })
 
     render(<HolonReportView graphId="kg_1" reportId="rpt_1" published />)
@@ -99,21 +99,21 @@ describe('HolonReportView', () => {
     expect(init.headers.authorization).toBe('Bearer session-token')
   })
 
-  it('falls back to the holon when the Tavi is not available', async () => {
+  it('falls back to the Tavi when the holon is not available', async () => {
     mockGetReportDownloadUrl
       .mockRejectedValueOnce(new Error('REPORT_BUNDLE_NOT_AVAILABLE'))
-      .mockResolvedValueOnce({ downloadUrl: 'https://s3/holon' })
+      .mockResolvedValueOnce({ downloadUrl: 'https://s3/tavi' })
 
     render(<HolonReportView graphId="kg_1" reportId="rpt_1" published />)
 
     await waitFor(() => expect(screen.getByTestId('report-view')).toBeTruthy())
-    expect(formatsRequested()).toEqual(['TAVI', 'HOLON_JSONLD'])
+    expect(formatsRequested()).toEqual(['HOLON_JSONLD', 'TAVI'])
     expect(mockParseReportDocument).toHaveBeenCalledWith(
-      '{"from":"https://s3/holon"}'
+      '{"from":"https://s3/tavi"}'
     )
   })
 
-  it('stops at a report that does not exist without trying the holon', async () => {
+  it('stops at a report that does not exist without trying the Tavi', async () => {
     mockGetReportDownloadUrl.mockResolvedValue(null)
 
     render(<HolonReportView graphId="kg_1" reportId="rpt_1" published />)
@@ -123,28 +123,28 @@ describe('HolonReportView', () => {
         'Report not found.'
       )
     )
-    expect(formatsRequested()).toEqual(['TAVI'])
+    expect(formatsRequested()).toEqual(['HOLON_JSONLD'])
     expect(mockParseReportDocument).not.toHaveBeenCalled()
   })
 
-  it('reports the holon’s failure when both flavors fail', async () => {
+  it('reports the Tavi’s failure when both flavors fail', async () => {
     mockGetReportDownloadUrl
-      .mockRejectedValueOnce(new Error('tavi is out'))
-      .mockRejectedValueOnce(new Error('holon is out too'))
+      .mockRejectedValueOnce(new Error('holon is out'))
+      .mockRejectedValueOnce(new Error('tavi is out too'))
 
     render(<HolonReportView graphId="kg_1" reportId="rpt_1" published />)
 
     await waitFor(() =>
       expect(screen.getByTestId('alert').textContent).toContain(
-        'holon is out too'
+        'tavi is out too'
       )
     )
-    expect(formatsRequested()).toEqual(['TAVI', 'HOLON_JSONLD'])
+    expect(formatsRequested()).toEqual(['HOLON_JSONLD', 'TAVI'])
   })
 
   it('surfaces a proxy rejection rather than parsing the error body', async () => {
     mockGetReportDownloadUrl.mockResolvedValue({
-      downloadUrl: 'https://s3/tavi',
+      downloadUrl: 'https://s3/holon',
     })
     globalThis.fetch = vi.fn(
       async () =>
