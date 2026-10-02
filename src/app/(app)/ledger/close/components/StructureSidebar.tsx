@@ -19,6 +19,7 @@ export type SelectedItem =
   | { type: 'schedule'; structureId: string }
   | { type: 'account_rollups'; mappingId: string; name: string }
   | { type: 'trial_balance' }
+  | { type: 'reconciliations' }
   | { type: 'period_close' }
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -43,6 +44,8 @@ function itemToSelected(item: ClosingBookItem): SelectedItem {
       }
     case 'trial_balance':
       return { type: 'trial_balance' }
+    case 'reconciliations':
+      return { type: 'reconciliations' }
     case 'period_close':
       return { type: 'period_close' }
     default:
@@ -69,6 +72,8 @@ function isActive(
       )
     case 'trial_balance':
       return item.itemType === 'trial_balance'
+    case 'reconciliations':
+      return item.itemType === 'reconciliations'
     case 'period_close':
       return item.itemType === 'period_close'
   }

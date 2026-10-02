@@ -96,6 +96,7 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
   const [residualValue, setResidualValue] = useState('')
   const [usefulLifeMonths, setUsefulLifeMonths] = useState('')
   const [assetElementId, setAssetElementId] = useState('')
+  const [bookedOn, setBookedOn] = useState('')
   const [accounts, setAccounts] = useState<AccountOption[]>([])
   const [accountsLoading, setAccountsLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -151,6 +152,7 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
     setResidualValue('')
     setUsefulLifeMonths('')
     setAssetElementId('')
+    setBookedOn('')
     setSubmitError(null)
   }, [open])
 
@@ -227,7 +229,8 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
         originalCents > 0 ||
         residualCents > 0 ||
         lifeMonths > 0 ||
-        !!assetElementId
+        !!assetElementId ||
+        !!bookedOn
       const elementIds = Array.from(
         new Set([
           debitElementId,
@@ -255,6 +258,7 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
                 residualValue: residualCents || undefined,
                 usefulLifeMonths: lifeMonths || undefined,
                 assetElementId: assetElementId || undefined,
+                bookedOn: bookedOn || undefined,
               },
             }
           : {}),
@@ -285,6 +289,7 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
     residualCents,
     usefulLifeMonths,
     assetElementId,
+    bookedOn,
     onClose,
     onCreated,
   ])
@@ -501,24 +506,45 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
                     </p>
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="sched-asset">Asset account (optional)</Label>
-                  <Select
-                    id="sched-asset"
-                    value={assetElementId}
-                    onChange={(e) => setAssetElementId(e.target.value)}
-                    disabled={submitting || accountsLoading}
-                  >
-                    <option value="">None</option>
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.code ? `${a.code} — ${a.name}` : a.name}
-                      </option>
-                    ))}
-                  </Select>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Balance-sheet asset tracked for net book value
-                  </p>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="sched-asset">
+                      Asset account (optional)
+                    </Label>
+                    <Select
+                      id="sched-asset"
+                      value={assetElementId}
+                      onChange={(e) => setAssetElementId(e.target.value)}
+                      disabled={submitting || accountsLoading}
+                    >
+                      <option value="">None</option>
+                      {accounts.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.code ? `${a.code} — ${a.name}` : a.name}
+                        </option>
+                      ))}
+                    </Select>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Balance-sheet asset tracked for net book value
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="sched-booked-on">
+                      Cost booked on (optional)
+                    </Label>
+                    <TextInput
+                      id="sched-booked-on"
+                      type="date"
+                      value={bookedOn}
+                      max={periodStart || undefined}
+                      onChange={(e) => setBookedOn(e.target.value)}
+                      disabled={submitting}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Only when the cost went on the books before the first
+                      period, so its reconciliation counts it from that day
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
