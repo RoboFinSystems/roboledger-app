@@ -344,7 +344,9 @@ describe('PeriodClosePanel — blockers name what is holding the close', () => {
     render(<PeriodClosePanel graphId="kg1" />)
 
     expect(
-      await screen.findByText(/dated in this period were never posted/)
+      await screen.findByText(
+        /captured but never posted.*both Captured and Classified/
+      )
     ).toBeInTheDocument()
     expect(screen.queryByText('unposted_source_events')).not.toBeInTheDocument()
   })
