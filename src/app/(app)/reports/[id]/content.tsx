@@ -153,6 +153,15 @@ const ReportViewerContent: FC = function () {
   const [pendingAction, setPendingAction] = useState<
     'file' | 'regenerate' | null
   >(null)
+  // What the confirm says. It outlives `pendingAction`, so the dialog keeps
+  // its own wording while it closes instead of falling through to the other.
+  const [confirmAction, setConfirmAction] = useState<'file' | 'regenerate'>(
+    'file'
+  )
+  const openConfirm = (action: 'file' | 'regenerate') => {
+    setConfirmAction(action)
+    setPendingAction(action)
+  }
   // Bumped when the report's figures are rebuilt or re-read, so the holon
   // view (which loads its own copy once) loads again.
   const [generation, setGeneration] = useState(0)
@@ -327,14 +336,16 @@ const ReportViewerContent: FC = function () {
     }
     // The rebuild landed; a failed reload must not read as a failed rebuild.
     setGeneration((g) => g + 1)
+    const staleNotice =
+      'The report was regenerated, but this page could not reload it. Refresh the page to see the new figures.'
     try {
       const data = await clients.reports.getReportPackage(graphId, reportId)
       if (data) setPkg(data)
+      // An empty answer leaves the old figures up, so say so.
+      else setActionError(staleNotice)
     } catch (err) {
       console.error('Reload after regenerate failed:', err)
-      setActionError(
-        'The report was regenerated, but this page could not reload it. Refresh the page to see the new figures.'
-      )
+      setActionError(staleNotice)
     } finally {
       setIsTransitioning(false)
       setPendingAction(null)
@@ -563,7 +574,7 @@ const ReportViewerContent: FC = function () {
                         {canRegenerate && (
                           <DropdownItem
                             icon={HiRefresh}
-                            onClick={() => setPendingAction('regenerate')}
+                            onClick={() => openConfirm('regenerate')}
                           >
                             Regenerate
                           </DropdownItem>
@@ -589,7 +600,7 @@ const ReportViewerContent: FC = function () {
                         {canFile && (
                           <DropdownItem
                             icon={HiLockClosed}
-                            onClick={() => setPendingAction('file')}
+                            onClick={() => openConfirm('file')}
                           >
                             File report
                           </DropdownItem>
@@ -930,16 +941,19 @@ const ReportViewerContent: FC = function () {
 
       <Modal
         show={pendingAction !== null}
-        onClose={() => setPendingAction(null)}
+        // Escape or a backdrop click must not hide a request still in flight.
+        onClose={() => {
+          if (!isTransitioning) setPendingAction(null)
+        }}
         size="md"
       >
         <ModalHeader>
-          {pendingAction === 'file'
+          {confirmAction === 'file'
             ? 'File this report?'
             : 'Regenerate this report?'}
         </ModalHeader>
         <ModalBody>
-          {pendingAction === 'file' ? (
+          {confirmAction === 'file' ? (
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Filing marks{' '}
               <span className="font-medium text-gray-900 dark:text-white">
@@ -965,13 +979,13 @@ const ReportViewerContent: FC = function () {
         <ModalFooter>
           <Button
             color="purple"
-            onClick={pendingAction === 'file' ? handleFile : handleRegenerate}
+            onClick={confirmAction === 'file' ? handleFile : handleRegenerate}
             disabled={isTransitioning}
           >
             {isTransitioning ? (
               <Spinner size="sm" className="mr-2 text-white" />
             ) : null}
-            {pendingAction === 'file' ? 'File report' : 'Regenerate'}
+            {confirmAction === 'file' ? 'File report' : 'Regenerate'}
           </Button>
           <Button
             color="gray"

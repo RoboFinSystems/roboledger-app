@@ -195,4 +195,11 @@ describe('reportPeriodType', () => {
   ] as const)('labels custom dates %s to %s %s', (start, end, expected) => {
     expect(reportPeriodType('custom', start, end)).toBe(expected)
   })
+
+  it('never calls unreadable dates annual', () => {
+    expect(reportPeriodType('custom', '', '')).toBe('quarterly')
+    expect(reportPeriodType('custom', 'not-a-date', '2026-09-30')).toBe(
+      'quarterly'
+    )
+  })
 })
