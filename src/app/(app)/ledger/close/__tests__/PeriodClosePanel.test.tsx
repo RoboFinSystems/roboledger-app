@@ -312,6 +312,20 @@ describe('PeriodClosePanel — blockers name what is holding the close', () => {
     expect(screen.queryByText('reconciling_items')).not.toBeInTheDocument()
   })
 
+  it('explains an unposted-source-event blocker instead of printing its code', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['unposted_source_events'],
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    expect(
+      await screen.findByText(/dated in this period were never posted/)
+    ).toBeInTheDocument()
+    expect(screen.queryByText('unposted_source_events')).not.toBeInTheDocument()
+  })
+
   it('marks the sample as partial when the count exceeds it', async () => {
     mockGetFiscalCalendar.mockResolvedValue({
       ...CALENDAR,

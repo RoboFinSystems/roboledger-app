@@ -69,6 +69,8 @@ const BLOCKER_MESSAGES: Record<string, string> = {
     'Some scheduled entries were promoted but never drafted, so closing now would omit them. Re-run promotion with handler dispatch, or void the obligations.',
   reconciling_items:
     'Transactions edited in QuickBooks after they were synced are still awaiting a decision. Review each one and choose how to treat it — restate the original months, book a catch-up entry, or record that you already handled it — then close.',
+  unposted_source_events:
+    'Bank-feed lines or synced transactions dated in this period were never posted, and once the period closes they can no longer post into it. Open the Inbox, approve or reject each one, then close.',
   unreconciled_accounts:
     'A reconciliation this close waits on does not tie for the period, or has not been run for it. Open Reconciliations to see what is different, clear it, and run them again.',
 }
