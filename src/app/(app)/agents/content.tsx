@@ -10,6 +10,7 @@ import {
   LoadingState,
   PageHeader,
   PageLayout,
+  useGraphWrites,
 } from '@robosystems/core'
 import {
   Alert,
@@ -23,7 +24,7 @@ import {
   TableRow,
 } from 'flowbite-react'
 import { useSearchParams } from 'next/navigation'
-import { type FC, useEffect, useMemo, useState } from 'react'
+import { type FC, useEffect, useMemo, useRef, useState } from 'react'
 import { HiExclamationCircle, HiSearch, HiUserGroup } from 'react-icons/hi'
 import AgentDetailModal from './AgentDetailModal'
 
@@ -65,6 +66,15 @@ const AgentsContent: FC = function () {
 
   const { graph: currentGraph } = useLedgerGraph()
 
+  // A /do in the console drawer that changed this graph, such as a
+  // counterparty added there. The reload keeps the table on screen.
+  const [reloadKey, setReloadKey] = useState(0)
+  const quietReload = useRef(false)
+  useGraphWrites(currentGraph?.graphId, () => {
+    quietReload.current = true
+    setReloadKey((k) => k + 1)
+  })
+
   // Inlined into the effect so the cleanup `cancelled` flag is local to
   // each invocation — prevents a stale response from overwriting state if
   // currentGraph or filters change mid-flight.
@@ -77,9 +87,11 @@ const AgentsContent: FC = function () {
     }
 
     let cancelled = false
+    const quiet = quietReload.current
+    quietReload.current = false
     void (async () => {
       try {
-        setIsLoading(true)
+        if (!quiet) setIsLoading(true)
         setError(null)
         const list = await clients.ledger.listAgents(currentGraph.graphId, {
           agentType: agentType || undefined,
@@ -102,7 +114,7 @@ const AgentsContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph, agentType, source])
+  }, [currentGraph, agentType, source, reloadKey])
 
   const filteredAgents = useMemo(() => {
     if (!searchTerm) return agents
