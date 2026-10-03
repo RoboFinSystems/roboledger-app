@@ -42,10 +42,14 @@ import {
   HiArchive,
   HiBan,
   HiChevronLeft,
+  HiClipboardCheck,
   HiCog,
   HiDocumentReport,
   HiDotsVertical,
   HiExclamationCircle,
+  HiLockClosed,
+  HiRefresh,
+  HiReply,
   HiShare,
   HiTrash,
 } from 'react-icons/hi'
@@ -144,6 +148,14 @@ const ReportViewerContent: FC = function () {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  // Filing locks the report and regenerating replaces its figures, so both
+  // wait behind a confirm.
+  const [pendingAction, setPendingAction] = useState<
+    'file' | 'regenerate' | null
+  >(null)
+  // Bumped when the report's figures are rebuilt or re-read, so the holon
+  // view (which loads its own copy once) loads again.
+  const [generation, setGeneration] = useState(0)
 
   const loadPublishLists = useCallback(async () => {
     if (!graphId) return
@@ -229,10 +241,11 @@ const ReportViewerContent: FC = function () {
     }
   }, [graphId, reportId, selectedListId])
 
-  // Archive / unarchive a filed report. A filed report is a record: archiving
-  // takes it off the current list without deleting it, and is reversible.
+  // The non-file legs: draft <-> under review, and archive / unarchive of a
+  // filed report. A filed report is a record: archiving takes it off the
+  // current list without deleting it, and is reversible.
   const handleFilingTransition = useCallback(
-    async (target: 'archived' | 'filed') => {
+    async (target: 'archived' | 'filed' | 'under_review' | 'draft') => {
       if (!graphId || !reportId) return
       try {
         setIsTransitioning(true)
@@ -256,6 +269,77 @@ const ReportViewerContent: FC = function () {
     },
     [graphId, reportId]
   )
+
+  const handleFile = useCallback(async () => {
+    if (!graphId || !reportId) return
+    try {
+      setIsTransitioning(true)
+      setActionError(null)
+      const updated = await clients.reports.fileReport(graphId, reportId)
+      setPkg((prev) =>
+        prev
+          ? {
+              ...prev,
+              filingStatus: updated.filing_status,
+              filedAt: updated.filed_at ?? prev.filedAt,
+              filedBy: updated.filed_by ?? prev.filedBy,
+            }
+          : prev
+      )
+      // Show what was filed: the report may have been regenerated elsewhere
+      // since this page loaded. A failed reload leaves the status above.
+      try {
+        const data = await clients.reports.getReportPackage(graphId, reportId)
+        if (data) {
+          setPkg(data)
+          setGeneration((g) => g + 1)
+        }
+      } catch (err) {
+        console.error('Reload after filing failed:', err)
+      }
+    } catch (err) {
+      console.error('File report failed:', err)
+      const message =
+        err instanceof Error ? err.message : 'Failed to file this report.'
+      setActionError(friendlyError(message).message)
+    } finally {
+      setIsTransitioning(false)
+      setPendingAction(null)
+    }
+  }, [graphId, reportId])
+
+  // Rebuilds the report in place from the ledger as it stands, then reloads
+  // the package so the page shows the new figures.
+  const handleRegenerate = useCallback(async () => {
+    if (!graphId || !reportId) return
+    setIsTransitioning(true)
+    setActionError(null)
+    try {
+      await clients.reports.regenerateReport(graphId, reportId)
+    } catch (err) {
+      console.error('Regenerate report failed:', err)
+      const message =
+        err instanceof Error ? err.message : 'Failed to regenerate this report.'
+      setActionError(friendlyError(message).message)
+      setIsTransitioning(false)
+      setPendingAction(null)
+      return
+    }
+    // The rebuild landed; a failed reload must not read as a failed rebuild.
+    setGeneration((g) => g + 1)
+    try {
+      const data = await clients.reports.getReportPackage(graphId, reportId)
+      if (data) setPkg(data)
+    } catch (err) {
+      console.error('Reload after regenerate failed:', err)
+      setActionError(
+        'The report was regenerated, but this page could not reload it. Refresh the page to see the new figures.'
+      )
+    } finally {
+      setIsTransitioning(false)
+      setPendingAction(null)
+    }
+  }, [graphId, reportId])
 
   // Deletes an unfiled report of this graph's own, or a copy shared in from
   // another graph. The copy carries the *sender's* user id in `created_by`,
@@ -388,11 +472,18 @@ const ReportViewerContent: FC = function () {
   // Filing actions on this graph's own reports, for their author (the API
   // enforces the same rule). Filed reports are archived, never deleted.
   const isAuthor = !pkg.sourceGraphId && pkg.createdBy === user?.id
+  const isUnfiled =
+    pkg.filingStatus === 'draft' || pkg.filingStatus === 'under_review'
   const canArchive = isAuthor && pkg.filingStatus === 'filed'
   const canUnarchive = isAuthor && pkg.filingStatus === 'archived'
-  const canDelete =
+  const canDelete = isAuthor && isUnfiled
+  const canRegenerate = isAuthor && isUnfiled
+  // Filing an unfinished generation would lock a partial snapshot.
+  const canFile =
     isAuthor &&
-    (pkg.filingStatus === 'draft' || pkg.filingStatus === 'under_review')
+    isUnfiled &&
+    (pkg.generationStatus === 'complete' ||
+      pkg.generationStatus === 'published')
   const hasLifecycleAction = canArchive || canUnarchive || canDelete
 
   return (
@@ -468,6 +559,40 @@ const ReportViewerContent: FC = function () {
                       <>
                         {pkg.generationStatus === 'published' && (
                           <DropdownDivider />
+                        )}
+                        {canRegenerate && (
+                          <DropdownItem
+                            icon={HiRefresh}
+                            onClick={() => setPendingAction('regenerate')}
+                          >
+                            Regenerate
+                          </DropdownItem>
+                        )}
+                        {isAuthor && pkg.filingStatus === 'draft' && (
+                          <DropdownItem
+                            icon={HiClipboardCheck}
+                            onClick={() =>
+                              handleFilingTransition('under_review')
+                            }
+                          >
+                            Mark under review
+                          </DropdownItem>
+                        )}
+                        {isAuthor && pkg.filingStatus === 'under_review' && (
+                          <DropdownItem
+                            icon={HiReply}
+                            onClick={() => handleFilingTransition('draft')}
+                          >
+                            Return to draft
+                          </DropdownItem>
+                        )}
+                        {canFile && (
+                          <DropdownItem
+                            icon={HiLockClosed}
+                            onClick={() => setPendingAction('file')}
+                          >
+                            File report
+                          </DropdownItem>
                         )}
                         {canArchive && (
                           <DropdownItem
@@ -643,6 +768,7 @@ const ReportViewerContent: FC = function () {
       {renderer === 'holon' ? (
         <Card>
           <HolonReportView
+            key={generation}
             graphId={graphId}
             reportId={reportId}
             published={pkg.generationStatus === 'published'}
@@ -710,6 +836,13 @@ const ReportViewerContent: FC = function () {
               get a read-only copy that won&apos;t change if your books are
               updated.
             </p>
+
+            {isUnfiled && (
+              <Alert color="warning">
+                This report has not been filed, so recipients will see it marked{' '}
+                {filingBadge.label}. File it first to send final statements.
+              </Alert>
+            )}
 
             {isLoadingLists ? (
               <LoadingState size="md" className="py-4" />
@@ -794,6 +927,61 @@ const ReportViewerContent: FC = function () {
           onBlocked={() => {}}
         />
       )}
+
+      <Modal
+        show={pendingAction !== null}
+        onClose={() => setPendingAction(null)}
+        size="md"
+      >
+        <ModalHeader>
+          {pendingAction === 'file'
+            ? 'File this report?'
+            : 'Regenerate this report?'}
+        </ModalHeader>
+        <ModalBody>
+          {pendingAction === 'file' ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Filing marks{' '}
+              <span className="font-medium text-gray-900 dark:text-white">
+                {pkg.name}
+              </span>{' '}
+              as final, and it cannot be undone: a filed report can no longer be
+              regenerated or deleted, only archived. If the books for this
+              period may still change, wait to file. Copies you have already
+              shared stay marked as they were sent; share again after filing to
+              send the final version.
+            </p>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              This rebuilds{' '}
+              <span className="font-medium text-gray-900 dark:text-white">
+                {pkg.name}
+              </span>{' '}
+              from the ledger as it stands now and replaces its current figures.
+              Copies you have already shared do not change.
+            </p>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            color="purple"
+            onClick={pendingAction === 'file' ? handleFile : handleRegenerate}
+            disabled={isTransitioning}
+          >
+            {isTransitioning ? (
+              <Spinner size="sm" className="mr-2 text-white" />
+            ) : null}
+            {pendingAction === 'file' ? 'File report' : 'Regenerate'}
+          </Button>
+          <Button
+            color="gray"
+            onClick={() => setPendingAction(null)}
+            disabled={isTransitioning}
+          >
+            Cancel
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       {/* Deleting is irreversible (and for a received copy the sender is not
           notified), so it gets an explicit confirm rather than riding the

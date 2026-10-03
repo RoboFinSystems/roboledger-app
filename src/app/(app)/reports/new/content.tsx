@@ -33,7 +33,11 @@ import {
   HiSparkles,
 } from 'react-icons/hi'
 import { TbReportAnalytics } from 'react-icons/tb'
-import { buildPresetPeriods, type PresetKey } from './presetPeriods'
+import {
+  buildPresetPeriods,
+  reportPeriodType,
+  type PresetKey,
+} from './presetPeriods'
 
 // ── Period Presets ────────────────────────────────────────────────────────
 
@@ -235,6 +239,8 @@ const ReportBuilderContent: FC = function () {
         mappingId: selectedMappingId,
         periodStart,
         periodEnd,
+        // Unset, the SDK labels every report quarterly.
+        periodType: reportPeriodType(selectedPreset, periodStart, periodEnd),
         comparative,
         periods,
       })
@@ -256,6 +262,7 @@ const ReportBuilderContent: FC = function () {
     reportName,
     comparative,
     periods,
+    selectedPreset,
     router,
   ])
 
