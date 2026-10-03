@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mockGetReportPackage = vi.fn()
 const mockTransitionFilingStatus = vi.fn()
 const mockDeleteReport = vi.fn()
+const mockFileReport = vi.fn()
+const mockRegenerateReport = vi.fn()
+const mockListPublishLists = vi.fn()
 const mockPush = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
@@ -13,7 +16,9 @@ vi.mock('@robosystems/core', () => ({
       transitionFilingStatus: (...args: any[]) =>
         mockTransitionFilingStatus(...args),
       deleteReport: (...args: any[]) => mockDeleteReport(...args),
-      listPublishLists: vi.fn(),
+      fileReport: (...args: any[]) => mockFileReport(...args),
+      regenerateReport: (...args: any[]) => mockRegenerateReport(...args),
+      listPublishLists: (...args: any[]) => mockListPublishLists(...args),
       getReportDownloadUrl: vi.fn(),
       shareReport: vi.fn(),
     },
@@ -182,6 +187,154 @@ describe('Report filing actions', () => {
     await renderWith({ filingStatus: 'filed', createdBy: 'usr_other' })
     expect(screen.queryByRole('button', { name: 'Archive' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Delete report' })).toBeNull()
+  })
+
+  it('shows no draft actions to someone who is not the author', async () => {
+    await renderWith({ filingStatus: 'draft', createdBy: 'usr_other' })
+    expect(screen.queryByRole('button', { name: 'File report' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Regenerate' })).toBeNull()
+    expect(
+      screen.queryByRole('button', { name: 'Mark under review' })
+    ).toBeNull()
+  })
+
+  it('files a draft behind a confirm, and the badge follows', async () => {
+    mockFileReport.mockResolvedValue({
+      filing_status: 'filed',
+      filed_at: '2026-10-03T12:00:00Z',
+      filed_by: 'usr_author',
+    })
+    await renderWith({ filingStatus: 'draft' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'File report' }))
+    expect(screen.getByText('File this report?')).toBeInTheDocument()
+    expect(mockFileReport).not.toHaveBeenCalled()
+
+    const confirm = screen.getAllByRole('button', { name: 'File report' })
+    fireEvent.click(confirm[confirm.length - 1])
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Archive' })
+      ).toBeInTheDocument()
+    )
+    expect(mockFileReport).toHaveBeenCalledWith('kg_mine', 'rpt_1')
+    expect(screen.getByText('Filed')).toBeInTheDocument()
+    expect(screen.getByText(/Filed Oct 3, 2026 by you/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'File report' })).toBeNull()
+  })
+
+  it.each(['generating', 'pending', 'failed'])(
+    'does not offer File while generation is %s',
+    async (generationStatus) => {
+      await renderWith({ filingStatus: 'draft', generationStatus })
+      expect(screen.queryByRole('button', { name: 'File report' })).toBeNull()
+    }
+  )
+
+  it.each(['filed', 'archived'])(
+    'offers neither File nor Regenerate on a %s report',
+    async (filingStatus) => {
+      await renderWith({ filingStatus })
+      expect(screen.queryByRole('button', { name: 'File report' })).toBeNull()
+      expect(screen.queryByRole('button', { name: 'Regenerate' })).toBeNull()
+    }
+  )
+
+  it('regenerates behind a confirm and reloads the package', async () => {
+    mockRegenerateReport.mockResolvedValue({ id: 'rpt_1' })
+    await renderWith({ filingStatus: 'draft' })
+    expect(mockGetReportPackage).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }))
+    expect(screen.getByText('Regenerate this report?')).toBeInTheDocument()
+    expect(mockRegenerateReport).not.toHaveBeenCalled()
+
+    const confirm = screen.getAllByRole('button', { name: 'Regenerate' })
+    fireEvent.click(confirm[confirm.length - 1])
+
+    await waitFor(() => expect(mockGetReportPackage).toHaveBeenCalledTimes(2))
+    expect(mockRegenerateReport).toHaveBeenCalledWith('kg_mine', 'rpt_1')
+    await waitFor(() =>
+      expect(screen.queryByText('Regenerate this report?')).toBeNull()
+    )
+  })
+
+  it('surfaces a refused regenerate and keeps the report on screen', async () => {
+    mockRegenerateReport.mockRejectedValue(new Error('Not authorized'))
+    await renderWith({ filingStatus: 'draft' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }))
+    const confirm = screen.getAllByRole('button', { name: 'Regenerate' })
+    fireEvent.click(confirm[confirm.length - 1])
+
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
+    expect(mockGetReportPackage).toHaveBeenCalledTimes(1)
+    expect(screen.getByText('FY2025 Annual')).toBeInTheDocument()
+  })
+
+  it('moves a draft under review and back', async () => {
+    mockTransitionFilingStatus.mockResolvedValueOnce({
+      filing_status: 'under_review',
+    })
+    await renderWith({ filingStatus: 'draft' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark under review' }))
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Return to draft' })
+      ).toBeInTheDocument()
+    )
+    expect(mockTransitionFilingStatus).toHaveBeenCalledWith(
+      'kg_mine',
+      'rpt_1',
+      'under_review'
+    )
+
+    mockTransitionFilingStatus.mockResolvedValueOnce({ filing_status: 'draft' })
+    fireEvent.click(screen.getByRole('button', { name: 'Return to draft' }))
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Mark under review' })
+      ).toBeInTheDocument()
+    )
+    expect(mockTransitionFilingStatus).toHaveBeenLastCalledWith(
+      'kg_mine',
+      'rpt_1',
+      'draft'
+    )
+  })
+
+  it.each([
+    ['draft', 'Draft'],
+    ['under_review', 'Under Review'],
+  ])(
+    'warns before sharing a %s report that recipients see it unfiled',
+    async (filingStatus, label) => {
+      mockListPublishLists.mockResolvedValue([])
+      await renderWith({ filingStatus })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Share' }))
+
+      await waitFor(() =>
+        expect(screen.getByText('No publish lists yet.')).toBeInTheDocument()
+      )
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        `recipients will see it marked ${label}`
+      )
+    }
+  )
+
+  it('shares a filed report without the warning', async () => {
+    mockListPublishLists.mockResolvedValue([])
+    await renderWith({ filingStatus: 'filed' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Share' }))
+
+    await waitFor(() =>
+      expect(screen.getByText('No publish lists yet.')).toBeInTheDocument()
+    )
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('surfaces a refused transition instead of changing the badge', async () => {
