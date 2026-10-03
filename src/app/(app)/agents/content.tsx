@@ -2,6 +2,7 @@
 
 import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
 import { formatDate } from '@/lib/ledger/formatters'
+import { useConsoleReload } from '@/lib/useConsoleReload'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LedgerAgent } from '@robosystems/client/clients'
 import {
@@ -10,7 +11,6 @@ import {
   LoadingState,
   PageHeader,
   PageLayout,
-  useGraphWrites,
 } from '@robosystems/core'
 import {
   Alert,
@@ -24,7 +24,7 @@ import {
   TableRow,
 } from 'flowbite-react'
 import { useSearchParams } from 'next/navigation'
-import { type FC, useEffect, useMemo, useRef, useState } from 'react'
+import { type FC, useEffect, useMemo, useState } from 'react'
 import { HiExclamationCircle, HiSearch, HiUserGroup } from 'react-icons/hi'
 import AgentDetailModal from './AgentDetailModal'
 
@@ -68,12 +68,7 @@ const AgentsContent: FC = function () {
 
   // A /do in the console drawer that changed this graph, such as a
   // counterparty added there. The reload keeps the table on screen.
-  const [reloadKey, setReloadKey] = useState(0)
-  const quietReload = useRef(false)
-  useGraphWrites(currentGraph?.graphId, () => {
-    quietReload.current = true
-    setReloadKey((k) => k + 1)
-  })
+  const { reloadKey, takeQuiet } = useConsoleReload(currentGraph?.graphId)
 
   // Inlined into the effect so the cleanup `cancelled` flag is local to
   // each invocation — prevents a stale response from overwriting state if
@@ -87,8 +82,7 @@ const AgentsContent: FC = function () {
     }
 
     let cancelled = false
-    const quiet = quietReload.current
-    quietReload.current = false
+    const quiet = takeQuiet()
     void (async () => {
       try {
         if (!quiet) setIsLoading(true)
@@ -114,7 +108,7 @@ const AgentsContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph, agentType, source, reloadKey])
+  }, [currentGraph, agentType, source, reloadKey, takeQuiet])
 
   const filteredAgents = useMemo(() => {
     if (!searchTerm) return agents

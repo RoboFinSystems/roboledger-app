@@ -2,6 +2,7 @@
 
 import DocsLink from '@/components/DocsLink'
 import SegmentedControl from '@/components/SegmentedControl'
+import { useConsoleReload } from '@/lib/useConsoleReload'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { ReportListItem } from '@robosystems/client/clients'
 import {
@@ -83,6 +84,10 @@ const ReportsContent: FC = function () {
 
   const { graph: currentGraph } = useLedgerGraph()
 
+  // A /do in the console drawer that changed this graph, such as a draft
+  // report created there. The reload keeps the table on screen.
+  const { reloadKey, takeQuiet } = useConsoleReload(currentGraph?.graphId)
+
   useEffect(() => {
     if (!currentGraph) {
       setReports([])
@@ -91,9 +96,10 @@ const ReportsContent: FC = function () {
     }
 
     let cancelled = false
+    const quiet = takeQuiet()
     const loadReports = async () => {
       try {
-        setIsLoading(true)
+        if (!quiet) setIsLoading(true)
         setError(null)
 
         const reportList = await clients.reports.listReports(
@@ -127,7 +133,7 @@ const ReportsContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph, view])
+  }, [currentGraph, view, reloadKey, takeQuiet])
 
   return (
     <PageLayout>
