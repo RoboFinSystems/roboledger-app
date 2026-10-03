@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildPresetPeriods } from '../presetPeriods'
+import { buildPresetPeriods, reportPeriodType } from '../presetPeriods'
 
 // Local-time construction: the helper reads getFullYear/getMonth, so building
 // these with `new Date(y, m, d)` matches how a browser would see "now".
@@ -165,5 +165,34 @@ describe('buildPresetPeriods', () => {
         expect(p.end).toMatch(iso)
       }
     }
+  })
+})
+
+describe('reportPeriodType', () => {
+  it.each([
+    ['this_month', 'monthly'],
+    ['last_month', 'monthly'],
+    ['this_quarter', 'quarterly'],
+    ['last_quarter', 'quarterly'],
+    ['monthly_ytd', 'monthly'],
+    ['monthly_full_year', 'monthly'],
+    ['annual_comparison', 'annual'],
+  ] as const)('labels the %s preset %s', (preset, expected) => {
+    // The dates are ignored for a preset: a year of monthly columns is monthly.
+    expect(reportPeriodType(preset, '2026-01-01', '2026-12-31')).toBe(expected)
+  })
+
+  it.each([
+    ['2026-09-01', '2026-09-30', 'monthly'],
+    ['2026-02-01', '2026-02-28', 'monthly'],
+    ['2026-07-01', '2026-09-30', 'quarterly'],
+    ['2026-01-01', '2026-12-31', 'annual'],
+    ['2026-01-01', '2026-06-30', 'annual'],
+  ] as const)('labels custom dates %s to %s %s', (start, end, expected) => {
+    expect(reportPeriodType('custom', start, end)).toBe(expected)
+  })
+
+  it('falls back to monthly when custom dates are not set yet', () => {
+    expect(reportPeriodType('custom', '', '')).toBe('monthly')
   })
 })

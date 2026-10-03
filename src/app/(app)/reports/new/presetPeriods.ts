@@ -23,6 +23,41 @@ const pad = (n: number): string => String(n).padStart(2, '0')
 
 const getQuarter = (month: number): number => Math.floor(month / 3)
 
+/** The cadence label a report carries: the length of one of its columns. */
+export type ReportPeriodType = 'monthly' | 'quarterly' | 'annual'
+
+const PRESET_PERIOD_TYPE: Record<
+  Exclude<PresetKey, 'custom'>,
+  ReportPeriodType
+> = {
+  this_month: 'monthly',
+  last_month: 'monthly',
+  this_quarter: 'quarterly',
+  last_quarter: 'quarterly',
+  monthly_ytd: 'monthly',
+  monthly_full_year: 'monthly',
+  annual_comparison: 'annual',
+}
+
+/**
+ * The cadence for a report: a preset names its own, and custom dates take the
+ * nearest one by length (a label only; the dates decide what is reported).
+ */
+export function reportPeriodType(
+  preset: PresetKey,
+  periodStart: string,
+  periodEnd: string
+): ReportPeriodType {
+  if (preset !== 'custom') return PRESET_PERIOD_TYPE[preset]
+  const days =
+    (Date.parse(`${periodEnd}T00:00:00Z`) -
+      Date.parse(`${periodStart}T00:00:00Z`)) /
+      86_400_000 +
+    1
+  if (!Number.isFinite(days) || days <= 45) return 'monthly'
+  return days <= 135 ? 'quarterly' : 'annual'
+}
+
 // Exported for unit testing: the year/quarter rollovers here decide which
 // periods a generated report covers, and a boundary slip produces a plausible
 // report for the wrong dates rather than an error.
