@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { useEffect } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockGetReportPackage = vi.fn()
@@ -8,6 +9,8 @@ const mockFileReport = vi.fn()
 const mockRegenerateReport = vi.fn()
 const mockListPublishLists = vi.fn()
 const mockPush = vi.fn()
+// How many times the holon view mounted: it loads its own copy once per mount.
+const holon = { mounts: 0 }
 
 vi.mock('@robosystems/core', () => ({
   clients: {
@@ -80,7 +83,14 @@ vi.mock('../../../ledger/close/components/ViewModeToggle', () => ({
   default: () => null,
 }))
 vi.mock('../components/BlockSenderModal', () => ({ default: () => null }))
-vi.mock('../components/HolonReportView', () => ({ default: () => null }))
+vi.mock('../components/HolonReportView', () => ({
+  default: function HolonStub() {
+    useEffect(() => {
+      holon.mounts += 1
+    }, [])
+    return <div data-testid="holon-view" />
+  },
+}))
 vi.mock('../components/ManageSharesModal', () => ({ default: () => null }))
 vi.mock('../components/ReportPackageSidebar', () => ({ default: () => null }))
 
@@ -115,6 +125,7 @@ const renderWith = async (overrides: Record<string, unknown> = {}) => {
 describe('Report filing actions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    holon.mounts = 0
     globalThis.IntersectionObserver = class {
       observe() {}
       disconnect() {}
@@ -205,6 +216,14 @@ describe('Report filing actions', () => {
       filed_by: 'usr_author',
     })
     await renderWith({ filingStatus: 'draft' })
+    // The page reloads the package once the report is filed.
+    mockGetReportPackage.mockResolvedValue(
+      pkg({
+        filingStatus: 'filed',
+        filedAt: '2026-10-03T12:00:00Z',
+        filedBy: 'usr_author',
+      })
+    )
 
     fireEvent.click(screen.getByRole('button', { name: 'File report' }))
     expect(screen.getByText('File this report?')).toBeInTheDocument()
@@ -241,10 +260,19 @@ describe('Report filing actions', () => {
     }
   )
 
-  it('regenerates behind a confirm and reloads the package', async () => {
+  const confirmRegenerate = () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }))
+    const confirm = screen.getAllByRole('button', { name: 'Regenerate' })
+    fireEvent.click(confirm[confirm.length - 1])
+  }
+
+  it('regenerates behind a confirm and shows the rebuilt package', async () => {
     mockRegenerateReport.mockResolvedValue({ id: 'rpt_1' })
     await renderWith({ filingStatus: 'draft' })
     expect(mockGetReportPackage).toHaveBeenCalledTimes(1)
+    mockGetReportPackage.mockResolvedValue(
+      pkg({ filingStatus: 'draft', name: 'FY2025 Annual (rebuilt)' })
+    )
 
     fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }))
     expect(screen.getByText('Regenerate this report?')).toBeInTheDocument()
@@ -253,11 +281,94 @@ describe('Report filing actions', () => {
     const confirm = screen.getAllByRole('button', { name: 'Regenerate' })
     fireEvent.click(confirm[confirm.length - 1])
 
-    await waitFor(() => expect(mockGetReportPackage).toHaveBeenCalledTimes(2))
+    // The page shows the reloaded package, not the one it had.
+    expect(
+      await screen.findByRole('heading', { name: 'FY2025 Annual (rebuilt)' })
+    ).toBeInTheDocument()
     expect(mockRegenerateReport).toHaveBeenCalledWith('kg_mine', 'rpt_1')
-    await waitFor(() =>
-      expect(screen.queryByText('Regenerate this report?')).toBeNull()
+    expect(screen.queryByText('Regenerate this report?')).toBeNull()
+  })
+
+  it('loads the holon view again after a regenerate', async () => {
+    mockRegenerateReport.mockResolvedValue({ id: 'rpt_1' })
+    await renderWith({ filingStatus: 'draft' })
+    fireEvent.click(screen.getByRole('button', { name: 'Holon' }))
+    await waitFor(() => expect(holon.mounts).toBe(1))
+
+    confirmRegenerate()
+
+    // Its copy is the pre-regeneration one, so it has to mount afresh.
+    await waitFor(() => expect(holon.mounts).toBe(2))
+  })
+
+  it('does not call a regenerate failed when only the reload failed', async () => {
+    mockRegenerateReport.mockResolvedValue({ id: 'rpt_1' })
+    await renderWith({ filingStatus: 'draft' })
+    mockGetReportPackage.mockRejectedValue(new Error('network'))
+
+    confirmRegenerate()
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('The report was regenerated')
+    expect(alert).toHaveTextContent('Refresh the page')
+    expect(screen.queryByText('Regenerate this report?')).toBeNull()
+  })
+
+  it('reloads the package after filing, so the page shows what was filed', async () => {
+    mockFileReport.mockResolvedValue({
+      filing_status: 'filed',
+      filed_at: '2026-10-03T12:00:00Z',
+      filed_by: 'usr_author',
+    })
+    await renderWith({ filingStatus: 'draft' })
+    mockGetReportPackage.mockResolvedValue(
+      pkg({
+        filingStatus: 'filed',
+        filedAt: '2026-10-03T12:00:00Z',
+        filedBy: 'usr_author',
+        name: 'FY2025 Annual (as filed)',
+      })
     )
+
+    fireEvent.click(screen.getByRole('button', { name: 'File report' }))
+    const confirm = screen.getAllByRole('button', { name: 'File report' })
+    fireEvent.click(confirm[confirm.length - 1])
+
+    expect(
+      await screen.findByRole('heading', { name: 'FY2025 Annual (as filed)' })
+    ).toBeInTheDocument()
+    expect(screen.getByText('Filed')).toBeInTheDocument()
+  })
+
+  it('keeps the filed status when the reload after filing fails', async () => {
+    mockFileReport.mockResolvedValue({
+      filing_status: 'filed',
+      filed_at: '2026-10-03T12:00:00Z',
+      filed_by: 'usr_author',
+    })
+    await renderWith({ filingStatus: 'draft' })
+    mockGetReportPackage.mockRejectedValue(new Error('network'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'File report' }))
+    const confirm = screen.getAllByRole('button', { name: 'File report' })
+    fireEvent.click(confirm[confirm.length - 1])
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Archive' })
+      ).toBeInTheDocument()
+    )
+    expect(screen.getByText('Filed')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('says filing cannot be undone and does not update shared copies', async () => {
+    await renderWith({ filingStatus: 'draft' })
+    fireEvent.click(screen.getByRole('button', { name: 'File report' }))
+
+    const dialog = screen.getByText('File this report?').parentElement!
+    expect(dialog).toHaveTextContent('cannot be undone')
+    expect(dialog).toHaveTextContent('share again after filing')
   })
 
   it('surfaces a refused regenerate and keeps the report on screen', async () => {

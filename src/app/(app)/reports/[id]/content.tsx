@@ -153,6 +153,9 @@ const ReportViewerContent: FC = function () {
   const [pendingAction, setPendingAction] = useState<
     'file' | 'regenerate' | null
   >(null)
+  // Bumped when the report's figures are rebuilt or re-read, so the holon
+  // view (which loads its own copy once) loads again.
+  const [generation, setGeneration] = useState(0)
 
   const loadPublishLists = useCallback(async () => {
     if (!graphId) return
@@ -283,6 +286,17 @@ const ReportViewerContent: FC = function () {
             }
           : prev
       )
+      // Show what was filed: the report may have been regenerated elsewhere
+      // since this page loaded. A failed reload leaves the status above.
+      try {
+        const data = await clients.reports.getReportPackage(graphId, reportId)
+        if (data) {
+          setPkg(data)
+          setGeneration((g) => g + 1)
+        }
+      } catch (err) {
+        console.error('Reload after filing failed:', err)
+      }
     } catch (err) {
       console.error('File report failed:', err)
       const message =
@@ -298,17 +312,29 @@ const ReportViewerContent: FC = function () {
   // the package so the page shows the new figures.
   const handleRegenerate = useCallback(async () => {
     if (!graphId || !reportId) return
+    setIsTransitioning(true)
+    setActionError(null)
     try {
-      setIsTransitioning(true)
-      setActionError(null)
       await clients.reports.regenerateReport(graphId, reportId)
-      const data = await clients.reports.getReportPackage(graphId, reportId)
-      if (data) setPkg(data)
     } catch (err) {
       console.error('Regenerate report failed:', err)
       const message =
         err instanceof Error ? err.message : 'Failed to regenerate this report.'
       setActionError(friendlyError(message).message)
+      setIsTransitioning(false)
+      setPendingAction(null)
+      return
+    }
+    // The rebuild landed; a failed reload must not read as a failed rebuild.
+    setGeneration((g) => g + 1)
+    try {
+      const data = await clients.reports.getReportPackage(graphId, reportId)
+      if (data) setPkg(data)
+    } catch (err) {
+      console.error('Reload after regenerate failed:', err)
+      setActionError(
+        'The report was regenerated, but this page could not reload it. Refresh the page to see the new figures.'
+      )
     } finally {
       setIsTransitioning(false)
       setPendingAction(null)
@@ -742,6 +768,7 @@ const ReportViewerContent: FC = function () {
       {renderer === 'holon' ? (
         <Card>
           <HolonReportView
+            key={generation}
             graphId={graphId}
             reportId={reportId}
             published={pkg.generationStatus === 'published'}
@@ -918,9 +945,11 @@ const ReportViewerContent: FC = function () {
               <span className="font-medium text-gray-900 dark:text-white">
                 {pkg.name}
               </span>{' '}
-              as final. A filed report can no longer be regenerated or deleted,
-              only archived. If the books for this period may still change,
-              regenerate first.
+              as final, and it cannot be undone: a filed report can no longer be
+              regenerated or deleted, only archived. If the books for this
+              period may still change, wait to file. Copies you have already
+              shared stay marked as they were sent; share again after filing to
+              send the final version.
             </p>
           ) : (
             <p className="text-sm text-gray-500 dark:text-gray-400">
