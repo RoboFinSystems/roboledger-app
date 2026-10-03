@@ -2,6 +2,7 @@
 
 import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
 import { formatDate } from '@/lib/ledger/formatters'
+import { useConsoleReload } from '@/lib/useConsoleReload'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LedgerAgent } from '@robosystems/client/clients'
 import {
@@ -65,6 +66,10 @@ const AgentsContent: FC = function () {
 
   const { graph: currentGraph } = useLedgerGraph()
 
+  // A /do in the console drawer that changed this graph, such as a
+  // counterparty added there. The reload keeps the table on screen.
+  const { reloadKey, takeQuiet } = useConsoleReload(currentGraph?.graphId)
+
   // Inlined into the effect so the cleanup `cancelled` flag is local to
   // each invocation — prevents a stale response from overwriting state if
   // currentGraph or filters change mid-flight.
@@ -77,9 +82,10 @@ const AgentsContent: FC = function () {
     }
 
     let cancelled = false
+    const quiet = takeQuiet()
     void (async () => {
       try {
-        setIsLoading(true)
+        if (!quiet) setIsLoading(true)
         setError(null)
         const list = await clients.ledger.listAgents(currentGraph.graphId, {
           agentType: agentType || undefined,
@@ -102,7 +108,7 @@ const AgentsContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph, agentType, source])
+  }, [currentGraph, agentType, source, reloadKey, takeQuiet])
 
   const filteredAgents = useMemo(() => {
     if (!searchTerm) return agents

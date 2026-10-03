@@ -1,13 +1,17 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockListReports = vi.fn()
+let onGraphWrites: (() => void) | null = null
 
 vi.mock('@robosystems/core', () => ({
   clients: {
     reports: {
       listReports: (...args: any[]) => mockListReports(...args),
     },
+  },
+  useGraphWrites: (_graphId: string | null | undefined, cb: () => void) => {
+    onGraphWrites = cb
   },
   GraphFilters: {
     roboledger: (graph: any) =>
@@ -39,6 +43,14 @@ vi.mock('@robosystems/core', () => ({
 }))
 
 vi.mock('@/components/DocsLink', () => ({ default: () => null }))
+
+// One stable object: the page reloads whenever the graph's identity changes.
+const { GRAPH } = vi.hoisted(() => ({
+  GRAPH: { graphId: 'kg_mine', graphName: 'Mine' },
+}))
+vi.mock('@/lib/useLedgerGraph', () => ({
+  useLedgerGraph: () => ({ graph: GRAPH }),
+}))
 
 import ReportsContent from '../content'
 
@@ -88,6 +100,30 @@ describe('ReportsContent', () => {
       lifecycle: 'ARCHIVED',
     })
     expect(screen.getAllByText('Archived').length).toBeGreaterThan(1)
+  })
+
+  it('reloads after a console write, keeping the table on screen', async () => {
+    mockListReports.mockResolvedValueOnce([report('FY2025', 'filed')])
+    render(<ReportsContent />)
+    await waitFor(() => expect(screen.getByText('FY2025')).toBeInTheDocument())
+
+    let finishReload: (rows: unknown[]) => void = () => {}
+    mockListReports.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishReload = resolve
+      })
+    )
+    act(() => onGraphWrites?.())
+
+    await waitFor(() => expect(mockListReports).toHaveBeenCalledTimes(2))
+    // Mid-reload the existing rows stay, with no spinner in their place.
+    expect(screen.getByText('FY2025')).toBeInTheDocument()
+    expect(screen.queryByRole('status')).toBeNull()
+
+    await act(async () => {
+      finishReload([report('FY2025', 'filed'), report('September', 'draft')])
+    })
+    expect(await screen.findByText('September')).toBeInTheDocument()
   })
 
   it('explains an empty archived view', async () => {

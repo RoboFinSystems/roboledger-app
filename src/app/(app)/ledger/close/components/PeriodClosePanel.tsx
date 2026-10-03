@@ -69,6 +69,8 @@ const BLOCKER_MESSAGES: Record<string, string> = {
     'Some scheduled entries were promoted but never drafted, so closing now would omit them. Re-run promotion with handler dispatch, or void the obligations.',
   reconciling_items:
     'Transactions edited in QuickBooks after they were synced are still awaiting a decision. Review each one and choose how to treat it — restate the original months, book a catch-up entry, or record that you already handled it — then close.',
+  unposted_source_events:
+    'Events dated in this period were captured but never posted, and once the period closes they can no longer post into it. In the Inbox, check both Captured and Classified, approve or reject each one, then close.',
   unreconciled_accounts:
     'A reconciliation this close waits on does not tie for the period, or has not been run for it. Open Reconciliations to see what is different, clear it, and run them again.',
 }
@@ -556,16 +558,24 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
             {selectedPeriodStatus}
           </Badge>
         )}
-        {selectedPeriodStatus === 'closed' && selectedPeriod && (
-          <Button
-            color="light"
-            size="xs"
-            onClick={() => openReopenModal(selectedPeriod)}
-          >
-            <HiLockOpen className="mr-1 h-4 w-4" />
-            Reopen
-          </Button>
-        )}
+        {/* Periods reopen latest first: the server refuses any other. */}
+        {selectedPeriodStatus === 'closed' &&
+          selectedPeriod &&
+          (selectedPeriod === calendar.closedThrough ? (
+            <Button
+              color="light"
+              size="xs"
+              onClick={() => openReopenModal(selectedPeriod)}
+            >
+              <HiLockOpen className="mr-1 h-4 w-4" />
+              Reopen
+            </Button>
+          ) : (
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              Reopen {formatPeriod(calendar.closedThrough)} first: periods
+              reopen latest to earliest.
+            </span>
+          ))}
       </div>
 
       {/* Schedules in selected period */}

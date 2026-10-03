@@ -312,6 +312,45 @@ describe('PeriodClosePanel — blockers name what is holding the close', () => {
     expect(screen.queryByText('reconciling_items')).not.toBeInTheDocument()
   })
 
+  it('offers Reopen only on the latest closed period', async () => {
+    mockGetFiscalCalendar.mockResolvedValue(CALENDAR_AFTER)
+    render(<PeriodClosePanel graphId="kg1" />)
+    const select = (await screen.findByTestId(
+      'period-select'
+    )) as HTMLSelectElement
+
+    // An earlier closed month: the server would refuse, so no button.
+    fireEvent.change(select, { target: { value: '2026-04' } })
+    await waitFor(() =>
+      expect(
+        screen.getByText(/periods\s+reopen latest to earliest/)
+      ).toBeInTheDocument()
+    )
+    expect(screen.queryByRole('button', { name: /Reopen/ })).toBeNull()
+
+    fireEvent.change(select, { target: { value: '2026-05' } })
+    expect(
+      await screen.findByRole('button', { name: /Reopen/ })
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/periods\s+reopen latest to earliest/)).toBeNull()
+  })
+
+  it('explains an unposted-source-event blocker instead of printing its code', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['unposted_source_events'],
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    expect(
+      await screen.findByText(
+        /captured but never posted.*both Captured and Classified/
+      )
+    ).toBeInTheDocument()
+    expect(screen.queryByText('unposted_source_events')).not.toBeInTheDocument()
+  })
+
   it('marks the sample as partial when the count exceeds it', async () => {
     mockGetFiscalCalendar.mockResolvedValue({
       ...CALENDAR,

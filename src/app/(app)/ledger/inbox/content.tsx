@@ -3,6 +3,7 @@
 import DocsLink from '@/components/DocsLink'
 import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
 import { formatAmount, formatDate } from '@/lib/ledger/formatters'
+import { useConsoleReload } from '@/lib/useConsoleReload'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LedgerAgent, LedgerEventBlock } from '@robosystems/client/clients'
 import {
@@ -105,6 +106,10 @@ const InboxContent: FC = function () {
 
   const { graph: currentGraph } = useLedgerGraph()
 
+  // A /do in the console drawer that changed this graph, such as a line
+  // classified there. The reload keeps the table on screen.
+  const { reloadKey, takeQuiet } = useConsoleReload(currentGraph?.graphId)
+
   // Index agents by id for the table column.
   const agentById = useMemo(() => {
     const map: Record<string, LedgerAgent> = {}
@@ -125,9 +130,10 @@ const InboxContent: FC = function () {
     }
 
     let cancelled = false
+    const quiet = takeQuiet()
     void (async () => {
       try {
-        setIsLoading(true)
+        if (!quiet) setIsLoading(true)
         setError(null)
 
         const list = await clients.ledger.listEventBlocks(
@@ -161,7 +167,7 @@ const InboxContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph, eventType, status, source, agentId])
+  }, [currentGraph, eventType, status, source, agentId, reloadKey, takeQuiet])
 
   // Load agents once per graph for the filter Select + name lookup.
   useEffect(() => {
