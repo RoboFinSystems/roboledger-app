@@ -56,8 +56,14 @@ vi.mock('flowbite-react', () => ({
     <button onClick={onClick}>{children}</button>
   ),
   Label: ({ children }: any) => <label>{children}</label>,
-  Modal: ({ children, show }: any) =>
-    show ? <div data-testid="modal">{children}</div> : null,
+  // The dismiss button stands in for Escape or a backdrop click.
+  Modal: ({ children, show, onClose }: any) =>
+    show ? (
+      <div data-testid="modal">
+        <button aria-label="dismiss dialog" onClick={onClose} />
+        {children}
+      </div>
+    ) : null,
   ModalBody: ({ children }: any) => <div>{children}</div>,
   ModalFooter: ({ children }: any) => <div>{children}</div>,
   ModalHeader: ({ children }: any) => <div>{children}</div>,
@@ -312,6 +318,54 @@ describe('Report filing actions', () => {
     expect(alert).toHaveTextContent('The report was regenerated')
     expect(alert).toHaveTextContent('Refresh the page')
     expect(screen.queryByText('Regenerate this report?')).toBeNull()
+  })
+
+  it('says so when the reload after a regenerate comes back empty', async () => {
+    mockRegenerateReport.mockResolvedValue({ id: 'rpt_1' })
+    await renderWith({ filingStatus: 'draft' })
+    mockGetReportPackage.mockResolvedValue(null)
+
+    confirmRegenerate()
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('The report was regenerated')
+    expect(alert).toHaveTextContent('Refresh the page')
+    // The report it had stays on screen.
+    expect(screen.getByText('FY2025 Annual')).toBeInTheDocument()
+  })
+
+  it('cannot be dismissed while the request is in flight', async () => {
+    let finish: (value: unknown) => void = () => {}
+    mockRegenerateReport.mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve
+      })
+    )
+    await renderWith({ filingStatus: 'draft' })
+
+    confirmRegenerate()
+    await waitFor(() => expect(mockRegenerateReport).toHaveBeenCalled())
+    // Escape or a backdrop click mid-request: the dialog stays.
+    const dismissals = screen.getAllByRole('button', { name: 'dismiss dialog' })
+    fireEvent.click(dismissals[dismissals.length - 1])
+    expect(screen.getByText('Regenerate this report?')).toBeInTheDocument()
+
+    finish({ id: 'rpt_1' })
+    await waitFor(() =>
+      expect(screen.queryByText('Regenerate this report?')).toBeNull()
+    )
+  })
+
+  it('can be dismissed before anything is sent', async () => {
+    await renderWith({ filingStatus: 'draft' })
+    fireEvent.click(screen.getByRole('button', { name: 'File report' }))
+    expect(screen.getByText('File this report?')).toBeInTheDocument()
+
+    const dismissals = screen.getAllByRole('button', { name: 'dismiss dialog' })
+    fireEvent.click(dismissals[dismissals.length - 1])
+
+    expect(screen.queryByText('File this report?')).toBeNull()
+    expect(mockFileReport).not.toHaveBeenCalled()
   })
 
   it('reloads the package after filing, so the page shows what was filed', async () => {

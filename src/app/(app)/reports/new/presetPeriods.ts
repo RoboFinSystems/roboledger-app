@@ -55,6 +55,9 @@ export function reportPeriodType(
       Date.parse(`${periodStart}T00:00:00Z`)) /
       86_400_000 +
     1
+  // Unreadable dates never reach the API (the builder holds Generate until
+  // both are set); if they did, this is the label the API itself defaults to.
+  if (!Number.isFinite(days)) return 'quarterly'
   if (days <= 60) return 'monthly'
   return days <= 228 ? 'quarterly' : 'annual'
 }
