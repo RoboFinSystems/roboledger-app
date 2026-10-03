@@ -41,7 +41,8 @@ const PRESET_PERIOD_TYPE: Record<
 
 /**
  * The cadence for a report: a preset names its own, and custom dates take the
- * nearest one by length (a label only; the dates decide what is reported).
+ * nearest one by length, split halfway between a month, a quarter and a year
+ * (a label only; the dates decide what is reported).
  */
 export function reportPeriodType(
   preset: PresetKey,
@@ -54,8 +55,8 @@ export function reportPeriodType(
       Date.parse(`${periodStart}T00:00:00Z`)) /
       86_400_000 +
     1
-  if (!Number.isFinite(days) || days <= 45) return 'monthly'
-  return days <= 135 ? 'quarterly' : 'annual'
+  if (days <= 60) return 'monthly'
+  return days <= 228 ? 'quarterly' : 'annual'
 }
 
 // Exported for unit testing: the year/quarter rollovers here decide which

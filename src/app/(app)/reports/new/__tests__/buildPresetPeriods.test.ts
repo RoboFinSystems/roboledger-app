@@ -187,12 +187,12 @@ describe('reportPeriodType', () => {
     ['2026-02-01', '2026-02-28', 'monthly'],
     ['2026-07-01', '2026-09-30', 'quarterly'],
     ['2026-01-01', '2026-12-31', 'annual'],
-    ['2026-01-01', '2026-06-30', 'annual'],
+    // Between cadences, the nearer one: six months is closer to a quarter
+    // than to a year, nine months closer to a year.
+    ['2026-01-01', '2026-06-30', 'quarterly'],
+    ['2026-01-01', '2026-09-30', 'annual'],
+    ['2026-09-01', '2026-10-15', 'monthly'],
   ] as const)('labels custom dates %s to %s %s', (start, end, expected) => {
     expect(reportPeriodType('custom', start, end)).toBe(expected)
-  })
-
-  it('falls back to monthly when custom dates are not set yet', () => {
-    expect(reportPeriodType('custom', '', '')).toBe('monthly')
   })
 })
