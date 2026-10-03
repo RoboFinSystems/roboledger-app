@@ -13,10 +13,11 @@ import {
 } from '@robosystems/core'
 import { Card } from 'flowbite-react'
 import type { FC } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
 import { TbBook2 } from 'react-icons/tb'
 import AccountRollupsPanel from './components/AccountRollupsPanel'
+import ChangedTransactionsPanel from './components/ChangedTransactionsPanel'
 import { NewScheduleModal } from './components/NewScheduleModal'
 import PeriodClosePanel from './components/PeriodClosePanel'
 import ReconciliationsPanel from './components/ReconciliationsPanel'
@@ -35,8 +36,8 @@ type ClosingBookCategories = LedgerClosingBookStructures['categories']
  * Whether a selection still refers to something in the freshly loaded
  * structures. Statements, schedules and rollups are identified by an id that is
  * per-graph, so a selection made before a graph switch must not be carried
- * over; the hub, the trial balance and the reconciliations worklist are not
- * tied to an id.
+ * over; the hub, the trial balance, the reconciliations worklist and the
+ * changed transactions are not tied to an id.
  */
 function selectionExists(
   selected: SelectedItem,
@@ -45,7 +46,8 @@ function selectionExists(
   if (
     selected.type === 'period_close' ||
     selected.type === 'trial_balance' ||
-    selected.type === 'reconciliations'
+    selected.type === 'reconciliations' ||
+    selected.type === 'changed_transactions'
   ) {
     return true
   }
@@ -55,6 +57,35 @@ function selectionExists(
       : selected.structureId
   return categories.some((category) =>
     category.items.some((item) => item.id === id)
+  )
+}
+
+const RECONCILIATIONS_LABEL = 'Reconciliations'
+
+/**
+ * The server lists the reconciliations worklist. The transactions changed at
+ * the source sit beside it, and that entry is added here.
+ */
+function withChangedTransactions(
+  categories: ClosingBookCategories
+): ClosingBookCategories {
+  return categories.map((category) =>
+    category.label === RECONCILIATIONS_LABEL
+      ? {
+          ...category,
+          items: [
+            ...category.items,
+            {
+              id: 'changed_transactions',
+              name: 'Changed transactions',
+              itemType: 'changed_transactions',
+              blockType: null,
+              reportId: null,
+              status: null,
+            },
+          ],
+        }
+      : category
   )
 }
 
@@ -159,6 +190,11 @@ const CloseContent: FC = function () {
     loadSidebarData()
   }, [loadSidebarData])
 
+  const sidebarCategories = useMemo(
+    () => withChangedTransactions(categories),
+    [categories]
+  )
+
   // No qualifying graph
   if (!currentGraph && !graphState.isLoading) {
     return (
@@ -215,7 +251,7 @@ const CloseContent: FC = function () {
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* Structure Sidebar */}
         <StructureSidebar
-          categories={categories}
+          categories={sidebarCategories}
           selectedItem={selectedItem}
           onSelect={setSelectedItem}
           isLoading={isSidebarLoading}
@@ -258,10 +294,15 @@ const CloseContent: FC = function () {
               <TrialBalancePanel graphId={currentGraph.graphId} />
             ) : selectedItem.type === 'reconciliations' && currentGraph ? (
               <ReconciliationsPanel graphId={currentGraph.graphId} />
+            ) : selectedItem.type === 'changed_transactions' && currentGraph ? (
+              <ChangedTransactionsPanel graphId={currentGraph.graphId} />
             ) : selectedItem.type === 'period_close' && currentGraph ? (
               <PeriodClosePanel
                 graphId={currentGraph.graphId}
                 onEntryCreated={handleEntryCreated}
+                onReviewChanges={() =>
+                  setSelectedItem({ type: 'changed_transactions' })
+                }
               />
             ) : null}
           </Card>

@@ -234,6 +234,52 @@ describe('StructureSidebar', () => {
     })
   })
 
+  it('selects and highlights the changed transactions entry', () => {
+    const onSelect = vi.fn()
+    const categories: ClosingBookCategory[] = [
+      {
+        label: 'Reconciliations',
+        items: [
+          {
+            id: 'reconciliations',
+            name: 'Reconciliations',
+            itemType: 'reconciliations',
+            blockType: null,
+            reportId: null,
+            status: null,
+          },
+          {
+            id: 'changed_transactions',
+            name: 'Changed transactions',
+            itemType: 'changed_transactions',
+            blockType: null,
+            reportId: null,
+            status: null,
+          },
+        ],
+      },
+    ]
+    const selected: SelectedItem = { type: 'changed_transactions' }
+    render(
+      <StructureSidebar
+        categories={categories}
+        selectedItem={selected}
+        onSelect={onSelect}
+        isLoading={false}
+      />
+    )
+
+    const entry = screen.getByText('Changed transactions').closest('button')
+    expect(entry?.className).toContain('font-medium')
+    // The worklist beside it is a different selection.
+    expect(
+      screen.getByRole('button', { name: 'Reconciliations' }).className
+    ).not.toContain('font-medium')
+
+    fireEvent.click(entry!)
+    expect(onSelect).toHaveBeenCalledWith({ type: 'changed_transactions' })
+  })
+
   it('collapses and expands the sidebar', () => {
     render(
       <StructureSidebar

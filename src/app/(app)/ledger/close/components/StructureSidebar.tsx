@@ -20,6 +20,7 @@ export type SelectedItem =
   | { type: 'account_rollups'; mappingId: string; name: string }
   | { type: 'trial_balance' }
   | { type: 'reconciliations' }
+  | { type: 'changed_transactions' }
   | { type: 'period_close' }
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -46,6 +47,8 @@ function itemToSelected(item: ClosingBookItem): SelectedItem {
       return { type: 'trial_balance' }
     case 'reconciliations':
       return { type: 'reconciliations' }
+    case 'changed_transactions':
+      return { type: 'changed_transactions' }
     case 'period_close':
       return { type: 'period_close' }
     default:
@@ -74,6 +77,8 @@ function isActive(
       return item.itemType === 'trial_balance'
     case 'reconciliations':
       return item.itemType === 'reconciliations'
+    case 'changed_transactions':
+      return item.itemType === 'changed_transactions'
     case 'period_close':
       return item.itemType === 'period_close'
   }

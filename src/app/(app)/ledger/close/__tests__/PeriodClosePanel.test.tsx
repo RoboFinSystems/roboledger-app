@@ -312,6 +312,39 @@ describe('PeriodClosePanel — blockers name what is holding the close', () => {
     expect(screen.queryByText('reconciling_items')).not.toBeInTheDocument()
   })
 
+  it('leads from the reconciling-item blocker to the changes themselves', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['reconciling_items'],
+      reconcilingItemCount: 3,
+    })
+    const onReviewChanges = vi.fn()
+    render(<PeriodClosePanel graphId="kg1" onReviewChanges={onReviewChanges} />)
+
+    const link = await screen.findByRole('button', {
+      name: 'Review changed transactions',
+    })
+    expect(link.parentElement).toHaveTextContent('3 holding this close.')
+    fireEvent.click(link)
+    expect(onReviewChanges).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers no review link where nothing can open it', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['reconciling_items'],
+      reconcilingItemCount: 3,
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    await screen.findByText(/edited in QuickBooks after they were synced/)
+    expect(
+      screen.queryByRole('button', { name: 'Review changed transactions' })
+    ).not.toBeInTheDocument()
+  })
+
   it('offers Reopen only on the latest closed period', async () => {
     mockGetFiscalCalendar.mockResolvedValue(CALENDAR_AFTER)
     render(<PeriodClosePanel graphId="kg1" />)

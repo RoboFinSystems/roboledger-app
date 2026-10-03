@@ -148,6 +148,8 @@ function obligationDetailFor(
 interface PeriodClosePanelProps {
   graphId: string
   onEntryCreated?: () => void
+  /** Opens the changed transactions the close is waiting on. */
+  onReviewChanges?: () => void
 }
 
 // Compute period bounds (YYYY-MM-DD) for a given YYYY-MM period name.
@@ -172,6 +174,7 @@ function formatPeriod(period: string | null): string {
 const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   graphId,
   onEntryCreated,
+  onReviewChanges,
 }) => {
   // ── State ────────────────────────────────────────────────────────────
   const [calendar, setCalendar] = useState<LedgerFiscalCalendar | null>(null)
@@ -530,7 +533,11 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
         />
       )}
 
-      <CalendarSummary calendar={calendar} onRefresh={loadCalendar} />
+      <CalendarSummary
+        calendar={calendar}
+        onRefresh={loadCalendar}
+        onReviewChanges={onReviewChanges}
+      />
 
       {/* Period selector */}
       <div className="flex flex-wrap items-center gap-4 border-b border-gray-200 pb-4 dark:border-gray-700">
@@ -820,9 +827,14 @@ const CloseSuccessCard: FC<CloseSuccessCardProps> = ({ result, onDismiss }) => {
 interface CalendarSummaryProps {
   calendar: LedgerFiscalCalendar
   onRefresh: () => void
+  onReviewChanges?: () => void
 }
 
-const CalendarSummary: FC<CalendarSummaryProps> = ({ calendar, onRefresh }) => {
+const CalendarSummary: FC<CalendarSummaryProps> = ({
+  calendar,
+  onRefresh,
+  onReviewChanges,
+}) => {
   return (
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -879,6 +891,18 @@ const CalendarSummary: FC<CalendarSummaryProps> = ({ calendar, onRefresh }) => {
               <li key={code}>
                 {BLOCKER_MESSAGES[code] ?? code}
                 {obligationDetailFor(code, calendar)}
+                {code === 'reconciling_items' && onReviewChanges && (
+                  <div className="mt-1 text-xs">
+                    {calendar.reconcilingItemCount} holding this close.{' '}
+                    <button
+                      type="button"
+                      onClick={onReviewChanges}
+                      className="font-medium underline"
+                    >
+                      Review changed transactions
+                    </button>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
