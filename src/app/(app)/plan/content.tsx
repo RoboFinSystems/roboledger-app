@@ -555,9 +555,13 @@ const PlanContent: FC = function () {
             )}
             {scenarios.length === 0 && (
               <div className="mb-3 rounded border border-gray-200 bg-gray-50 p-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                No forecast scenario yet — this view shows closed actuals only.
-                Author a scenario (via the MCP forecast tools) to light up the
-                forward columns.
+                No forecast scenario yet, so this view shows closed actuals
+                only. To light up the forward columns, ask the console for one
+                (for example{' '}
+                <code>
+                  /do create a base-case forecast for the next 12 months
+                </code>
+                ), or author it from your AI assistant.
               </div>
             )}
             <PlanGrid model={windowed} scale={scale} />

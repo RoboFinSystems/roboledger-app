@@ -326,7 +326,10 @@ describe('PlanContent', () => {
     render(<PlanContent />)
 
     expect(await screen.findByTestId('plan-grid')).toBeInTheDocument()
-    expect(screen.getByText(/No forecast scenario yet/)).toBeInTheDocument()
+    // The hint names the in-app way to author one, the console's /do.
+    const hint = screen.getByText(/No forecast scenario yet/)
+    expect(hint).toHaveTextContent('/do create a base-case forecast')
+    expect(hint).not.toHaveTextContent('MCP forecast tools')
     // No scenario to bind — statements read actuals series only (the
     // default 12-month history window still applies).
     expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_is', {
