@@ -558,16 +558,24 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
             {selectedPeriodStatus}
           </Badge>
         )}
-        {selectedPeriodStatus === 'closed' && selectedPeriod && (
-          <Button
-            color="light"
-            size="xs"
-            onClick={() => openReopenModal(selectedPeriod)}
-          >
-            <HiLockOpen className="mr-1 h-4 w-4" />
-            Reopen
-          </Button>
-        )}
+        {/* Periods reopen latest first: the server refuses any other. */}
+        {selectedPeriodStatus === 'closed' &&
+          selectedPeriod &&
+          (selectedPeriod === calendar.closedThrough ? (
+            <Button
+              color="light"
+              size="xs"
+              onClick={() => openReopenModal(selectedPeriod)}
+            >
+              <HiLockOpen className="mr-1 h-4 w-4" />
+              Reopen
+            </Button>
+          ) : (
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              Reopen {formatPeriod(calendar.closedThrough)} first: periods
+              reopen latest to earliest.
+            </span>
+          ))}
       </div>
 
       {/* Schedules in selected period */}
