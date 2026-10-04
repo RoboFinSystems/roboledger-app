@@ -18,6 +18,8 @@ export interface FriendlyError {
   link?: { href: string; label: string }
   /** The same request can succeed if sent again — offer a retry. */
   retryable?: boolean
+  /** Set for a refusal a surface acts on rather than only showing. */
+  code?: 'change_already_settled' | 'change_flagged_again'
 }
 
 /** Index of the first `{` or `[`, or -1 when the string carries no JSON. */
@@ -84,6 +86,25 @@ export const extractDetail = (raw: string): string => {
 export const friendlyError = (raw: string): FriendlyError => {
   const detail = extractDetail(raw)
   const lower = detail.toLowerCase()
+
+  // --- Changed transactions -------------------------------------------
+
+  // 409: the flag is gone, so someone settled it since the list loaded.
+  if (lower.includes('is not a reconciling item')) {
+    return {
+      message: 'That change was already settled. Nothing was done.',
+      code: 'change_already_settled',
+    }
+  }
+
+  // 409: a sync flagged a newer version while this one was being settled.
+  if (lower.includes('re-flagged with a newer payload')) {
+    return {
+      message:
+        'This transaction changed again at the source while it was open. These are the latest figures; nothing was settled.',
+      code: 'change_flagged_again',
+    }
+  }
 
   // 409 RowLockedError: a sync or sweep holds the rows this write needs.
   // Retryable, and not the user's mistake.

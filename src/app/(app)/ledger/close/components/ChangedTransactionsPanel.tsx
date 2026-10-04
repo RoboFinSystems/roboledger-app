@@ -1,7 +1,7 @@
 'use client'
 
 import DocsLink from '@/components/DocsLink'
-import { extractDetail } from '@/lib/ledger/errors'
+import { friendlyError, type FriendlyError } from '@/lib/ledger/errors'
 import { formatAmount, formatDate } from '@/lib/ledger/formatters'
 import type {
   ReconcilingItemPlan,
@@ -42,9 +42,14 @@ function sourceName(source: string | null | undefined): string {
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-/** The API's own words for a refusal, or a fallback when there are none. */
-const describeError = (err: unknown, fallback: string): string =>
-  err instanceof Error ? extractDetail(err.message) : fallback
+/** A refusal in the app's words, or the fallback when nothing was said. */
+const describeError = (err: unknown, fallback: string): FriendlyError =>
+  err instanceof Error ? friendlyError(err.message) : { message: fallback }
+
+/** A link only to a web address; anything else stays text. */
+function webHref(url: string | null | undefined): string | null {
+  return url && /^https?:\/\//i.test(url) ? url : null
+}
 
 /** A signed amount in minor units, debit-positive, as the API reports it. */
 function netAmount(cents: number, currency: string | null | undefined) {
@@ -111,45 +116,74 @@ const ChangedTransactionsPanel: FC<ChangedTransactionsPanelProps> = ({
   const [notice, setNotice] = useState<string | null>(null)
   const [outcome, setOutcome] = useState<string | null>(null)
 
-  // Sequence guards: a preview that lands after another row was opened, and
-  // anything that lands after the graph changed, is dropped.
+  // Sequence guards: a list or a preview that lands after a newer one was
+  // asked for, and anything that lands after the graph changed, is dropped.
+  const listSeq = useRef(0)
   const planSeq = useRef(0)
   const graphSeq = useRef(0)
 
+  const loadList = useCallback(async () => {
+    const seq = ++listSeq.current
+    try {
+      const list = await clients.ledger.listEventBlocks(graphId, {
+        isReconcilingItem: true,
+        limit: CHANGES_LIMIT,
+      })
+      if (seq !== listSeq.current) return
+      list.sort(
+        (a, b) =>
+          new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
+      )
+      setItems(list)
+      setTruncated(list.length >= CHANGES_LIMIT)
+      setError(null)
+    } catch (err) {
+      if (seq !== listSeq.current) return
+      console.error('Error loading changed transactions:', err)
+      setError('Failed to load changed transactions.')
+      // A failed refresh keeps the rows already on screen.
+      setItems((current) => current ?? [])
+    }
+  }, [graphId])
+
   useEffect(() => {
-    let cancelled = false
     planSeq.current += 1
     graphSeq.current += 1
     setItems(null)
     setTruncated(false)
     setSelectedId(null)
     setPlan(null)
+    setPlanError(null)
+    setSettleError(null)
+    setNotice(null)
+    setNote('')
     setOutcome(null)
     setError(null)
-    void (async () => {
-      try {
-        const list = await clients.ledger.listEventBlocks(graphId, {
-          isReconcilingItem: true,
-          limit: CHANGES_LIMIT,
-        })
-        if (cancelled) return
-        list.sort(
-          (a, b) =>
-            new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
-        )
-        setItems(list)
-        setTruncated(list.length >= CHANGES_LIMIT)
-      } catch (err) {
-        if (cancelled) return
-        console.error('Error loading changed transactions:', err)
-        setError('Failed to load changed transactions.')
-        setItems([])
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [graphId])
+    void loadList()
+  }, [loadList])
+
+  const closeItem = useCallback(() => {
+    planSeq.current += 1
+    setSelectedId(null)
+    setPlan(null)
+    setPlanError(null)
+    setSettleError(null)
+    setNotice(null)
+  }, [])
+
+  /** Takes a change that is no longer open off the list, and says why. */
+  const dropRow = useCallback(
+    (eventId: string, message: string) => {
+      setItems((current) =>
+        current ? current.filter((item) => item.id !== eventId) : current
+      )
+      closeItem()
+      setOutcome(message)
+      // A full page hid the rest; bring the next ones in.
+      if (truncated) void loadList()
+    },
+    [closeItem, loadList, truncated]
+  )
 
   const openItem = useCallback(
     async (eventId: string) => {
@@ -159,6 +193,7 @@ const ChangedTransactionsPanel: FC<ChangedTransactionsPanelProps> = ({
       setPlanError(null)
       setSettleError(null)
       setNotice(null)
+      setOutcome(null)
       setNote('')
       try {
         const result = await clients.ledger.previewReconcilingItem(
@@ -171,20 +206,16 @@ const ChangedTransactionsPanel: FC<ChangedTransactionsPanelProps> = ({
       } catch (err) {
         if (seq !== planSeq.current) return
         console.error('Error previewing changed transaction:', err)
-        setPlanError(describeError(err, 'Failed to load this change.'))
+        const refusal = describeError(err, 'Failed to load this change.')
+        if (refusal.code === 'change_already_settled') {
+          dropRow(eventId, refusal.message)
+        } else {
+          setPlanError(refusal.message)
+        }
       }
     },
-    [graphId]
+    [graphId, dropRow]
   )
-
-  const closeItem = useCallback(() => {
-    planSeq.current += 1
-    setSelectedId(null)
-    setPlan(null)
-    setPlanError(null)
-    setSettleError(null)
-    setNotice(null)
-  }, [])
 
   const handleSettle = useCallback(async () => {
     if (!selectedId || !plan) return
@@ -199,35 +230,24 @@ const ChangedTransactionsPanel: FC<ChangedTransactionsPanelProps> = ({
         ...(trimmed ? { note: trimmed } : {}),
       })
       if (seq !== graphSeq.current) return
-      setOutcome(describeOutcome(result))
-      setItems((current) =>
-        current ? current.filter((item) => item.id !== selectedId) : current
-      )
-      closeItem()
+      dropRow(selectedId, describeOutcome(result))
     } catch (err) {
       console.error('Error settling changed transaction:', err)
       if (seq !== graphSeq.current) return
-      const detail = describeError(err, 'The change was not settled.')
-      if (detail.includes('not a reconciling item')) {
-        // Settled from somewhere else since the list loaded.
-        setItems((current) =>
-          current ? current.filter((item) => item.id !== selectedId) : current
-        )
-        closeItem()
-        setOutcome('That change was already settled. Nothing was done.')
-      } else if (detail.includes('re-flagged')) {
-        // The source changed again; what was on screen is no longer the plan.
+      const refusal = describeError(err, 'The change was not settled.')
+      if (refusal.code === 'change_already_settled') {
+        dropRow(selectedId, refusal.message)
+      } else if (refusal.code === 'change_flagged_again') {
+        // What was on screen is no longer the plan; show the newer one.
         await openItem(selectedId)
-        setNotice(
-          'This transaction changed again at the source while it was open. These are the latest figures; nothing was settled.'
-        )
+        setNotice(refusal.message)
       } else {
-        setSettleError(detail)
+        setSettleError(refusal.message)
       }
     } finally {
       setIsSettling(false)
     }
-  }, [graphId, selectedId, plan, treatment, note, closeItem, openItem])
+  }, [graphId, selectedId, plan, treatment, note, dropRow, openItem])
 
   const selected = items?.find((item) => item.id === selectedId) ?? null
 
@@ -316,9 +336,9 @@ const ChangedTransactionsPanel: FC<ChangedTransactionsPanelProps> = ({
                       {sourceName(item.source)}
                     </TableCell>
                     <TableCell className="font-mono text-xs">
-                      {item.externalUrl && item.externalId ? (
+                      {webHref(item.externalUrl) && item.externalId ? (
                         <a
-                          href={item.externalUrl}
+                          href={webHref(item.externalUrl) ?? undefined}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary-600 dark:text-primary-400 underline"
@@ -386,7 +406,7 @@ const ChangedTransactionsPanel: FC<ChangedTransactionsPanelProps> = ({
 
       {truncated && (
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          Showing the {CHANGES_LIMIT} most recent. Settle these to see the rest.
+          Showing {CHANGES_LIMIT}. More appear as these are settled.
         </p>
       )}
     </div>

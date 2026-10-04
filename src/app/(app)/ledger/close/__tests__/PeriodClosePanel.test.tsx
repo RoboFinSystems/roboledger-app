@@ -330,6 +330,21 @@ describe('PeriodClosePanel — blockers name what is holding the close', () => {
     expect(onReviewChanges).toHaveBeenCalledTimes(1)
   })
 
+  it('leaves the count out when the calendar reports none', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['reconciling_items'],
+      reconcilingItemCount: 0,
+    })
+    render(<PeriodClosePanel graphId="kg1" onReviewChanges={vi.fn()} />)
+
+    const link = await screen.findByRole('button', {
+      name: 'Review changed transactions',
+    })
+    expect(link.parentElement).not.toHaveTextContent('holding this close')
+  })
+
   it('offers no review link where nothing can open it', async () => {
     mockGetFiscalCalendar.mockResolvedValue({
       ...CALENDAR,
