@@ -38,7 +38,7 @@
     "sync:demos": "cp node_modules/@robosystems/core/demos/runtime.js public/demos/runtime.js"
   },
   "dependencies": {
-    "@aws-sdk/client-sns": "^3.1141.0",
+    "@aws-sdk/client-sns": "^3.1145.0",
     "@robosystems/client": "^2.5.1",
     "@robosystems/core": "^0.13.5",
     "@robosystems/report-components": "^0.8.1",
