@@ -129,6 +129,10 @@ jobs:
 
             echo "🚀 Publishing configurable image to Docker Hub"
 
+            # Same tag, pulled from Docker Hub under the Hub login instead of
+            # anonymously from ECR Public.
+            NODE_IMAGE=$(grep -m1 -oE 'public\.ecr\.aws/docker/library/node:[^ ]+' Dockerfile)
+
             # Build for both amd64 and arm64 (for Mac M1/M2 users). The Dockerfile
             # keeps every Node step on the build platform, so the arm64 half is
             # file copies under QEMU, not an emulated npm.
@@ -138,7 +142,7 @@ jobs:
               --push \
               --sbom=true \
               --provenance=mode=max \
-              --build-arg NODE_REGISTRY=docker.io/library \
+              --build-context "$NODE_IMAGE=docker-image://docker.io/library/${NODE_IMAGE#public.ecr.aws/docker/library/}" \
               $TAGS \
               -f Dockerfile .
 

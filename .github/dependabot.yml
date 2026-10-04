@@ -97,7 +97,7 @@ updates:
   - package-ecosystem: 'docker'
     directory: '/'
     schedule:
-      interval: 'monthly'
+      interval: 'weekly'
       # The three frontends share this base image, and running their docker
       # checks in the same minute got two of the three rate-limited (HTTP 429)
       # by the public ECR mirror on 2026-09-02. Each repo checks at its own hour.
