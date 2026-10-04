@@ -186,6 +186,32 @@ describe('nested detail and contention', () => {
     ).toBe('Connection not found')
   })
 
+  it('names a changed transaction that was already settled', () => {
+    const mapped = friendlyError(
+      'Resolve reconciling item failed: {"detail":"Event evt_1 is not a reconciling item — its payload matches the source system. It was already resolved as \'restate\'.","request_id":"r1"}'
+    )
+    expect(mapped.code).toBe('change_already_settled')
+    expect(mapped.message).toBe(
+      'That change was already settled. Nothing was done.'
+    )
+  })
+
+  it('names a changed transaction that changed again mid-review', () => {
+    const mapped = friendlyError(
+      'Resolve reconciling item failed: {"detail":"Event evt_1 was re-flagged with a newer payload while this resolution was being prepared. Preview it again."}'
+    )
+    expect(mapped.code).toBe('change_flagged_again')
+    expect(mapped.message).toMatch(/changed again at the source/)
+    // Not the generic row-lock copy: retrying the same request cannot work.
+    expect(mapped.retryable).toBeUndefined()
+  })
+
+  it('gives an ordinary refusal no code', () => {
+    expect(
+      friendlyError('Event evt_1 is being written by another process.').code
+    ).toBeUndefined()
+  })
+
   it('turns a 409 row-lock into a retryable message', () => {
     const mapped = friendlyError(
       'Event evt_1 is being written by another process (most likely a running sync). Retry in a moment.'

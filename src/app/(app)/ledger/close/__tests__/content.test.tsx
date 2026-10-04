@@ -365,7 +365,8 @@ describe('CloseContent', () => {
           ],
         },
         {
-          label: 'Reconciliations',
+          // Found by what it holds, so a renamed category keeps the entry.
+          label: 'Tie-outs',
           items: [
             {
               id: 'reconciliations',
@@ -381,9 +382,7 @@ describe('CloseContent', () => {
 
     render(<CloseContent />)
 
-    expect(
-      await screen.findByText('Reconciliations: 2 items')
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Tie-outs: 2 items')).toBeInTheDocument()
     expect(screen.getByTestId('item-changed_transactions')).toBeInTheDocument()
     // Only that category gains the entry.
     expect(screen.getByText('Period Close: 1 items')).toBeInTheDocument()

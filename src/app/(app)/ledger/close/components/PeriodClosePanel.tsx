@@ -893,7 +893,9 @@ const CalendarSummary: FC<CalendarSummaryProps> = ({
                 {obligationDetailFor(code, calendar)}
                 {code === 'reconciling_items' && onReviewChanges && (
                   <div className="mt-1 text-xs">
-                    {calendar.reconcilingItemCount} holding this close.{' '}
+                    {calendar.reconcilingItemCount > 0 && (
+                      <>{calendar.reconcilingItemCount} holding this close. </>
+                    )}
                     <button
                       type="button"
                       onClick={onReviewChanges}

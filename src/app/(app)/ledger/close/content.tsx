@@ -60,17 +60,16 @@ function selectionExists(
   )
 }
 
-const RECONCILIATIONS_LABEL = 'Reconciliations'
-
 /**
  * The server lists the reconciliations worklist. The transactions changed at
- * the source sit beside it, and that entry is added here.
+ * the source sit beside it, and that entry is added here, to whichever
+ * category holds the worklist.
  */
 function withChangedTransactions(
   categories: ClosingBookCategories
 ): ClosingBookCategories {
   return categories.map((category) =>
-    category.label === RECONCILIATIONS_LABEL
+    category.items.some((item) => item.itemType === 'reconciliations')
       ? {
           ...category,
           items: [

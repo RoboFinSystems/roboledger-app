@@ -392,8 +392,9 @@ describe('ChangedTransactionsPanel', () => {
     await openFirst()
     fireEvent.click(screen.getByRole('button', { name: 'Settle' }))
 
+    // The app's words for the refusal, not the API's.
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Event evt_invoice is being written by another process.'
+      'Another process (usually a running sync) is writing this right now.'
     )
     expect(screen.getByText('qb-inv-1042')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Settle' })).toBeEnabled()
@@ -442,6 +443,84 @@ describe('ChangedTransactionsPanel', () => {
     ).toBeInTheDocument()
     expect(mockPreviewReconcilingItem).toHaveBeenCalledTimes(2)
     expect(screen.getByText('qb-inv-1042')).toBeInTheDocument()
+  })
+
+  it('drops a change that was settled before it could be reviewed', async () => {
+    mockPreviewReconcilingItem.mockRejectedValue(
+      refusal(
+        'Event evt_invoice is not a reconciling item — its payload matches the source system.'
+      )
+    )
+    render(<ChangedTransactionsPanel graphId="kg_books" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Review' }))
+
+    expect(
+      await screen.findByText(
+        'That change was already settled. Nothing was done.'
+      )
+    ).toBeInTheDocument()
+    expect(screen.queryByText('qb-inv-1042')).not.toBeInTheDocument()
+  })
+
+  it('clears the last outcome when another change is opened', async () => {
+    mockListEventBlocks.mockResolvedValue([
+      event(),
+      event({ id: 'evt_bill', externalId: 'qb-bill-7' }),
+    ])
+    render(<ChangedTransactionsPanel graphId="kg_books" />)
+    fireEvent.click(
+      (await screen.findAllByRole('button', { name: 'Review' }))[0]
+    )
+    await screen.findByText('Difference by account')
+    fireEvent.click(screen.getByRole('button', { name: 'Settle' }))
+    expect(await screen.findByText(/^Restated\./)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Review' }))
+    await screen.findByText('Difference by account')
+    expect(screen.queryByText(/^Restated\./)).not.toBeInTheDocument()
+  })
+
+  it('brings in the changes a full page hid once one is settled', async () => {
+    const page = Array.from({ length: 200 }, (_, i) =>
+      event({ id: `evt_${i}`, externalId: `qb-${i}` })
+    )
+    mockListEventBlocks.mockResolvedValueOnce(page)
+    mockListEventBlocks.mockResolvedValueOnce([
+      ...page.slice(1),
+      event({ id: 'evt_next', externalId: 'qb-next' }),
+    ])
+    render(<ChangedTransactionsPanel graphId="kg_books" />)
+
+    expect(
+      await screen.findByText('Showing 200. More appear as these are settled.')
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Review' })[0])
+    await screen.findByText('Difference by account')
+    fireEvent.click(screen.getByRole('button', { name: 'Settle' }))
+
+    expect(await screen.findByText('qb-next')).toBeInTheDocument()
+    expect(mockListEventBlocks).toHaveBeenCalledTimes(2)
+    expect(screen.queryByText('qb-0')).not.toBeInTheDocument()
+  })
+
+  it('does not refetch after a settle when the whole list was on screen', async () => {
+    await openFirst()
+    fireEvent.click(screen.getByRole('button', { name: 'Settle' }))
+
+    await screen.findByText(/^Restated\./)
+    expect(mockListEventBlocks).toHaveBeenCalledTimes(1)
+  })
+
+  it('links a reference only to a web address', async () => {
+    mockListEventBlocks.mockResolvedValue([
+      event({ externalUrl: 'javascript:alert(1)' }),
+    ])
+    render(<ChangedTransactionsPanel graphId="kg_books" />)
+
+    expect(await screen.findByText('qb-inv-1042')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: 'qb-inv-1042' })
+    ).not.toBeInTheDocument()
   })
 
   it('ignores a preview that lands after another change was opened', async () => {
