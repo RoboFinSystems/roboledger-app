@@ -150,6 +150,13 @@ Parameters:
     Default: App
     Description: Tag value for Component identification
 
+  # Permissions boundary for the roles this stack creates; the policy is made
+  # by the robosystems OIDC bootstrap, under that stack's own ServiceTag.
+  FrontendRoleBoundaryName:
+    Type: String
+    Default: RoboSystemsFrontendRoleBoundary
+    Description: Name of the IAM policy that bounds this stack's roles
+
 Conditions:
   # Access mode conditions
   IsPublicMode: !Equals [!Ref AppAccessMode, 'public']
@@ -236,6 +243,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Properties:
       RoleName: !Sub roboledger-${Environment}-ecs-execution
+      PermissionsBoundary: !Sub arn:aws:iam::${AWS::AccountId}:policy/${FrontendRoleBoundaryName}
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -272,6 +280,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Properties:
       RoleName: !Sub roboledger-${Environment}-ecs-task
+      PermissionsBoundary: !Sub arn:aws:iam::${AWS::AccountId}:policy/${FrontendRoleBoundaryName}
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -310,6 +319,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Properties:
       RoleName: !Sub roboledger-${Environment}-ecs-infrastructure
+      PermissionsBoundary: arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRoleforExpressGatewayServices
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
