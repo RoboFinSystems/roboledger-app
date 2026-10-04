@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 const mockGetClosingBookStructures = vi.fn()
@@ -67,6 +67,9 @@ vi.mock('../components/StructureSidebar', () => ({
       {categories?.map((c: any) => (
         <div key={c.label} data-testid={`category-${c.label}`}>
           {c.label}: {c.items.length} items
+          {c.items.map((item: any) => (
+            <span key={item.id} data-testid={`item-${item.itemType}`} />
+          ))}
         </div>
       ))}
       {selectedItem && <div data-testid="selected">{selectedItem.type}</div>}
@@ -121,7 +124,17 @@ vi.mock('../components/AccountRollupsPanel', () => ({
 }))
 
 vi.mock('../components/PeriodClosePanel', () => ({
-  default: () => <div data-testid="period-close-panel" />,
+  default: ({ onReviewChanges }: any) => (
+    <div data-testid="period-close-panel">
+      <button onClick={onReviewChanges}>review changes</button>
+    </div>
+  ),
+}))
+
+vi.mock('../components/ChangedTransactionsPanel', () => ({
+  default: ({ graphId }: any) => (
+    <div data-testid="changed-transactions-panel">{graphId}</div>
+  ),
 }))
 
 vi.mock('../components/TrialBalancePanel', () => ({
@@ -338,6 +351,94 @@ describe('CloseContent', () => {
       expect(screen.getByTestId('period-close-panel')).toBeInTheDocument()
     })
     expect(screen.queryByTestId('view-mode-toggle')).not.toBeInTheDocument()
+  })
+
+  it('lists the changed transactions beside the reconciliations worklist', async () => {
+    const graph = makeGraph('kg_test')
+    mockUseGraphContext.mockReturnValue(makeGraphState([graph], 'kg_test'))
+    mockGetClosingBookStructures.mockResolvedValue({
+      categories: [
+        {
+          label: 'Period Close',
+          items: [
+            { id: 'pc', name: 'Current Period', itemType: 'period_close' },
+          ],
+        },
+        {
+          label: 'Reconciliations',
+          items: [
+            {
+              id: 'reconciliations',
+              name: 'Reconciliations',
+              itemType: 'reconciliations',
+            },
+          ],
+        },
+      ],
+      has_data: true,
+    })
+    mockGetEntity.mockResolvedValue(null)
+
+    render(<CloseContent />)
+
+    expect(
+      await screen.findByText('Reconciliations: 2 items')
+    ).toBeInTheDocument()
+    expect(screen.getByTestId('item-changed_transactions')).toBeInTheDocument()
+    // Only that category gains the entry.
+    expect(screen.getByText('Period Close: 1 items')).toBeInTheDocument()
+  })
+
+  it('adds no changed transactions entry before anything is posted', async () => {
+    const graph = makeGraph('kg_test')
+    mockUseGraphContext.mockReturnValue(makeGraphState([graph], 'kg_test'))
+    mockGetClosingBookStructures.mockResolvedValue({
+      categories: [
+        {
+          label: 'Period Close',
+          items: [
+            { id: 'pc', name: 'Current Period', itemType: 'period_close' },
+          ],
+        },
+      ],
+      has_data: false,
+    })
+    mockGetEntity.mockResolvedValue(null)
+
+    render(<CloseContent />)
+
+    await screen.findByTestId('period-close-panel')
+    expect(
+      screen.queryByTestId('item-changed_transactions')
+    ).not.toBeInTheDocument()
+  })
+
+  it('opens the changed transactions from the close hub', async () => {
+    const graph = makeGraph('kg_test')
+    mockUseGraphContext.mockReturnValue(makeGraphState([graph], 'kg_test'))
+    mockGetClosingBookStructures.mockResolvedValue({
+      categories: [
+        {
+          label: 'Period Close',
+          items: [
+            { id: 'pc', name: 'Current Period', itemType: 'period_close' },
+          ],
+        },
+      ],
+      has_data: true,
+    })
+    mockGetEntity.mockResolvedValue(null)
+
+    render(<CloseContent />)
+    fireEvent.click(await screen.findByText('review changes'))
+
+    expect(screen.getByTestId('changed-transactions-panel')).toHaveTextContent(
+      'kg_test'
+    )
+    expect(screen.getByTestId('selected')).toHaveTextContent(
+      'changed_transactions'
+    )
+    expect(screen.queryByTestId('period-close-panel')).not.toBeInTheDocument()
   })
 
   it('calls API with correct graph ID', async () => {
