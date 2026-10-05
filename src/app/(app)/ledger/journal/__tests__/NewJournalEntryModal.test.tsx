@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockListAccounts = vi.fn()
 const mockCreateJournalEntry = vi.fn()
+const mockUpdateJournalEntry = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
   clients: {
     ledger: {
       listAccounts: (...args: any[]) => mockListAccounts(...args),
       createJournalEntry: (...args: any[]) => mockCreateJournalEntry(...args),
+      updateJournalEntry: (...args: any[]) => mockUpdateJournalEntry(...args),
     },
   },
 }))
@@ -278,6 +280,114 @@ describe('NewJournalEntryModal', () => {
       // The user's work must survive the failure so they can retry.
       expect(onClose).not.toHaveBeenCalled()
       expect(onCreated).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('editing a draft', () => {
+    const DRAFT = {
+      id: 'je_draft',
+      postingDate: '2026-09-30',
+      memo: 'Accrue September rent',
+      type: 'adjusting',
+      // Dollars, as the journal list carries them.
+      lineItems: [
+        {
+          accountId: 'acct_ar',
+          debitAmount: 1525.5,
+          creditAmount: 0,
+          description: 'Rent',
+        },
+        {
+          accountId: 'acct_rev',
+          debitAmount: 0,
+          creditAmount: 1525.5,
+          description: null,
+        },
+      ],
+    }
+
+    const renderEdit = (onCreated = vi.fn(), onClose = vi.fn()) => {
+      render(
+        <NewJournalEntryModal
+          graphId="kg_test"
+          open
+          draft={DRAFT}
+          onClose={onClose}
+          onCreated={onCreated}
+        />
+      )
+      return { onCreated, onClose }
+    }
+
+    beforeEach(() => {
+      mockUpdateJournalEntry.mockResolvedValue({ id: 'je_draft' })
+    })
+
+    it('loads the draft into the form and keeps it a draft', async () => {
+      renderEdit()
+      expect(screen.getByText('Edit Draft')).toBeInTheDocument()
+      expect(
+        (document.getElementById('je-memo') as HTMLInputElement).value
+      ).toBe('Accrue September rent')
+      expect(
+        (document.getElementById('line-debit-0') as HTMLInputElement).value
+      ).toBe('1525.50')
+      // Close posts a draft; the edit form never does.
+      expect(document.getElementById('je-status')).toBeNull()
+      expect(
+        screen.getByRole('button', { name: 'Save Changes' })
+      ).toBeInTheDocument()
+    })
+
+    it('saves the whole draft back in cents, without creating one', async () => {
+      const { onCreated, onClose } = renderEdit()
+      await waitFor(() => expect(mockListAccounts).toHaveBeenCalled())
+      fillLine(0, 'acct_ar', 'debit', '1600')
+      fillLine(1, 'acct_rev', 'credit', '1600')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+      await waitFor(() => expect(mockUpdateJournalEntry).toHaveBeenCalled())
+      expect(mockCreateJournalEntry).not.toHaveBeenCalled()
+      const [graphId, body] = mockUpdateJournalEntry.mock.calls[0]
+      expect(graphId).toBe('kg_test')
+      expect(body).toEqual({
+        entry_id: 'je_draft',
+        posting_date: '2026-09-30',
+        memo: 'Accrue September rent',
+        type: 'adjusting',
+        line_items: [
+          {
+            element_id: 'acct_ar',
+            debit_amount: 160000,
+            credit_amount: 0,
+            description: 'Rent',
+          },
+          {
+            element_id: 'acct_rev',
+            debit_amount: 0,
+            credit_amount: 160000,
+            description: null,
+          },
+        ],
+      })
+      expect(onCreated).toHaveBeenCalled()
+      expect(onClose).toHaveBeenCalled()
+    })
+
+    it('shows a refusal in plain words and keeps the form open', async () => {
+      mockUpdateJournalEntry.mockRejectedValue(
+        new Error(
+          'Update journal entry failed: {"detail":"Journal entry je_draft is being written by another process. Retry in a moment."}'
+        )
+      )
+      const { onClose } = renderEdit()
+      await waitFor(() => expect(mockListAccounts).toHaveBeenCalled())
+      fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Another process (usually a running sync) is writing this right now.'
+      )
+      expect(onClose).not.toHaveBeenCalled()
     })
   })
 })

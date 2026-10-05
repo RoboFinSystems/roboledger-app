@@ -1,5 +1,6 @@
 'use client'
 
+import { friendlyError } from '@/lib/ledger/errors'
 import { formatDollars } from '@/lib/ledger/formatters'
 import { clients } from '@robosystems/core'
 import {
@@ -33,14 +34,35 @@ interface LineItemDraft {
   description: string
 }
 
+type EntryType = 'standard' | 'adjusting' | 'closing' | 'reversing'
+
+/** A draft to edit. Amounts are dollars, as the journal list carries them. */
+export interface EditableDraft {
+  id: string
+  postingDate: string
+  memo: string | null
+  type: string
+  lineItems: {
+    accountId: string
+    debitAmount: number
+    creditAmount: number
+    description: string | null
+  }[]
+}
+
 interface NewJournalEntryModalProps {
   graphId: string
   open: boolean
   onClose: () => void
+  /** Called after a create, or after an edit is saved. */
   onCreated?: () => void
+  /** Edit this draft instead of creating an entry. */
+  draft?: EditableDraft | null
 }
 
-const newLine = (): LineItemDraft => ({
+const newLine = (
+  fields: Partial<Omit<LineItemDraft, '_id'>> = {}
+): LineItemDraft => ({
   _id:
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
@@ -49,7 +71,17 @@ const newLine = (): LineItemDraft => ({
   debit: '',
   credit: '',
   description: '',
+  ...fields,
 })
+
+const toInput = (dollars: number): string => (dollars ? dollars.toFixed(2) : '')
+
+const ENTRY_TYPES: EntryType[] = [
+  'standard',
+  'adjusting',
+  'closing',
+  'reversing',
+]
 
 const parseMoney = (raw: string): number => {
   const n = Number(raw)
@@ -71,12 +103,12 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
   open,
   onClose,
   onCreated,
+  draft = null,
 }) => {
+  const editing = draft !== null
   const [postingDate, setPostingDate] = useState<string>(() => todayLocal())
   const [memo, setMemo] = useState('')
-  const [entryType, setEntryType] = useState<
-    'standard' | 'adjusting' | 'closing' | 'reversing'
-  >('standard')
+  const [entryType, setEntryType] = useState<EntryType>('standard')
   const [status, setStatus] = useState<'draft' | 'posted'>('draft')
   const [lineItems, setLineItems] = useState<LineItemDraft[]>([
     newLine(),
@@ -126,16 +158,36 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
     }
   }, [open, graphId])
 
-  // Reset state every time the modal opens.
+  // Reset state every time the modal opens, from the draft when editing.
   useEffect(() => {
     if (!open) return
+    setSubmitError(null)
+    setStatus('draft')
+    if (draft) {
+      setMemo(draft.memo ?? '')
+      setEntryType(
+        ENTRY_TYPES.includes(draft.type as EntryType)
+          ? (draft.type as EntryType)
+          : 'standard'
+      )
+      setPostingDate(draft.postingDate)
+      const lines = draft.lineItems.map((li) =>
+        newLine({
+          elementId: li.accountId,
+          debit: toInput(li.debitAmount),
+          credit: toInput(li.creditAmount),
+          description: li.description ?? '',
+        })
+      )
+      while (lines.length < 2) lines.push(newLine())
+      setLineItems(lines)
+      return
+    }
     setMemo('')
     setEntryType('standard')
-    setStatus('draft')
     setLineItems([newLine(), newLine()])
-    setSubmitError(null)
     setPostingDate(todayLocal())
-  }, [open])
+  }, [open, draft])
 
   const updateLine = (idx: number, patch: Partial<LineItemDraft>) => {
     setLineItems((prev) =>
@@ -178,6 +230,24 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
     setSubmitting(true)
     setSubmitError(null)
     try {
+      if (draft) {
+        // A draft stays a draft; close is what posts it.
+        await clients.ledger.updateJournalEntry(graphId, {
+          entry_id: draft.id,
+          posting_date: postingDate,
+          memo: memo.trim(),
+          type: entryType,
+          line_items: lineItems.map((l) => ({
+            element_id: l.elementId,
+            debit_amount: parseMoney(l.debit),
+            credit_amount: parseMoney(l.credit),
+            description: l.description.trim() || null,
+          })),
+        })
+        onCreated?.()
+        onClose()
+        return
+      }
       await clients.ledger.createJournalEntry(graphId, {
         postingDate,
         memo: memo.trim(),
@@ -194,14 +264,20 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
       onCreated?.()
       onClose()
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : 'Failed to create journal entry.'
-      setSubmitError(msg)
+      setSubmitError(
+        err instanceof Error
+          ? friendlyError(err.message).message
+          : editing
+            ? 'Failed to save the draft.'
+            : 'Failed to create journal entry.'
+      )
     } finally {
       setSubmitting(false)
     }
   }, [
     canSubmit,
+    draft,
+    editing,
     graphId,
     postingDate,
     memo,
@@ -214,7 +290,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
 
   return (
     <Modal show={open} onClose={onClose} size="4xl">
-      <ModalHeader>New Journal Entry</ModalHeader>
+      <ModalHeader>{editing ? 'Edit Draft' : 'New Journal Entry'}</ModalHeader>
       <ModalBody>
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -233,12 +309,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
               <Select
                 id="je-type"
                 value={entryType}
-                onChange={(e) =>
-                  setEntryType(
-                    e.target.value as
-                      'standard' | 'adjusting' | 'closing' | 'reversing'
-                  )
-                }
+                onChange={(e) => setEntryType(e.target.value as EntryType)}
                 disabled={submitting}
               >
                 <option value="standard">Standard</option>
@@ -247,20 +318,22 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
                 <option value="reversing">Reversing</option>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="je-status">Status on Submit</Label>
-              <Select
-                id="je-status"
-                value={status}
-                onChange={(e) =>
-                  setStatus(e.target.value as 'draft' | 'posted')
-                }
-                disabled={submitting}
-              >
-                <option value="draft">Draft</option>
-                <option value="posted">Posted</option>
-              </Select>
-            </div>
+            {!editing && (
+              <div>
+                <Label htmlFor="je-status">Status on Submit</Label>
+                <Select
+                  id="je-status"
+                  value={status}
+                  onChange={(e) =>
+                    setStatus(e.target.value as 'draft' | 'posted')
+                  }
+                  disabled={submitting}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="posted">Posted</option>
+                </Select>
+              </div>
+            )}
           </div>
 
           <div>
@@ -420,9 +493,11 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
         <Button color="primary" onClick={handleSubmit} disabled={!canSubmit}>
           {submitting
             ? 'Submitting…'
-            : status === 'posted'
-              ? 'Post Entry'
-              : 'Save Draft'}
+            : editing
+              ? 'Save Changes'
+              : status === 'posted'
+                ? 'Post Entry'
+                : 'Save Draft'}
         </Button>
       </ModalFooter>
     </Modal>

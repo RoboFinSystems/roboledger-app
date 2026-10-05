@@ -15,6 +15,8 @@ import {
   LoadingState,
   PageHeader,
   PageLayout,
+  SDK,
+  unwrapSdk,
   useGraphContext,
 } from '@robosystems/core'
 import {
@@ -140,6 +142,46 @@ const JournalContent: FC = function () {
     const types = new Set(transactions.map((t) => t.type))
     return Array.from(types).filter(Boolean).sort()
   }, [transactions])
+
+  // What the entry row verbs depend on: a live QuickBooks connection (whose
+  // entries are corrected there) and the closed months. Unknown stays null.
+  const [quickBooksConnected, setQuickBooksConnected] = useState<
+    boolean | null
+  >(null)
+  const [closedThrough, setClosedThrough] = useState<string | null>(null)
+  useEffect(() => {
+    if (!ledgerGraphId) return
+    let cancelled = false
+    setQuickBooksConnected(null)
+    setClosedThrough(null)
+    void (async () => {
+      try {
+        const connections = unwrapSdk(
+          await SDK.listConnections({ path: { graph_id: ledgerGraphId } })
+        )
+        if (cancelled) return
+        setQuickBooksConnected(
+          (Array.isArray(connections) ? connections : []).some(
+            (c: { provider?: string }) =>
+              c.provider?.toLowerCase() === 'quickbooks'
+          )
+        )
+      } catch (err) {
+        console.error('Error loading connections for the journal:', err)
+      }
+    })()
+    void (async () => {
+      try {
+        const calendar = await clients.ledger.getFiscalCalendar(ledgerGraphId)
+        if (!cancelled) setClosedThrough(calendar?.closedThrough ?? null)
+      } catch (err) {
+        console.error('Error loading the fiscal calendar for the journal:', err)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [ledgerGraphId, refreshKey])
 
   // Load transactions from all roboledger graphs
   useEffect(() => {
@@ -399,6 +441,9 @@ const JournalContent: FC = function () {
           startDate={startDate}
           endDate={endDate}
           refreshKey={refreshKey}
+          quickBooksConnected={quickBooksConnected}
+          closedThrough={closedThrough}
+          onChanged={() => setRefreshKey((k) => k + 1)}
         />
       ) : (
         <>

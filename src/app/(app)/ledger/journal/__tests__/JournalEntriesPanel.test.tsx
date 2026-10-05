@@ -16,6 +16,9 @@ vi.mock('@robosystems/core', () => ({
 vi.mock('flowbite-react', () => ({
   Alert: ({ children }: any) => <div role="alert">{children}</div>,
   Badge: ({ children }: any) => <span>{children}</span>,
+  Button: ({ children, onClick }: any) => (
+    <button onClick={onClick}>{children}</button>
+  ),
   Card: ({ children }: any) => <div>{children}</div>,
   Select: ({ children, id, value, onChange }: any) => (
     <select id={id} value={value} onChange={onChange}>
@@ -24,8 +27,10 @@ vi.mock('flowbite-react', () => ({
   ),
   Table: ({ children }: any) => <table>{children}</table>,
   TableBody: ({ children }: any) => <tbody>{children}</tbody>,
-  TableCell: ({ children, colSpan }: any) => (
-    <td colSpan={colSpan}>{children}</td>
+  TableCell: ({ children, colSpan, onClick }: any) => (
+    <td colSpan={colSpan} onClick={onClick}>
+      {children}
+    </td>
   ),
   TableHead: ({ children }: any) => (
     <thead>
@@ -44,6 +49,20 @@ vi.mock('flowbite-react', () => ({
       placeholder={placeholder}
     />
   ),
+}))
+
+// The modals have their own tests; here only which one a verb opens.
+vi.mock('../NewJournalEntryModal', () => ({
+  NewJournalEntryModal: ({ open, draft }: any) =>
+    open ? <div>Editing {draft?.id}</div> : null,
+}))
+vi.mock('../DeleteDraftModal', () => ({
+  DeleteDraftModal: ({ draft }: any) =>
+    draft ? <div>Deleting {draft.id}</div> : null,
+}))
+vi.mock('../ReverseEntryModal', () => ({
+  ReverseEntryModal: ({ entry }: any) =>
+    entry ? <div>Reversing {entry.id}</div> : null,
 }))
 
 import { JournalEntriesPanel } from '../JournalEntriesPanel'
@@ -80,15 +99,29 @@ const STANDALONE_ENTRY = {
   ],
 }
 
-const renderPanel = () =>
+const renderPanel = (
+  context: {
+    quickBooksConnected?: boolean | null
+    closedThrough?: string | null
+  } = {}
+) =>
   render(
     <JournalEntriesPanel
       graphId="kg_1"
       startDate="2026-07-01"
       endDate="2026-07-31"
       refreshKey={0}
+      quickBooksConnected={context.quickBooksConnected ?? false}
+      closedThrough={context.closedThrough ?? null}
+      onChanged={vi.fn()}
     />
   )
+
+const showOnly = (entry: Record<string, unknown>) =>
+  mockListJournalEntries.mockResolvedValue({
+    entries: [{ ...STANDALONE_ENTRY, ...entry }],
+    pagination: { total: 1, limit: 500, offset: 0, hasMore: false },
+  })
 
 describe('JournalEntriesPanel', () => {
   beforeEach(() => {
@@ -173,5 +206,81 @@ describe('JournalEntriesPanel', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Failed to load journal entries'
     )
+  })
+
+  describe('row actions', () => {
+    const MANUAL_DRAFT = {
+      id: 'je_draft',
+      status: 'draft',
+      provenance: 'manual_entry',
+      triggeredByEventId: 'evt_1',
+    }
+
+    it('offers edit and delete on a manual draft, and opens each', async () => {
+      showOnly(MANUAL_DRAFT)
+      renderPanel()
+      fireEvent.click(await screen.findByRole('button', { name: 'Edit' }))
+      expect(screen.getByText('Editing je_draft')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+      expect(screen.getByText('Deleting je_draft')).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: 'Reverse' })
+      ).not.toBeInTheDocument()
+    })
+
+    it('does not toggle the lines when a verb is clicked', async () => {
+      showOnly(MANUAL_DRAFT)
+      renderPanel()
+      fireEvent.click(await screen.findByRole('button', { name: 'Edit' }))
+      expect(screen.queryByText('Depreciation Expense')).not.toBeInTheDocument()
+    })
+
+    it('sends a draft rebuilt from its source back to the source', async () => {
+      showOnly({ status: 'draft', provenance: 'schedule_derived' })
+      renderPanel()
+      expect(
+        await screen.findByText('Drafted from its source. Change it there.')
+      ).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull()
+    })
+
+    it('offers reverse on a posted entry and opens it', async () => {
+      renderPanel()
+      fireEvent.click(await screen.findByRole('button', { name: 'Reverse' }))
+      expect(screen.getByText('Reversing je_sched')).toBeInTheDocument()
+    })
+
+    it('holds a synced entry back while QuickBooks is connected', async () => {
+      showOnly({ provenance: 'source_sync' })
+      renderPanel({ quickBooksConnected: true })
+      expect(
+        await screen.findByText('Synced from QuickBooks. Correct it there.')
+      ).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Reverse' })).toBeNull()
+    })
+
+    it('reverses a synced entry once QuickBooks is gone', async () => {
+      showOnly({ provenance: 'source_sync' })
+      renderPanel({ quickBooksConnected: false })
+      expect(
+        await screen.findByRole('button', { name: 'Reverse' })
+      ).toBeInTheDocument()
+    })
+
+    it('offers nothing in a closed month, and says why', async () => {
+      renderPanel({ closedThrough: '2026-07' })
+      expect(
+        await screen.findByText('In a closed period. Reopen it to change this.')
+      ).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Reverse' })).toBeNull()
+    })
+
+    it('offers nothing on a reversed entry, and marks it reversed', async () => {
+      showOnly({ status: 'reversed' })
+      renderPanel()
+      await screen.findByText('MacBook depreciation')
+      expect(screen.queryByRole('button')).toBeNull()
+      expect(screen.getByText('reversed')).toBeInTheDocument()
+    })
   })
 })
