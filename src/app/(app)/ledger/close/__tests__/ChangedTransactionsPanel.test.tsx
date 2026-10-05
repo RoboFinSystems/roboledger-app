@@ -70,6 +70,7 @@ const plan = (overrides: Record<string, unknown> = {}) => ({
   event_status: 'fulfilled',
   default_disposition: 'restate',
   default_posting_date: '2026-09-30',
+  drift_detected_at: '2026-09-02T08:00:00+00:00',
   closed_periods: [],
   prior_entries: [
     {
@@ -243,6 +244,7 @@ describe('ChangedTransactionsPanel', () => {
     await waitFor(() =>
       expect(mockResolveReconcilingItem).toHaveBeenCalledWith('kg_books', {
         event_id: 'evt_invoice',
+        expected_drift_detected_at: '2026-09-02T08:00:00+00:00',
         disposition: 'restate',
       })
     )
@@ -273,6 +275,7 @@ describe('ChangedTransactionsPanel', () => {
     )
     expect(mockResolveReconcilingItem).toHaveBeenCalledWith('kg_books', {
       event_id: 'evt_invoice',
+      expected_drift_detected_at: '2026-09-02T08:00:00+00:00',
       disposition: 'catch_up',
     })
   })
@@ -335,6 +338,7 @@ describe('ChangedTransactionsPanel', () => {
     await waitFor(() =>
       expect(mockResolveReconcilingItem).toHaveBeenCalledWith('kg_books', {
         event_id: 'evt_invoice',
+        expected_drift_detected_at: '2026-09-02T08:00:00+00:00',
         disposition: 'acknowledge',
         note: 'Booked by JE-88 in September',
       })

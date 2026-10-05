@@ -226,6 +226,8 @@ const ChangedTransactionsPanel: FC<ChangedTransactionsPanelProps> = ({
       setSettleError(null)
       const result = await clients.ledger.resolveReconcilingItem(graphId, {
         event_id: selectedId,
+        // Settle what was reviewed: a newer change flagged since is refused.
+        expected_drift_detected_at: plan.drift_detected_at ?? null,
         disposition: treatment,
         ...(trimmed ? { note: trimmed } : {}),
       })
