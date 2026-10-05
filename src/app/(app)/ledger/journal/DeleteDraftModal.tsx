@@ -28,14 +28,17 @@ interface DeleteDraftModalProps {
   onDeleted: () => void
 }
 
-const RETRACTED = new Set(['voided', 'superseded'])
+const isSoleDraftOfLiveEvent = (err: unknown): boolean =>
+  err instanceof Error &&
+  err.message.includes('is the only ledger entry of event')
 
 /**
- * Delete a manual draft. Every manual entry is recorded through an event,
- * and the API refuses to delete an event's only draft while the event is
- * live, so the event is voided first. That order is the safe one: once the
- * event is voided, close no longer posts its draft, so a delete that then
- * fails leaves nothing that reaches the books, and trying again finishes it.
+ * Delete a manual draft. Every manual entry is recorded through an event.
+ * The API deletes one of an event's several drafts as asked, but refuses
+ * the only draft of a live event; that one is deleted by voiding its event
+ * first, which nothing else hangs off. The order is the safe one: close no
+ * longer posts a voided event's draft, so a delete that then fails leaves
+ * nothing that reaches the books, and trying again finishes it.
  */
 export const DeleteDraftModal: FC<DeleteDraftModalProps> = ({
   graphId,
@@ -55,19 +58,16 @@ export const DeleteDraftModal: FC<DeleteDraftModalProps> = ({
     setDeleting(true)
     setError(null)
     try {
-      if (draft.triggeredByEventId) {
-        const event = await clients.ledger.getEventBlock(
-          graphId,
-          draft.triggeredByEventId
-        )
-        if (event && !RETRACTED.has(event.status)) {
-          await clients.ledger.updateEventBlock(graphId, {
-            event_id: draft.triggeredByEventId,
-            transition_to: 'voided',
-          })
-        }
+      try {
+        await clients.ledger.deleteJournalEntry(graphId, draft.id)
+      } catch (err) {
+        if (!draft.triggeredByEventId || !isSoleDraftOfLiveEvent(err)) throw err
+        await clients.ledger.updateEventBlock(graphId, {
+          event_id: draft.triggeredByEventId,
+          transition_to: 'voided',
+        })
+        await clients.ledger.deleteJournalEntry(graphId, draft.id)
       }
-      await clients.ledger.deleteJournalEntry(graphId, draft.id)
       onDeleted()
       onClose()
     } catch (err) {

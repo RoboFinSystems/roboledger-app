@@ -181,4 +181,14 @@ describe('ReverseEntryModal', () => {
     )
     expect(onClose).not.toHaveBeenCalled()
   })
+
+  it('posts nothing once the date is cleared', async () => {
+    renderModal()
+    await waitFor(() => expect(postButton()).not.toBeDisabled())
+    setDate('')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Choose a reversal date.'
+    )
+    expect(postButton()).toBeDisabled()
+  })
 })

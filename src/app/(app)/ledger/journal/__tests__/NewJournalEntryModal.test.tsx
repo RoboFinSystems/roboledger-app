@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mockListAccounts = vi.fn()
 const mockCreateJournalEntry = vi.fn()
 const mockUpdateJournalEntry = vi.fn()
+const mockGetEventBlock = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
   clients: {
@@ -11,6 +12,7 @@ vi.mock('@robosystems/core', () => ({
       listAccounts: (...args: any[]) => mockListAccounts(...args),
       createJournalEntry: (...args: any[]) => mockCreateJournalEntry(...args),
       updateJournalEntry: (...args: any[]) => mockUpdateJournalEntry(...args),
+      getEventBlock: (...args: any[]) => mockGetEventBlock(...args),
     },
   },
 }))
@@ -289,6 +291,7 @@ describe('NewJournalEntryModal', () => {
       postingDate: '2026-09-30',
       memo: 'Accrue September rent',
       type: 'adjusting',
+      triggeredByEventId: 'evt_1',
       // Dollars, as the journal list carries them.
       lineItems: [
         {
@@ -321,6 +324,45 @@ describe('NewJournalEntryModal', () => {
 
     beforeEach(() => {
       mockUpdateJournalEntry.mockResolvedValue({ id: 'je_draft' })
+      mockGetEventBlock.mockResolvedValue({ id: 'evt_1', status: 'classified' })
+    })
+
+    it('leaves the lines alone when only the header changed', async () => {
+      // The API replaces the whole line set, and the form cannot carry a
+      // line's flow tag, so unchanged lines are not sent back.
+      renderEdit()
+      await waitFor(() => expect(mockListAccounts).toHaveBeenCalled())
+      await screen.findAllByText('1200 — Accounts Receivable')
+      fillMemo('Accrue September rent, corrected')
+      fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
+      await waitFor(() => expect(mockUpdateJournalEntry).toHaveBeenCalled())
+      const [, body] = mockUpdateJournalEntry.mock.calls[0]
+      expect(body.memo).toBe('Accrue September rent, corrected')
+      expect(body).not.toHaveProperty('line_items')
+    })
+
+    it('refuses to edit a draft whose event was voided', async () => {
+      mockGetEventBlock.mockResolvedValue({ id: 'evt_1', status: 'voided' })
+      renderEdit()
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'close will not post it'
+      )
+      expect(
+        screen.getByRole('button', { name: 'Save Changes' })
+      ).toBeDisabled()
+    })
+
+    it('refuses a line whose account the picker cannot show', async () => {
+      mockListAccounts.mockResolvedValue({
+        accounts: ACCOUNTS.accounts.filter((a) => a.id !== 'acct_ar'),
+      })
+      renderEdit()
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'not in the active chart'
+      )
+      expect(
+        screen.getByRole('button', { name: 'Save Changes' })
+      ).toBeDisabled()
     })
 
     it('loads the draft into the form and keeps it a draft', async () => {

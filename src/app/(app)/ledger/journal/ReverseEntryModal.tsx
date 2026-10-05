@@ -92,7 +92,11 @@ export const ReverseEntryModal: FC<ReverseEntryModalProps> = ({
   }, [entry])
 
   useEffect(() => {
-    if (!entry || !postingDate) return
+    if (!entry) return
+    if (!postingDate) {
+      setPreview({ kind: 'refused', reasons: ['Choose a reversal date.'] })
+      return
+    }
     let cancelled = false
     setPreview({ kind: 'loading' })
     void (async () => {

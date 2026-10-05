@@ -16,8 +16,10 @@ vi.mock('@robosystems/core', () => ({
 vi.mock('flowbite-react', () => ({
   Alert: ({ children }: any) => <div role="alert">{children}</div>,
   Badge: ({ children }: any) => <span>{children}</span>,
-  Button: ({ children, onClick }: any) => (
-    <button onClick={onClick}>{children}</button>
+  Button: ({ children, onClick, 'aria-label': ariaLabel }: any) => (
+    <button onClick={onClick} aria-label={ariaLabel}>
+      {children}
+    </button>
   ),
   Card: ({ children }: any) => <div>{children}</div>,
   Select: ({ children, id, value, onChange }: any) => (
@@ -101,8 +103,9 @@ const STANDALONE_ENTRY = {
 
 const renderPanel = (
   context: {
-    quickBooksConnected?: boolean | null
+    quickBooks?: 'none' | 'synced' | 'writeback' | null
     closedThrough?: string | null
+    calendarLoaded?: boolean
   } = {}
 ) =>
   render(
@@ -111,8 +114,11 @@ const renderPanel = (
       startDate="2026-07-01"
       endDate="2026-07-31"
       refreshKey={0}
-      quickBooksConnected={context.quickBooksConnected ?? false}
+      quickBooks={
+        context.quickBooks === undefined ? 'none' : context.quickBooks
+      }
       closedThrough={context.closedThrough ?? null}
+      calendarLoaded={context.calendarLoaded ?? true}
       onChanged={vi.fn()}
     />
   )
@@ -219,19 +225,19 @@ describe('JournalEntriesPanel', () => {
     it('offers edit and delete on a manual draft, and opens each', async () => {
       showOnly(MANUAL_DRAFT)
       renderPanel()
-      fireEvent.click(await screen.findByRole('button', { name: 'Edit' }))
+      fireEvent.click(await screen.findByRole('button', { name: /^Edit/ }))
       expect(screen.getByText('Editing je_draft')).toBeInTheDocument()
-      fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+      fireEvent.click(screen.getByRole('button', { name: /^Delete/ }))
       expect(screen.getByText('Deleting je_draft')).toBeInTheDocument()
       expect(
-        screen.queryByRole('button', { name: 'Reverse' })
+        screen.queryByRole('button', { name: /^Reverse/ })
       ).not.toBeInTheDocument()
     })
 
     it('does not toggle the lines when a verb is clicked', async () => {
       showOnly(MANUAL_DRAFT)
       renderPanel()
-      fireEvent.click(await screen.findByRole('button', { name: 'Edit' }))
+      fireEvent.click(await screen.findByRole('button', { name: /^Edit/ }))
       expect(screen.queryByText('Depreciation Expense')).not.toBeInTheDocument()
     })
 
@@ -241,29 +247,60 @@ describe('JournalEntriesPanel', () => {
       expect(
         await screen.findByText('Drafted from its source. Change it there.')
       ).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull()
+      expect(screen.queryByRole('button', { name: /^Edit/ })).toBeNull()
     })
 
     it('offers reverse on a posted entry and opens it', async () => {
       renderPanel()
-      fireEvent.click(await screen.findByRole('button', { name: 'Reverse' }))
+      fireEvent.click(await screen.findByRole('button', { name: /^Reverse/ }))
       expect(screen.getByText('Reversing je_sched')).toBeInTheDocument()
     })
 
     it('holds a synced entry back while QuickBooks is connected', async () => {
       showOnly({ provenance: 'source_sync' })
-      renderPanel({ quickBooksConnected: true })
+      renderPanel({ quickBooks: 'synced' })
       expect(
         await screen.findByText('Synced from QuickBooks. Correct it there.')
       ).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: 'Reverse' })).toBeNull()
+      expect(screen.queryByRole('button', { name: /^Reverse/ })).toBeNull()
     })
 
     it('reverses a synced entry once QuickBooks is gone', async () => {
       showOnly({ provenance: 'source_sync' })
-      renderPanel({ quickBooksConnected: false })
+      renderPanel({ quickBooks: 'none' })
       expect(
-        await screen.findByRole('button', { name: 'Reverse' })
+        await screen.findByRole('button', { name: /^Reverse/ })
+      ).toBeInTheDocument()
+    })
+
+    it('holds every reversal back while close publishes to QuickBooks', async () => {
+      // Under write-back, close publishes RoboLedger's own entries too; a
+      // reversal here would never reach QuickBooks.
+      renderPanel({ quickBooks: 'writeback' })
+      expect(
+        await screen.findByText(
+          'QuickBooks keeps these books. Reverse it there.'
+        )
+      ).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /^Reverse/ })).toBeNull()
+    })
+
+    it('offers no reversal until QuickBooks and the calendar are known', async () => {
+      const { unmount } = renderPanel({ quickBooks: null })
+      await screen.findByText('MacBook depreciation')
+      expect(screen.queryByRole('button', { name: /^Reverse/ })).toBeNull()
+      unmount()
+      renderPanel({ calendarLoaded: false })
+      await screen.findByText('MacBook depreciation')
+      expect(screen.queryByRole('button', { name: /^Reverse/ })).toBeNull()
+    })
+
+    it('names the entry each verb acts on', async () => {
+      renderPanel()
+      expect(
+        await screen.findByRole('button', {
+          name: 'Reverse MacBook depreciation',
+        })
       ).toBeInTheDocument()
     })
 
@@ -272,7 +309,7 @@ describe('JournalEntriesPanel', () => {
       expect(
         await screen.findByText('In a closed period. Reopen it to change this.')
       ).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: 'Reverse' })).toBeNull()
+      expect(screen.queryByRole('button', { name: /^Reverse/ })).toBeNull()
     })
 
     it('offers nothing on a reversed entry, and marks it reversed', async () => {

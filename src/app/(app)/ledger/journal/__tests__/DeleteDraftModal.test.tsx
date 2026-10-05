@@ -1,14 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mockGetEventBlock = vi.fn()
 const mockUpdateEventBlock = vi.fn()
 const mockDeleteJournalEntry = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
   clients: {
     ledger: {
-      getEventBlock: (...args: any[]) => mockGetEventBlock(...args),
       updateEventBlock: (...args: any[]) => mockUpdateEventBlock(...args),
       deleteJournalEntry: (...args: any[]) => mockDeleteJournalEntry(...args),
     },
@@ -53,41 +51,42 @@ const renderModal = (onDeleted = vi.fn(), onClose = vi.fn()) => {
 const confirm = () =>
   fireEvent.click(screen.getByRole('button', { name: 'Delete Draft' }))
 
+const SOLE_DRAFT = new Error(
+  'Delete journal entry failed: {"detail":"Journal entry je_draft is the only ledger entry of event evt_1 (status \'classified\'). Void or supersede the event instead of deleting its draft; a retracted event\'s drafts can then be deleted."}'
+)
+
 describe('DeleteDraftModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockGetEventBlock.mockResolvedValue({ id: 'evt_1', status: 'classified' })
     mockUpdateEventBlock.mockResolvedValue({})
     mockDeleteJournalEntry.mockResolvedValue({ deleted: true })
   })
 
-  it('voids the draft’s event before deleting it', async () => {
-    // The API refuses to delete a live event's only draft.
+  it('deletes one of an event’s drafts without touching the event', async () => {
+    // Voiding would stop the event's other drafts from posting at close.
     const { onDeleted, onClose } = renderModal()
+    confirm()
+    await waitFor(() => expect(onDeleted).toHaveBeenCalled())
+    expect(mockDeleteJournalEntry).toHaveBeenCalledWith('kg_1', 'je_draft')
+    expect(mockUpdateEventBlock).not.toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('voids the event and deletes when the draft is its only one', async () => {
+    mockDeleteJournalEntry
+      .mockRejectedValueOnce(SOLE_DRAFT)
+      .mockResolvedValueOnce({ deleted: true })
+    const { onDeleted } = renderModal()
     confirm()
     await waitFor(() => expect(onDeleted).toHaveBeenCalled())
     expect(mockUpdateEventBlock).toHaveBeenCalledWith('kg_1', {
       event_id: 'evt_1',
       transition_to: 'voided',
     })
-    expect(mockDeleteJournalEntry).toHaveBeenCalledWith('kg_1', 'je_draft')
-    expect(mockUpdateEventBlock.mock.invocationCallOrder[0]).toBeLessThan(
-      mockDeleteJournalEntry.mock.invocationCallOrder[0]
-    )
-    expect(onClose).toHaveBeenCalled()
+    expect(mockDeleteJournalEntry).toHaveBeenCalledTimes(2)
   })
 
-  it('finishes a delete whose event was already voided', async () => {
-    // A retry after the delete failed: voiding again would be refused.
-    mockGetEventBlock.mockResolvedValue({ id: 'evt_1', status: 'voided' })
-    const { onDeleted } = renderModal()
-    confirm()
-    await waitFor(() => expect(onDeleted).toHaveBeenCalled())
-    expect(mockUpdateEventBlock).not.toHaveBeenCalled()
-    expect(mockDeleteJournalEntry).toHaveBeenCalledWith('kg_1', 'je_draft')
-  })
-
-  it('keeps the dialog open with the reason when a step is refused', async () => {
+  it('voids nothing on any other refusal, and says why', async () => {
     mockDeleteJournalEntry.mockRejectedValue(
       new Error(
         'Delete journal entry failed: {"detail":"Journal entry je_draft is being written by another process. Retry in a moment."}'
@@ -98,6 +97,7 @@ describe('DeleteDraftModal', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Another process (usually a running sync) is writing this right now.'
     )
+    expect(mockUpdateEventBlock).not.toHaveBeenCalled()
     expect(onDeleted).not.toHaveBeenCalled()
     expect(onClose).not.toHaveBeenCalled()
   })

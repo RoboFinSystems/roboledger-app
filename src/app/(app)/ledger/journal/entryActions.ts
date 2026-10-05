@@ -10,15 +10,33 @@ export interface ActionableEntry {
   provenance: string | null
 }
 
+/**
+ * How QuickBooks relates to this ledger. `synced`: a connection syncs down
+ * and RoboLedger writes nothing back. `writeback`: close also publishes
+ * RoboLedger's own entries to QuickBooks (`qb_authoritative` / `hybrid`).
+ */
+export type QuickBooksMode = 'none' | 'synced' | 'writeback'
+
+const WRITEBACK_POLICIES = new Set(['qb_authoritative', 'hybrid'])
+
+/** The mode the graph's connections put the ledger in. */
+export const quickBooksMode = (
+  connections: { provider?: string | null; write_policy?: string | null }[]
+): QuickBooksMode => {
+  const quickBooks = connections.filter(
+    (c) => c.provider?.toLowerCase() === 'quickbooks'
+  )
+  if (quickBooks.some((c) => WRITEBACK_POLICIES.has(c.write_policy ?? '')))
+    return 'writeback'
+  return quickBooks.length > 0 ? 'synced' : 'none'
+}
+
 export interface ActionContext {
-  /**
-   * A QuickBooks connection is on the graph. `null` while unknown, treated
-   * as connected: hiding a reversal is recoverable, diverging from
-   * QuickBooks is not.
-   */
-  quickBooksConnected: boolean | null
-  /** The fiscal calendar's `closedThrough` (`YYYY-MM`), when loaded. */
+  /** `null` while unknown. */
+  quickBooks: QuickBooksMode | null
+  /** The fiscal calendar's `closedThrough` (`YYYY-MM`); `null` when none. */
   closedThrough: string | null
+  calendarLoaded: boolean
 }
 
 export interface EntryActions {
@@ -30,8 +48,6 @@ export interface EntryActions {
 }
 
 const NONE: EntryActions = { edit: false, delete: false, reverse: false }
-
-const AUTHORED_PROVENANCE = new Set(['manual_entry', 'ai_generated'])
 
 /** Periods close in order, so a month on or before `closedThrough` is closed. */
 export const isInClosedPeriod = (
@@ -53,15 +69,22 @@ export const entryActions = (
     // Every draft hangs off an event, a manual one included, so provenance
     // is what separates an authored draft from one rebuilt from its source
     // (a schedule, an Inbox line), where an edit would be overwritten.
-    if (!AUTHORED_PROVENANCE.has(entry.provenance ?? '')) {
+    if (entry.provenance !== 'manual_entry') {
       return { ...NONE, note: 'Drafted from its source. Change it there.' }
     }
     return { edit: true, delete: true, reverse: false }
   }
 
-  // A reversal here posts in RoboLedger only, and QuickBooks would keep the
-  // original: the two sets of books would stop agreeing.
-  if (entry.provenance === 'source_sync' && ctx.quickBooksConnected !== false) {
+  // A reversal posts in RoboLedger only. Whatever QuickBooks also holds
+  // (what it synced down, or what close published to it) would keep the
+  // original, and the two sets of books would stop agreeing. Until both are
+  // known nothing is offered: the preview checks the reversal's date, not
+  // the original's.
+  if (ctx.quickBooks === null || !ctx.calendarLoaded) return NONE
+  if (ctx.quickBooks === 'writeback') {
+    return { ...NONE, note: 'QuickBooks keeps these books. Reverse it there.' }
+  }
+  if (ctx.quickBooks === 'synced' && entry.provenance === 'source_sync') {
     return { ...NONE, note: 'Synced from QuickBooks. Correct it there.' }
   }
   return { edit: false, delete: false, reverse: true }

@@ -24,7 +24,7 @@ import {
 } from 'react-icons/hi'
 import { TbBook2 } from 'react-icons/tb'
 import { DeleteDraftModal } from './DeleteDraftModal'
-import { entryActions } from './entryActions'
+import { entryActions, type QuickBooksMode } from './entryActions'
 import { NewJournalEntryModal } from './NewJournalEntryModal'
 import { ReverseEntryModal } from './ReverseEntryModal'
 
@@ -96,8 +96,9 @@ interface JournalEntriesPanelProps {
   endDate: string | null
   refreshKey: number
   /** See `ActionContext` in `entryActions`. */
-  quickBooksConnected: boolean | null
+  quickBooks: QuickBooksMode | null
   closedThrough: string | null
+  calendarLoaded: boolean
   /** An entry was edited, deleted or reversed; reload what shows it. */
   onChanged: () => void
 }
@@ -119,8 +120,9 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
   startDate,
   endDate,
   refreshKey,
-  quickBooksConnected,
+  quickBooks,
   closedThrough,
+  calendarLoaded,
   onChanged,
 }) {
   const [entries, setEntries] = useState<JournalEntryRow[]>([])
@@ -325,9 +327,11 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                 {visibleEntries.map((entry) => {
                   const isExpanded = expandedIds.has(entry.id)
                   const actions = entryActions(entry, {
-                    quickBooksConnected,
+                    quickBooks,
                     closedThrough,
+                    calendarLoaded,
                   })
+                  const label = entry.memo || entry.number || entry.id
 
                   return (
                     <Fragment key={entry.id}>
@@ -410,6 +414,7 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                                 size="xs"
                                 color="light"
                                 onClick={() => setEditing(entry)}
+                                aria-label={`Edit ${label}`}
                               >
                                 Edit
                               </Button>
@@ -419,6 +424,7 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                                 size="xs"
                                 color="light"
                                 onClick={() => setDeleting(entry)}
+                                aria-label={`Delete ${label}`}
                               >
                                 Delete
                               </Button>
@@ -428,6 +434,7 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                                 size="xs"
                                 color="light"
                                 onClick={() => setReversing(entry)}
+                                aria-label={`Reverse ${label}`}
                               >
                                 Reverse
                               </Button>

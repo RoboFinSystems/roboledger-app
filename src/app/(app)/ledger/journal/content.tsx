@@ -47,6 +47,7 @@ import {
   HiSearch,
 } from 'react-icons/hi'
 import { TbBook2, TbReceipt } from 'react-icons/tb'
+import { quickBooksMode, type QuickBooksMode } from './entryActions'
 import { JournalEntriesPanel } from './JournalEntriesPanel'
 import { NewJournalEntryModal } from './NewJournalEntryModal'
 
@@ -143,28 +144,28 @@ const JournalContent: FC = function () {
     return Array.from(types).filter(Boolean).sort()
   }, [transactions])
 
-  // What the entry row verbs depend on: a live QuickBooks connection (whose
-  // entries are corrected there) and the closed months. Unknown stays null.
-  const [quickBooksConnected, setQuickBooksConnected] = useState<
-    boolean | null
-  >(null)
+  // What the entry row verbs depend on: how QuickBooks relates to this
+  // ledger, and the closed months. Cleared only when the graph changes, so a
+  // reload after a write does not briefly offer verbs on closed rows.
+  const [quickBooks, setQuickBooks] = useState<QuickBooksMode | null>(null)
   const [closedThrough, setClosedThrough] = useState<string | null>(null)
+  const [calendarLoaded, setCalendarLoaded] = useState(false)
+  useEffect(() => {
+    setQuickBooks(null)
+    setClosedThrough(null)
+    setCalendarLoaded(false)
+  }, [ledgerGraphId])
   useEffect(() => {
     if (!ledgerGraphId) return
     let cancelled = false
-    setQuickBooksConnected(null)
-    setClosedThrough(null)
     void (async () => {
       try {
         const connections = unwrapSdk(
           await SDK.listConnections({ path: { graph_id: ledgerGraphId } })
         )
         if (cancelled) return
-        setQuickBooksConnected(
-          (Array.isArray(connections) ? connections : []).some(
-            (c: { provider?: string }) =>
-              c.provider?.toLowerCase() === 'quickbooks'
-          )
+        setQuickBooks(
+          quickBooksMode(Array.isArray(connections) ? connections : [])
         )
       } catch (err) {
         console.error('Error loading connections for the journal:', err)
@@ -173,7 +174,10 @@ const JournalContent: FC = function () {
     void (async () => {
       try {
         const calendar = await clients.ledger.getFiscalCalendar(ledgerGraphId)
-        if (!cancelled) setClosedThrough(calendar?.closedThrough ?? null)
+        if (cancelled) return
+        // No calendar yet means nothing is closed.
+        setClosedThrough(calendar?.closedThrough ?? null)
+        setCalendarLoaded(true)
       } catch (err) {
         console.error('Error loading the fiscal calendar for the journal:', err)
       }
@@ -441,8 +445,9 @@ const JournalContent: FC = function () {
           startDate={startDate}
           endDate={endDate}
           refreshKey={refreshKey}
-          quickBooksConnected={quickBooksConnected}
+          quickBooks={quickBooks}
           closedThrough={closedThrough}
+          calendarLoaded={calendarLoaded}
           onChanged={() => setRefreshKey((k) => k + 1)}
         />
       ) : (
