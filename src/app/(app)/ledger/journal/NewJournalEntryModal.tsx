@@ -1,5 +1,6 @@
 'use client'
 
+import { friendlyError } from '@/lib/ledger/errors'
 import { formatDollars } from '@/lib/ledger/formatters'
 import { clients } from '@robosystems/core'
 import {
@@ -33,14 +34,36 @@ interface LineItemDraft {
   description: string
 }
 
+type EntryType = 'standard' | 'adjusting' | 'closing' | 'reversing'
+
+/** A draft to edit. Amounts are dollars, as the journal list carries them. */
+export interface EditableDraft {
+  id: string
+  postingDate: string
+  memo: string | null
+  type: string
+  triggeredByEventId: string | null
+  lineItems: {
+    accountId: string
+    debitAmount: number
+    creditAmount: number
+    description: string | null
+  }[]
+}
+
 interface NewJournalEntryModalProps {
   graphId: string
   open: boolean
   onClose: () => void
+  /** Called after a create, or after an edit is saved. */
   onCreated?: () => void
+  /** Edit this draft instead of creating an entry. */
+  draft?: EditableDraft | null
 }
 
-const newLine = (): LineItemDraft => ({
+const newLine = (
+  fields: Partial<Omit<LineItemDraft, '_id'>> = {}
+): LineItemDraft => ({
   _id:
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
@@ -49,12 +72,37 @@ const newLine = (): LineItemDraft => ({
   debit: '',
   credit: '',
   description: '',
+  ...fields,
 })
+
+const toInput = (dollars: number): string => (dollars ? dollars.toFixed(2) : '')
+
+const ENTRY_TYPES: EntryType[] = [
+  'standard',
+  'adjusting',
+  'closing',
+  'reversing',
+]
 
 const parseMoney = (raw: string): number => {
   const n = Number(raw)
   return Number.isFinite(n) ? Math.round(n * 100) : 0
 }
+
+/** What a line set says, in cents, to tell whether an edit changed it. */
+const linesKey = (
+  lines: {
+    elementId: string
+    debit: number
+    credit: number
+    description: string
+  }[]
+): string =>
+  JSON.stringify(
+    lines.map((l) => [l.elementId, l.debit, l.credit, l.description.trim()])
+  )
+
+const RETRACTED_EVENT = new Set(['voided', 'superseded'])
 
 // Local-timezone YYYY-MM-DD. `toISOString().slice(0, 10)` returns UTC,
 // which rolls forward to tomorrow for evening users in US zones.
@@ -71,12 +119,12 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
   open,
   onClose,
   onCreated,
+  draft = null,
 }) => {
+  const editing = draft !== null
   const [postingDate, setPostingDate] = useState<string>(() => todayLocal())
   const [memo, setMemo] = useState('')
-  const [entryType, setEntryType] = useState<
-    'standard' | 'adjusting' | 'closing' | 'reversing'
-  >('standard')
+  const [entryType, setEntryType] = useState<EntryType>('standard')
   const [status, setStatus] = useState<'draft' | 'posted'>('draft')
   const [lineItems, setLineItems] = useState<LineItemDraft[]>([
     newLine(),
@@ -86,6 +134,34 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
   const [accountsLoading, setAccountsLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  // The draft's event was voided: close will not post it, whatever it says.
+  const [draftRetracted, setDraftRetracted] = useState(false)
+  // Save waits for the check; a failed check does not hold it, since the
+  // API accepts the save either way.
+  const [eventChecking, setEventChecking] = useState(false)
+
+  useEffect(() => {
+    setDraftRetracted(false)
+    const eventId = open ? draft?.triggeredByEventId : null
+    if (!eventId) return
+    let cancelled = false
+    setEventChecking(true)
+    void (async () => {
+      try {
+        const event = await clients.ledger.getEventBlock(graphId, eventId)
+        if (!cancelled && event && RETRACTED_EVENT.has(event.status)) {
+          setDraftRetracted(true)
+        }
+      } catch (err) {
+        console.error("Failed to read the draft's event:", err)
+      } finally {
+        if (!cancelled) setEventChecking(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [open, draft, graphId])
 
   // Load accounts when the modal opens.
   useEffect(() => {
@@ -126,16 +202,36 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
     }
   }, [open, graphId])
 
-  // Reset state every time the modal opens.
+  // Reset state every time the modal opens, from the draft when editing.
   useEffect(() => {
     if (!open) return
+    setSubmitError(null)
+    setStatus('draft')
+    if (draft) {
+      setMemo(draft.memo ?? '')
+      setEntryType(
+        ENTRY_TYPES.includes(draft.type as EntryType)
+          ? (draft.type as EntryType)
+          : 'standard'
+      )
+      setPostingDate(draft.postingDate)
+      const lines = draft.lineItems.map((li) =>
+        newLine({
+          elementId: li.accountId,
+          debit: toInput(li.debitAmount),
+          credit: toInput(li.creditAmount),
+          description: li.description ?? '',
+        })
+      )
+      while (lines.length < 2) lines.push(newLine())
+      setLineItems(lines)
+      return
+    }
     setMemo('')
     setEntryType('standard')
-    setStatus('draft')
     setLineItems([newLine(), newLine()])
-    setSubmitError(null)
     setPostingDate(todayLocal())
-  }, [open])
+  }, [open, draft])
 
   const updateLine = (idx: number, patch: Partial<LineItemDraft>) => {
     setLineItems((prev) =>
@@ -165,8 +261,20 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
     // Exactly one of debit / credit must be > 0
     return (d > 0 && c === 0) || (c > 0 && d === 0)
   })
+  // A line whose account the picker cannot show (retired, or past the
+  // first 500) would save an account nobody can see in the form.
+  // An empty list (a failed load) counts: nothing can be shown, so any
+  // line already holding an account is one the form cannot show.
+  const missingAccount =
+    !accountsLoading &&
+    lineItems.some(
+      (l) => l.elementId && !accounts.some((a) => a.id === l.elementId)
+    )
   const canSubmit =
     !submitting &&
+    !draftRetracted &&
+    !eventChecking &&
+    !missingAccount &&
     !!graphId &&
     !!postingDate &&
     memo.trim().length > 0 &&
@@ -178,6 +286,40 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
     setSubmitting(true)
     setSubmitError(null)
     try {
+      if (draft) {
+        // Lines go only when they changed: the API replaces the whole set,
+        // and the form cannot carry a line's metadata (its flow tag).
+        const edited = lineItems.map((l) => ({
+          elementId: l.elementId,
+          debit: parseMoney(l.debit),
+          credit: parseMoney(l.credit),
+          description: l.description,
+        }))
+        const original = draft.lineItems.map((li) => ({
+          elementId: li.accountId,
+          debit: Math.round(li.debitAmount * 100),
+          credit: Math.round(li.creditAmount * 100),
+          description: li.description ?? '',
+        }))
+        // A draft stays a draft; close is what posts it.
+        await clients.ledger.updateJournalEntry(graphId, {
+          entry_id: draft.id,
+          posting_date: postingDate,
+          memo: memo.trim(),
+          type: entryType,
+          ...(linesKey(edited) !== linesKey(original) && {
+            line_items: edited.map((l) => ({
+              element_id: l.elementId,
+              debit_amount: l.debit,
+              credit_amount: l.credit,
+              description: l.description.trim() || null,
+            })),
+          }),
+        })
+        onCreated?.()
+        onClose()
+        return
+      }
       await clients.ledger.createJournalEntry(graphId, {
         postingDate,
         memo: memo.trim(),
@@ -194,14 +336,20 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
       onCreated?.()
       onClose()
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : 'Failed to create journal entry.'
-      setSubmitError(msg)
+      setSubmitError(
+        err instanceof Error
+          ? friendlyError(err.message).message
+          : editing
+            ? 'Failed to save the draft.'
+            : 'Failed to create journal entry.'
+      )
     } finally {
       setSubmitting(false)
     }
   }, [
     canSubmit,
+    draft,
+    editing,
     graphId,
     postingDate,
     memo,
@@ -214,7 +362,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
 
   return (
     <Modal show={open} onClose={onClose} size="4xl">
-      <ModalHeader>New Journal Entry</ModalHeader>
+      <ModalHeader>{editing ? 'Edit Draft' : 'New Journal Entry'}</ModalHeader>
       <ModalBody>
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -233,12 +381,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
               <Select
                 id="je-type"
                 value={entryType}
-                onChange={(e) =>
-                  setEntryType(
-                    e.target.value as
-                      'standard' | 'adjusting' | 'closing' | 'reversing'
-                  )
-                }
+                onChange={(e) => setEntryType(e.target.value as EntryType)}
                 disabled={submitting}
               >
                 <option value="standard">Standard</option>
@@ -247,20 +390,22 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
                 <option value="reversing">Reversing</option>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="je-status">Status on Submit</Label>
-              <Select
-                id="je-status"
-                value={status}
-                onChange={(e) =>
-                  setStatus(e.target.value as 'draft' | 'posted')
-                }
-                disabled={submitting}
-              >
-                <option value="draft">Draft</option>
-                <option value="posted">Posted</option>
-              </Select>
-            </div>
+            {!editing && (
+              <div>
+                <Label htmlFor="je-status">Status on Submit</Label>
+                <Select
+                  id="je-status"
+                  value={status}
+                  onChange={(e) =>
+                    setStatus(e.target.value as 'draft' | 'posted')
+                  }
+                  disabled={submitting}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="posted">Posted</option>
+                </Select>
+              </div>
+            )}
           </div>
 
           <div>
@@ -410,6 +555,19 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
             </div>
           </div>
 
+          {draftRetracted && (
+            <Alert color="warning">
+              This draft&apos;s event was voided, so close will not post it.
+              Delete it instead, and record a new entry if one is needed.
+            </Alert>
+          )}
+          {missingAccount && (
+            <Alert color="warning">
+              A line uses an account the form cannot show: it is retired, beyond
+              the first 500 accounts, or the chart did not load. Choose another
+              account for it, or reload.
+            </Alert>
+          )}
           {submitError && <Alert color="failure">{submitError}</Alert>}
         </div>
       </ModalBody>
@@ -420,9 +578,11 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
         <Button color="primary" onClick={handleSubmit} disabled={!canSubmit}>
           {submitting
             ? 'Submitting…'
-            : status === 'posted'
-              ? 'Post Entry'
-              : 'Save Draft'}
+            : editing
+              ? 'Save Changes'
+              : status === 'posted'
+                ? 'Post Entry'
+                : 'Save Draft'}
         </Button>
       </ModalFooter>
     </Modal>

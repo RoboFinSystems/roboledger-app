@@ -6,6 +6,7 @@ import { clients, EmptyState, LoadingState } from '@robosystems/core'
 import {
   Alert,
   Badge,
+  Button,
   Card,
   Table,
   TableBody,
@@ -22,6 +23,10 @@ import {
   HiSearch,
 } from 'react-icons/hi'
 import { TbBook2 } from 'react-icons/tb'
+import { DeleteDraftModal } from './DeleteDraftModal'
+import { entryActions, type QuickBooksMode } from './entryActions'
+import { NewJournalEntryModal } from './NewJournalEntryModal'
+import { ReverseEntryModal } from './ReverseEntryModal'
 
 const ENTRY_TYPE_COLORS: Record<string, string> = {
   standard: 'info',
@@ -47,6 +52,7 @@ const PROVENANCE_LABELS: Record<string, string> = {
 
 interface JournalLineItem {
   id: string
+  accountId: string
   accountName: string | null
   accountCode: string | null
   debitAmount: number
@@ -63,6 +69,7 @@ interface JournalEntryRow {
   postingDate: string
   memo: string | null
   provenance: string | null
+  triggeredByEventId: string | null
   sourceStructureName: string | null
   totalDebit: number
   totalCredit: number
@@ -88,6 +95,13 @@ interface JournalEntriesPanelProps {
   startDate: string | null
   endDate: string | null
   refreshKey: number
+  /** See `ActionContext` in `entryActions`. */
+  quickBooks: QuickBooksMode | null
+  closedThrough: string | null
+  calendarLoaded: boolean
+  contextFailed: boolean
+  /** An entry was edited, deleted or reversed; reload what shows it. */
+  onChanged: () => void
 }
 
 /**
@@ -107,6 +121,11 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
   startDate,
   endDate,
   refreshKey,
+  quickBooks,
+  closedThrough,
+  calendarLoaded,
+  contextFailed,
+  onChanged,
 }) {
   const [entries, setEntries] = useState<JournalEntryRow[]>([])
   const [totalCount, setTotalCount] = useState<number | null>(null)
@@ -117,6 +136,9 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
   const [provenanceFilter, setProvenanceFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('posted')
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [editing, setEditing] = useState<JournalEntryRow | null>(null)
+  const [deleting, setDeleting] = useState<JournalEntryRow | null>(null)
+  const [reversing, setReversing] = useState<JournalEntryRow | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -147,12 +169,14 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
             postingDate: row.postingDate,
             memo: row.memo,
             provenance: row.provenance,
+            triggeredByEventId: row.triggeredByEventId,
             sourceStructureName: row.sourceStructureName,
             totalDebit: row.totalDebit,
             totalCredit: row.totalCredit,
             balanced: row.balanced,
             lineItems: row.lineItems.map((li) => ({
               id: li.id,
+              accountId: li.accountId,
               accountName: li.accountName,
               accountCode: li.accountCode,
               debitAmount: li.debitAmount,
@@ -296,11 +320,21 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                   <TableHeadCell>Type</TableHeadCell>
                   <TableHeadCell>Source</TableHeadCell>
                   <TableHeadCell className="text-right">Amount</TableHeadCell>
+                  <TableHeadCell>
+                    <span className="sr-only">Actions</span>
+                  </TableHeadCell>
                 </tr>
               </TableHead>
               <TableBody>
                 {visibleEntries.map((entry) => {
                   const isExpanded = expandedIds.has(entry.id)
+                  const actions = entryActions(entry, {
+                    quickBooks,
+                    closedThrough,
+                    calendarLoaded,
+                    contextFailed,
+                  })
+                  const label = entry.memo || entry.number || entry.id
 
                   return (
                     <Fragment key={entry.id}>
@@ -336,6 +370,12 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                             >
                               {entry.type}
                             </Badge>
+                            {/* Posted is the default view; the others say so. */}
+                            {entry.status !== 'posted' && (
+                              <Badge color="gray" size="sm">
+                                {entry.status}
+                              </Badge>
+                            )}
                             {!entry.balanced && (
                               <Badge color="failure" size="sm">
                                 unbalanced
@@ -366,6 +406,49 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                             Math.max(entry.totalDebit, entry.totalCredit)
                           )}
                         </TableCell>
+                        <TableCell
+                          className="whitespace-nowrap"
+                          // The row toggles its lines; a verb must not.
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex items-center justify-end gap-2">
+                            {actions.edit && (
+                              <Button
+                                size="xs"
+                                color="light"
+                                onClick={() => setEditing(entry)}
+                                aria-label={`Edit ${label}`}
+                              >
+                                Edit
+                              </Button>
+                            )}
+                            {actions.delete && (
+                              <Button
+                                size="xs"
+                                color="light"
+                                onClick={() => setDeleting(entry)}
+                                aria-label={`Delete ${label}`}
+                              >
+                                Delete
+                              </Button>
+                            )}
+                            {actions.reverse && (
+                              <Button
+                                size="xs"
+                                color="light"
+                                onClick={() => setReversing(entry)}
+                                aria-label={`Reverse ${label}`}
+                              >
+                                Reverse
+                              </Button>
+                            )}
+                            {actions.note && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {actions.note}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
 
                       {isExpanded && (
@@ -373,7 +456,7 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                           key={`${entry.id}-details`}
                           className="bg-gray-50 dark:bg-gray-800"
                         >
-                          <TableCell colSpan={6} className="p-0">
+                          <TableCell colSpan={7} className="p-0">
                             <div className="px-8 py-4">
                               <table className="w-full text-sm">
                                 <thead>
@@ -463,6 +546,28 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
           </div>
         )}
       </Card>
+
+      <NewJournalEntryModal
+        graphId={graphId}
+        open={editing !== null}
+        draft={editing}
+        onClose={() => setEditing(null)}
+        onCreated={onChanged}
+      />
+      <DeleteDraftModal
+        graphId={graphId}
+        draft={deleting}
+        onClose={() => setDeleting(null)}
+        onDeleted={onChanged}
+      />
+      <ReverseEntryModal
+        // A new dialog per entry, so its first check uses today's date.
+        key={reversing?.id ?? 'none'}
+        graphId={graphId}
+        entry={reversing}
+        onClose={() => setReversing(null)}
+        onReversed={onChanged}
+      />
     </>
   )
 }

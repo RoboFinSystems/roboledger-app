@@ -3,12 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockListAccounts = vi.fn()
 const mockCreateJournalEntry = vi.fn()
+const mockUpdateJournalEntry = vi.fn()
+const mockGetEventBlock = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
   clients: {
     ledger: {
       listAccounts: (...args: any[]) => mockListAccounts(...args),
       createJournalEntry: (...args: any[]) => mockCreateJournalEntry(...args),
+      updateJournalEntry: (...args: any[]) => mockUpdateJournalEntry(...args),
+      getEventBlock: (...args: any[]) => mockGetEventBlock(...args),
     },
   },
 }))
@@ -278,6 +282,183 @@ describe('NewJournalEntryModal', () => {
       // The user's work must survive the failure so they can retry.
       expect(onClose).not.toHaveBeenCalled()
       expect(onCreated).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('editing a draft', () => {
+    const DRAFT = {
+      id: 'je_draft',
+      postingDate: '2026-09-30',
+      memo: 'Accrue September rent',
+      type: 'adjusting',
+      triggeredByEventId: 'evt_1',
+      // Dollars, as the journal list carries them.
+      lineItems: [
+        {
+          accountId: 'acct_ar',
+          debitAmount: 1525.5,
+          creditAmount: 0,
+          description: 'Rent',
+        },
+        {
+          accountId: 'acct_rev',
+          debitAmount: 0,
+          creditAmount: 1525.5,
+          description: null,
+        },
+      ],
+    }
+
+    const renderEdit = (onCreated = vi.fn(), onClose = vi.fn()) => {
+      render(
+        <NewJournalEntryModal
+          graphId="kg_test"
+          open
+          draft={DRAFT}
+          onClose={onClose}
+          onCreated={onCreated}
+        />
+      )
+      return { onCreated, onClose }
+    }
+
+    beforeEach(() => {
+      mockUpdateJournalEntry.mockResolvedValue({ id: 'je_draft' })
+      mockGetEventBlock.mockResolvedValue({ id: 'evt_1', status: 'classified' })
+    })
+
+    it('leaves the lines alone when only the header changed', async () => {
+      // The API replaces the whole line set, and the form cannot carry a
+      // line's flow tag, so unchanged lines are not sent back.
+      renderEdit()
+      await waitFor(() => expect(mockListAccounts).toHaveBeenCalled())
+      await screen.findAllByText('1200 — Accounts Receivable')
+      fillMemo('Accrue September rent, corrected')
+      fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
+      await waitFor(() => expect(mockUpdateJournalEntry).toHaveBeenCalled())
+      const [, body] = mockUpdateJournalEntry.mock.calls[0]
+      expect(body.memo).toBe('Accrue September rent, corrected')
+      expect(body).not.toHaveProperty('line_items')
+    })
+
+    it('refuses to edit a draft whose event was voided', async () => {
+      mockGetEventBlock.mockResolvedValue({ id: 'evt_1', status: 'voided' })
+      renderEdit()
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'close will not post it'
+      )
+      expect(
+        screen.getByRole('button', { name: 'Save Changes' })
+      ).toBeDisabled()
+    })
+
+    it('holds Save until the draft\u2019s event is checked', async () => {
+      let resolveEvent: (v: unknown) => void = () => {}
+      mockGetEventBlock.mockReturnValue(
+        new Promise((r) => {
+          resolveEvent = r
+        })
+      )
+      renderEdit()
+      await screen.findAllByText('1200 — Accounts Receivable')
+      expect(
+        screen.getByRole('button', { name: 'Save Changes' })
+      ).toBeDisabled()
+      resolveEvent({ id: 'evt_1', status: 'classified' })
+      await waitFor(() =>
+        expect(
+          screen.getByRole('button', { name: 'Save Changes' })
+        ).not.toBeDisabled()
+      )
+    })
+
+    it('refuses to save when the chart did not load', async () => {
+      mockListAccounts.mockRejectedValue(new Error('boom'))
+      renderEdit()
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'the chart did not load'
+      )
+      expect(
+        screen.getByRole('button', { name: 'Save Changes' })
+      ).toBeDisabled()
+    })
+
+    it('refuses a line whose account the picker cannot show', async () => {
+      mockListAccounts.mockResolvedValue({
+        accounts: ACCOUNTS.accounts.filter((a) => a.id !== 'acct_ar'),
+      })
+      renderEdit()
+      expect(await screen.findByRole('alert')).toHaveTextContent('cannot show')
+      expect(
+        screen.getByRole('button', { name: 'Save Changes' })
+      ).toBeDisabled()
+    })
+
+    it('loads the draft into the form and keeps it a draft', async () => {
+      renderEdit()
+      expect(screen.getByText('Edit Draft')).toBeInTheDocument()
+      expect(
+        (document.getElementById('je-memo') as HTMLInputElement).value
+      ).toBe('Accrue September rent')
+      expect(
+        (document.getElementById('line-debit-0') as HTMLInputElement).value
+      ).toBe('1525.50')
+      // Close posts a draft; the edit form never does.
+      expect(document.getElementById('je-status')).toBeNull()
+      expect(
+        screen.getByRole('button', { name: 'Save Changes' })
+      ).toBeInTheDocument()
+    })
+
+    it('saves the whole draft back in cents, without creating one', async () => {
+      const { onCreated, onClose } = renderEdit()
+      await waitFor(() => expect(mockListAccounts).toHaveBeenCalled())
+      fillLine(0, 'acct_ar', 'debit', '1600')
+      fillLine(1, 'acct_rev', 'credit', '1600')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+      await waitFor(() => expect(mockUpdateJournalEntry).toHaveBeenCalled())
+      expect(mockCreateJournalEntry).not.toHaveBeenCalled()
+      const [graphId, body] = mockUpdateJournalEntry.mock.calls[0]
+      expect(graphId).toBe('kg_test')
+      expect(body).toEqual({
+        entry_id: 'je_draft',
+        posting_date: '2026-09-30',
+        memo: 'Accrue September rent',
+        type: 'adjusting',
+        line_items: [
+          {
+            element_id: 'acct_ar',
+            debit_amount: 160000,
+            credit_amount: 0,
+            description: 'Rent',
+          },
+          {
+            element_id: 'acct_rev',
+            debit_amount: 0,
+            credit_amount: 160000,
+            description: null,
+          },
+        ],
+      })
+      expect(onCreated).toHaveBeenCalled()
+      expect(onClose).toHaveBeenCalled()
+    })
+
+    it('shows a refusal in plain words and keeps the form open', async () => {
+      mockUpdateJournalEntry.mockRejectedValue(
+        new Error(
+          'Update journal entry failed: {"detail":"Journal entry je_draft is being written by another process. Retry in a moment."}'
+        )
+      )
+      const { onClose } = renderEdit()
+      await waitFor(() => expect(mockListAccounts).toHaveBeenCalled())
+      fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Another process (usually a running sync) is writing this right now.'
+      )
+      expect(onClose).not.toHaveBeenCalled()
     })
   })
 })

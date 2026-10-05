@@ -15,6 +15,8 @@ import {
   LoadingState,
   PageHeader,
   PageLayout,
+  SDK,
+  unwrapSdk,
   useGraphContext,
 } from '@robosystems/core'
 import {
@@ -45,6 +47,7 @@ import {
   HiSearch,
 } from 'react-icons/hi'
 import { TbBook2, TbReceipt } from 'react-icons/tb'
+import { quickBooksMode, type QuickBooksMode } from './entryActions'
 import { JournalEntriesPanel } from './JournalEntriesPanel'
 import { NewJournalEntryModal } from './NewJournalEntryModal'
 
@@ -140,6 +143,53 @@ const JournalContent: FC = function () {
     const types = new Set(transactions.map((t) => t.type))
     return Array.from(types).filter(Boolean).sort()
   }, [transactions])
+
+  // What the entry row verbs depend on: how QuickBooks relates to this
+  // ledger, and the closed months. Cleared only when the graph changes, so a
+  // reload after a write does not briefly offer verbs on closed rows.
+  const [quickBooks, setQuickBooks] = useState<QuickBooksMode | null>(null)
+  const [closedThrough, setClosedThrough] = useState<string | null>(null)
+  const [calendarLoaded, setCalendarLoaded] = useState(false)
+  const [verbContextFailed, setVerbContextFailed] = useState(false)
+  useEffect(() => {
+    setQuickBooks(null)
+    setClosedThrough(null)
+    setCalendarLoaded(false)
+    setVerbContextFailed(false)
+  }, [ledgerGraphId])
+  useEffect(() => {
+    if (!ledgerGraphId) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const connections = unwrapSdk(
+          await SDK.listConnections({ path: { graph_id: ledgerGraphId } })
+        )
+        if (cancelled) return
+        setQuickBooks(
+          quickBooksMode(Array.isArray(connections) ? connections : [])
+        )
+      } catch (err) {
+        console.error('Error loading connections for the journal:', err)
+        if (!cancelled) setVerbContextFailed(true)
+      }
+    })()
+    void (async () => {
+      try {
+        const calendar = await clients.ledger.getFiscalCalendar(ledgerGraphId)
+        if (cancelled) return
+        // No calendar yet means nothing is closed.
+        setClosedThrough(calendar?.closedThrough ?? null)
+        setCalendarLoaded(true)
+      } catch (err) {
+        console.error('Error loading the fiscal calendar for the journal:', err)
+        if (!cancelled) setVerbContextFailed(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [ledgerGraphId, refreshKey])
 
   // Load transactions from all roboledger graphs
   useEffect(() => {
@@ -399,6 +449,11 @@ const JournalContent: FC = function () {
           startDate={startDate}
           endDate={endDate}
           refreshKey={refreshKey}
+          quickBooks={quickBooks}
+          closedThrough={closedThrough}
+          calendarLoaded={calendarLoaded}
+          contextFailed={verbContextFailed}
+          onChanged={() => setRefreshKey((k) => k + 1)}
         />
       ) : (
         <>
