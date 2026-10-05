@@ -1,7 +1,7 @@
 // Shared renderer for dynamically generated 1200×630 OpenGraph/Twitter images
 // (Next file conventions → ImageResponse/Satori). Used for the public marketing pages,
 // which otherwise fall back to the square brand logo. Uses the built-in default font.
-// Brand gradient from the cross-app brand map (src/lib/core/auth-core/config.ts):
+// Brand gradient from the cross-app brand map (@robosystems/core auth-core/config.ts):
 // roboledger = violet → purple → fuchsia.
 
 import { ImageResponse } from 'next/og'
