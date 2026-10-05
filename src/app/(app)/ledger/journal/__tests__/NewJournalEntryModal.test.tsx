@@ -352,14 +352,43 @@ describe('NewJournalEntryModal', () => {
       ).toBeDisabled()
     })
 
+    it('holds Save until the draft\u2019s event is checked', async () => {
+      let resolveEvent: (v: unknown) => void = () => {}
+      mockGetEventBlock.mockReturnValue(
+        new Promise((r) => {
+          resolveEvent = r
+        })
+      )
+      renderEdit()
+      await screen.findAllByText('1200 — Accounts Receivable')
+      expect(
+        screen.getByRole('button', { name: 'Save Changes' })
+      ).toBeDisabled()
+      resolveEvent({ id: 'evt_1', status: 'classified' })
+      await waitFor(() =>
+        expect(
+          screen.getByRole('button', { name: 'Save Changes' })
+        ).not.toBeDisabled()
+      )
+    })
+
+    it('refuses to save when the chart did not load', async () => {
+      mockListAccounts.mockRejectedValue(new Error('boom'))
+      renderEdit()
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'the chart did not load'
+      )
+      expect(
+        screen.getByRole('button', { name: 'Save Changes' })
+      ).toBeDisabled()
+    })
+
     it('refuses a line whose account the picker cannot show', async () => {
       mockListAccounts.mockResolvedValue({
         accounts: ACCOUNTS.accounts.filter((a) => a.id !== 'acct_ar'),
       })
       renderEdit()
-      expect(await screen.findByRole('alert')).toHaveTextContent(
-        'not in the active chart'
-      )
+      expect(await screen.findByRole('alert')).toHaveTextContent('cannot show')
       expect(
         screen.getByRole('button', { name: 'Save Changes' })
       ).toBeDisabled()

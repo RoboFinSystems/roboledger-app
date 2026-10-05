@@ -150,10 +150,12 @@ const JournalContent: FC = function () {
   const [quickBooks, setQuickBooks] = useState<QuickBooksMode | null>(null)
   const [closedThrough, setClosedThrough] = useState<string | null>(null)
   const [calendarLoaded, setCalendarLoaded] = useState(false)
+  const [verbContextFailed, setVerbContextFailed] = useState(false)
   useEffect(() => {
     setQuickBooks(null)
     setClosedThrough(null)
     setCalendarLoaded(false)
+    setVerbContextFailed(false)
   }, [ledgerGraphId])
   useEffect(() => {
     if (!ledgerGraphId) return
@@ -169,6 +171,7 @@ const JournalContent: FC = function () {
         )
       } catch (err) {
         console.error('Error loading connections for the journal:', err)
+        if (!cancelled) setVerbContextFailed(true)
       }
     })()
     void (async () => {
@@ -180,6 +183,7 @@ const JournalContent: FC = function () {
         setCalendarLoaded(true)
       } catch (err) {
         console.error('Error loading the fiscal calendar for the journal:', err)
+        if (!cancelled) setVerbContextFailed(true)
       }
     })()
     return () => {
@@ -448,6 +452,7 @@ const JournalContent: FC = function () {
           quickBooks={quickBooks}
           closedThrough={closedThrough}
           calendarLoaded={calendarLoaded}
+          contextFailed={verbContextFailed}
           onChanged={() => setRefreshKey((k) => k + 1)}
         />
       ) : (

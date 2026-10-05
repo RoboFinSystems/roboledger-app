@@ -99,6 +99,7 @@ interface JournalEntriesPanelProps {
   quickBooks: QuickBooksMode | null
   closedThrough: string | null
   calendarLoaded: boolean
+  contextFailed: boolean
   /** An entry was edited, deleted or reversed; reload what shows it. */
   onChanged: () => void
 }
@@ -123,6 +124,7 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
   quickBooks,
   closedThrough,
   calendarLoaded,
+  contextFailed,
   onChanged,
 }) {
   const [entries, setEntries] = useState<JournalEntryRow[]>([])
@@ -330,6 +332,7 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                     quickBooks,
                     closedThrough,
                     calendarLoaded,
+                    contextFailed,
                   })
                   const label = entry.memo || entry.number || entry.id
 
@@ -558,6 +561,8 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
         onDeleted={onChanged}
       />
       <ReverseEntryModal
+        // A new dialog per entry, so its first check uses today's date.
+        key={reversing?.id ?? 'none'}
         graphId={graphId}
         entry={reversing}
         onClose={() => setReversing(null)}

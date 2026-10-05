@@ -19,7 +19,12 @@ export type QuickBooksMode = 'none' | 'synced' | 'writeback'
 
 const WRITEBACK_POLICIES = new Set(['qb_authoritative', 'hybrid'])
 
-/** The mode the graph's connections put the ledger in. */
+/**
+ * The mode the graph's connections put the ledger in. Any listed QuickBooks
+ * connection counts, whatever its sync status: a disconnect soft-deletes it
+ * out of the list, while one in error or awaiting re-auth is still the books
+ * of record. The API's own provider check reads connections the same way.
+ */
 export const quickBooksMode = (
   connections: { provider?: string | null; write_policy?: string | null }[]
 ): QuickBooksMode => {
@@ -37,6 +42,8 @@ export interface ActionContext {
   /** The fiscal calendar's `closedThrough` (`YYYY-MM`); `null` when none. */
   closedThrough: string | null
   calendarLoaded: boolean
+  /** Loading either of the above failed, so it will not arrive. */
+  contextFailed?: boolean
 }
 
 export interface EntryActions {
@@ -80,7 +87,11 @@ export const entryActions = (
   // original, and the two sets of books would stop agreeing. Until both are
   // known nothing is offered: the preview checks the reversal's date, not
   // the original's.
-  if (ctx.quickBooks === null || !ctx.calendarLoaded) return NONE
+  if (ctx.quickBooks === null || !ctx.calendarLoaded) {
+    return ctx.contextFailed
+      ? { ...NONE, note: 'Could not check this ledger. Reload to reverse.' }
+      : NONE
+  }
   if (ctx.quickBooks === 'writeback') {
     return { ...NONE, note: 'QuickBooks keeps these books. Reverse it there.' }
   }

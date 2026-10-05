@@ -85,14 +85,6 @@ export const ReverseEntryModal: FC<ReverseEntryModalProps> = ({
 
   useEffect(() => {
     if (!entry) return
-    setPostingDate(todayLocal())
-    setMemo('')
-    setReason('')
-    setSubmitError(null)
-  }, [entry])
-
-  useEffect(() => {
-    if (!entry) return
     if (!postingDate) {
       setPreview({ kind: 'refused', reasons: ['Choose a reversal date.'] })
       return
@@ -238,8 +230,8 @@ export const ReverseEntryModal: FC<ReverseEntryModalProps> = ({
               <Alert color="warning">
                 <span className="font-medium">This cannot be reversed:</span>
                 <ul className="mt-1 list-disc pl-5">
-                  {preview.reasons.map((r) => (
-                    <li key={r}>{r}</li>
+                  {preview.reasons.map((r, i) => (
+                    <li key={`${i}-${r}`}>{r}</li>
                   ))}
                 </ul>
               </Alert>

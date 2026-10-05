@@ -106,6 +106,7 @@ const renderPanel = (
     quickBooks?: 'none' | 'synced' | 'writeback' | null
     closedThrough?: string | null
     calendarLoaded?: boolean
+    contextFailed?: boolean
   } = {}
 ) =>
   render(
@@ -119,6 +120,7 @@ const renderPanel = (
       }
       closedThrough={context.closedThrough ?? null}
       calendarLoaded={context.calendarLoaded ?? true}
+      contextFailed={context.contextFailed ?? false}
       onChanged={vi.fn()}
     />
   )
@@ -293,6 +295,15 @@ describe('JournalEntriesPanel', () => {
       renderPanel({ calendarLoaded: false })
       await screen.findByText('MacBook depreciation')
       expect(screen.queryByRole('button', { name: /^Reverse/ })).toBeNull()
+    })
+
+    it('says when what a reversal depends on could not load', async () => {
+      renderPanel({ quickBooks: null, contextFailed: true })
+      expect(
+        await screen.findByText(
+          'Could not check this ledger. Reload to reverse.'
+        )
+      ).toBeInTheDocument()
     })
 
     it('names the entry each verb acts on', async () => {

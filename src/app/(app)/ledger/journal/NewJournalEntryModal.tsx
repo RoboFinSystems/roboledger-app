@@ -136,12 +136,16 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
   const [submitError, setSubmitError] = useState<string | null>(null)
   // The draft's event was voided: close will not post it, whatever it says.
   const [draftRetracted, setDraftRetracted] = useState(false)
+  // Save waits for the check; a failed check does not hold it, since the
+  // API accepts the save either way.
+  const [eventChecking, setEventChecking] = useState(false)
 
   useEffect(() => {
     setDraftRetracted(false)
     const eventId = open ? draft?.triggeredByEventId : null
     if (!eventId) return
     let cancelled = false
+    setEventChecking(true)
     void (async () => {
       try {
         const event = await clients.ledger.getEventBlock(graphId, eventId)
@@ -150,6 +154,8 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
         }
       } catch (err) {
         console.error("Failed to read the draft's event:", err)
+      } finally {
+        if (!cancelled) setEventChecking(false)
       }
     })()
     return () => {
@@ -257,15 +263,17 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
   })
   // A line whose account the picker cannot show (retired, or past the
   // first 500) would save an account nobody can see in the form.
+  // An empty list (a failed load) counts: nothing can be shown, so any
+  // line already holding an account is one the form cannot show.
   const missingAccount =
     !accountsLoading &&
-    accounts.length > 0 &&
     lineItems.some(
       (l) => l.elementId && !accounts.some((a) => a.id === l.elementId)
     )
   const canSubmit =
     !submitting &&
     !draftRetracted &&
+    !eventChecking &&
     !missingAccount &&
     !!graphId &&
     !!postingDate &&
@@ -555,8 +563,9 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
           )}
           {missingAccount && (
             <Alert color="warning">
-              A line uses an account that is not in the active chart (retired,
-              or beyond the first 500 accounts). Choose another account for it.
+              A line uses an account the form cannot show: it is retired, beyond
+              the first 500 accounts, or the chart did not load. Choose another
+              account for it, or reload.
             </Alert>
           )}
           {submitError && <Alert color="failure">{submitError}</Alert>}

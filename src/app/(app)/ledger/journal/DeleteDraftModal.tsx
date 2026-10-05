@@ -28,6 +28,10 @@ interface DeleteDraftModalProps {
   onDeleted: () => void
 }
 
+// The refusal carries no code; this is `JournalEntryOwnedByEventError`'s
+// text (robosystems `operations/roboledger/commands/journal_entries.py`),
+// pinned by the delete test. If it ever stops matching, delete shows the
+// refusal and voids nothing.
 const isSoleDraftOfLiveEvent = (err: unknown): boolean =>
   err instanceof Error &&
   err.message.includes('is the only ledger entry of event')
