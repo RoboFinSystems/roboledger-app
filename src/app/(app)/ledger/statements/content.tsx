@@ -12,6 +12,7 @@ import SegmentedControl, {
   type SegmentedOption,
 } from '@/components/SegmentedControl'
 import ValidationBanner from '@/components/ValidationBanner'
+import { useEntityScope } from '@/lib/entity-scope'
 import { friendlyError, type FriendlyError } from '@/lib/ledger/errors'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
@@ -49,6 +50,13 @@ const STATEMENT_TYPES: readonly SegmentedOption<StatementType>[] = [
 ]
 
 type PresetKey = 'this_month' | 'this_quarter' | 'ytd' | 'last_fy' | 'custom'
+
+type StatementScope = 'entity' | 'combined'
+
+const SCOPE_OPTIONS: readonly SegmentedOption<StatementScope>[] = [
+  { value: 'entity', label: 'This entity' },
+  { value: 'combined', label: 'Combined' },
+]
 
 const PRESETS: { key: PresetKey; label: string }[] = [
   { key: 'this_month', label: 'This month' },
@@ -99,6 +107,19 @@ function presetRange(
 
 const LiveStatementsContent: FC = function () {
   const { graph: currentGraph } = useLedgerGraph()
+  const { entityId, entities } = useEntityScope()
+  // A combined statement is the group parent's Reporting Style over every
+  // entity's books, summed per concept with nothing eliminated. It is only
+  // offered on the parent of a graph that holds more than one entity.
+  const canCombine = entityId === null && entities.length > 1
+  const [scope, setScope] = useState<StatementScope>('entity')
+  // Back to the entity's own books whenever the entity or the graph changes:
+  // two group parents both resolve to a null entity id.
+  const graphId = currentGraph?.graphId ?? null
+  useEffect(() => {
+    setScope('entity')
+  }, [entityId, graphId])
+  const combined = canCombine && scope === 'combined'
 
   const [statementType, setStatementType] =
     useState<StatementType>('balance_sheet')
@@ -139,9 +160,11 @@ const LiveStatementsContent: FC = function () {
       const result = await clients.ledger.liveFinancialStatement(
         currentGraph.graphId,
         {
+          entity_id: entityId,
           statement_type: statementType,
           period_start: range.start,
           period_end: range.end,
+          consolidated: combined,
         }
       )
       if (seq !== loadSeq.current) return // superseded by a newer load
@@ -166,7 +189,15 @@ const LiveStatementsContent: FC = function () {
     } finally {
       if (seq === loadSeq.current) setIsLoading(false)
     }
-  }, [currentGraph, statementType, preset, customStart, customEnd])
+  }, [
+    currentGraph,
+    entityId,
+    combined,
+    statementType,
+    preset,
+    customStart,
+    customEnd,
+  ])
 
   useEffect(() => {
     load()
@@ -201,6 +232,16 @@ const LiveStatementsContent: FC = function () {
             ariaLabel="Statement"
           />
         </FilterField>
+        {canCombine && (
+          <FilterField label="Scope">
+            <SegmentedControl
+              options={SCOPE_OPTIONS}
+              value={scope}
+              onChange={setScope}
+              ariaLabel="Scope"
+            />
+          </FilterField>
+        )}
         <FilterSelect
           id="period-preset"
           label="Period"
@@ -297,6 +338,13 @@ const LiveStatementsContent: FC = function () {
                 statement.unmapped_count === 1 ? '' : 's'
               } not included`}
             {statement.truncated && ' • results truncated — narrow the period'}
+            {combined &&
+              statement.combined_entity_ids &&
+              ` • combined across ${statement.combined_entity_ids.length} ${
+                statement.combined_entity_ids.length === 1
+                  ? 'entity'
+                  : 'entities'
+              }, nothing eliminated`}
           </div>
         )}
       </Card>

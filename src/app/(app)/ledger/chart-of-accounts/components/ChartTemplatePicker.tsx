@@ -18,6 +18,8 @@ import {
 
 interface ChartTemplatePickerProps {
   graphId: string
+  /** The entity whose chart is initialized: a subsidiary's id, or null for the group parent. */
+  entityId?: string | null
   /** Called once the chart exists; the page reloads its accounts. */
   onInitialized: (result: InitializeChartOfAccountsResult) => void
 }
@@ -39,6 +41,7 @@ const toFriendly = (err: unknown, fallback: string): FriendlyError =>
 // sees this — its chart arrives with the first sync.
 export const ChartTemplatePicker: FC<ChartTemplatePickerProps> = ({
   graphId,
+  entityId = null,
   onInitialized,
 }) => {
   const [templates, setTemplates] = useState<LedgerChartTemplate[] | undefined>(
@@ -81,7 +84,7 @@ export const ChartTemplatePicker: FC<ChartTemplatePickerProps> = ({
       const result = await clients.ledger.initializeChartOfAccounts(
         graphId,
         selectedKey,
-        { entityType: entityType || null }
+        { entityId, entityType: entityType || null }
       )
       onInitialized(result)
     } catch (err) {
@@ -91,7 +94,7 @@ export const ChartTemplatePicker: FC<ChartTemplatePickerProps> = ({
     } finally {
       setInitializing(false)
     }
-  }, [graphId, selectedKey, entityType, onInitialized])
+  }, [graphId, entityId, selectedKey, entityType, onInitialized])
 
   if (templates === undefined) {
     return null // still loading; don't flash the picker

@@ -24,6 +24,8 @@ interface AccountOption {
 
 interface NewScheduleModalProps {
   graphId: string
+  /** A subsidiary's id, or null for the group parent: whose chart the accounts come from. */
+  entityId?: string | null
   open: boolean
   onClose: () => void
   onCreated?: (structureId: string) => void
@@ -77,6 +79,7 @@ const formatCents = (cents: number): string => formatDollars(cents / 100)
  */
 export const NewScheduleModal: FC<NewScheduleModalProps> = ({
   graphId,
+  entityId = null,
   open,
   onClose,
   onCreated,
@@ -110,6 +113,7 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
     void (async () => {
       try {
         const list = await clients.ledger.listAccounts(graphId, {
+          entityId,
           isActive: true,
           limit: 500,
         })
@@ -134,7 +138,7 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
     return () => {
       cancelled = true
     }
-  }, [open, graphId])
+  }, [open, graphId, entityId])
 
   // Reset state every time the modal opens.
   useEffect(() => {

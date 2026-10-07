@@ -299,6 +299,7 @@ describe('AccountRollupsPanel', () => {
     await waitFor(() => {
       expect(mockGetAccountRollups).toHaveBeenCalledWith('kg_mygraph', {
         mappingId: 'struct_map_99',
+        entityId: null,
       })
     })
   })

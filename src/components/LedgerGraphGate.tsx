@@ -1,18 +1,23 @@
 'use client'
 
+import { useEntityScope } from '@/lib/entity-scope'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
-import { EmptyState, PageLayout, useGraphContext } from '@robosystems/core'
+import {
+  EmptyState,
+  LoadingState,
+  PageLayout,
+  useGraphContext,
+} from '@robosystems/core'
 import { Button, Card } from 'flowbite-react'
 import { usePathname } from 'next/navigation'
 import type { PropsWithChildren } from 'react'
-import { HiSwitchHorizontal } from 'react-icons/hi'
+import { HiExclamationCircle, HiSwitchHorizontal } from 'react-icons/hi'
 
 /**
  * Routes that do not read or write one ledger graph's books: they list every
  * ledger graph, or forward to another app, so a non-ledger selection is fine.
  */
 const GRAPH_INDEPENDENT_ROUTES = [
-  '/entities',
   '/settings',
   '/graphs/new',
   '/console',
@@ -41,8 +46,46 @@ export function LedgerGraphGate({ children }: PropsWithChildren) {
   const pathname = usePathname() ?? ''
   const { mismatch, ledgerGraphs } = useLedgerGraph()
   const { setCurrentGraph } = useGraphContext()
+  const scope = useEntityScope()
 
-  if (!mismatch || isGraphIndependent(pathname)) return <>{children}</>
+  if (isGraphIndependent(pathname)) return <>{children}</>
+
+  if (!mismatch) {
+    // The entity in scope decides whose books every ledger page reads and
+    // writes. Until the selected graph's list has been read it would default
+    // to the parent, and a failed read would do so silently — so the page
+    // waits, and a failure says so rather than showing the wrong books.
+    if (scope.error) {
+      return (
+        <PageLayout>
+          <Card>
+            <EmptyState
+              icon={HiExclamationCircle}
+              title="Entities could not be loaded"
+              description={`${scope.error} The pages need to know which entity is selected before they read its books.`}
+              action={
+                <Button
+                  size="sm"
+                  color="light"
+                  onClick={() => void scope.refresh()}
+                >
+                  Retry
+                </Button>
+              }
+            />
+          </Card>
+        </PageLayout>
+      )
+    }
+    if (!scope.isResolved) {
+      return (
+        <PageLayout>
+          <LoadingState size="xl" className="py-24" />
+        </PageLayout>
+      )
+    }
+    return <>{children}</>
+  }
 
   return (
     <PageLayout>

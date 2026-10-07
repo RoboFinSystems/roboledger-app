@@ -129,7 +129,9 @@ describe('TrialBalancePanel', () => {
     mockGetTrialBalance.mockResolvedValue(makeResponse([]))
     render(<TrialBalancePanel graphId="kg_mygraph" />)
     await waitFor(() => {
-      expect(mockGetTrialBalance).toHaveBeenCalledWith('kg_mygraph')
+      expect(mockGetTrialBalance).toHaveBeenCalledWith('kg_mygraph', {
+        entityId: null,
+      })
     })
   })
 })

@@ -27,12 +27,15 @@ import type { ViewMode } from './ViewModeToggle'
 
 interface AccountRollupsPanelProps {
   graphId: string
+  /** A subsidiary's id, or null for the group parent. */
+  entityId?: string | null
   mappingId: string
   viewMode: ViewMode
 }
 
 const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
   graphId,
+  entityId = null,
   mappingId,
   viewMode,
 }) => {
@@ -51,6 +54,7 @@ const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
       setError(null)
       const response = await clients.ledger.getAccountRollups(graphId, {
         mappingId,
+        entityId,
       })
       if (seq !== loadSeq.current) return
       setData(response)
@@ -61,7 +65,7 @@ const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
     } finally {
       if (seq === loadSeq.current) setIsLoading(false)
     }
-  }, [graphId, mappingId])
+  }, [graphId, entityId, mappingId])
 
   useEffect(() => {
     loadData()

@@ -143,7 +143,9 @@ describe('ReconciliationsPanel', () => {
     expect(
       await screen.findByText('Prepaid Insurance (schedules)')
     ).toBeInTheDocument()
-    expect(mockListReconciliations).toHaveBeenCalledWith('kg1', '2026-08')
+    expect(mockListReconciliations).toHaveBeenCalledWith('kg1', '2026-08', {
+      entityId: null,
+    })
     expect(screen.getByText('Reconciled')).toBeInTheDocument()
     expect(screen.getByText('Against its schedules')).toBeInTheDocument()
   })
@@ -325,7 +327,9 @@ describe('ReconciliationsPanel', () => {
       })
     )
     await waitFor(() =>
-      expect(mockListReconciliations).toHaveBeenCalledWith('kg1', '2026-07')
+      expect(mockListReconciliations).toHaveBeenCalledWith('kg1', '2026-07', {
+        entityId: null,
+      })
     )
   })
 })

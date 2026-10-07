@@ -454,8 +454,14 @@ describe('CloseContent', () => {
     render(<CloseContent />)
 
     await waitFor(() => {
-      expect(mockGetClosingBookStructures).toHaveBeenCalledWith('kg_mygraph123')
-      expect(mockGetEntity).toHaveBeenCalledWith('kg_mygraph123')
+      // No entity in scope: the group parent is the server's default.
+      expect(mockGetClosingBookStructures).toHaveBeenCalledWith(
+        'kg_mygraph123',
+        { entityId: null }
+      )
+      expect(mockGetEntity).toHaveBeenCalledWith('kg_mygraph123', {
+        entityId: null,
+      })
     })
   })
 })

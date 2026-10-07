@@ -1,22 +1,20 @@
 'use client'
 
 import { FilterBar, SearchField } from '@/components/FilterBar'
-import SortableHeadCell from '@/components/SortableHeadCell'
-import { type SortColumn, useTableSort } from '@/lib/useTableSort'
-import type { Entity } from '@robosystems/core'
+import { hierarchyDepth, useEntityScope } from '@/lib/entity-scope'
+import { useLedgerGraph } from '@/lib/useLedgerGraph'
+import type { LedgerEntitySummary } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
-  GraphFilters,
   LoadingState,
   PageHeader,
   PageLayout,
-  useEntity,
   useGraphContext,
 } from '@robosystems/core'
 import {
-  Alert,
   Badge,
+  Button,
   Card,
   Table,
   TableBody,
@@ -25,114 +23,136 @@ import {
   TableHeadCell,
   TableRow,
 } from 'flowbite-react'
+import { useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { HiExclamationCircle, HiOfficeBuilding } from 'react-icons/hi'
+import { HiOfficeBuilding, HiPlus } from 'react-icons/hi'
+import NewEntityModal from './components/NewEntityModal'
 
-interface EntityWithGraph extends Entity {
-  _graphId: string
-  _graphName: string
-  _graphCreatedAt?: string
-  _graphType?: string
+const TYPE_LABELS: Record<string, string> = {
+  corporation: 'Corporation',
+  llc: 'LLC',
+  partnership: 'Partnership',
+  sole_proprietorship: 'Sole proprietorship',
+  non_profit: 'Non-profit',
 }
 
-type SortKey = 'entity' | 'graph' | 'type' | 'created'
+/** What the ledger facades take for an entity: a subsidiary's id, or null for the parent. */
+const scopeOf = (entity: LedgerEntitySummary): string | null =>
+  entity.isParent ? null : entity.id
 
-const SORT_COLUMNS: Record<SortKey, SortColumn<EntityWithGraph>> = {
-  entity: { value: (entity) => entity.name },
-  graph: { value: (entity) => entity._graphName },
-  type: { value: (entity) => entity._graphType || 'entity' },
-  // ISO timestamps order correctly as text; newest first.
-  created: { value: (entity) => entity._graphCreatedAt ?? null, first: 'desc' },
+function formatOwnership(pct: number | null): string {
+  if (pct === null) return '—'
+  return `${Number.isInteger(pct) ? pct : pct.toFixed(2)}%`
 }
 
+/**
+ * The reporting group of the selected graph: the group parent and every
+ * subsidiary under it, each with its own close. Selecting a row puts that
+ * entity in the header, and every ledger page reads its books.
+ */
 const EntitiesListPageContent: FC = function () {
   const { state: graphState } = useGraphContext()
-  const { currentEntity } = useEntity()
-  const [entities, setEntities] = useState<EntityWithGraph[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { graph } = useLedgerGraph()
+  const {
+    entities,
+    entity: current,
+    isLoading,
+    select,
+    refresh,
+  } = useEntityScope()
+  const searchParams = useSearchParams()
   const [searchTerm, setSearchTerm] = useState('')
+  const [newOpen, setNewOpen] = useState(false)
+  const [closedThrough, setClosedThrough] = useState<
+    Record<string, string | null | undefined>
+  >({})
 
-  // Load parent entity from each roboledger graph via the ledger entity API
+  // The header's "Add Entity" lands here with the form open.
   useEffect(() => {
-    const loadAllEntities = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
+    if (searchParams?.get('new') === '1') setNewOpen(true)
+  }, [searchParams])
 
-        const roboledgerGraphs = graphState.graphs.filter(
-          GraphFilters.roboledger
-        )
+  const graphId = graph?.graphId ?? null
 
-        if (roboledgerGraphs.length === 0) {
-          setEntities([])
-          return
-        }
-
-        const results = await Promise.allSettled(
-          roboledgerGraphs.map((graph) =>
-            clients.ledger
-              .getEntity(graph.graphId)
-              .then((entity) => ({ graph, entity }))
-          )
-        )
-
-        const allEntities: EntityWithGraph[] = []
-        for (const result of results) {
-          if (result.status === 'fulfilled' && result.value.entity) {
-            const { graph, entity } = result.value
-            allEntities.push({
-              identifier: entity.id || entity.uri || '',
-              name: entity.name || 'Unnamed Entity',
-              parentEntityId: entity.parentEntityId,
-              isParent: entity.isParent,
-              _graphId: graph.graphId,
-              _graphName: graph.graphName,
-              _graphCreatedAt: graph.createdAt,
-              _graphType: graph.graphType,
-            })
-          } else if (result.status === 'rejected') {
-            console.error('Error loading entity:', result.reason)
-          }
-        }
-
-        setEntities(allEntities)
-      } catch (error) {
-        console.error('Error loading entities:', error)
-        setError('Failed to load entities. Please try again.')
-      } finally {
-        setIsLoading(false)
-      }
+  // Close status per entity: each closes on its own calendar. Undefined is
+  // "not read", null is "no calendar yet", a string is the month.
+  useEffect(() => {
+    if (!graphId || entities.length === 0) {
+      setClosedThrough({})
+      return
     }
+    let cancelled = false
+    void (async () => {
+      const results = await Promise.allSettled(
+        entities.map((e) =>
+          clients.ledger
+            .getFiscalCalendar(graphId, { entityId: scopeOf(e) })
+            .then((cal) => [e.id, cal?.closedThrough ?? null] as const)
+        )
+      )
+      if (cancelled) return
+      const next: Record<string, string | null | undefined> = {}
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          const [id, month] = result.value
+          next[id] = month
+        }
+      }
+      setClosedThrough(next)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [graphId, entities])
 
-    loadAllEntities()
-  }, [graphState.graphs])
-
-  // Filter entities based on search term. Memoised so the sort below has a
-  // stable list to work from.
-  const filteredEntities = useMemo(() => {
-    const needle = searchTerm.toLowerCase()
+  const filtered = useMemo(() => {
+    const needle = searchTerm.trim().toLowerCase()
+    if (!needle) return entities
     return entities.filter(
-      (entity) =>
-        entity.name.toLowerCase().includes(needle) ||
-        entity.identifier.toLowerCase().includes(needle) ||
-        entity._graphName.toLowerCase().includes(needle)
+      (e) =>
+        e.name.toLowerCase().includes(needle) ||
+        (e.legalName ?? '').toLowerCase().includes(needle) ||
+        (e.ticker ?? '').toLowerCase().includes(needle)
     )
   }, [entities, searchTerm])
 
-  // Every entity is in hand (no cap, no paging), so sorting is honest.
-  const tableSort = useTableSort(filteredEntities, SORT_COLUMNS)
+  const count = entities.length
+  const subtitle = graph
+    ? `${graph.graphName} · ${count} ${count === 1 ? 'entity' : 'entities'}`
+    : 'The reporting group of the selected graph'
+
+  if (!graph && !graphState.isLoading) {
+    return (
+      <PageLayout>
+        <PageHeader icon={HiOfficeBuilding} title="Entities" />
+        <Card>
+          <EmptyState
+            icon={HiOfficeBuilding}
+            title="No Ledger Found"
+            description="Select a RoboLedger graph to see its entities."
+          />
+        </Card>
+      </PageLayout>
+    )
+  }
 
   return (
     <PageLayout>
       <PageHeader
         icon={HiOfficeBuilding}
-        title={`All Entities (${entities.length})`}
-        subtitle="View all entities across your roboledger graphs"
+        title="Entities"
+        subtitle={subtitle}
+        actions={
+          graphId ? (
+            <Button size="sm" color="blue" onClick={() => setNewOpen(true)}>
+              <HiPlus className="mr-1 h-4 w-4" />
+              New Entity
+            </Button>
+          ) : undefined
+        }
       />
 
-      {/* Search */}
       <FilterBar>
         <SearchField
           id="search"
@@ -142,101 +162,117 @@ const EntitiesListPageContent: FC = function () {
         />
       </FilterBar>
 
-      {error && (
-        <Alert color="failure">
-          <HiExclamationCircle className="h-4 w-4" />
-          <span className="font-medium">Error!</span> {error}
-        </Alert>
-      )}
-
       <Card>
         <div className="overflow-x-auto">
-          {isLoading ? (
+          {isLoading && entities.length === 0 ? (
             <LoadingState />
           ) : entities.length === 0 ? (
             <EmptyState
               icon={HiOfficeBuilding}
-              title="No Entities Found"
-              description="No entities found in your roboledger graphs."
+              title="No Entities Yet"
+              description="Create the first entity of this graph. It becomes the group parent."
               className="p-8"
+              action={
+                graphId ? (
+                  <Button
+                    size="sm"
+                    color="blue"
+                    onClick={() => setNewOpen(true)}
+                  >
+                    <HiPlus className="mr-1 h-4 w-4" />
+                    New Entity
+                  </Button>
+                ) : undefined
+              }
             />
           ) : (
             <Table>
               <TableHead>
                 <tr>
-                  <SortableHeadCell
-                    sort={tableSort.ariaSort('entity')}
-                    onSort={() => tableSort.toggle('entity')}
-                  >
-                    Entity
-                  </SortableHeadCell>
-                  <SortableHeadCell
-                    sort={tableSort.ariaSort('graph')}
-                    onSort={() => tableSort.toggle('graph')}
-                  >
-                    Graph
-                  </SortableHeadCell>
-                  <SortableHeadCell
-                    sort={tableSort.ariaSort('type')}
-                    onSort={() => tableSort.toggle('type')}
-                  >
-                    Type
-                  </SortableHeadCell>
-                  <SortableHeadCell
-                    sort={tableSort.ariaSort('created')}
-                    onSort={() => tableSort.toggle('created')}
-                  >
-                    Created
-                  </SortableHeadCell>
-                  <TableHeadCell>Selected</TableHeadCell>
+                  <TableHeadCell>Entity</TableHeadCell>
+                  <TableHeadCell>Legal form</TableHeadCell>
+                  <TableHeadCell>Ownership</TableHeadCell>
+                  <TableHeadCell>Closed through</TableHeadCell>
+                  <TableHeadCell>Status</TableHeadCell>
+                  <TableHeadCell>
+                    <span className="sr-only">Select</span>
+                  </TableHeadCell>
                 </tr>
               </TableHead>
               <TableBody>
-                {tableSort.sorted.map((entity) => {
-                  const isSelected =
-                    currentEntity?.identifier === entity.identifier &&
-                    graphState.currentGraphId === entity._graphId
-
+                {filtered.map((row) => {
+                  const isSelected = current?.id === row.id
+                  const depth = hierarchyDepth(row, entities)
+                  const month = closedThrough[row.id]
                   return (
-                    <TableRow key={entity._graphId}>
+                    <TableRow key={row.id}>
                       <TableCell className="font-medium text-gray-900 dark:text-white">
-                        <div className="flex flex-col">
-                          <span className="font-semibold">{entity.name}</span>
+                        <div
+                          className="flex flex-col"
+                          style={{ paddingLeft: `${depth * 20}px` }}
+                        >
+                          <span className="font-semibold">
+                            {row.name}
+                            {row.isParent && count > 1 && (
+                              <Badge
+                                color="indigo"
+                                size="xs"
+                                className="ml-2 inline"
+                              >
+                                group parent
+                              </Badge>
+                            )}
+                          </span>
                           <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
-                            {entity.identifier}
+                            {row.ticker ?? row.id}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col">
-                          <span className="text-sm text-gray-600 dark:text-gray-300">
-                            {entity._graphName}
-                          </span>
-                          <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
-                            {entity._graphId}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge color="gray" size="sm">
-                          {entity._graphType || 'entity'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {entity._graphCreatedAt
-                            ? new Date(
-                                entity._graphCreatedAt
-                              ).toLocaleDateString()
-                            : '--'}
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          {row.entityType
+                            ? (TYPE_LABELS[row.entityType] ?? row.entityType)
+                            : '—'}
                         </span>
                       </TableCell>
                       <TableCell>
-                        {isSelected && (
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          {row.isParent
+                            ? '—'
+                            : formatOwnership(row.ownershipPct)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          {month === undefined
+                            ? '…'
+                            : month === null
+                              ? 'Not initialized'
+                              : month}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          color={row.status === 'active' ? 'success' : 'gray'}
+                          size="sm"
+                        >
+                          {row.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {isSelected ? (
                           <Badge color="success" size="sm">
-                            active
+                            selected
                           </Badge>
-                        )}
+                        ) : graphId ? (
+                          <Button
+                            size="xs"
+                            color="light"
+                            onClick={() => void select(row, graphId)}
+                          >
+                            Select
+                          </Button>
+                        ) : null}
                       </TableCell>
                     </TableRow>
                   )
@@ -246,6 +282,19 @@ const EntitiesListPageContent: FC = function () {
           )}
         </div>
       </Card>
+
+      {graphId && (
+        <NewEntityModal
+          graphId={graphId}
+          entities={entities}
+          open={newOpen}
+          onClose={() => setNewOpen(false)}
+          onCreated={() => {
+            setNewOpen(false)
+            void refresh()
+          }}
+        />
+      )}
     </PageLayout>
   )
 }

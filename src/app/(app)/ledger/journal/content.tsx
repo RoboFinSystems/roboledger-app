@@ -6,6 +6,7 @@ import {
   FilterSelect,
   SearchField,
 } from '@/components/FilterBar'
+import { useEntityScope } from '@/lib/entity-scope'
 import { formatDollars } from '@/lib/ledger/formatters'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import {
@@ -113,6 +114,7 @@ export const initialViewFromSearch = (search: string): JournalView =>
 const JournalContent: FC = function () {
   const { state: graphState } = useGraphContext()
   const ledgerGraphId = useLedgerGraph().graph?.graphId ?? null
+  const { entityId } = useEntityScope()
   const [transactions, setTransactions] = useState<TransactionRow[]>([])
   const [totalCount, setTotalCount] = useState<number | null>(null)
   const [lineItemsMap, setLineItemsMap] = useState<
@@ -176,7 +178,9 @@ const JournalContent: FC = function () {
     })()
     void (async () => {
       try {
-        const calendar = await clients.ledger.getFiscalCalendar(ledgerGraphId)
+        const calendar = await clients.ledger.getFiscalCalendar(ledgerGraphId, {
+          entityId,
+        })
         if (cancelled) return
         // No calendar yet means nothing is closed.
         setClosedThrough(calendar?.closedThrough ?? null)
@@ -189,7 +193,7 @@ const JournalContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [ledgerGraphId, refreshKey])
+  }, [ledgerGraphId, entityId, refreshKey])
 
   // Load transactions from all roboledger graphs
   useEffect(() => {
@@ -213,6 +217,7 @@ const JournalContent: FC = function () {
         const result = await clients.ledger.listTransactions(
           currentGraph.graphId,
           {
+            entityId,
             startDate: startDate || undefined,
             endDate: endDate || undefined,
             limit: 500,
@@ -265,6 +270,7 @@ const JournalContent: FC = function () {
   }, [
     graphState.graphs,
     graphState.currentGraphId,
+    entityId,
     startDate,
     endDate,
     refreshKey,
@@ -437,6 +443,7 @@ const JournalContent: FC = function () {
       {ledgerGraphId && (
         <NewJournalEntryModal
           graphId={ledgerGraphId}
+          entityId={entityId}
           open={newEntryOpen}
           onClose={() => setNewEntryOpen(false)}
           onCreated={() => setRefreshKey((k) => k + 1)}
@@ -446,6 +453,7 @@ const JournalContent: FC = function () {
       {activeTab === 'entries' && ledgerGraphId ? (
         <JournalEntriesPanel
           graphId={ledgerGraphId}
+          entityId={entityId}
           startDate={startDate}
           endDate={endDate}
           refreshKey={refreshKey}

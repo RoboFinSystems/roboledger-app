@@ -1,10 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mockSetCurrentGraph = vi.fn()
-const mockSetCurrentEntity = vi.fn()
+const mockUseGraphContext = vi.fn()
+const mockScope = vi.fn()
+const mockSelect = vi.fn()
 const mockOpenCreateGraph = vi.fn()
-const mockGetEntity = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
   GraphFilters: {
@@ -12,16 +12,15 @@ vi.mock('@robosystems/core', () => ({
       graph.graphType === 'entity' &&
       graph.schemaExtensions?.includes('roboledger'),
   },
-  useGraphContext: vi.fn(),
+  useGraphContext: () => mockUseGraphContext(),
   useEntity: vi.fn(),
-  // The component now calls clients.ledger.getEntity(graphId) directly
-  // — no more raw `getLedgerEntity` SDK import.
-  clients: {
-    ledger: {
-      getEntity: (graphId: string) => mockGetEntity(graphId),
-    },
-  },
+  clients: { ledger: {} },
 }))
+
+vi.mock('@/lib/entity-scope', async (importOriginal) => {
+  const actual = (await importOriginal()) as Record<string, unknown>
+  return { ...actual, useEntityScope: () => mockScope() }
+})
 
 vi.mock('@/lib/cross-app', () => ({
   useCreateGraphHandoff: () => ({
@@ -33,13 +32,11 @@ vi.mock('@/lib/cross-app', () => ({
 vi.mock('react-icons/hi', () => ({
   HiChevronDown: () => <span data-testid="chevron" />,
   HiOfficeBuilding: () => <span data-testid="office-icon" />,
+  HiPlus: () => <span />,
+  HiSearch: () => <span />,
 }))
 
-import { useEntity, useGraphContext } from '@robosystems/core'
 import { EntitySelectorDropdown } from '../EntitySelectorDropdown'
-
-const mockUseGraphContext = vi.mocked(useGraphContext)
-const mockUseEntity = vi.mocked(useEntity)
 
 const makeGraph = (id: string, name: string) => ({
   graphId: id,
@@ -51,272 +48,169 @@ const makeGraph = (id: string, name: string) => ({
   createdAt: '2025-01-01T00:00:00Z',
 })
 
+const entity = (over: Record<string, unknown>) => ({
+  id: 'ent',
+  name: 'Entity',
+  legalName: null,
+  ticker: null,
+  cik: null,
+  industry: null,
+  entityType: null,
+  status: 'active',
+  isParent: false,
+  parentEntityId: null,
+  ownershipPct: null,
+  source: 'native',
+  sourceGraphId: null,
+  connectionId: null,
+  createdAt: null,
+  updatedAt: null,
+  ...over,
+})
+
+const parent = entity({ id: 'ent_p', name: 'Harbinger', isParent: true })
+const sub = entity({
+  id: 'ent_s',
+  name: 'Maple Court',
+  parentEntityId: 'ent_p',
+  ticker: 'MCL',
+})
+const bParent = entity({ id: 'ent_b', name: 'Beta Co', isParent: true })
+
+const graphA = makeGraph('kg_a', 'Graph A')
+const graphB = makeGraph('kg_b', 'Graph B')
+
+function scope(over: Record<string, unknown> = {}) {
+  mockScope.mockReturnValue({
+    entitiesByGraph: new Map([
+      ['kg_a', [parent, sub]],
+      ['kg_b', [bParent]],
+    ]),
+    entities: [parent, sub],
+    entity: parent,
+    parent,
+    entityId: null,
+    isLoading: false,
+    select: mockSelect,
+    refresh: vi.fn(),
+    ...over,
+  })
+}
+
 describe('EntitySelectorDropdown', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockUseEntity.mockReturnValue({
-      currentEntity: null,
-      setCurrentEntity: mockSetCurrentEntity,
-      clearEntity: vi.fn(),
-    } as any)
+    mockSelect.mockResolvedValue(undefined)
     mockUseGraphContext.mockReturnValue({
-      state: { graphs: [], currentGraphId: null, isLoading: false },
-      setCurrentGraph: mockSetCurrentGraph,
-    } as any)
+      state: { graphs: [graphA, graphB], currentGraphId: 'kg_a' },
+    })
+    scope()
   })
 
-  it('shows "Create Graph" button when no graphs exist', () => {
-    render(<EntitySelectorDropdown />)
-    expect(screen.getByText('Create Graph')).toBeInTheDocument()
-  })
-
-  it('hands off to graph creation in a new tab when Create Graph is clicked', () => {
+  it('shows "Create Graph" when no graphs exist', () => {
+    mockUseGraphContext.mockReturnValue({
+      state: { graphs: [], currentGraphId: null },
+    })
+    scope({ entitiesByGraph: new Map(), entities: [], entity: null })
     render(<EntitySelectorDropdown />)
     fireEvent.click(screen.getByText('Create Graph'))
     // No argument means the hook's `_blank` default — this app's tab stays put.
     expect(mockOpenCreateGraph).toHaveBeenCalledWith()
   })
 
-  it('loads entities in parallel via Promise.allSettled', async () => {
-    const graphs = [makeGraph('g1', 'Graph 1'), makeGraph('g2', 'Graph 2')]
+  it('names the entity in scope on the button', () => {
+    scope({ entity: sub, entityId: 'ent_s' })
+    render(<EntitySelectorDropdown />)
+    expect(screen.getByText('Maple Court')).toBeInTheDocument()
+  })
 
-    mockUseGraphContext.mockReturnValue({
-      state: { graphs, currentGraphId: 'g1', isLoading: false },
-      setCurrentGraph: mockSetCurrentGraph,
-    } as any)
+  it('lists every graph’s entities grouped by graph, subsidiaries indented', () => {
+    render(<EntitySelectorDropdown />)
+    fireEvent.click(screen.getByText('Harbinger'))
 
-    mockGetEntity.mockImplementation((graphId: string) =>
-      Promise.resolve({
-        id: graphId,
-        name: `Entity ${graphId}`,
-        parentEntityId: null,
-        isParent: true,
-      })
+    expect(screen.getByText('Graph A')).toBeInTheDocument()
+    expect(screen.getByText('Graph B')).toBeInTheDocument()
+    expect(screen.getByText('Beta Co')).toBeInTheDocument()
+    expect(screen.getByText('MCL')).toBeInTheDocument()
+
+    const options = screen.getAllByRole('option')
+    expect(options.map((o) => o.textContent)).toEqual([
+      'Harbingerparent',
+      'Maple CourtMCL',
+      'Beta Co',
+    ])
+    expect(options[0]).toHaveStyle({ paddingLeft: '16px' })
+    expect(options[1]).toHaveStyle({ paddingLeft: '32px' })
+    expect(options[0]).toHaveAttribute('aria-selected', 'true')
+    expect(options[1]).toHaveAttribute('aria-selected', 'false')
+  })
+
+  it('narrows the list as the user types', () => {
+    render(<EntitySelectorDropdown />)
+    fireEvent.click(screen.getByText('Harbinger'))
+    const search = screen.getByLabelText('Search entities')
+
+    fireEvent.change(search, { target: { value: 'maple' } })
+    expect(screen.getAllByRole('option')).toHaveLength(1)
+    expect(screen.getByText('Maple Court')).toBeInTheDocument()
+    expect(screen.queryByText('Graph B')).not.toBeInTheDocument()
+
+    // A ticker matches too.
+    fireEvent.change(search, { target: { value: 'mcl' } })
+    expect(screen.getAllByRole('option')).toHaveLength(1)
+
+    // A graph name keeps all of its entities.
+    fireEvent.change(search, { target: { value: 'graph b' } })
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
+      'Beta Co',
+    ])
+
+    fireEvent.change(search, { target: { value: 'zzz' } })
+    expect(screen.getByText('No entities match “zzz”.')).toBeInTheDocument()
+  })
+
+  it('hands a pick to the scope with its graph, and closes', async () => {
+    render(<EntitySelectorDropdown />)
+    fireEvent.click(screen.getByText('Harbinger'))
+    fireEvent.click(screen.getByText('Beta Co'))
+
+    expect(mockSelect).toHaveBeenCalledWith(bParent, 'kg_b')
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+  })
+
+  it('offers a new entity in the selected graph and a new graph', () => {
+    render(<EntitySelectorDropdown />)
+    fireEvent.click(screen.getByText('Harbinger'))
+
+    expect(screen.getByText('Add Entity').closest('a')).toHaveAttribute(
+      'href',
+      '/entities?new=1'
     )
-
-    render(<EntitySelectorDropdown />)
-
-    await waitFor(() => {
-      expect(mockGetEntity).toHaveBeenCalledTimes(2)
-    })
-  })
-
-  it('auto-selects entity for current graph when none selected', async () => {
-    const graphs = [makeGraph('g1', 'Graph 1')]
-
-    mockUseGraphContext.mockReturnValue({
-      state: { graphs, currentGraphId: 'g1', isLoading: false },
-      setCurrentGraph: mockSetCurrentGraph,
-    } as any)
-
-    mockGetEntity.mockResolvedValue({
-      id: 'g1',
-      name: 'Auto Entity',
-      parentEntityId: null,
-      isParent: true,
-    })
-
-    render(<EntitySelectorDropdown />)
-
-    await waitFor(() => {
-      expect(mockSetCurrentEntity).toHaveBeenCalledWith({
-        identifier: 'g1',
-        name: 'Auto Entity',
-        parentEntityId: null,
-        isParent: true,
-      })
-    })
-  })
-
-  it('does not auto-select if entity is already selected', async () => {
-    const graphs = [makeGraph('g1', 'Graph 1')]
-
-    mockUseGraphContext.mockReturnValue({
-      state: { graphs, currentGraphId: 'g1', isLoading: false },
-      setCurrentGraph: mockSetCurrentGraph,
-    } as any)
-
-    mockUseEntity.mockReturnValue({
-      currentEntity: {
-        identifier: 'g1',
-        name: 'Already Selected Entity',
-        parentEntityId: null,
-        isParent: true,
-      },
-      setCurrentEntity: mockSetCurrentEntity,
-      clearEntity: vi.fn(),
-    } as any)
-
-    mockGetEntity.mockResolvedValue({
-      id: 'g1',
-      name: 'Already Selected Entity',
-      parentEntityId: null,
-      isParent: true,
-    })
-
-    render(<EntitySelectorDropdown />)
-
-    await waitFor(() => {
-      expect(mockGetEntity).toHaveBeenCalledTimes(1)
-    })
-
-    expect(mockSetCurrentEntity).not.toHaveBeenCalled()
-  })
-
-  it('shows selected entity name in button', async () => {
-    const graphs = [makeGraph('g1', 'Graph 1')]
-
-    mockUseGraphContext.mockReturnValue({
-      state: { graphs, currentGraphId: 'g1', isLoading: false },
-      setCurrentGraph: mockSetCurrentGraph,
-    } as any)
-
-    mockUseEntity.mockReturnValue({
-      currentEntity: {
-        identifier: 'e1',
-        name: 'My Company',
-        parentEntityId: null,
-        isParent: true,
-      },
-      setCurrentEntity: mockSetCurrentEntity,
-      clearEntity: vi.fn(),
-    } as any)
-
-    mockGetEntity.mockResolvedValue({
-      id: 'g1',
-      name: 'My Company',
-      parentEntityId: null,
-      isParent: true,
-    })
-
-    render(<EntitySelectorDropdown />)
-
-    await waitFor(() => {
-      expect(screen.getByText('My Company')).toBeInTheDocument()
-    })
-  })
-
-  it('opens dropdown and shows entities on click', async () => {
-    const graphs = [makeGraph('g1', 'Graph 1'), makeGraph('g2', 'Graph 2')]
-
-    mockUseGraphContext.mockReturnValue({
-      state: { graphs, currentGraphId: 'g1', isLoading: false },
-      setCurrentGraph: mockSetCurrentGraph,
-    } as any)
-
-    mockGetEntity.mockImplementation((graphId: string) =>
-      Promise.resolve({
-        id: graphId,
-        name: `Entity ${graphId}`,
-        parentEntityId: null,
-        isParent: true,
-      })
-    )
-
-    render(<EntitySelectorDropdown />)
-
-    // Wait for entities to load
-    await waitFor(() => {
-      expect(mockGetEntity).toHaveBeenCalledTimes(2)
-    })
-
-    // Click dropdown button
-    fireEvent.click(screen.getByText('Select Entity'))
-
-    // Should show entity names and graph names
-    expect(screen.getByText('Entity g1')).toBeInTheDocument()
-    expect(screen.getByText('Entity g2')).toBeInTheDocument()
-    expect(screen.getByText('Graph 1')).toBeInTheDocument()
-    expect(screen.getByText('Graph 2')).toBeInTheDocument()
-  })
-
-  it('switches graph and entity on selection', async () => {
-    const graphs = [makeGraph('g1', 'Graph 1'), makeGraph('g2', 'Graph 2')]
-
-    mockUseGraphContext.mockReturnValue({
-      state: { graphs, currentGraphId: 'g1', isLoading: false },
-      setCurrentGraph: mockSetCurrentGraph,
-    } as any)
-
-    mockGetEntity.mockImplementation((graphId: string) =>
-      Promise.resolve({
-        id: graphId,
-        name: `Entity ${graphId}`,
-        parentEntityId: null,
-        isParent: true,
-      })
-    )
-
-    render(<EntitySelectorDropdown />)
-
-    await waitFor(() => {
-      expect(mockGetEntity).toHaveBeenCalledTimes(2)
-    })
-
-    // Open dropdown
-    fireEvent.click(screen.getByText('Select Entity'))
-
-    // Click on Entity g2 (different graph)
-    fireEvent.click(screen.getByText('Entity g2'))
-
-    await waitFor(() => {
-      expect(mockSetCurrentGraph).toHaveBeenCalledWith('g2')
-      expect(mockSetCurrentEntity).toHaveBeenCalledWith({
-        identifier: 'g2',
-        name: 'Entity g2',
-        parentEntityId: null,
-        isParent: true,
-      })
-    })
-  })
-
-  it('handles API failures gracefully', async () => {
-    const graphs = [makeGraph('g1', 'Graph 1')]
-
-    mockUseGraphContext.mockReturnValue({
-      state: { graphs, currentGraphId: 'g1', isLoading: false },
-      setCurrentGraph: mockSetCurrentGraph,
-    } as any)
-
-    mockGetEntity.mockRejectedValue(new Error('Network error'))
-
-    render(<EntitySelectorDropdown />)
-
-    await waitFor(() => {
-      expect(mockGetEntity).toHaveBeenCalledTimes(1)
-    })
-
-    // Should not crash — button should still render
-    expect(screen.getByText('Select Entity')).toBeInTheDocument()
-  })
-
-  it('shows Create New Entity option in dropdown', async () => {
-    const graphs = [makeGraph('g1', 'Graph 1')]
-
-    mockUseGraphContext.mockReturnValue({
-      state: { graphs, currentGraphId: 'g1', isLoading: false },
-      setCurrentGraph: mockSetCurrentGraph,
-    } as any)
-
-    mockGetEntity.mockResolvedValue({
-      id: 'g1',
-      name: 'Entity 1',
-      parentEntityId: null,
-      isParent: true,
-    })
-
-    render(<EntitySelectorDropdown />)
-
-    await waitFor(() => {
-      expect(mockGetEntity).toHaveBeenCalledTimes(1)
-    })
-
-    fireEvent.click(screen.getByText('Select Entity'))
-
-    const createButton = screen.getByText('+ Create New Entity')
-    expect(createButton).toBeInTheDocument()
-
-    fireEvent.click(createButton)
+    fireEvent.click(screen.getByText('New Graph'))
     expect(mockOpenCreateGraph).toHaveBeenCalledWith()
+  })
+
+  it('says it is loading before the first list arrives', () => {
+    scope({
+      entitiesByGraph: new Map(),
+      entities: [],
+      entity: null,
+      parent: null,
+      isLoading: true,
+    })
+    render(<EntitySelectorDropdown />)
+    fireEvent.click(screen.getByText('Select Entity'))
+    expect(screen.getByText('Loading entities...')).toBeInTheDocument()
+  })
+
+  it('is disabled when the graphs hold no entity', () => {
+    scope({
+      entitiesByGraph: new Map(),
+      entities: [],
+      entity: null,
+      parent: null,
+    })
+    render(<EntitySelectorDropdown />)
+    expect(screen.getByText('Select Entity').closest('button')).toBeDisabled()
   })
 })

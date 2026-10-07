@@ -96,7 +96,7 @@ describe('ChartTemplatePicker', () => {
       expect(mockInitializeChartOfAccounts).toHaveBeenCalledWith(
         'kg_test',
         'services',
-        { entityType: 'llc' }
+        { entityId: null, entityType: 'llc' }
       )
     )
     expect(onInitialized).toHaveBeenCalledWith(result)
@@ -112,7 +112,7 @@ describe('ChartTemplatePicker', () => {
       expect(mockInitializeChartOfAccounts).toHaveBeenCalledWith(
         'kg_test',
         'saas',
-        { entityType: null }
+        { entityId: null, entityType: null }
       )
     )
   })

@@ -1,29 +1,35 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mockGetEntity = vi.fn()
+const mockGetFiscalCalendar = vi.fn()
+const mockUseGraphContext = vi.fn()
+const mockLedgerGraph = vi.fn()
+const mockScope = vi.fn()
+const mockSelect = vi.fn()
+const mockRefresh = vi.fn()
+let mockSearch = ''
 
 vi.mock('@robosystems/core', () => ({
-  customTheme: { card: {}, alert: {}, table: {}, textInput: {} },
+  clients: {
+    ledger: {
+      getFiscalCalendar: (...args: any[]) => mockGetFiscalCalendar(...args),
+    },
+  },
   GraphFilters: {
-    roboledger: (graph: any) =>
-      graph.graphType === 'entity' &&
-      graph.schemaExtensions?.includes('roboledger'),
+    roboledger: (graph: any) => graph.schemaExtensions?.includes('roboledger'),
   },
   PageLayout: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
-  useGraphContext: vi.fn(),
+  useGraphContext: () => mockUseGraphContext(),
   useEntity: vi.fn(),
-  // The page now reads via clients.ledger.getEntity(graphId) directly.
-  // The facade returns the entity object (camelCase) or null — no REST
-  // envelope wrapper.
-  clients: {
-    ledger: {
-      getEntity: (graphId: string) => mockGetEntity(graphId),
-    },
-  },
-  PageHeader: () => <div data-testid="page-header" />,
+  PageHeader: ({ title, subtitle, actions }: any) => (
+    <div data-testid="page-header">
+      <h1>{title}</h1>
+      {subtitle ? <p>{subtitle}</p> : null}
+      {actions}
+    </div>
+  ),
   LoadingState: ({ message }: any) => (
     <div data-testid="loading-state" role="status">
       {message ?? 'Loading'}
@@ -38,10 +44,43 @@ vi.mock('@robosystems/core', () => ({
   ),
 }))
 
+vi.mock('@/lib/useLedgerGraph', () => ({
+  useLedgerGraph: () => mockLedgerGraph(),
+}))
+
+vi.mock('@/lib/entity-scope', async (importOriginal) => {
+  const actual = (await importOriginal()) as Record<string, unknown>
+  return { ...actual, useEntityScope: () => mockScope() }
+})
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(mockSearch),
+}))
+
+vi.mock('../components/NewEntityModal', () => ({
+  default: ({ open, entities, onCreated, onClose }: any) =>
+    open ? (
+      <div data-testid="new-entity-modal">
+        <span>{entities.length} in picker</span>
+        <button onClick={() => onCreated({ id: 'ent_new' })}>created</button>
+        <button onClick={onClose}>close</button>
+      </div>
+    ) : null,
+}))
+
 vi.mock('flowbite-react', () => ({
   Alert: ({ children }: any) => <div role="alert">{children}</div>,
   Badge: ({ children }: any) => <span>{children}</span>,
+  Button: ({ children, onClick, disabled }: any) => (
+    <button onClick={onClick} disabled={disabled}>
+      {children}
+    </button>
+  ),
   Card: ({ children }: any) => <div>{children}</div>,
+  Label: ({ children }: any) => <label>{children}</label>,
+  Select: ({ children, ...props }: any) => (
+    <select {...props}>{children}</select>
+  ),
   Spinner: () => <div data-testid="spinner" />,
   Table: ({ children }: any) => <table>{children}</table>,
   TableBody: ({ children }: any) => <tbody>{children}</tbody>,
@@ -53,161 +92,186 @@ vi.mock('flowbite-react', () => ({
 }))
 
 vi.mock('react-icons/hi', () => ({
-  HiChevronDown: () => <span />,
-  HiChevronUp: () => <span />,
-  HiExclamationCircle: () => <span />,
   HiOfficeBuilding: () => <span />,
-  HiSelector: () => <span />,
+  HiPlus: () => <span />,
   HiSearch: () => <span />,
 }))
 
-import { useEntity, useGraphContext } from '@robosystems/core'
 import EntitiesListPageContent from '../content'
 
-const mockUseGraphContext = vi.mocked(useGraphContext)
-const mockUseEntity = vi.mocked(useEntity)
-
-const makeGraph = (id: string, name: string) => ({
-  graphId: id,
-  graphName: name,
-  graphType: 'entity' as const,
-  schemaExtensions: ['roboledger'],
-  isSubgraph: false,
-  isRepository: false,
-  createdAt: '2025-01-01T00:00:00Z',
+const entity = (over: Record<string, unknown>) => ({
+  id: 'ent',
+  name: 'Entity',
+  legalName: null,
+  ticker: null,
+  cik: null,
+  industry: null,
+  entityType: null,
+  status: 'active',
+  isParent: false,
+  parentEntityId: null,
+  ownershipPct: null,
+  source: 'native',
+  sourceGraphId: null,
+  connectionId: null,
+  createdAt: null,
+  updatedAt: null,
+  ...over,
 })
+
+const parent = entity({
+  id: 'ent_p',
+  name: 'Harbinger',
+  isParent: true,
+  entityType: 'corporation',
+  ticker: 'HRB',
+})
+const sub = entity({
+  id: 'ent_s',
+  name: 'Maple Court',
+  parentEntityId: 'ent_p',
+  ownershipPct: 100,
+  entityType: 'llc',
+  ticker: 'MCL',
+})
+
+const graphA = {
+  graphId: 'kg_a',
+  graphName: 'Harbinger Group',
+  schemaExtensions: ['roboledger'],
+}
+
+function scope(over: Record<string, unknown> = {}) {
+  mockScope.mockReturnValue({
+    entitiesByGraph: new Map([['kg_a', [parent, sub]]]),
+    entities: [parent, sub],
+    entity: parent,
+    parent,
+    entityId: null,
+    isLoading: false,
+    select: mockSelect,
+    refresh: mockRefresh,
+    ...over,
+  })
+}
 
 describe('EntitiesListPageContent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockUseEntity.mockReturnValue({
-      currentEntity: null,
-      setCurrentEntity: vi.fn(),
-      clearEntity: vi.fn(),
-    } as any)
+    mockSearch = ''
     mockUseGraphContext.mockReturnValue({
-      state: {
-        graphs: [],
-        currentGraphId: null,
-        isLoading: false,
-      },
-      setCurrentGraph: vi.fn(),
-    } as any)
+      state: { graphs: [graphA], currentGraphId: 'kg_a', isLoading: false },
+    })
+    mockLedgerGraph.mockReturnValue({
+      graph: graphA,
+      ledgerGraphs: [graphA],
+      mismatch: false,
+    })
+    mockGetFiscalCalendar.mockImplementation(
+      (_graphId: string, options: { entityId: string | null }) =>
+        Promise.resolve({
+          closedThrough: options.entityId === null ? '2026-08' : '2026-07',
+        })
+    )
+    scope()
   })
 
-  it('shows spinner while loading', () => {
+  it('shows the empty state when no ledger graph is selected', () => {
+    mockLedgerGraph.mockReturnValue({
+      graph: null,
+      ledgerGraphs: [],
+      mismatch: false,
+    })
     mockUseGraphContext.mockReturnValue({
-      state: {
-        graphs: [makeGraph('g1', 'Graph 1')],
-        currentGraphId: 'g1',
-        isLoading: false,
-      },
-      setCurrentGraph: vi.fn(),
-    } as any)
+      state: { graphs: [], currentGraphId: null, isLoading: false },
+    })
+    scope({
+      entitiesByGraph: new Map(),
+      entities: [],
+      entity: null,
+      parent: null,
+    })
+    render(<EntitiesListPageContent />)
+    expect(screen.getByText('No Ledger Found')).toBeInTheDocument()
+  })
 
-    mockGetEntity.mockReturnValue(new Promise(() => {})) // never resolves
-
+  it('shows the loading state before the list arrives', () => {
+    scope({ entities: [], entity: null, parent: null, isLoading: true })
     render(<EntitiesListPageContent />)
     expect(screen.getByTestId('loading-state')).toBeInTheDocument()
   })
 
-  it('shows empty state when no entities', async () => {
+  it('lists the group in hierarchy order with the close status of each entity', async () => {
     render(<EntitiesListPageContent />)
-    await waitFor(() => {
-      expect(screen.getByText('No Entities Found')).toBeInTheDocument()
+
+    expect(screen.getByText('Harbinger Group · 2 entities')).toBeInTheDocument()
+    expect(screen.getByText('Harbinger')).toBeInTheDocument()
+    expect(screen.getByText('group parent')).toBeInTheDocument()
+    expect(screen.getByText('Maple Court')).toBeInTheDocument()
+    expect(screen.getByText('Corporation')).toBeInTheDocument()
+    expect(screen.getByText('LLC')).toBeInTheDocument()
+    expect(screen.getByText('100%')).toBeInTheDocument()
+
+    // Each entity closes on its own calendar: the parent is the server's
+    // default (null), the subsidiary is named.
+    expect(await screen.findByText('2026-08')).toBeInTheDocument()
+    expect(await screen.findByText('2026-07')).toBeInTheDocument()
+    expect(mockGetFiscalCalendar).toHaveBeenCalledWith('kg_a', {
+      entityId: null,
     })
+    expect(mockGetFiscalCalendar).toHaveBeenCalledWith('kg_a', {
+      entityId: 'ent_s',
+    })
+
+    // The row in scope is marked; the other offers Select.
+    expect(screen.getByText('selected')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    expect(mockSelect).toHaveBeenCalledWith(sub, 'kg_a')
   })
 
-  it('loads entities in parallel via Promise.allSettled', async () => {
-    const graphs = [makeGraph('g1', 'Graph 1'), makeGraph('g2', 'Graph 2')]
-
-    mockUseGraphContext.mockReturnValue({
-      state: { graphs, currentGraphId: 'g1', isLoading: false },
-      setCurrentGraph: vi.fn(),
-    } as any)
-
-    mockGetEntity.mockImplementation((graphId: string) =>
-      Promise.resolve({
-        id: graphId,
-        name: `Entity for ${graphId}`,
-        parentEntityId: null,
-        isParent: true,
-        entityType: 'corporation',
-        status: 'active',
-      })
-    )
-
+  it('says when an entity has no calendar yet', async () => {
+    mockGetFiscalCalendar.mockResolvedValue(null)
     render(<EntitiesListPageContent />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Entity for g1')).toBeInTheDocument()
-      expect(screen.getByText('Entity for g2')).toBeInTheDocument()
-    })
-
-    // Both calls should have been made (parallel)
-    expect(mockGetEntity).toHaveBeenCalledTimes(2)
+    expect(await screen.findAllByText('Not initialized')).toHaveLength(2)
   })
 
-  it('handles partial failures gracefully', async () => {
-    const graphs = [makeGraph('g1', 'Graph 1'), makeGraph('g2', 'Graph 2')]
-
-    mockUseGraphContext.mockReturnValue({
-      state: { graphs, currentGraphId: 'g1', isLoading: false },
-      setCurrentGraph: vi.fn(),
-    } as any)
-
-    mockGetEntity
-      .mockResolvedValueOnce({
-        id: 'g1',
-        name: 'Entity 1',
-        parentEntityId: null,
-        isParent: true,
-      })
-      .mockRejectedValueOnce(new Error('API error'))
-
+  it('narrows the rows as the user types', () => {
     render(<EntitiesListPageContent />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Entity 1')).toBeInTheDocument()
+    fireEvent.change(screen.getByPlaceholderText('Search entities…'), {
+      target: { value: 'mcl' },
     })
-
-    // The failed entity should not appear, but the page shouldn't crash
-    expect(screen.queryByText('Entity for g2')).not.toBeInTheDocument()
+    expect(screen.queryByText('Harbinger')).not.toBeInTheDocument()
+    expect(screen.getByText('Maple Court')).toBeInTheDocument()
   })
 
-  it('filters non-roboledger graphs', async () => {
-    const graphs = [
-      makeGraph('g1', 'Ledger Graph'),
-      {
-        graphId: 'g2',
-        graphName: 'Other Graph',
-        graphType: 'generic',
-        schemaExtensions: [],
-        isSubgraph: false,
-        isRepository: false,
-        createdAt: '2025-01-01T00:00:00Z',
-      },
-    ]
-
-    mockUseGraphContext.mockReturnValue({
-      state: { graphs, currentGraphId: 'g1', isLoading: false },
-      setCurrentGraph: vi.fn(),
-    } as any)
-
-    mockGetEntity.mockResolvedValueOnce({
-      id: 'g1',
-      name: 'Ledger Entity',
-      parentEntityId: null,
-      isParent: true,
-    })
-
+  it('opens the create form and re-reads the group once an entity is created', async () => {
     render(<EntitiesListPageContent />)
+    expect(screen.queryByTestId('new-entity-modal')).not.toBeInTheDocument()
 
-    await waitFor(() => {
-      expect(screen.getByText('Ledger Entity')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('New Entity'))
+    expect(screen.getByTestId('new-entity-modal')).toBeInTheDocument()
+    expect(screen.getByText('2 in picker')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('created'))
+    await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1))
+    expect(screen.queryByTestId('new-entity-modal')).not.toBeInTheDocument()
+  })
+
+  it('opens the create form when the header sends ?new=1', () => {
+    mockSearch = 'new=1'
+    render(<EntitiesListPageContent />)
+    expect(screen.getByTestId('new-entity-modal')).toBeInTheDocument()
+  })
+
+  it('offers to create the first entity of an empty graph', () => {
+    scope({
+      entitiesByGraph: new Map([['kg_a', []]]),
+      entities: [],
+      entity: null,
+      parent: null,
     })
-
-    // Only the roboledger graph should have been queried
-    expect(mockGetEntity).toHaveBeenCalledTimes(1)
+    render(<EntitiesListPageContent />)
+    expect(screen.getByText('No Entities Yet')).toBeInTheDocument()
+    expect(screen.getAllByText('New Entity').length).toBeGreaterThan(0)
   })
 })

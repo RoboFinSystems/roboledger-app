@@ -53,6 +53,8 @@ export interface EditableDraft {
 
 interface NewJournalEntryModalProps {
   graphId: string
+  /** A subsidiary's id, or null for the group parent: whose chart the accounts come from. */
+  entityId?: string | null
   open: boolean
   onClose: () => void
   /** Called after a create, or after an edit is saved. */
@@ -116,6 +118,7 @@ const formatBalance = (cents: number): string => formatDollars(cents / 100)
 // §3.10 — Manual journal entry creation modal with running DR/CR balance check.
 export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
   graphId,
+  entityId = null,
   open,
   onClose,
   onCreated,
@@ -171,6 +174,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
     void (async () => {
       try {
         const list = await clients.ledger.listAccounts(graphId, {
+          entityId,
           isActive: true,
           limit: 500,
         })
@@ -200,7 +204,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
     return () => {
       cancelled = true
     }
-  }, [open, graphId])
+  }, [open, graphId, entityId])
 
   // Reset state every time the modal opens, from the draft when editing.
   useEffect(() => {

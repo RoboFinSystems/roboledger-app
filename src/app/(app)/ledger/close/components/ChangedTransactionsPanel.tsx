@@ -92,6 +92,8 @@ function blockedReason(
 
 interface ChangedTransactionsPanelProps {
   graphId: string
+  /** A subsidiary's id, or null for the group parent. */
+  entityId?: string | null
 }
 
 /**
@@ -100,6 +102,7 @@ interface ChangedTransactionsPanelProps {
  */
 const ChangedTransactionsPanel: FC<ChangedTransactionsPanelProps> = ({
   graphId,
+  entityId = null,
 }) => {
   const [items, setItems] = useState<LedgerEventBlock[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -126,6 +129,7 @@ const ChangedTransactionsPanel: FC<ChangedTransactionsPanelProps> = ({
     const seq = ++listSeq.current
     try {
       const list = await clients.ledger.listEventBlocks(graphId, {
+        entityId,
         isReconcilingItem: true,
         limit: CHANGES_LIMIT,
       })
@@ -144,7 +148,7 @@ const ChangedTransactionsPanel: FC<ChangedTransactionsPanelProps> = ({
       // A failed refresh keeps the rows already on screen.
       setItems((current) => current ?? [])
     }
-  }, [graphId])
+  }, [graphId, entityId])
 
   useEffect(() => {
     planSeq.current += 1

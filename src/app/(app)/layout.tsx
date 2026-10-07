@@ -1,3 +1,4 @@
+import { EntityScopeProvider } from '@/lib/entity-scope'
 import {
   AuthGuard,
   EntityProvider,
@@ -29,9 +30,11 @@ export default async function DashboardLayout({ children }: PropsWithChildren) {
             persistGraphSelection={persistGraphSelection}
           >
             <EntityProvider initialEntityCookie={initialEntityCookie}>
-              <SidebarProvider initialCollapsed={isCollapsed}>
-                <LayoutWrapper>{children}</LayoutWrapper>
-              </SidebarProvider>
+              <EntityScopeProvider>
+                <SidebarProvider initialCollapsed={isCollapsed}>
+                  <LayoutWrapper>{children}</LayoutWrapper>
+                </SidebarProvider>
+              </EntityScopeProvider>
             </EntityProvider>
           </GraphProvider>
         </ServiceOfferingsProvider>
