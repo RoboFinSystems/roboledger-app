@@ -1,6 +1,7 @@
 'use client'
 
 import DocsLink from '@/components/DocsLink'
+import { useEntityScope } from '@/lib/entity-scope'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LedgerClosingBookStructures } from '@robosystems/client/clients'
 import {
@@ -111,8 +112,9 @@ const CloseContent: FC = function () {
   // Schedule authoring modal
   const [newScheduleOpen, setNewScheduleOpen] = useState(false)
 
-  // Current graph
+  // Current graph, and the entity in it whose books this closes
   const { graph: currentGraph } = useLedgerGraph()
+  const { entityId } = useEntityScope()
 
   // Load sidebar data — single call to closing book structures endpoint.
   // `select` lets callers land on a specific item after the refresh (e.g.
@@ -129,8 +131,12 @@ const CloseContent: FC = function () {
         setError(null)
 
         const [response, entity] = await Promise.all([
-          clients.ledger.getClosingBookStructures(currentGraph.graphId),
-          clients.ledger.getEntity(currentGraph.graphId).catch(() => null),
+          clients.ledger.getClosingBookStructures(currentGraph.graphId, {
+            entityId,
+          }),
+          clients.ledger
+            .getEntity(currentGraph.graphId, { entityId })
+            .catch(() => null),
         ])
 
         setCategories(response?.categories ?? [])
@@ -164,7 +170,7 @@ const CloseContent: FC = function () {
         setHasLoadedOnce(true)
       }
     },
-    [currentGraph]
+    [currentGraph, entityId]
   )
 
   useEffect(() => {
@@ -286,18 +292,29 @@ const CloseContent: FC = function () {
             ) : selectedItem.type === 'account_rollups' && currentGraph ? (
               <AccountRollupsPanel
                 graphId={currentGraph.graphId}
+                entityId={entityId}
                 mappingId={selectedItem.mappingId}
                 viewMode={viewMode}
               />
             ) : selectedItem.type === 'trial_balance' && currentGraph ? (
-              <TrialBalancePanel graphId={currentGraph.graphId} />
+              <TrialBalancePanel
+                graphId={currentGraph.graphId}
+                entityId={entityId}
+              />
             ) : selectedItem.type === 'reconciliations' && currentGraph ? (
-              <ReconciliationsPanel graphId={currentGraph.graphId} />
+              <ReconciliationsPanel
+                graphId={currentGraph.graphId}
+                entityId={entityId}
+              />
             ) : selectedItem.type === 'changed_transactions' && currentGraph ? (
-              <ChangedTransactionsPanel graphId={currentGraph.graphId} />
+              <ChangedTransactionsPanel
+                graphId={currentGraph.graphId}
+                entityId={entityId}
+              />
             ) : selectedItem.type === 'period_close' && currentGraph ? (
               <PeriodClosePanel
                 graphId={currentGraph.graphId}
+                entityId={entityId}
                 onEntryCreated={handleEntryCreated}
                 onReviewChanges={() =>
                   setSelectedItem({ type: 'changed_transactions' })
@@ -311,6 +328,7 @@ const CloseContent: FC = function () {
       {currentGraph && (
         <NewScheduleModal
           graphId={currentGraph.graphId}
+          entityId={entityId}
           open={newScheduleOpen}
           onClose={() => setNewScheduleOpen(false)}
           onCreated={handleScheduleCreated}

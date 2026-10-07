@@ -2,6 +2,7 @@
 
 import DocsLink from '@/components/DocsLink'
 import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
+import { useEntityScope } from '@/lib/entity-scope'
 import { formatAmount, formatDate } from '@/lib/ledger/formatters'
 import { useConsoleReload } from '@/lib/useConsoleReload'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
@@ -105,6 +106,7 @@ const InboxContent: FC = function () {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const { graph: currentGraph } = useLedgerGraph()
+  const { entityId } = useEntityScope()
 
   // A /do in the console drawer that changed this graph, such as a line
   // classified there. The reload keeps the table on screen.
@@ -139,6 +141,7 @@ const InboxContent: FC = function () {
         const list = await clients.ledger.listEventBlocks(
           currentGraph.graphId,
           {
+            entityId,
             eventType: eventType || undefined,
             status: status || undefined,
             source: source || undefined,
@@ -167,7 +170,16 @@ const InboxContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph, eventType, status, source, agentId, reloadKey, takeQuiet])
+  }, [
+    currentGraph,
+    entityId,
+    eventType,
+    status,
+    source,
+    agentId,
+    reloadKey,
+    takeQuiet,
+  ])
 
   // Load agents once per graph for the filter Select + name lookup.
   useEffect(() => {

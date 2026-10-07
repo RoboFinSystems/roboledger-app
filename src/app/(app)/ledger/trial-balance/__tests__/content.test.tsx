@@ -126,7 +126,10 @@ describe('TrialBalanceContent', () => {
     render(<TrialBalanceContent />)
 
     await waitFor(() => {
-      expect(mockGetTrialBalance).toHaveBeenCalledWith('kg_a')
+      // No entity in scope: the group parent is the server's default.
+      expect(mockGetTrialBalance).toHaveBeenCalledWith('kg_a', {
+        entityId: null,
+      })
     })
     expect(await screen.findByText('Cash')).toBeInTheDocument()
   })

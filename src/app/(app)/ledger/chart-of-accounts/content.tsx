@@ -3,6 +3,7 @@
 import DocsLink from '@/components/DocsLink'
 import { FilterBar, FilterField, SearchField } from '@/components/FilterBar'
 import SegmentedControl from '@/components/SegmentedControl'
+import { useEntityScope } from '@/lib/entity-scope'
 import type { ElementClassification } from '@/lib/ledger'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type {
@@ -374,6 +375,7 @@ const ChartOfAccountsContent: FC = function () {
   const [isSaving, setIsSaving] = useState(false)
 
   const { graph: currentGraph } = useLedgerGraph()
+  const { entityId } = useEntityScope()
 
   // Load accounts and mappings
   useEffect(() => {
@@ -400,7 +402,7 @@ const ChartOfAccountsContent: FC = function () {
 
         // Load account tree and mappings in parallel
         const [accountTree, mappingList] = await Promise.all([
-          clients.ledger.getAccountTree(currentGraph.graphId),
+          clients.ledger.getAccountTree(currentGraph.graphId, { entityId }),
           clients.ledger
             .listMappings(currentGraph.graphId)
             .catch(() => [] as LedgerMappingInfo[]),
@@ -443,7 +445,7 @@ const ChartOfAccountsContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph, reloadKey])
+  }, [currentGraph, entityId, reloadKey])
 
   // Load mapping detail, coverage, and elements when selected mapping changes
   useEffect(() => {
@@ -857,8 +859,9 @@ const ChartOfAccountsContent: FC = function () {
             // wrong for a graph whose chart merely failed to load.
             currentGraph && !error ? (
               <ChartTemplatePicker
-                key={currentGraph.graphId}
+                key={`${currentGraph.graphId}:${entityId ?? ''}`}
                 graphId={currentGraph.graphId}
+                entityId={entityId}
                 onInitialized={() => setReloadKey((k) => k + 1)}
               />
             ) : (

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCreateGraphHandoff } from '@/lib/cross-app'
+import { useEntityScope } from '@/lib/entity-scope'
 import { formatDollars } from '@/lib/ledger/formatters'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import {
@@ -141,6 +142,7 @@ const HomePageContent: FC = function () {
   const { openCreateGraph } = useCreateGraphHandoff()
 
   const { graph: currentGraph } = useLedgerGraph()
+  const { entityId } = useEntityScope()
 
   const hasQualifyingGraph = currentGraph != null
 
@@ -162,9 +164,9 @@ const HomePageContent: FC = function () {
       setLoadError(null)
 
       const [txResult, accountResult, reportResult] = await Promise.allSettled([
-        clients.ledger.listTransactions(graphId, { limit: 5 }),
-        clients.ledger.getAccountTree(graphId),
-        clients.ledger.listReports(graphId),
+        clients.ledger.listTransactions(graphId, { limit: 5, entityId }),
+        clients.ledger.getAccountTree(graphId, { entityId }),
+        clients.ledger.listReports(graphId, { entityId }),
       ])
 
       if (cancelled) return
@@ -247,7 +249,7 @@ const HomePageContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph])
+  }, [currentGraph, entityId])
 
   const formatCount = (value: number | null): string => {
     if (value == null) return isLoading ? '…' : '—'

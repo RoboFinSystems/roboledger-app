@@ -147,6 +147,8 @@ function obligationDetailFor(
 
 interface PeriodClosePanelProps {
   graphId: string
+  /** The entity whose calendar this is: a subsidiary's id, or null for the group parent. */
+  entityId?: string | null
   onEntryCreated?: () => void
   /** Opens the changed transactions the close is waiting on. */
   onReviewChanges?: () => void
@@ -173,6 +175,7 @@ function formatPeriod(period: string | null): string {
 
 const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   graphId,
+  entityId = null,
   onEntryCreated,
   onReviewChanges,
 }) => {
@@ -219,7 +222,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     try {
       setIsLoadingCalendar(true)
       setError(null)
-      const cal = await clients.ledger.getFiscalCalendar(graphId)
+      const cal = await clients.ledger.getFiscalCalendar(graphId, { entityId })
       // SDK returns null (not an error) when the ledger isn't
       // initialized yet — surface as a first-class state so the UI
       // shows the Initialize button instead of a red error banner.
@@ -238,7 +241,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     } finally {
       setIsLoadingCalendar(false)
     }
-  }, [graphId])
+  }, [graphId, entityId])
 
   // Sequence guards, one per loader since each can also be re-invoked on its own
   // after a mutation. Without these, moving between periods quickly can leave
@@ -259,7 +262,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       const status = await clients.ledger.getPeriodCloseStatus(
         graphId,
         start,
-        end
+        end,
+        { entityId }
       )
       if (seq !== closeStatusSeq.current) return
       setCloseStatus(status)
@@ -270,7 +274,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     } finally {
       if (seq === closeStatusSeq.current) setIsLoadingStatus(false)
     }
-  }, [graphId, selectedPeriod])
+  }, [graphId, entityId, selectedPeriod])
 
   const loadDrafts = useCallback(async () => {
     if (!selectedPeriod) return
@@ -279,7 +283,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       setIsLoadingDrafts(true)
       const result = await clients.ledger.listPeriodDrafts(
         graphId,
-        selectedPeriod
+        selectedPeriod,
+        { entityId }
       )
       if (seq !== draftsSeq.current) return
       setDrafts(result)
@@ -290,7 +295,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     } finally {
       if (seq === draftsSeq.current) setIsLoadingDrafts(false)
     }
-  }, [graphId, selectedPeriod])
+  }, [graphId, entityId, selectedPeriod])
 
   useEffect(() => {
     loadCalendar()
@@ -320,7 +325,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     try {
       setIsInitializing(true)
       setError(null)
-      await clients.ledger.initializeLedger(graphId, {})
+      await clients.ledger.initializeLedger(graphId, { entityId })
       await loadCalendar()
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -328,7 +333,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     } finally {
       setIsInitializing(false)
     }
-  }, [graphId, loadCalendar])
+  }, [graphId, entityId, loadCalendar])
 
   const handleCreateEntry = useCallback(
     async (structureId: string) => {
@@ -364,6 +369,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       setIsClosing(true)
       setError(null)
       const result = await clients.ledger.closePeriod(graphId, period, {
+        entityId,
         allowStaleSync,
         allowStrandedObligations,
         allowUnreconciledAccounts,
@@ -415,6 +421,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     }
   }, [
     graphId,
+    entityId,
     selectedPeriod,
     allowStaleSync,
     allowStrandedObligations,
@@ -435,7 +442,9 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       const newCal = await clients.ledger.reopenPeriod(
         graphId,
         reopenTarget,
-        reopenReason.trim()
+        reopenReason.trim(),
+        null,
+        { entityId }
       )
       setCalendar(newCal)
       setSelectedPeriod(reopenTarget)
@@ -451,7 +460,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     } finally {
       setIsReopening(false)
     }
-  }, [graphId, reopenTarget, reopenReason, onEntryCreated])
+  }, [graphId, entityId, reopenTarget, reopenReason, onEntryCreated])
 
   // ── Derived ──────────────────────────────────────────────────────────
   const selectablePeriods = useMemo(() => {

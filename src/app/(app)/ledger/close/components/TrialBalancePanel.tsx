@@ -92,9 +92,14 @@ function formatCurrency(value: number): string {
 
 interface TrialBalancePanelProps {
   graphId: string
+  /** A subsidiary's id, or null for the group parent. */
+  entityId?: string | null
 }
 
-const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
+const TrialBalancePanel: FC<TrialBalancePanelProps> = ({
+  graphId,
+  entityId = null,
+}) => {
   const [rows, setRows] = useState<TrialBalanceRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -109,7 +114,7 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
       setIsLoading(true)
       setError(null)
 
-      const result = await clients.ledger.getTrialBalance(graphId)
+      const result = await clients.ledger.getTrialBalance(graphId, { entityId })
       if (seq !== loadSeq.current) return
 
       if (result) {
@@ -136,7 +141,7 @@ const TrialBalancePanel: FC<TrialBalancePanelProps> = ({ graphId }) => {
     } finally {
       if (seq === loadSeq.current) setIsLoading(false)
     }
-  }, [graphId])
+  }, [graphId, entityId])
 
   useEffect(() => {
     loadData()

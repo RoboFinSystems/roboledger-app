@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockGetEntity = vi.fn()
 const mockUpdateEntity = vi.fn()
+const mockScope = vi.fn()
+const mockRefresh = vi.fn()
 
 // Every graph these tests select is a RoboLedger graph.
 vi.mock('@/lib/useLedgerGraph', async () => {
@@ -20,6 +22,11 @@ vi.mock('@/lib/useLedgerGraph', async () => {
   }
 })
 
+// The entity in scope: the group parent unless a test picks a subsidiary.
+vi.mock('@/lib/entity-scope', () => ({
+  useEntityScope: () => mockScope(),
+}))
+
 vi.mock('@robosystems/core', () => ({
   customTheme: { card: {}, alert: {}, textInput: {} },
   PageLayout: ({ children }: { children: React.ReactNode }) => (
@@ -30,9 +37,8 @@ vi.mock('@robosystems/core', () => ({
   useEntity: vi.fn(),
   clients: {
     ledger: {
-      getEntity: (graphId: string) => mockGetEntity(graphId),
-      updateEntity: (graphId: string, updates: unknown) =>
-        mockUpdateEntity(graphId, updates),
+      getEntity: (...args: any[]) => mockGetEntity(...args),
+      updateEntity: (...args: any[]) => mockUpdateEntity(...args),
     },
   },
 }))
@@ -97,6 +103,14 @@ function setGraph(graphId: string) {
   } as any)
 }
 
+const parentScope = () =>
+  mockScope.mockReturnValue({
+    entityId: null,
+    entities: [],
+    entity: null,
+    refresh: mockRefresh,
+  })
+
 describe('EntityInfoPageContent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -111,11 +125,14 @@ describe('EntityInfoPageContent', () => {
       Promise.resolve(entityFor(graphId))
     )
     setGraph('kg_a')
+    parentScope()
   })
 
   it('loads the entity for the selected graph', async () => {
     render(<EntityInfoPageContent />)
-    await waitFor(() => expect(mockGetEntity).toHaveBeenCalledWith('kg_a'))
+    await waitFor(() =>
+      expect(mockGetEntity).toHaveBeenCalledWith('kg_a', { entityId: null })
+    )
     // Read-only view renders values as text; inputs appear only while editing.
     expect(
       await screen.findByText('https://example.test/kg_a')
@@ -125,7 +142,9 @@ describe('EntityInfoPageContent', () => {
   it('abandons an in-progress edit when the graph changes', async () => {
     const user = userEvent.setup()
     const { rerender } = render(<EntityInfoPageContent />)
-    await waitFor(() => expect(mockGetEntity).toHaveBeenCalledWith('kg_a'))
+    await waitFor(() =>
+      expect(mockGetEntity).toHaveBeenCalledWith('kg_a', { entityId: null })
+    )
 
     await user.click(await screen.findByText('Edit'))
     const nameInput = await screen.findByDisplayValue('Entity kg_a')
@@ -137,7 +156,9 @@ describe('EntityInfoPageContent', () => {
     setGraph('kg_b')
     rerender(<EntityInfoPageContent />)
 
-    await waitFor(() => expect(mockGetEntity).toHaveBeenCalledWith('kg_b'))
+    await waitFor(() =>
+      expect(mockGetEntity).toHaveBeenCalledWith('kg_b', { entityId: null })
+    )
     await waitFor(() =>
       expect(
         screen.queryByDisplayValue('Renamed while on graph A')
@@ -151,7 +172,9 @@ describe('EntityInfoPageContent', () => {
   it('saves edited fields against the graph they were entered on', async () => {
     const user = userEvent.setup()
     render(<EntityInfoPageContent />)
-    await waitFor(() => expect(mockGetEntity).toHaveBeenCalledWith('kg_a'))
+    await waitFor(() =>
+      expect(mockGetEntity).toHaveBeenCalledWith('kg_a', { entityId: null })
+    )
 
     await user.click(await screen.findByText('Edit'))
     const nameInput = await screen.findByDisplayValue('Entity kg_a')
@@ -164,5 +187,48 @@ describe('EntityInfoPageContent', () => {
       'kg_a',
       expect.objectContaining({ name: 'New name' })
     )
+  })
+  it('reads and writes the subsidiary in scope, then re-reads the group', async () => {
+    const user = userEvent.setup()
+    const sub = {
+      id: 'ent_s',
+      name: 'Maple Court',
+      isParent: false,
+      parentEntityId: 'ent_kg_a',
+      ownershipPct: 100,
+    }
+    mockScope.mockReturnValue({
+      entityId: 'ent_s',
+      entities: [entityFor('kg_a'), sub],
+      entity: sub,
+      refresh: mockRefresh,
+    })
+    mockGetEntity.mockResolvedValue({
+      ...entityFor('kg_a'),
+      ...sub,
+      uri: 'https://example.test/sub',
+    })
+    mockUpdateEntity.mockResolvedValue({ ...entityFor('kg_a'), ...sub })
+    render(<EntityInfoPageContent />)
+
+    await waitFor(() =>
+      expect(mockGetEntity).toHaveBeenCalledWith('kg_a', { entityId: 'ent_s' })
+    )
+    expect(await screen.findByText(/Held under/)).toBeInTheDocument()
+    expect(screen.getByText('Entity kg_a')).toBeInTheDocument()
+    expect(screen.getByText(/100% owned/)).toBeInTheDocument()
+
+    await user.click(screen.getByText('Edit'))
+    const nameInput = await screen.findByDisplayValue('Maple Court')
+    await user.clear(nameInput)
+    await user.type(nameInput, 'Maple Court LLC')
+    await user.click(screen.getByText('Save'))
+
+    await waitFor(() => expect(mockUpdateEntity).toHaveBeenCalledTimes(1))
+    expect(mockUpdateEntity).toHaveBeenCalledWith(
+      'kg_a',
+      expect.objectContaining({ name: 'Maple Court LLC', entity_id: 'ent_s' })
+    )
+    await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1))
   })
 })

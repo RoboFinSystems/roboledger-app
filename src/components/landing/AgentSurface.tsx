@@ -89,8 +89,8 @@ export default function AgentSurface() {
             label="One AI chat with three companies' books connected, reading each and answering which client needs attention this month."
           />
           <p className="mt-4 text-center text-sm text-gray-400">
-            One connector per company, side by side in the same chat. Your AI
-            reads each set of books and answers across all of them.
+            One connector per set of books, side by side in the same chat. Your
+            AI reads each one and answers across all of them.
           </p>
         </div>
 

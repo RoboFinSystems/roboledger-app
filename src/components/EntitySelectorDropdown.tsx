@@ -1,115 +1,82 @@
 'use client'
 
 import { useCreateGraphHandoff } from '@/lib/cross-app'
-import type { Entity } from '@robosystems/core'
+import { hierarchyDepth, useEntityScope } from '@/lib/entity-scope'
+import type { LedgerEntitySummary } from '@robosystems/client/clients'
+import { GraphFilters, useGraphContext } from '@robosystems/core'
+import Link from 'next/link'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  clients,
-  GraphFilters,
-  useEntity,
-  useGraphContext,
-} from '@robosystems/core'
-import { useEffect, useMemo, useState } from 'react'
-import { HiChevronDown, HiOfficeBuilding } from 'react-icons/hi'
+  HiChevronDown,
+  HiOfficeBuilding,
+  HiPlus,
+  HiSearch,
+} from 'react-icons/hi'
 
 /**
- * EntitySelectorDropdown for RoboLedger
+ * The entity switcher in the header.
  *
- * Loads the parent entity for each roboledger graph via the ledger entity API.
- * Selecting an entity switches to its graph.
+ * Lists every entity of every RoboLedger graph, grouped by graph and ordered
+ * by hierarchy (the group parent, then its subsidiaries indented), with a
+ * search box: a fund-admin or a holding company runs to dozens of entities,
+ * which a dropdown cannot carry. Picking an entity in another graph switches
+ * the graph first.
  */
 export function EntitySelectorDropdown() {
-  const { state: graphState, setCurrentGraph } = useGraphContext()
-  const { currentEntity, setCurrentEntity } = useEntity()
+  const { state: graphState } = useGraphContext()
+  const { entitiesByGraph, entity, isLoading, select } = useEntityScope()
   const { openCreateGraph } = useCreateGraphHandoff()
   const [isOpen, setIsOpen] = useState(false)
-  const [entitiesByGraph, setEntitiesByGraph] = useState<Map<string, Entity>>(
-    new Map()
-  )
-  const [isLoading, setIsLoading] = useState(false)
+  const [query, setQuery] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
 
-  // Filter to only roboledger graphs
   const roboledgerGraphs = useMemo(
     () => graphState.graphs.filter(GraphFilters.roboledger),
     [graphState.graphs]
   )
 
-  // Load parent entity for each roboledger graph
-  // Only re-fetch when the graph list itself changes, not on entity/graph selection
   useEffect(() => {
-    const loadEntities = async () => {
-      setIsLoading(true)
-      const results = await Promise.allSettled(
-        roboledgerGraphs.map((graph) =>
-          clients.ledger
-            .getEntity(graph.graphId)
-            .then((entity) => ({ graph, entity }))
+    if (isOpen) {
+      setQuery('')
+      searchRef.current?.focus()
+    }
+  }, [isOpen])
+
+  const groups = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    return roboledgerGraphs
+      .map((graph) => {
+        const all = entitiesByGraph.get(graph.graphId) ?? []
+        const graphMatches =
+          needle.length > 0 && graph.graphName.toLowerCase().includes(needle)
+        const rows = all.filter(
+          (e) =>
+            needle.length === 0 ||
+            graphMatches ||
+            e.name.toLowerCase().includes(needle) ||
+            (e.legalName ?? '').toLowerCase().includes(needle) ||
+            (e.ticker ?? '').toLowerCase().includes(needle)
         )
-      )
+        return { graph, all, rows }
+      })
+      .filter((g) => g.rows.length > 0)
+  }, [roboledgerGraphs, entitiesByGraph, query])
 
-      const entityMap = new Map<string, Entity>()
-      for (const result of results) {
-        if (result.status === 'fulfilled' && result.value.entity) {
-          const { graph, entity } = result.value
-          entityMap.set(graph.graphId, {
-            identifier: entity.id || entity.uri || '',
-            name: entity.name || 'Unnamed Entity',
-            parentEntityId: entity.parentEntityId,
-            isParent: entity.isParent,
-          })
-        } else if (result.status === 'rejected') {
-          console.error('Failed to load entity:', result.reason)
-        }
-      }
-
-      setEntitiesByGraph(entityMap)
-      setIsLoading(false)
-    }
-
-    if (roboledgerGraphs.length > 0) {
-      loadEntities()
-    }
-  }, [roboledgerGraphs])
-
-  // Sync entity selection with current graph
-  // Runs when entities finish loading, graph changes, or entity is cleared
-  useEffect(() => {
-    if (isLoading || entitiesByGraph.size === 0) return
-
-    if (currentEntity) {
-      // Validate current entity still exists in loaded data
-      const entityStillValid = Array.from(entitiesByGraph.values()).some(
-        (e) => e.identifier === currentEntity.identifier
-      )
-      if (!entityStillValid) {
-        // Stale entity — clear and auto-select for current graph
-        const entity = graphState.currentGraphId
-          ? entitiesByGraph.get(graphState.currentGraphId)
-          : undefined
-        setCurrentEntity(entity ?? null)
-      }
-    } else if (graphState.currentGraphId) {
-      // No entity selected — auto-select for current graph
-      const entity = entitiesByGraph.get(graphState.currentGraphId)
-      if (entity) {
-        setCurrentEntity(entity)
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally omit currentEntity to avoid re-triggering after setting it
-  }, [isLoading, entitiesByGraph, graphState.currentGraphId, setCurrentEntity])
-
-  const handleEntitySelect = async (entity: Entity, graphId: string) => {
-    setIsOpen(false)
-
-    if (graphId !== graphState.currentGraphId) {
-      await setCurrentGraph(graphId)
-    }
-
-    setCurrentEntity(entity)
-  }
-
-  const totalEntities = entitiesByGraph.size
+  const totalEntities = useMemo(
+    () =>
+      roboledgerGraphs.reduce(
+        (n, g) => n + (entitiesByGraph.get(g.graphId)?.length ?? 0),
+        0
+      ),
+    [roboledgerGraphs, entitiesByGraph]
+  )
   const hasNoGraphs = roboledgerGraphs.length === 0
   const hasNoEntities = !isLoading && totalEntities === 0
+
+  const handleSelect = async (target: LedgerEntitySummary, graphId: string) => {
+    setIsOpen(false)
+    await select(target, graphId)
+  }
 
   // If no graphs, link to platform to create one
   if (hasNoGraphs) {
@@ -131,11 +98,13 @@ export function EntitySelectorDropdown() {
       <button
         onClick={() => !hasNoEntities && setIsOpen(!isOpen)}
         disabled={hasNoEntities}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:disabled:hover:bg-gray-700"
       >
         <HiOfficeBuilding className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-        <span className="font-medium text-gray-900 dark:text-gray-100">
-          {currentEntity?.name || 'Select Entity'}
+        <span className="max-w-56 truncate font-medium text-gray-900 dark:text-gray-100">
+          {entity?.name || 'Select Entity'}
         </span>
         <HiChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
       </button>
@@ -156,63 +125,105 @@ export function EntitySelectorDropdown() {
 
           {/* Dropdown */}
           <div className="absolute right-0 z-20 mt-2 w-80 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800">
-            <div className="max-h-96 overflow-y-auto">
-              {isLoading ? (
+            <div className="border-b border-gray-200 p-2 dark:border-gray-600">
+              <div className="relative">
+                <HiSearch className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  ref={searchRef}
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') setIsOpen(false)
+                  }}
+                  placeholder="Search entities…"
+                  aria-label="Search entities"
+                  className="w-full rounded-md border border-gray-300 bg-white py-1.5 pr-2 pl-8 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                />
+              </div>
+            </div>
+            <div className="max-h-96 overflow-y-auto" role="listbox">
+              {isLoading && totalEntities === 0 ? (
                 <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                   Loading entities...
                 </div>
+              ) : groups.length === 0 ? (
+                <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                  No entities match “{query}”.
+                </div>
               ) : (
-                <>
-                  {/* Entity list — one per graph */}
-                  {roboledgerGraphs.map((graph) => {
-                    const entity = entitiesByGraph.get(graph.graphId)
-                    if (!entity) return null
-
-                    const isSelected =
-                      currentEntity?.identifier === entity.identifier &&
-                      graphState.currentGraphId === graph.graphId
-
-                    return (
-                      <button
-                        key={graph.graphId}
-                        onClick={() =>
-                          handleEntitySelect(entity, graph.graphId)
-                        }
-                        className={`w-full border-b border-gray-200 px-4 py-3 text-left transition-colors last:border-0 dark:border-gray-600 ${
-                          isSelected
-                            ? 'bg-blue-50 dark:bg-blue-900/30'
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                        }`}
-                      >
-                        <div className="flex flex-col">
+                groups.map(({ graph, all, rows }) => (
+                  <div
+                    key={graph.graphId}
+                    className="border-b border-gray-200 last:border-0 dark:border-gray-600"
+                  >
+                    <div className="px-4 pt-2 pb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+                      {graph.graphName}
+                    </div>
+                    {rows.map((row) => {
+                      const isSelected =
+                        entity?.id === row.id &&
+                        graphState.currentGraphId === graph.graphId
+                      const depth = hierarchyDepth(row, all)
+                      return (
+                        <button
+                          key={row.id}
+                          role="option"
+                          aria-selected={isSelected}
+                          onClick={() => void handleSelect(row, graph.graphId)}
+                          className={`flex w-full items-center gap-2 px-4 py-2 text-left transition-colors ${
+                            isSelected
+                              ? 'bg-blue-50 dark:bg-blue-900/30'
+                              : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                          }`}
+                          style={{ paddingLeft: `${16 + depth * 16}px` }}
+                        >
                           <span
-                            className={`text-sm font-medium ${
+                            className={`truncate text-sm ${
                               isSelected
-                                ? 'text-blue-700 dark:text-blue-300'
+                                ? 'font-medium text-blue-700 dark:text-blue-300'
                                 : 'text-gray-900 dark:text-gray-100'
                             }`}
                           >
-                            {entity.name}
+                            {row.name}
                           </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {graph.graphName}
-                          </span>
-                        </div>
-                      </button>
-                    )
-                  })}
-
-                  {/* Create New Entity — redirects to platform via SSO */}
-                  <div className="border-t-2 border-gray-300 dark:border-gray-600">
-                    <button
-                      onClick={() => void openCreateGraph()}
-                      className="flex w-full items-center justify-center px-4 py-3 text-sm font-medium text-blue-600 transition-colors hover:bg-gray-50 dark:text-blue-400 dark:hover:bg-gray-700"
-                    >
-                      + Create New Entity
-                    </button>
+                          {row.ticker && (
+                            <span className="shrink-0 font-mono text-xs text-gray-500 dark:text-gray-400">
+                              {row.ticker}
+                            </span>
+                          )}
+                          {row.isParent && all.length > 1 && (
+                            <span className="ml-auto shrink-0 text-xs text-gray-400 dark:text-gray-500">
+                              parent
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
                   </div>
-                </>
+                ))
               )}
+            </div>
+
+            <div className="flex divide-x divide-gray-200 border-t-2 border-gray-300 dark:divide-gray-600 dark:border-gray-600">
+              {graphState.currentGraphId &&
+                entitiesByGraph.has(graphState.currentGraphId) && (
+                  <Link
+                    href="/entities?new=1"
+                    onClick={() => setIsOpen(false)}
+                    className="flex flex-1 items-center justify-center gap-1 px-3 py-3 text-sm font-medium text-blue-600 transition-colors hover:bg-gray-50 dark:text-blue-400 dark:hover:bg-gray-700"
+                  >
+                    <HiPlus className="h-4 w-4" />
+                    Add Entity
+                  </Link>
+                )}
+              <button
+                onClick={() => void openCreateGraph()}
+                className="flex flex-1 items-center justify-center gap-1 px-3 py-3 text-sm font-medium text-blue-600 transition-colors hover:bg-gray-50 dark:text-blue-400 dark:hover:bg-gray-700"
+              >
+                <HiPlus className="h-4 w-4" />
+                New Graph
+              </button>
             </div>
           </div>
         </>

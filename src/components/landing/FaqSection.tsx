@@ -86,11 +86,14 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: 'I look after several companies. Can I see them all here?',
     a: (
       <>
-        Yes. Each company&apos;s books live in their own isolated graph —
-        connect QuickBooks per company and switch between them from one account.
-        In your AI chat, add the RoboLedger connector once per company and ask
-        across all of them. It&apos;s built for fractional CFOs, controllers,
-        and firms who look after more than one company.{' '}
+        Yes. Companies that report together — a holding company and its
+        subsidiaries — share one graph as a reporting group: each keeps its own
+        chart of accounts and closes on its own calendar, and the parent&apos;s
+        statements combine them. Unrelated clients get their own isolated
+        graphs; switch between them from one account. In your AI chat, add the
+        RoboLedger connector once per graph and ask across all of them.
+        It&apos;s built for fractional CFOs, controllers, and firms who look
+        after more than one company.{' '}
         <a
           href={HARBINGER_URL}
           target="_blank"

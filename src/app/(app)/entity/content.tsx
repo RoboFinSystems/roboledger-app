@@ -1,9 +1,10 @@
 'use client'
 
+import { useEntityScope } from '@/lib/entity-scope'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LedgerEntity } from '@robosystems/client/clients'
 import type { UpdateEntityRequest } from '@robosystems/client/types'
-import { clients, PageHeader, PageLayout, useEntity } from '@robosystems/core'
+import { clients, PageHeader, PageLayout } from '@robosystems/core'
 import {
   Alert,
   Badge,
@@ -17,8 +18,10 @@ import { type FC, useEffect, useRef, useState } from 'react'
 import { HiOfficeBuilding, HiPencil, HiSave, HiX } from 'react-icons/hi'
 
 const EntityInfoPageContent: FC = function () {
-  const { currentEntity, setCurrentEntity } = useEntity()
   const graphId = useLedgerGraph().graph?.graphId ?? null
+  // The header's pick: a subsidiary's id, or null for the group parent.
+  const { entityId, entities, entity: scoped, refresh } = useEntityScope()
+  const scopeKey = graphId ? `${graphId}:${entityId ?? ''}` : null
 
   const [entity, setEntity] = useState<LedgerEntity | null>(null)
   const [loading, setLoading] = useState(false)
@@ -28,12 +31,13 @@ const EntityInfoPageContent: FC = function () {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
 
-  // Tracks the graph a request was issued for, so a response that arrives after
-  // the selection moved on can be discarded instead of applied to another graph.
-  const graphIdRef = useRef(graphId)
+  // Tracks the graph and entity a request was issued for, so a response that
+  // arrives after the selection moved on can be discarded instead of applied
+  // to another entity.
+  const scopeRef = useRef(scopeKey)
   useEffect(() => {
-    graphIdRef.current = graphId
-  }, [graphId])
+    scopeRef.current = scopeKey
+  }, [scopeKey])
 
   useEffect(() => {
     if (!graphId) return
@@ -52,7 +56,7 @@ const EntityInfoPageContent: FC = function () {
 
     const load = async () => {
       try {
-        const loaded = await clients.ledger.getEntity(graphId)
+        const loaded = await clients.ledger.getEntity(graphId, { entityId })
         if (cancelled) return
         if (loaded === null) {
           setError(
@@ -74,7 +78,7 @@ const EntityInfoPageContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [graphId])
+  }, [graphId, entityId])
 
   const startEditing = () => {
     if (!entity) return
@@ -157,31 +161,28 @@ const EntityInfoPageContent: FC = function () {
       return
     }
 
-    const requestGraphId = graphId
+    const requestScope = scopeKey
     try {
-      const updated = await clients.ledger.updateEntity(
-        requestGraphId,
-        updates as UpdateEntityRequest
-      )
-      // The write itself targeted the right graph, but applying the result
-      // after the user moved on would show it under the new selection.
-      if (graphIdRef.current !== requestGraphId) return
-      setEntity(updated)
-      // Update the entity context so the dropdown reflects changes
-      setCurrentEntity({
-        identifier: updated.id || updated.uri || '',
-        name: updated.name,
-        parentEntityId: updated.parentEntityId,
-        isParent: updated.isParent,
+      const updated = await clients.ledger.updateEntity(graphId, {
+        ...(updates as UpdateEntityRequest),
+        // The group parent is the server's default; a subsidiary is named.
+        ...(entityId ? { entity_id: entityId } : {}),
       })
+      // The write itself targeted the right entity, but applying the result
+      // after the user moved on would show it under the new selection.
+      if (scopeRef.current !== requestScope) return
+      setEntity(updated)
+      // The switcher and the pages read the group's list; a renamed entity
+      // shows up there once it is re-read.
+      void refresh()
       setEditing(false)
     } catch (err) {
-      if (graphIdRef.current !== requestGraphId) return
+      if (scopeRef.current !== requestScope) return
       setSaveError(
         err instanceof Error ? err.message : 'Failed to update entity.'
       )
     } finally {
-      if (graphIdRef.current === requestGraphId) setSaving(false)
+      if (scopeRef.current === requestScope) setSaving(false)
     }
   }
 
@@ -195,9 +196,7 @@ const EntityInfoPageContent: FC = function () {
         icon={HiOfficeBuilding}
         title="Entity Details"
         subtitle={
-          entity?.name ||
-          currentEntity?.name ||
-          'View entity information and settings'
+          entity?.name || scoped?.name || 'View entity information and settings'
         }
       />
 
@@ -324,6 +323,29 @@ const EntityInfoPageContent: FC = function () {
                     >
                       {entity.status || 'active'}
                     </Badge>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Reporting group
+                  </dt>
+                  <dd className="text-sm text-gray-900 dark:text-white">
+                    {entity.isParent ? (
+                      <Badge color="indigo" size="sm">
+                        group parent
+                      </Badge>
+                    ) : (
+                      <>
+                        Held under{' '}
+                        <span className="font-medium">
+                          {entities.find((e) => e.id === entity.parentEntityId)
+                            ?.name ?? 'the group parent'}
+                        </span>
+                        {entity.ownershipPct !== null && (
+                          <> · {entity.ownershipPct}% owned</>
+                        )}
+                      </>
+                    )}
                   </dd>
                 </div>
                 <div>

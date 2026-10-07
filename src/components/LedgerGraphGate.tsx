@@ -12,7 +12,6 @@ import { HiSwitchHorizontal } from 'react-icons/hi'
  * ledger graph, or forward to another app, so a non-ledger selection is fine.
  */
 const GRAPH_INDEPENDENT_ROUTES = [
-  '/entities',
   '/settings',
   '/graphs/new',
   '/console',

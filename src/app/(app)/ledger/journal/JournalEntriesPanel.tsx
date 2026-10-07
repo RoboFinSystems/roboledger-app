@@ -92,6 +92,8 @@ interface JournalEntryRow {
 
 interface JournalEntriesPanelProps {
   graphId: string
+  /** A subsidiary's id, or null for the group parent. */
+  entityId?: string | null
   startDate: string | null
   endDate: string | null
   refreshKey: number
@@ -118,6 +120,7 @@ interface JournalEntriesPanelProps {
  */
 export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
   graphId,
+  entityId = null,
   startDate,
   endDate,
   refreshKey,
@@ -149,6 +152,7 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
         setError(null)
 
         const result = await clients.ledger.listJournalEntries(graphId, {
+          entityId,
           startDate: startDate || undefined,
           endDate: endDate || undefined,
           status: statusFilter || undefined,
@@ -203,6 +207,7 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
     }
   }, [
     graphId,
+    entityId,
     startDate,
     endDate,
     statusFilter,

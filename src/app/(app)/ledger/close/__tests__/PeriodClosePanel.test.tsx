@@ -183,6 +183,7 @@ describe('PeriodClosePanel — close success', () => {
     // must send false rather than omitting the flag, so a stale value can
     // never carry over from a previous close.
     expect(mockClosePeriod).toHaveBeenCalledWith('kg1', '2026-05', {
+      entityId: null,
       allowStaleSync: false,
       allowStrandedObligations: false,
       allowUnreconciledAccounts: false,
@@ -492,6 +493,7 @@ describe('PeriodClosePanel — close overrides', () => {
 
     await waitFor(() =>
       expect(mockClosePeriod).toHaveBeenCalledWith('kg1', '2026-05', {
+        entityId: null,
         allowStaleSync: false,
         allowStrandedObligations: true,
         allowUnreconciledAccounts: false,
@@ -524,6 +526,7 @@ describe('PeriodClosePanel — close overrides', () => {
 
     await waitFor(() =>
       expect(mockClosePeriod).toHaveBeenCalledWith('kg1', '2026-05', {
+        entityId: null,
         allowStaleSync: false,
         allowStrandedObligations: false,
         allowUnreconciledAccounts: true,

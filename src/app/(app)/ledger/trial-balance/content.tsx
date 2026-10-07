@@ -5,6 +5,7 @@ import SegmentedControl, {
   type SegmentedOption,
 } from '@/components/SegmentedControl'
 import SortableHeadCell from '@/components/SortableHeadCell'
+import { useEntityScope } from '@/lib/entity-scope'
 import type { ElementClassification } from '@/lib/ledger'
 import { formatDollars } from '@/lib/ledger/formatters'
 import { type SortColumn, useTableSort } from '@/lib/useTableSort'
@@ -108,6 +109,7 @@ const VIEW_MODES: readonly SegmentedOption<ViewMode>[] = [
 
 const TrialBalanceContent: FC = function () {
   const { state: graphState } = useGraphContext()
+  const { entityId } = useEntityScope()
   const [data, setData] = useState<TrialBalanceRowWithGraph[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -189,7 +191,8 @@ const TrialBalanceContent: FC = function () {
 
         if (viewMode === 'coa') {
           const result = await clients.ledger.getTrialBalance(
-            currentGraph.graphId
+            currentGraph.graphId,
+            { entityId }
           )
 
           if (seq !== loadSeq.current) return // superseded by a newer load
@@ -289,7 +292,13 @@ const TrialBalanceContent: FC = function () {
     }
 
     loadTrialBalance()
-  }, [graphState.graphs, graphState.currentGraphId, viewMode, mapping])
+  }, [
+    graphState.graphs,
+    graphState.currentGraphId,
+    entityId,
+    viewMode,
+    mapping,
+  ])
 
   // Filter data
   const filteredData = useMemo(() => {

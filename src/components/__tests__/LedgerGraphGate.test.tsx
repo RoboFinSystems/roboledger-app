@@ -66,7 +66,7 @@ describe('LedgerGraphGate', () => {
     expect(mockSetCurrentGraph).toHaveBeenCalledWith('kg_ledger')
   })
 
-  it.each(['/entities', '/reports/rpt_1'])(
+  it.each(['/reports/rpt_1'])(
     'leaves %s alone (its graph does not come from the selector)',
     (path) => {
       withSelected('kg_investor')
@@ -76,7 +76,8 @@ describe('LedgerGraphGate', () => {
     }
   )
 
-  it.each(['/reports', '/reports/new', '/reports/publish-lists'])(
+  // /entities is the selected graph's reporting group, so it is gated too.
+  it.each(['/entities', '/reports', '/reports/new', '/reports/publish-lists'])(
     'gates %s',
     (path) => {
       withSelected('kg_investor')

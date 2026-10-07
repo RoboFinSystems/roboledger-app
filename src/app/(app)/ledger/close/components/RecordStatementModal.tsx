@@ -28,6 +28,8 @@ interface AccountOption {
 
 interface RecordStatementModalProps {
   graphId: string
+  /** A subsidiary's id, or null for the group parent: whose chart the accounts come from. */
+  entityId?: string | null
   open: boolean
   onClose: () => void
   onRecorded: (reconciliation: LedgerReconciliation) => void
@@ -39,6 +41,7 @@ interface RecordStatementModalProps {
  */
 const RecordStatementModal: FC<RecordStatementModalProps> = ({
   graphId,
+  entityId = null,
   open,
   onClose,
   onRecorded,
@@ -60,6 +63,7 @@ const RecordStatementModal: FC<RecordStatementModalProps> = ({
     void (async () => {
       try {
         const list = await clients.ledger.listAccounts(graphId, {
+          entityId,
           isActive: true,
           limit: 500,
         })
@@ -78,7 +82,7 @@ const RecordStatementModal: FC<RecordStatementModalProps> = ({
     return () => {
       cancelled = true
     }
-  }, [graphId, open])
+  }, [graphId, entityId, open])
 
   const amount = Number(balance)
   const ready =

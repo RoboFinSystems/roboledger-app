@@ -70,13 +70,18 @@ function money(value: number | null): string {
 
 interface ReconciliationsPanelProps {
   graphId: string
+  /** A subsidiary's id, or null for the group parent. */
+  entityId?: string | null
 }
 
 /**
  * The period's reconciliation worklist: each check that ties the ledger to
  * something outside it, where it stands, and the actions on it.
  */
-const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({ graphId }) => {
+const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({
+  graphId,
+  entityId = null,
+}) => {
   const [periods, setPeriods] = useState<string[]>([])
   const [period, setPeriod] = useState<string | null>(null)
   const [list, setList] = useState<LedgerReconciliationList | null>(null)
@@ -97,7 +102,9 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({ graphId }) => {
     let cancelled = false
     void (async () => {
       try {
-        const calendar = await clients.ledger.getFiscalCalendar(graphId)
+        const calendar = await clients.ledger.getFiscalCalendar(graphId, {
+          entityId,
+        })
         if (cancelled) return
         const names = (calendar?.periods ?? []).map((p) => p.name)
         const start =
@@ -115,7 +122,7 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({ graphId }) => {
     return () => {
       cancelled = true
     }
-  }, [graphId])
+  }, [graphId, entityId])
 
   const load = useCallback(async () => {
     if (!period) return
@@ -123,7 +130,9 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({ graphId }) => {
     try {
       setIsLoading(true)
       setError(null)
-      const result = await clients.ledger.listReconciliations(graphId, period)
+      const result = await clients.ledger.listReconciliations(graphId, period, {
+        entityId,
+      })
       if (seq !== loadSeq.current) return
       setList(result)
     } catch (err) {
@@ -132,7 +141,7 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({ graphId }) => {
     } finally {
       if (seq === loadSeq.current) setIsLoading(false)
     }
-  }, [graphId, period])
+  }, [graphId, entityId, period])
 
   useEffect(() => {
     setNotes([])
@@ -394,6 +403,7 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({ graphId }) => {
 
       <RecordStatementModal
         graphId={graphId}
+        entityId={entityId}
         open={statementOpen}
         onClose={() => setStatementOpen(false)}
         onRecorded={handleStatementRecorded}
