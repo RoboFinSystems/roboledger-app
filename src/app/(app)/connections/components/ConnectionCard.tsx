@@ -31,12 +31,13 @@ const PROVIDER_IMAGES: Record<
 export const PROVIDER_LABELS: Record<string, string> = {
   quickbooks: 'QuickBooks',
   mercury: 'Mercury',
+  plaid: 'Plaid',
   external: 'External',
 }
 
 /** Providers whose first sync initializes the fiscal calendar, and whose
  *  card therefore surfaces the bootstrap state when that could not happen. */
-const CALENDAR_BOOTSTRAP_PROVIDERS = new Set(['quickbooks', 'mercury'])
+const CALENDAR_BOOTSTRAP_PROVIDERS = new Set(['quickbooks', 'mercury', 'plaid'])
 
 export interface ConnectionStatus {
   status: string
@@ -151,10 +152,16 @@ export default function ConnectionCard({
   // The provider has not granted access yet: nothing can sync, and the
   // first sync is what initializes the fiscal calendar.
   const awaitingConsent = connection.status === 'pending_oauth'
+  // The provider revoked the login (a changed bank password, an expired
+  // consent): the row keeps its history and resumes from a new sign-in.
+  const needsReauth = connection.status === 'needs_reauth'
 
-  const subtitle = connection.metadata?.entity_name
-    ? `${provider === 'mercury' ? 'Organization' : 'Company'}: ${connection.metadata.entity_name}`
-    : null
+  const subtitle =
+    provider === 'plaid' && connection.metadata?.institution_name
+      ? `Bank: ${connection.metadata.institution_name}`
+      : connection.metadata?.entity_name
+        ? `${provider === 'mercury' ? 'Organization' : 'Company'}: ${connection.metadata.entity_name}`
+        : null
 
   return (
     <Card>
@@ -277,7 +284,7 @@ export default function ConnectionCard({
         </div>
 
         <div className="flex gap-2">
-          {awaitingConsent ? (
+          {awaitingConsent || needsReauth ? (
             <Button
               size="sm"
               color="primary"
@@ -285,7 +292,7 @@ export default function ConnectionCard({
               disabled={!onContinueOAuth}
             >
               <HiExternalLink className="mr-2 h-4 w-4" />
-              Continue sign-in
+              {needsReauth ? 'Reconnect' : 'Continue sign-in'}
             </Button>
           ) : (
             <Button
