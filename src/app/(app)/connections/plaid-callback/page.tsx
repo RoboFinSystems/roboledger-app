@@ -4,15 +4,17 @@ import {
   completePlaidLink,
   openPlaidLink,
   plaidRefusalMessage,
+  requestPlaidLinkToken,
   takePendingPlaidLink,
 } from '@/lib/plaid-link'
 import { LoadingState } from '@robosystems/core'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
-// Where a bank that signs in through OAuth sends the user back. Link is
-// opened again here with the same token and the redirect it received, and
-// hands back the public token that completes the connection.
+// Where a bank that signs in through OAuth sends the user back. The backend
+// answers with the token Link started with (it keeps it for its life), Link
+// is opened again with it and the redirect it received, and hands back the
+// public token that completes the connection.
 export default function PlaidCallbackPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -35,46 +37,54 @@ export default function PlaidCallbackPage() {
       return
     }
 
-    void openPlaidLink({
-      token: pending.linkToken,
-      receivedRedirectUri: window.location.href,
-      onSuccess: (publicToken) => {
-        void completePlaidLink({
-          graphId: pending.graphId,
-          publicToken,
-          state: pending.state,
-        }).then(
-          () => {
-            // The return is single-use; strip it so a refresh cannot
-            // resubmit it and report a failure after success.
-            window.history.replaceState({}, '', '/connections/plaid-callback')
-            setStatus('success')
-            setTimeout(() => {
-              router.push('/connections?success=bank-connected')
-            }, 2000)
+    void requestPlaidLinkToken(pending.graphId, pending.connectionId)
+      .then(({ linkToken, state }) =>
+        openPlaidLink({
+          token: linkToken,
+          receivedRedirectUri: window.location.href,
+          onSuccess: (publicToken) => {
+            void completePlaidLink({
+              graphId: pending.graphId,
+              publicToken,
+              state,
+            }).then(
+              () => {
+                // The return is single-use; strip it so a refresh cannot
+                // resubmit it and report a failure after success.
+                window.history.replaceState(
+                  {},
+                  '',
+                  '/connections/plaid-callback'
+                )
+                setStatus('success')
+                setTimeout(() => {
+                  router.push('/connections?success=bank-connected')
+                }, 2000)
+              },
+              (err: unknown) => {
+                setError(
+                  plaidRefusalMessage(err, 'The bank could not be connected')
+                )
+                setStatus('error')
+              }
+            )
           },
-          (err: unknown) => {
+          onExit: (exitError) => {
             setError(
-              plaidRefusalMessage(err, 'The bank could not be connected')
+              exitError
+                ? exitError.display_message ||
+                    exitError.error_message ||
+                    'The bank reported an error. Start the connection again from Connections.'
+                : 'Connection canceled — nothing was linked. You can start the connection again whenever you like.'
             )
             setStatus('error')
-          }
-        )
-      },
-      onExit: (exitError) => {
-        setError(
-          exitError
-            ? exitError.display_message ||
-                exitError.error_message ||
-                'The bank reported an error. Start the connection again from Connections.'
-            : 'Connection canceled — nothing was linked. You can start the connection again whenever you like.'
-        )
+          },
+        })
+      )
+      .catch((err: unknown) => {
+        setError(plaidRefusalMessage(err, 'Plaid Link could not be opened'))
         setStatus('error')
-      },
-    }).catch((err: unknown) => {
-      setError(plaidRefusalMessage(err, 'Plaid Link could not be opened'))
-      setStatus('error')
-    })
+      })
   }, [router, searchParams])
 
   if (status === 'loading') {

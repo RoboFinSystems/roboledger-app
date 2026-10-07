@@ -7,9 +7,11 @@ import { SDK, unwrapSdk } from '@robosystems/core'
  * Plaid's rule is that the initialize script comes from cdn.plaid.com, never
  * from a bundle, so it is loaded once on demand (the CSP in `proxy.ts`
  * allows exactly that origin). A bank that signs in through OAuth leaves
- * the page and comes back to `/connections/plaid-callback`; the Link token
- * and the state that completes the flow wait in sessionStorage for the
- * return, where Link is opened again with the redirect it received.
+ * the page and comes back to `/connections/plaid-callback`, which must open
+ * Link again with the token it started with. Only which connection that
+ * was waits in sessionStorage; the backend keeps the token for its life and
+ * answers the second `initOAuth` with the same one, so no token sits in the
+ * browser's storage.
  */
 
 export const PLAID_LINK_SCRIPT =
@@ -92,8 +94,6 @@ export async function openPlaidLink(
 export interface PendingPlaidLink {
   graphId: string
   connectionId: string
-  linkToken: string
-  state: string
 }
 
 export function savePendingPlaidLink(pending: PendingPlaidLink): void {
@@ -122,6 +122,33 @@ export function clearPendingPlaidLink(): void {
   } catch {
     // nothing to clear
   }
+}
+
+/**
+ * A Link token for the connection from the backend: update mode when the
+ * connection already holds an Item that needs its login repaired, and the
+ * same token while it lives, so an OAuth bank's return gets the one Link
+ * started with.
+ */
+export async function requestPlaidLinkToken(
+  graphId: string,
+  connectionId: string
+): Promise<{ linkToken: string; state: string }> {
+  const oauth = unwrapSdk(
+    await SDK.initOAuth({
+      path: { graph_id: graphId },
+      body: {
+        connection_id: connectionId,
+        redirect_uri: `${window.location.origin}${PLAID_CALLBACK_PATH}`,
+      },
+    })
+  )
+  const linkToken = oauth?.link_token
+  const state = oauth?.state
+  if (!linkToken || !state) {
+    throw new Error('Plaid did not return a Link token')
+  }
+  return { linkToken, state }
 }
 
 /**
@@ -159,21 +186,11 @@ export async function linkPlaidConnection(args: {
   onExit: (message: string | null) => void
 }): Promise<void> {
   const { graphId, connectionId, onConnected, onExit } = args
-  const oauth = unwrapSdk(
-    await SDK.initOAuth({
-      path: { graph_id: graphId },
-      body: {
-        connection_id: connectionId,
-        redirect_uri: `${window.location.origin}${PLAID_CALLBACK_PATH}`,
-      },
-    })
+  const { linkToken, state } = await requestPlaidLinkToken(
+    graphId,
+    connectionId
   )
-  const linkToken = oauth?.link_token
-  const state = oauth?.state
-  if (!linkToken || !state) {
-    throw new Error('Plaid did not return a Link token')
-  }
-  savePendingPlaidLink({ graphId, connectionId, linkToken, state })
+  savePendingPlaidLink({ graphId, connectionId })
   await openPlaidLink({
     token: linkToken,
     onSuccess: (publicToken) => {

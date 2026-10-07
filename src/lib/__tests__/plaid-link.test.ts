@@ -20,6 +20,7 @@ import {
   linkPlaidConnection,
   loadPlaidLink,
   plaidRefusalMessage,
+  requestPlaidLinkToken,
   savePendingPlaidLink,
   takePendingPlaidLink,
 } from '../plaid-link'
@@ -33,14 +34,10 @@ describe('pending Link storage', () => {
     savePendingPlaidLink({
       graphId: 'kg_1',
       connectionId: 'conn_1',
-      linkToken: 'link-tok',
-      state: 'st',
     })
     expect(takePendingPlaidLink()).toEqual({
       graphId: 'kg_1',
       connectionId: 'conn_1',
-      linkToken: 'link-tok',
-      state: 'st',
     })
     expect(takePendingPlaidLink()).toBeNull()
   })
@@ -49,8 +46,6 @@ describe('pending Link storage', () => {
     savePendingPlaidLink({
       graphId: 'kg_1',
       connectionId: 'conn_1',
-      linkToken: 'link-tok',
-      state: 'st',
     })
     clearPendingPlaidLink()
     expect(takePendingPlaidLink()).toBeNull()
@@ -95,10 +90,14 @@ describe('linkPlaidConnection', () => {
     })
     expect(create.mock.calls[0][0].token).toBe('link-tok')
     expect(open).toHaveBeenCalledTimes(1)
-    // The pending Link waits for an OAuth bank's return until Link is done.
-    expect(sessionStorage.getItem('roboledger:plaid-link')).toContain(
-      'link-tok'
-    )
+    // Which connection is in Link waits for an OAuth bank's return until
+    // Link is done — never the token itself.
+    const pending = sessionStorage.getItem('roboledger:plaid-link') ?? ''
+    expect(JSON.parse(pending)).toEqual({
+      graphId: 'kg_1',
+      connectionId: 'conn_1',
+    })
+    expect(pending).not.toContain('link-tok')
 
     create.mock.calls[0][0].onSuccess('public-tok', {})
     await vi.waitFor(() => expect(onConnected).toHaveBeenCalledTimes(1))
@@ -147,7 +146,27 @@ describe('linkPlaidConnection', () => {
   })
 })
 
+describe('requestPlaidLinkToken', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('asks initOAuth for the connection with the callback as the redirect', async () => {
+    mockInitOAuth.mockResolvedValueOnce(
+      ok({ link_token: 'link-tok', state: 'st2', auth_url: null })
+    )
+    await expect(requestPlaidLinkToken('kg_1', 'conn_1')).resolves.toEqual({
+      linkToken: 'link-tok',
+      state: 'st2',
+    })
+    expect(mockInitOAuth.mock.calls[0][0].body).toEqual({
+      connection_id: 'conn_1',
+      redirect_uri: `${window.location.origin}/connections/plaid-callback`,
+    })
+  })
+})
+
 describe('completePlaidLink', () => {
+  beforeEach(() => vi.clearAllMocks())
+
   it('throws the backend message when the exchange did not succeed', async () => {
     mockOauthCallback.mockResolvedValueOnce(
       ok({
