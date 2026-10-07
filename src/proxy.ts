@@ -39,12 +39,14 @@ export function proxy(request: NextRequest) {
         'https://challenges.cloudflare.com https://static.cloudflareinsights.com ' +
         'https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com ' +
         'https://www.googletagmanager.com https://www.google-analytics.com ' +
-        'https://tagmanager.google.com https://analytics.google.com'
+        'https://tagmanager.google.com https://analytics.google.com ' +
+        'https://cdn.plaid.com'
       : "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' " +
         'https://challenges.cloudflare.com https://static.cloudflareinsights.com ' +
         'https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com ' +
         'https://www.googletagmanager.com https://www.google-analytics.com ' +
-        'https://tagmanager.google.com https://analytics.google.com',
+        'https://tagmanager.google.com https://analytics.google.com ' +
+        'https://cdn.plaid.com',
 
     // Style sources - Allow unsafe-inline for Next.js Image component and other inline styles
     "style-src 'self' 'unsafe-inline' " +
@@ -74,6 +76,7 @@ export function proxy(request: NextRequest) {
         'https://www.google-analytics.com https://analytics.google.com ' +
         'https://region1.google-analytics.com https://www.googletagmanager.com ' +
         'https://tagmanager.google.com wss://ws-us3.pusher.com https://sockjs-us3.pusher.com ' +
+        'https://production.plaid.com https://sandbox.plaid.com ' +
         API_ORIGIN
       : "connect-src 'self' " +
         'https://api.robosystems.ai https://staging.api.robosystems.ai ' +
@@ -81,12 +84,15 @@ export function proxy(request: NextRequest) {
         'https://www.google-analytics.com https://analytics.google.com ' +
         'https://region1.google-analytics.com https://www.googletagmanager.com ' +
         'https://tagmanager.google.com wss://ws-us3.pusher.com https://sockjs-us3.pusher.com ' +
+        'https://production.plaid.com https://sandbox.plaid.com ' +
         API_ORIGIN,
 
     // Frame sources - Allow Cloudflare CAPTCHA and common embeds
+    // Plaid Link runs in a frame from Plaid's CDN; its script and its API
+    // origins sit in script-src and connect-src.
     "frame-src 'self' " +
       'https://challenges.cloudflare.com https://www.youtube.com https://player.vimeo.com ' +
-      'https://www.google.com https://docs.google.com',
+      'https://www.google.com https://docs.google.com https://cdn.plaid.com',
 
     // Media sources - Allow video and audio from common hosts.
     // BLOG_ASSETS is what lets the post page's "Listen to this story" player load its

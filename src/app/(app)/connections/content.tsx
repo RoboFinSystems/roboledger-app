@@ -1,6 +1,11 @@
 'use client'
 
 import { apiErrorMessage } from '@/lib/ledger/errors'
+import {
+  linkPlaidConnection,
+  PLAID_CALLBACK_PATH,
+  plaidRefusalMessage,
+} from '@/lib/plaid-link'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import {
   EmptyState,
@@ -36,6 +41,7 @@ import DeleteConnectionModal, {
 import MercurySetupForm, {
   MERCURY_PARTNER_URL,
 } from './components/MercurySetupForm'
+import PlaidLinkSetup from './components/PlaidLinkSetup'
 import QuickBooksSetupForm from './components/QuickBooksSetupForm'
 import SyncOptionsModal, {
   type SyncOptions,
@@ -52,6 +58,7 @@ const SYNC_POLL_TIMEOUT_MS = 300_000
 const OAUTH_CALLBACK_PATHS: Record<string, string> = {
   quickbooks: '/connections/qb-callback',
   mercury: '/connections/mercury-callback',
+  plaid: PLAID_CALLBACK_PATH,
 }
 
 interface SyncWatch {
@@ -316,12 +323,33 @@ export default function ModernConnectionsContent() {
   }, [showSuccess, closeMarketplace, loadConnections])
 
   // A connection left `pending_oauth` (the user closed the provider's
-  // consent page) resumes from the same row: re-initialize the flow and
-  // send them back to the provider.
+  // consent page) or marked `needs_reauth` (the bank revoked the login)
+  // resumes from the same row: re-initialize the flow and send them back
+  // to the provider — or, for a bank through Plaid, open Link again here.
   const handleContinueOAuth = async (connection: ConnectionData) => {
-    const callbackPath = OAUTH_CALLBACK_PATHS[connection.provider.toLowerCase()]
+    const provider = connection.provider.toLowerCase()
+    const callbackPath = OAUTH_CALLBACK_PATHS[provider]
     if (!currentGraphId || !callbackPath) {
       showError('This connection cannot resume sign-in')
+      return
+    }
+    if (provider === 'plaid') {
+      try {
+        await linkPlaidConnection({
+          graphId: currentGraphId,
+          connectionId: connection.connection_id,
+          onConnected: () => {
+            showSuccess('Bank connected — the first sync is running')
+            void loadConnections()
+          },
+          onExit: (message) => {
+            if (message) showError(message)
+          },
+        })
+      } catch (err) {
+        console.error('Plaid Link error:', err)
+        showError(plaidRefusalMessage(err, 'Plaid Link could not be opened'))
+      }
       return
     }
     try {
@@ -591,6 +619,11 @@ export default function ModernConnectionsContent() {
           <ModalBody>
             {setupProvider === 'quickbooks' ? (
               <QuickBooksSetupForm onCancel={() => setSetupProvider(null)} />
+            ) : setupProvider === 'plaid' ? (
+              <PlaidLinkSetup
+                onCancel={() => setSetupProvider(null)}
+                onConnected={handleSetupSuccess}
+              />
             ) : setupProvider === 'mercury' ? (
               <MercurySetupForm
                 apiKeyMode={availableProviders
