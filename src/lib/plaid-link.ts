@@ -225,10 +225,10 @@ export function plaidRefusalMessage(err: unknown, fallback: string): string {
   // CHART_REQUIRED mentions severing QuickBooks as one way to get a chart,
   // so it is tested before the QUICKBOOKS_ACTIVE shape.
   if (lower.includes('chart of accounts')) {
-    return 'This graph has no chart of accounts yet. Start one from a template on the Chart of Accounts page, then connect a bank.'
+    return 'This company has no chart of accounts yet. Start one from a template on the Chart of Accounts page, then connect a bank.'
   }
   if (lower.includes('sever') && lower.includes('quickbooks')) {
-    return 'A bank feed cannot sit beside a live QuickBooks connection. Sever QuickBooks first — the chart it created stays as this graph’s own — then connect a bank.'
+    return 'QuickBooks keeps the group parent’s books, so a bank cannot connect for it. Pick a subsidiary, or sever QuickBooks first — the chart it created stays as the parent’s own.'
   }
   if (lower.includes('already connected') || lower.includes('duplicate')) {
     return 'This bank is already connected to this graph. Its accounts are on the existing connection.'

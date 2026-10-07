@@ -4,6 +4,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mockCreateConnection = vi.fn()
 const mockInitOAuth = vi.fn()
 const mockPush = vi.fn()
+let mockEntities: any[] = []
+
+vi.mock('@/lib/entity-scope', async (importOriginal) => {
+  const actual = (await importOriginal()) as Record<string, unknown>
+  return {
+    ...actual,
+    useEntityScope: () => ({ entities: mockEntities }),
+  }
+})
 
 // Every graph these tests select is a RoboLedger graph.
 vi.mock('@/lib/useLedgerGraph', async () => {
@@ -60,6 +69,11 @@ vi.mock('flowbite-react', () => ({
   Label: ({ children, htmlFor }: any) => (
     <label htmlFor={htmlFor}>{children}</label>
   ),
+  Select: ({ id, value, onChange, disabled, children }: any) => (
+    <select id={id} value={value} onChange={onChange} disabled={disabled}>
+      {children}
+    </select>
+  ),
   TextInput: ({ id, type, value, onChange, disabled, placeholder }: any) => (
     <input
       id={id}
@@ -111,6 +125,7 @@ describe('MercurySetupForm', () => {
             since_date: '2026-01-01',
             include_treasury: false,
             api_key: null,
+            entity_id: null,
           },
         },
       })
@@ -173,7 +188,7 @@ describe('MercurySetupForm', () => {
   it('explains the QuickBooks conflict in plain words', async () => {
     mockCreateConnection.mockResolvedValue(
       sdkError(
-        'Sever the quickbooks connection first — a bank feed is native accounting, and while it is connected the synced ledger is the source of truth for bank transactions.'
+        "Quickbooks keeps the group parent's books, so a bank feed cannot book there. Connect the bank for a subsidiary (name it when connecting), or sever the synced connection first."
       )
     )
     render(<MercurySetupForm onCancel={vi.fn()} />)
@@ -181,7 +196,9 @@ describe('MercurySetupForm', () => {
     fireEvent.click(screen.getByText('Sign in with Mercury'))
 
     const alert = await screen.findByRole('alert')
-    expect(alert).toHaveTextContent('Sever QuickBooks first')
+    expect(alert).toHaveTextContent(
+      'Pick a subsidiary, or sever QuickBooks first'
+    )
     expect(alert).not.toHaveTextContent('{"detail"')
     expect(mockInitOAuth).not.toHaveBeenCalled()
   })
@@ -199,5 +216,59 @@ describe('MercurySetupForm', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Chart of Accounts page'
     )
+  })
+})
+
+describe('MercurySetupForm in a holding company', () => {
+  const PARENT = {
+    id: 'ent_parent',
+    name: 'Harbor Holdings',
+    isParent: true,
+    parentEntityId: null,
+  }
+  const SUB = {
+    id: 'ent_sub',
+    name: 'Cadence Studio',
+    isParent: false,
+    parentEntityId: 'ent_parent',
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockEntities = [PARENT, SUB]
+  })
+
+  it('connects Mercury for the picked subsidiary', async () => {
+    mockCreateConnection.mockResolvedValueOnce({
+      data: { connection_id: 'conn_1' },
+      error: undefined,
+      response: { ok: true },
+    })
+    mockInitOAuth.mockResolvedValueOnce({
+      data: { auth_url: 'https://mercury.example/oauth' },
+      error: undefined,
+      response: { ok: true },
+    })
+    render(<MercurySetupForm onCancel={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('Company'), {
+      target: { value: 'ent_sub' },
+    })
+    fireEvent.click(screen.getByText('Sign in with Mercury'))
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalled())
+    expect(
+      mockCreateConnection.mock.calls[0][0].body.mercury_config.entity_id
+    ).toBe('ent_sub')
+  })
+
+  it('defaults to a subsidiary while QuickBooks keeps the parent', () => {
+    render(<MercurySetupForm onCancel={vi.fn()} parentKept />)
+    const select = screen.getByLabelText('Company') as HTMLSelectElement
+    expect(select.value).toBe('ent_sub')
+    const parent = screen.getByRole('option', {
+      name: /Harbor Holdings/,
+    }) as HTMLOptionElement
+    expect(parent.disabled).toBe(true)
   })
 })

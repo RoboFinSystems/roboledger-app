@@ -1,13 +1,19 @@
 'use client'
 
+import { useEntityScope } from '@/lib/entity-scope'
 import { apiErrorMessage } from '@/lib/ledger/errors'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import { SDK, unwrapSdk } from '@robosystems/core'
 import { Spinner } from '@robosystems/core/ui-components'
 import { Alert, Button, Checkbox, Label, TextInput } from 'flowbite-react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { HiLibrary } from 'react-icons/hi'
+import FeedEntityField, {
+  feedEntityAllowed,
+  feedEntityDefault,
+  feedEntityScope,
+} from './FeedEntityField'
 
 interface MercurySetupFormProps {
   /** Whether this deployment lets a personal read-only API token connect
@@ -17,6 +23,8 @@ interface MercurySetupFormProps {
   onCancel: () => void
   /** Called when an API-token connection is live (no browser round-trip). */
   onConnected?: () => void
+  /** A QuickBooks connection is live, so the group parent's books are its. */
+  parentKept?: boolean
 }
 
 /** RoboSystems' Mercury partner page — the referral link that came with the
@@ -35,32 +43,52 @@ const toMessage = (err: unknown, fallback: string): string => {
   // CHART_REQUIRED mentions severing QuickBooks as one way to get a chart, so
   // it is tested before the QUICKBOOKS_ACTIVE shape.
   if (lower.includes('chart of accounts')) {
-    return 'This graph has no chart of accounts yet. Start one from a template on the Chart of Accounts page, then connect Mercury.'
+    return 'This company has no chart of accounts yet. Start one from a template on the Chart of Accounts page, then connect Mercury.'
   }
   if (lower.includes('sever') && lower.includes('quickbooks')) {
-    return 'A bank feed cannot sit beside a live QuickBooks connection. Sever QuickBooks first — the chart it created stays as this graph’s own — then connect Mercury.'
+    return 'QuickBooks keeps the group parent’s books, so Mercury cannot connect for it. Pick a subsidiary, or sever QuickBooks first — the chart it created stays as the parent’s own.'
   }
   return friendly
 }
 
-// The Mercury bank feed. A bank feed is native accounting: the graph must
-// already have a chart of accounts and no live QuickBooks connection — the
-// backend refuses otherwise and the message says which. Every bank account
-// the feed exposes is linked to a chart account by name, or one is added.
+// The Mercury bank feed. A bank feed is native accounting: the company its
+// accounts land on must already have a chart of accounts and must not be the
+// one QuickBooks keeps (the group parent, while QuickBooks is connected) —
+// the backend refuses otherwise and the message says which. Every bank
+// account the feed exposes is linked to a chart account by name on that
+// company's chart, or one is added.
 export default function MercurySetupForm({
   apiKeyMode = false,
   onCancel,
   onConnected,
+  parentKept = false,
 }: MercurySetupFormProps) {
   const router = useRouter()
   const currentGraphId = useLedgerGraph().graph?.graphId ?? null
+  const { entities } = useEntityScope()
   const [sinceDate, setSinceDate] = useState(defaultSinceDate)
+  const [entityId, setEntityId] = useState(() =>
+    feedEntityDefault(entities, parentKept)
+  )
   const [includeTreasury, setIncludeTreasury] = useState(true)
   const [apiKey, setApiKey] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const usingApiKey = apiKeyMode && apiKey.trim().length > 0
+
+  // The entity list arrives after the first render; a pick that is no longer
+  // one the server would take (or never was) falls back to the default.
+  useEffect(() => {
+    if (!feedEntityAllowed(entities, entityId, parentKept)) {
+      setEntityId(feedEntityDefault(entities, parentKept))
+    }
+  }, [entities, entityId, parentKept])
+
+  const canConnect =
+    entities.length === 0
+      ? !parentKept
+      : feedEntityAllowed(entities, entityId, parentKept)
 
   const handleConnect = async () => {
     if (!currentGraphId) {
@@ -80,6 +108,7 @@ export default function MercurySetupForm({
               since_date: sinceDate || null,
               include_treasury: includeTreasury,
               api_key: usingApiKey ? apiKey.trim() : null,
+              entity_id: feedEntityScope(entities, entityId),
             },
           },
         })
@@ -150,9 +179,10 @@ export default function MercurySetupForm({
         <div className="mb-4 flex items-center gap-3">
           <HiLibrary className="h-8 w-8 shrink-0 text-gray-400" />
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            A bank feed needs a chart of accounts first, and cannot sit beside a
-            live QuickBooks connection. Each Mercury account is linked to a
-            chart account by name, or one is added for it.
+            A bank feed needs the company&rsquo;s chart of accounts first. Each
+            Mercury account is linked to a chart account by name, or one is
+            added for it. While QuickBooks keeps the group parent&rsquo;s books,
+            Mercury connects for a subsidiary.
           </p>
         </div>
 
@@ -181,6 +211,17 @@ export default function MercurySetupForm({
               Include treasury accounts
             </Label>
           </div>
+        </div>
+
+        <div className="mt-4">
+          <FeedEntityField
+            id="mercury-entity"
+            entities={entities}
+            value={entityId}
+            onChange={setEntityId}
+            parentKept={parentKept}
+            disabled={loading}
+          />
         </div>
 
         {apiKeyMode && (
@@ -222,7 +263,11 @@ export default function MercurySetupForm({
               </span>
             </div>
           ) : (
-            <Button color="primary" onClick={handleConnect}>
+            <Button
+              color="primary"
+              onClick={handleConnect}
+              disabled={!canConnect}
+            >
               {usingApiKey ? 'Connect with API token' : 'Sign in with Mercury'}
             </Button>
           )}

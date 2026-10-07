@@ -27,7 +27,7 @@ import {
   ModalHeader,
 } from 'flowbite-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiLink, HiPlus } from 'react-icons/hi'
 
 import DocsLink from '@/components/DocsLink'
@@ -321,6 +321,13 @@ export default function ModernConnectionsContent() {
     closeMarketplace()
     void loadConnections()
   }, [showSuccess, closeMarketplace, loadConnections])
+
+  // A synced ledger keeps the group parent's books, whatever its sync state:
+  // a bank feed then connects for a subsidiary.
+  const parentKept = useMemo(
+    () => connections.some((c) => c.provider.toLowerCase() === 'quickbooks'),
+    [connections]
+  )
 
   // A connection left `pending_oauth` (the user closed the provider's
   // consent page) or marked `needs_reauth` (the bank revoked the login)
@@ -623,6 +630,7 @@ export default function ModernConnectionsContent() {
               <PlaidLinkSetup
                 onCancel={() => setSetupProvider(null)}
                 onConnected={handleSetupSuccess}
+                parentKept={parentKept}
               />
             ) : setupProvider === 'mercury' ? (
               <MercurySetupForm
@@ -631,6 +639,7 @@ export default function ModernConnectionsContent() {
                   ?.optional_config?.includes('api_key')}
                 onCancel={() => setSetupProvider(null)}
                 onConnected={handleSetupSuccess}
+                parentKept={parentKept}
               />
             ) : providersLoading ? (
               <LoadingState />
