@@ -44,6 +44,14 @@ export interface EntityScope {
   entityId: string | null
   /** True while any graph's entity list is loading. */
   isLoading: boolean
+  /**
+   * True once the selected graph's entity list has been read (or failed), or
+   * when the selected graph is not a ledger graph. Until then `entityId` is
+   * the parent by default, so a page that writes should wait for this.
+   */
+  isResolved: boolean
+  /** Set when the selected graph's list failed and nothing is cached for it. */
+  error: string | null
   /** Make an entity current, switching graph first when it is in another. */
   select: (entity: LedgerEntitySummary, graphId: string) => Promise<void>
   /** Reload every graph's entities, e.g. after one is created. */
@@ -116,6 +124,10 @@ export function EntityScopeProvider({ children }: PropsWithChildren) {
     Map<string, LedgerEntitySummary[]>
   >(new Map())
   const [isLoading, setIsLoading] = useState(false)
+  // Whether each graph's last read landed or failed; absent until the first.
+  const [statusByGraph, setStatusByGraph] = useState<
+    Map<string, 'loaded' | 'failed'>
+  >(new Map())
 
   const ledgerGraphs = useMemo(
     () => graphState.graphs.filter(GraphFilters.roboledger),
@@ -133,6 +145,7 @@ export function EntityScopeProvider({ children }: PropsWithChildren) {
     const seq = ++loadSeq.current
     if (ledgerGraphs.length === 0) {
       setEntitiesByGraph(new Map())
+      setStatusByGraph(new Map())
       setIsLoading(false)
       return
     }
@@ -167,6 +180,14 @@ export function EntityScopeProvider({ children }: PropsWithChildren) {
       }
       return next
     })
+    setStatusByGraph(
+      new Map(
+        ledgerGraphs.map((graph, i) => [
+          graph.graphId,
+          results[i].status === 'fulfilled' ? 'loaded' : 'failed',
+        ])
+      )
+    )
     setIsLoading(false)
     // The id list, not the array: the graph list is rebuilt on every context
     // refresh, and reloading entities each time would hammer the API.
@@ -196,6 +217,20 @@ export function EntityScopeProvider({ children }: PropsWithChildren) {
     return picked ?? parent
   }, [currentEntity, entities, parent])
   const entityId = entity && !entity.isParent ? entity.id : null
+
+  // A ledger page must not act on the parent's books because the list has not
+  // arrived or could not be read: the gate holds the page on these.
+  const isLedgerGraph =
+    !!currentGraphId && ledgerGraphs.some((g) => g.graphId === currentGraphId)
+  const status = currentGraphId ? statusByGraph.get(currentGraphId) : undefined
+  const isResolved = !isLedgerGraph || status !== undefined
+  const error =
+    isLedgerGraph &&
+    status === 'failed' &&
+    currentGraphId &&
+    !entitiesByGraph.has(currentGraphId)
+      ? "This graph's entities could not be loaded."
+      : null
 
   // Keep the persisted pick honest: it names an entity of the selected graph,
   // and it carries the fields the switcher and the pages read.
@@ -233,6 +268,8 @@ export function EntityScopeProvider({ children }: PropsWithChildren) {
       parent,
       entityId,
       isLoading,
+      isResolved,
+      error,
       select,
       refresh: load,
     }),
@@ -243,6 +280,8 @@ export function EntityScopeProvider({ children }: PropsWithChildren) {
       parent,
       entityId,
       isLoading,
+      isResolved,
+      error,
       select,
       load,
     ]
@@ -282,6 +321,8 @@ const UNSCOPED: EntityScope = {
   parent: null,
   entityId: null,
   isLoading: false,
+  isResolved: true,
+  error: null,
   select: async () => {},
   refresh: async () => {},
 }

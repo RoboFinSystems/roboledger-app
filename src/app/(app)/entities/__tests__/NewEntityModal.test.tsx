@@ -189,6 +189,32 @@ describe('NewEntityModal', () => {
     expect(screen.getByText('Create Entity')).not.toBeDisabled()
   })
 
+  it('keeps what the user typed when the group is re-read', () => {
+    const { rerender } = render(
+      <NewEntityModal
+        graphId="kg_a"
+        entities={[parent]}
+        open
+        onClose={onClose}
+        onCreated={onCreated}
+      />
+    )
+    fireEvent.change(screen.getByLabelText('Name'), {
+      target: { value: 'Maple Annex' },
+    })
+    // The same group, read again: new array, new row objects.
+    rerender(
+      <NewEntityModal
+        graphId="kg_a"
+        entities={[{ ...parent }]}
+        open
+        onClose={onClose}
+        onCreated={onCreated}
+      />
+    )
+    expect(screen.getByLabelText('Name')).toHaveValue('Maple Annex')
+  })
+
   it('cancels without creating', () => {
     render(
       <NewEntityModal

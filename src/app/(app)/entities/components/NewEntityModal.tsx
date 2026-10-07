@@ -51,8 +51,11 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
   onClose,
   onCreated,
 }) => {
-  const groupParent = useMemo(
-    () => entities.find((e) => e.isParent) ?? entities[0] ?? null,
+  // The id, not the row: the group is re-read after every create and each
+  // read is a new array, and a reset keyed on the row would wipe the form
+  // while the user types.
+  const groupParentId = useMemo(
+    () => (entities.find((e) => e.isParent) ?? entities[0])?.id ?? '',
     [entities]
   )
   const isFirstEntity = entities.length === 0
@@ -72,13 +75,15 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
     setName('')
     setLegalName('')
     setEntityType('')
-    setParentEntityId(groupParent?.id ?? '')
+    setParentEntityId(groupParentId)
     setOwnershipPct('')
     setTicker('')
     setError(null)
     setSubmitting(false)
-  }, [open, groupParent])
+  }, [open, groupParentId])
 
+  // 0 is allowed: a consolidated entity with no equity held (a VIE) is a real
+  // shape, and the treatment is the server's call when consolidation lands.
   const ownershipInvalid =
     ownershipPct !== '' &&
     (Number.isNaN(Number(ownershipPct)) ||

@@ -113,9 +113,12 @@ const LiveStatementsContent: FC = function () {
   // offered on the parent of a graph that holds more than one entity.
   const canCombine = entityId === null && entities.length > 1
   const [scope, setScope] = useState<StatementScope>('entity')
+  // Back to the entity's own books whenever the entity or the graph changes:
+  // two group parents both resolve to a null entity id.
+  const graphId = currentGraph?.graphId ?? null
   useEffect(() => {
     setScope('entity')
-  }, [entityId])
+  }, [entityId, graphId])
   const combined = canCombine && scope === 'combined'
 
   const [statementType, setStatementType] =

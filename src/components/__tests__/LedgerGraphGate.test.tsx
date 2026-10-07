@@ -3,7 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockUseGraphContext = vi.fn()
 const mockSetCurrentGraph = vi.fn()
+const mockScope = vi.fn()
+const mockRefresh = vi.fn()
 let mockPathname = '/ledger/inbox'
+
+vi.mock('@/lib/entity-scope', () => ({
+  useEntityScope: () => mockScope(),
+}))
 
 vi.mock('@robosystems/core', () => ({
   GraphFilters: {
@@ -11,6 +17,7 @@ vi.mock('@robosystems/core', () => ({
   },
   useGraphContext: () => mockUseGraphContext(),
   PageLayout: ({ children }: any) => <div>{children}</div>,
+  LoadingState: () => <div data-testid="loading-state" role="status" />,
   EmptyState: ({ title, action }: any) => (
     <div>
       <h2>{title}</h2>
@@ -48,7 +55,51 @@ const withSelected = (currentGraphId: string) =>
 describe('LedgerGraphGate', () => {
   beforeEach(() => {
     mockSetCurrentGraph.mockReset()
+    mockRefresh.mockReset()
     mockPathname = '/ledger/inbox'
+    mockScope.mockReturnValue({
+      isResolved: true,
+      error: null,
+      refresh: mockRefresh,
+    })
+  })
+
+  it('holds the page until the entity in scope is known', () => {
+    withSelected('kg_ledger')
+    mockScope.mockReturnValue({
+      isResolved: false,
+      error: null,
+      refresh: mockRefresh,
+    })
+    render(<LedgerGraphGate>page</LedgerGraphGate>)
+    expect(screen.queryByText('page')).not.toBeInTheDocument()
+    expect(screen.getByTestId('loading-state')).toBeInTheDocument()
+  })
+
+  it('says so, with a retry, when the entities could not be read', () => {
+    withSelected('kg_ledger')
+    mockScope.mockReturnValue({
+      isResolved: true,
+      error: "This graph's entities could not be loaded.",
+      refresh: mockRefresh,
+    })
+    render(<LedgerGraphGate>page</LedgerGraphGate>)
+    expect(screen.queryByText('page')).not.toBeInTheDocument()
+    expect(screen.getByText('Entities could not be loaded')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Retry'))
+    expect(mockRefresh).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not hold a graph-independent route on the scope', () => {
+    withSelected('kg_ledger')
+    mockPathname = '/settings'
+    mockScope.mockReturnValue({
+      isResolved: false,
+      error: null,
+      refresh: mockRefresh,
+    })
+    render(<LedgerGraphGate>page</LedgerGraphGate>)
+    expect(screen.getByText('page')).toBeInTheDocument()
   })
 
   it('renders the page for a ledger graph', () => {

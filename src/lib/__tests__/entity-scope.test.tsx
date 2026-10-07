@@ -187,6 +187,7 @@ describe('EntityScopeProvider', () => {
     const { result } = renderHook(() => useEntityScope(), { wrapper })
 
     await waitFor(() => expect(result.current.entityId).toBe('ent_s'))
+    expect(mockSetCurrentEntity).toHaveBeenCalledTimes(1)
     expect(mockSetCurrentEntity).toHaveBeenCalledWith(
       expect.objectContaining({
         identifier: 'ent_s',
@@ -195,6 +196,59 @@ describe('EntityScopeProvider', () => {
         graphId: 'kg_a',
       })
     )
+  })
+
+  it('leaves a pick alone that already carries the fields', async () => {
+    withState([ledgerA], 'kg_a')
+    withPick({
+      identifier: 'ent_s',
+      name: 'Maple Court',
+      isParent: false,
+      parentEntityId: 'ent_p',
+      graphId: 'kg_a',
+    })
+    const { result } = renderHook(() => useEntityScope(), { wrapper })
+
+    await waitFor(() => expect(result.current.entityId).toBe('ent_s'))
+    expect(mockSetCurrentEntity).not.toHaveBeenCalled()
+  })
+
+  it('is unresolved until the selected graph’s list arrives', async () => {
+    withState([ledgerA], 'kg_a')
+    withPick(null)
+    const { result } = renderHook(() => useEntityScope(), { wrapper })
+
+    expect(result.current.isResolved).toBe(false)
+    expect(result.current.error).toBeNull()
+    await waitFor(() => expect(result.current.isResolved).toBe(true))
+    expect(result.current.error).toBeNull()
+  })
+
+  it('is resolved at once when the selected graph is not a ledger graph', () => {
+    withState([ledgerA, investor], 'kg_i')
+    withPick(null)
+    const { result } = renderHook(() => useEntityScope(), { wrapper })
+    expect(result.current.isResolved).toBe(true)
+  })
+
+  it('reports a failed read of the selected graph instead of defaulting to the parent', async () => {
+    mockListEntities.mockRejectedValue(new Error('boom'))
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    withState([ledgerA], 'kg_a')
+    withPick({ identifier: 'ent_s', name: 'Maple Court', graphId: 'kg_a' })
+    const { result } = renderHook(() => useEntityScope(), { wrapper })
+
+    await waitFor(() => expect(result.current.isResolved).toBe(true))
+    expect(result.current.error).toMatch(/could not be loaded/)
+    expect(result.current.entityId).toBeNull()
+    expect(mockSetCurrentEntity).not.toHaveBeenCalled()
+
+    // A later read that lands clears it.
+    mockListEntities.mockResolvedValue([sub, parent])
+    await act(() => result.current.refresh())
+    expect(result.current.error).toBeNull()
+    expect(result.current.entityId).toBe('ent_s')
+    consoleError.mockRestore()
   })
 
   it('switches the graph before persisting a pick from another graph', async () => {
