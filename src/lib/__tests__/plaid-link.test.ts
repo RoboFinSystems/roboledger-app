@@ -207,8 +207,13 @@ describe('plaidRefusalMessage', () => {
       )
     ).toMatch(/Chart of Accounts page/)
     expect(
-      plaidRefusalMessage(refusal('Sever the QuickBooks connection first'), 'x')
-    ).toMatch(/Sever QuickBooks first/)
+      plaidRefusalMessage(
+        refusal(
+          "Quickbooks keeps the group parent's books, so a bank feed cannot book there. Connect the bank for a subsidiary (name it when connecting), or sever the synced connection first."
+        ),
+        'x'
+      )
+    ).toMatch(/Pick a subsidiary, or sever QuickBooks first/)
     expect(
       plaidRefusalMessage(
         refusal('This bank is already connected to the graph'),
