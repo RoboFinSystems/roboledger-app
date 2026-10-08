@@ -75,11 +75,11 @@ vi.mock('../components/ConnectionCard', () => ({
       <button onClick={onDelete}>open delete</button>
       <button
         onClick={() => {
-          writePolicyResult = onSetWritePolicy('native')
+          writePolicyResult = onSetWritePolicy('shadow')
           writePolicyResult?.catch(() => undefined)
         }}
       >
-        set native
+        set shadow
       </button>
     </div>
   ),
@@ -167,7 +167,7 @@ describe('Connections error handling', () => {
   it('a refused write-policy change throws so the card reverts', async () => {
     mockSetWritePolicy.mockResolvedValue(notFound)
     await renderLoaded()
-    fireEvent.click(screen.getByText('set native'))
+    fireEvent.click(screen.getByText('set shadow'))
 
     await expect(writePolicyResult).rejects.toMatchObject({ status: 404 })
     expect(mockShowError).toHaveBeenCalledWith('Connection not found')

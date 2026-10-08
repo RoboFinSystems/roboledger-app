@@ -34,6 +34,7 @@ import DocsLink from '@/components/DocsLink'
 import ConnectionCard, {
   type ConnectionData,
   type ConnectionStatus,
+  type WritePolicyChoice,
 } from './components/ConnectionCard'
 import DeleteConnectionModal, {
   type DeleteDisposition,
@@ -469,21 +470,30 @@ export default function ModernConnectionsContent() {
 
   // ── Write-back policy ──
 
+  type SetWritePolicyBody = NonNullable<
+    NonNullable<Parameters<typeof SDK.setConnectionWritePolicy>[0]>['body']
+  >
+
   const WRITE_POLICY_LABELS: Record<string, string> = {
     qb_authoritative: 'QuickBooks authoritative',
-    native: 'Native (local only)',
+    shadow: 'Shadow (observe only)',
   }
 
   const handleSetWritePolicy = async (
     connectionId: string,
-    writePolicy: 'native' | 'qb_authoritative'
+    writePolicy: WritePolicyChoice
   ) => {
     if (!currentGraphId) return
     try {
       unwrapSdk(
         await SDK.setConnectionWritePolicy({
           path: { graph_id: currentGraphId, connection_id: connectionId },
-          body: { write_policy: writePolicy },
+          // The client's request type predates `shadow`; the cast goes with
+          // the next client regen.
+          body: {
+            write_policy:
+              writePolicy as unknown as SetWritePolicyBody['write_policy'],
+          },
         })
       )
       showSuccess(

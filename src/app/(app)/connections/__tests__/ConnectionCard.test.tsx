@@ -38,6 +38,53 @@ const connection = (
 })
 
 describe('ConnectionCard', () => {
+  it('a QuickBooks card chooses write back or shadow, never native', () => {
+    const onSetWritePolicy = vi.fn()
+    const { container } = render(
+      <ConnectionCard
+        connection={connection({
+          provider: 'quickbooks',
+          write_policy: 'qb_authoritative',
+        })}
+        status={{ status: 'connected', message: 'Connected' }}
+        onSync={() => {}}
+        onDelete={() => {}}
+        onSetWritePolicy={onSetWritePolicy}
+        graphId="kg_test"
+      />
+    )
+    const select = container.querySelector('select') as HTMLSelectElement
+    expect(Array.from(select.options).map((o) => o.value)).toEqual([
+      'qb_authoritative',
+      'shadow',
+    ])
+    fireEvent.change(select, { target: { value: 'shadow' } })
+    expect(onSetWritePolicy).toHaveBeenCalledWith('shadow')
+  })
+
+  it('a row still on native shows it until another choice is made', () => {
+    const { container } = render(
+      <ConnectionCard
+        connection={connection({
+          provider: 'quickbooks',
+          write_policy: 'native',
+        })}
+        status={{ status: 'connected', message: 'Connected' }}
+        onSync={() => {}}
+        onDelete={() => {}}
+        onSetWritePolicy={() => {}}
+        graphId="kg_test"
+      />
+    )
+    const select = container.querySelector('select') as HTMLSelectElement
+    expect(select.value).toBe('native')
+    expect(Array.from(select.options).map((o) => o.value)).toEqual([
+      'qb_authoritative',
+      'shadow',
+      'native',
+    ])
+  })
+
   it('offers Continue sign-in instead of Sync while OAuth is pending', () => {
     const onContinueOAuth = vi.fn()
     const onSync = vi.fn()
