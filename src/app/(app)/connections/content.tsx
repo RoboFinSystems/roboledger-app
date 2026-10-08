@@ -569,8 +569,9 @@ export default function ModernConnectionsContent() {
           title="Data Connections"
           subtitle={
             <>
-              Connect external data sources to import transactions and financial
-              data on demand. <DocsLink href="/docs/connect-your-books" />
+              Connect external data sources. Each one syncs on its own once a
+              day, and whenever you ask.{' '}
+              <DocsLink href="/docs/connect-your-books" />
             </>
           }
           actions={
@@ -607,7 +608,7 @@ export default function ModernConnectionsContent() {
               <EmptyState
                 icon={HiLink}
                 title="No connections yet"
-                description="Connect your data sources to import transactions, chart of accounts, and other financial data on demand."
+                description="Connect your data sources to import transactions, chart of accounts, and other financial data. Each connection syncs once a day on its own, and whenever you ask."
               />
             </Card>
           )}
