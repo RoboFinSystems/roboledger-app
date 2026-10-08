@@ -470,10 +470,6 @@ export default function ModernConnectionsContent() {
 
   // ── Write-back policy ──
 
-  type SetWritePolicyBody = NonNullable<
-    NonNullable<Parameters<typeof SDK.setConnectionWritePolicy>[0]>['body']
-  >
-
   const WRITE_POLICY_LABELS: Record<string, string> = {
     qb_authoritative: 'QuickBooks authoritative',
     shadow: 'Shadow (observe only)',
@@ -488,12 +484,7 @@ export default function ModernConnectionsContent() {
       unwrapSdk(
         await SDK.setConnectionWritePolicy({
           path: { graph_id: currentGraphId, connection_id: connectionId },
-          // The client's request type predates `shadow`; the cast goes with
-          // the next client regen.
-          body: {
-            write_policy:
-              writePolicy as unknown as SetWritePolicyBody['write_policy'],
-          },
+          body: { write_policy: writePolicy },
         })
       )
       showSuccess(
