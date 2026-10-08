@@ -229,8 +229,8 @@ export default function QuickBooksMcpPage() {
               <li>QuickBooks Online, and admin permissions in the company.</li>
               <li>Books kept in US dollars.</li>
               <li>
-                Syncing is on demand: press Sync Now, or ask your assistant to
-                sync before you ask about recent activity.
+                Your books sync once a day on their own. For anything more
+                recent, press Sync Now or ask your assistant to sync.
               </li>
             </ul>
           </Section>
