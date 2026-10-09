@@ -1,5 +1,7 @@
 'use client'
 
+import FiscalCalendarSetupModal from '@/components/FiscalCalendarSetupModal'
+import { useEntityScope } from '@/lib/entity-scope'
 import type {
   LedgerFiscalCalendar,
   LedgerPeriodCloseStatus,
@@ -35,7 +37,6 @@ import {
   HiExclamationCircle,
   HiLockClosed,
   HiLockOpen,
-  HiPlay,
   HiRefresh,
   HiTable,
   HiX,
@@ -193,7 +194,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   const [error, setError] = useState<string | null>(null)
   const [creatingEntry, setCreatingEntry] = useState<string | null>(null)
   const [isClosing, setIsClosing] = useState(false)
-  const [isInitializing, setIsInitializing] = useState(false)
+  const [setupOpen, setSetupOpen] = useState(false)
+  const { entity: scopedEntity } = useEntityScope()
   const [allowStaleSync, setAllowStaleSync] = useState(false)
   const [allowStrandedObligations, setAllowStrandedObligations] =
     useState(false)
@@ -321,19 +323,6 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   }, [selectedPeriod, loadCloseStatus, loadDrafts])
 
   // ── Actions ──────────────────────────────────────────────────────────
-  const handleInitialize = useCallback(async () => {
-    try {
-      setIsInitializing(true)
-      setError(null)
-      await clients.ledger.initializeLedger(graphId, { entityId })
-      await loadCalendar()
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      setError(`Failed to initialize ledger: ${message}`)
-    } finally {
-      setIsInitializing(false)
-    }
-  }, [graphId, entityId, loadCalendar])
 
   const handleCreateEntry = useCallback(
     async (structureId: string) => {
@@ -495,8 +484,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
         <Card>
           <EmptyState
             icon={HiCalendar}
-            title="Fiscal Calendar Not Initialized"
-            description="Initialize the fiscal calendar to start tracking close state and enforcing period sequence."
+            title="No Fiscal Calendar Yet"
+            description="Set where this company's books start. The close runs month by month from there."
             className="py-8"
             action={
               <>
@@ -506,22 +495,25 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
                     <span>{error}</span>
                   </div>
                 )}
-                <Button
-                  color="primary"
-                  disabled={isInitializing}
-                  onClick={handleInitialize}
-                >
-                  {isInitializing ? (
-                    <Spinner size="sm" className="mr-2 text-white" />
-                  ) : (
-                    <HiPlay className="mr-2 h-4 w-4" />
-                  )}
-                  Initialize Fiscal Calendar
+                <Button color="primary" onClick={() => setSetupOpen(true)}>
+                  <HiCalendar className="mr-2 h-4 w-4" />
+                  Set up calendar
                 </Button>
               </>
             }
           />
         </Card>
+        <FiscalCalendarSetupModal
+          graphId={graphId}
+          entityId={entityId ?? null}
+          entityName={scopedEntity?.name ?? 'this company'}
+          open={setupOpen}
+          onClose={() => setSetupOpen(false)}
+          onInitialized={() => {
+            setSetupOpen(false)
+            void loadCalendar()
+          }}
+        />
       </div>
     )
   }

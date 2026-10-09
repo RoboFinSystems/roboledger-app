@@ -1,6 +1,7 @@
 'use client'
 
 import { FilterBar, SearchField } from '@/components/FilterBar'
+import FiscalCalendarSetupModal from '@/components/FiscalCalendarSetupModal'
 import { hierarchyDepth, useEntityScope } from '@/lib/entity-scope'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LedgerEntitySummary } from '@robosystems/client/clients'
@@ -26,7 +27,7 @@ import {
 import { useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { HiOfficeBuilding, HiPlus } from 'react-icons/hi'
+import { HiCalendar, HiOfficeBuilding, HiPlus } from 'react-icons/hi'
 import NewEntityModal from './components/NewEntityModal'
 
 const TYPE_LABELS: Record<string, string> = {
@@ -64,9 +65,16 @@ const EntitiesListPageContent: FC = function () {
   const searchParams = useSearchParams()
   const [searchTerm, setSearchTerm] = useState('')
   const [newOpen, setNewOpen] = useState(false)
+  const [calendarFor, setCalendarFor] = useState<LedgerEntitySummary | null>(
+    null
+  )
+  const [calendarsRead, setCalendarsRead] = useState(0)
   const [closedThrough, setClosedThrough] = useState<
     Record<string, string | null | undefined>
   >({})
+  // Whether each entity has a calendar at all; a calendar can exist with
+  // nothing closed yet.
+  const [hasCalendar, setHasCalendar] = useState<Record<string, boolean>>({})
 
   // The header's "Add Entity" lands here with the form open.
   useEffect(() => {
@@ -88,23 +96,26 @@ const EntitiesListPageContent: FC = function () {
         entities.map((e) =>
           clients.ledger
             .getFiscalCalendar(graphId, { entityId: scopeOf(e) })
-            .then((cal) => [e.id, cal?.closedThrough ?? null] as const)
+            .then((cal) => [e.id, cal] as const)
         )
       )
       if (cancelled) return
       const next: Record<string, string | null | undefined> = {}
+      const exists: Record<string, boolean> = {}
       for (const result of results) {
         if (result.status === 'fulfilled') {
-          const [id, month] = result.value
-          next[id] = month
+          const [id, cal] = result.value
+          next[id] = cal?.closedThrough ?? null
+          exists[id] = cal !== null
         }
       }
       setClosedThrough(next)
+      setHasCalendar(exists)
     })()
     return () => {
       cancelled = true
     }
-  }, [graphId, entities])
+  }, [graphId, entities, calendarsRead])
 
   const filtered = useMemo(() => {
     const needle = searchTerm.trim().toLowerCase()
@@ -244,11 +255,24 @@ const EntitiesListPageContent: FC = function () {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-gray-600 dark:text-gray-300">
-                          {month === undefined
-                            ? '…'
-                            : month === null
-                              ? 'Not initialized'
-                              : month}
+                          {month === undefined ? (
+                            '…'
+                          ) : month !== null ? (
+                            month
+                          ) : hasCalendar[row.id] ? (
+                            'Nothing closed yet'
+                          ) : graphId ? (
+                            <Button
+                              size="xs"
+                              color="warning"
+                              onClick={() => setCalendarFor(row)}
+                            >
+                              <HiCalendar className="mr-1 h-4 w-4" />
+                              Set up calendar
+                            </Button>
+                          ) : (
+                            'Not set up'
+                          )}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -282,6 +306,20 @@ const EntitiesListPageContent: FC = function () {
           )}
         </div>
       </Card>
+
+      {graphId && calendarFor && (
+        <FiscalCalendarSetupModal
+          graphId={graphId}
+          entityId={scopeOf(calendarFor)}
+          entityName={calendarFor.name}
+          open
+          onClose={() => setCalendarFor(null)}
+          onInitialized={() => {
+            setCalendarFor(null)
+            setCalendarsRead((n) => n + 1)
+          }}
+        />
+      )}
 
       {graphId && (
         <NewEntityModal

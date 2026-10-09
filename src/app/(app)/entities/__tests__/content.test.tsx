@@ -92,6 +92,7 @@ vi.mock('flowbite-react', () => ({
 }))
 
 vi.mock('react-icons/hi', () => ({
+  HiCalendar: () => <span />,
   HiOfficeBuilding: () => <span />,
   HiPlus: () => <span />,
   HiSearch: () => <span />,
@@ -229,10 +230,24 @@ describe('EntitiesListPageContent', () => {
     expect(mockSelect).toHaveBeenCalledWith(sub, 'kg_a')
   })
 
-  it('says when an entity has no calendar yet', async () => {
+  it('offers calendar setup where an entity has none', async () => {
     mockGetFiscalCalendar.mockResolvedValue(null)
     render(<EntitiesListPageContent />)
-    expect(await screen.findAllByText('Not initialized')).toHaveLength(2)
+    expect(
+      await screen.findAllByRole('button', { name: /Set up calendar/ })
+    ).toHaveLength(2)
+  })
+
+  it('tells a calendar with nothing closed from no calendar', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      closedThrough: null,
+      fiscalYearStartMonth: 1,
+    })
+    render(<EntitiesListPageContent />)
+    expect(await screen.findAllByText('Nothing closed yet')).toHaveLength(2)
+    expect(
+      screen.queryByRole('button', { name: /Set up calendar/ })
+    ).not.toBeInTheDocument()
   })
 
   it('narrows the rows as the user types', () => {

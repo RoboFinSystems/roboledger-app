@@ -1,5 +1,7 @@
 'use client'
 
+import FiscalCalendarSetupModal from '@/components/FiscalCalendarSetupModal'
+import { useEntityScope } from '@/lib/entity-scope'
 import type { LedgerFiscalCalendar } from '@robosystems/client/clients'
 import { clients } from '@robosystems/core'
 import { Alert, Badge, Button } from 'flowbite-react'
@@ -19,8 +21,9 @@ export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
     LedgerFiscalCalendar | null | undefined
   >(undefined)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [initializing, setInitializing] = useState(false)
-  const [initError, setInitError] = useState<string | null>(null)
+  const [setupOpen, setSetupOpen] = useState(false)
+  const { entities } = useEntityScope()
+  const parentName = entities.find((e) => e.isParent)?.name ?? 'the company'
 
   const load = useCallback(async () => {
     if (!graphId) return
@@ -39,24 +42,6 @@ export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
   useEffect(() => {
     void load()
   }, [load])
-
-  const handleInitialize = useCallback(async () => {
-    if (!graphId) return
-    setInitializing(true)
-    setInitError(null)
-    try {
-      const result = await clients.ledger.initializeLedger(graphId)
-      setCalendar(result.fiscalCalendar)
-    } catch (err) {
-      setInitError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to initialize fiscal calendar.'
-      )
-    } finally {
-      setInitializing(false)
-    }
-  }, [graphId])
 
   if (calendar === undefined) {
     return null // still loading; don't flash empty state
@@ -99,25 +84,26 @@ export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
               Fiscal calendar not initialized
             </p>
             <p className="text-xs text-amber-800 dark:text-amber-200">
-              The close workflow needs a calendar before it can run. Click
-              Initialize to bootstrap from the latest synced data.
+              The close needs a calendar before it can run. Set where the books
+              start.
             </p>
           </div>
         </div>
-        <Button
-          color="warning"
-          size="xs"
-          onClick={handleInitialize}
-          disabled={initializing}
-        >
-          {initializing ? 'Initializing...' : 'Initialize Calendar'}
+        <Button color="warning" size="xs" onClick={() => setSetupOpen(true)}>
+          Set up calendar
         </Button>
       </div>
-      {initError && (
-        <Alert color="failure" className="mt-2">
-          {initError}
-        </Alert>
-      )}
+      <FiscalCalendarSetupModal
+        graphId={graphId}
+        entityId={null}
+        entityName={parentName}
+        open={setupOpen}
+        onClose={() => setSetupOpen(false)}
+        onInitialized={(cal) => {
+          setSetupOpen(false)
+          setCalendar(cal)
+        }}
+      />
     </div>
   )
 }
