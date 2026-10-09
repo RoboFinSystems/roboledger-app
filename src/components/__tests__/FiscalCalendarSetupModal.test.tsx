@@ -36,6 +36,7 @@ vi.mock('flowbite-react', () => ({
 
 import FiscalCalendarSetupModal, {
   addMonths,
+  currentPeriod,
   monthsBetween,
 } from '../FiscalCalendarSetupModal'
 
@@ -68,7 +69,7 @@ describe('period helpers', () => {
 describe('FiscalCalendarSetupModal', () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date(2026, 9, 9))
+    vi.setSystemTime(new Date(Date.UTC(2026, 9, 9, 12)))
     mockInitializeLedger.mockReset()
     mockGetFiscalCalendar.mockReset()
     mockGetFiscalCalendar.mockResolvedValue(null)
@@ -119,6 +120,23 @@ describe('FiscalCalendarSetupModal', () => {
         fiscalYearStartMonth: 1,
         closedThrough: '2026-06',
       })
+    )
+  })
+
+  it('says the current month closes only once it ends', () => {
+    renderModal()
+    fireEvent.change(screen.getByLabelText('First month to close'), {
+      target: { value: '2026-10' },
+    })
+    expect(screen.getByTestId('calendar-setup-preview')).toHaveTextContent(
+      'First close: October 2026, once the month ends'
+    )
+  })
+
+  it('reads the current month in UTC, as the server does', () => {
+    // 1 Nov 2026 00:30 in UTC+2 is still 31 Oct in UTC.
+    expect(currentPeriod(new Date(Date.UTC(2026, 9, 31, 22, 30)))).toBe(
+      '2026-10'
     )
   })
 

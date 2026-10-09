@@ -39,8 +39,9 @@ export function addMonths(period: string, delta: number): string {
   return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}`
 }
 
+/** The current month in UTC, the server's clock for every period check. */
 export function currentPeriod(today: Date = new Date()): string {
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+  return `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
 /** Months from `from` through `to`, inclusive; 0 when `from` is later. */
@@ -151,7 +152,13 @@ const FiscalCalendarSetupModal: FC<FiscalCalendarSetupModalProps> = ({
   }
 
   return (
-    <Modal show={open} onClose={onClose} size="lg">
+    <Modal
+      show={open}
+      onClose={() => {
+        if (!submitting) onClose()
+      }}
+      size="lg"
+    >
       <ModalHeader>Set up the fiscal calendar</ModalHeader>
       <form onSubmit={handleSubmit}>
         <ModalBody>
@@ -192,6 +199,7 @@ const FiscalCalendarSetupModal: FC<FiscalCalendarSetupModalProps> = ({
                         className="mt-2 max-w-48"
                         value={firstOpen}
                         max={current}
+                        placeholder="YYYY-MM"
                         onChange={(e) => setFirstOpen(e.target.value)}
                       />
                     )}
@@ -224,6 +232,7 @@ const FiscalCalendarSetupModal: FC<FiscalCalendarSetupModalProps> = ({
                         className="mt-2 max-w-48"
                         value={closedThrough}
                         max={lastCompleted}
+                        placeholder="YYYY-MM"
                         onChange={(e) => setClosedThrough(e.target.value)}
                       />
                     )}
@@ -275,6 +284,7 @@ const FiscalCalendarSetupModal: FC<FiscalCalendarSetupModalProps> = ({
                     <span className="font-semibold">
                       {formatPeriod(firstClose)}
                     </span>
+                    {firstClose === current && ', once the month ends'}
                   </p>
                   {backlog > 1 && (
                     <p className="mt-1 text-amber-700 dark:text-amber-400">

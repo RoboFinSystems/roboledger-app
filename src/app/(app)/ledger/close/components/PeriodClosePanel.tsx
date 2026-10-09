@@ -323,7 +323,6 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   }, [selectedPeriod, loadCloseStatus, loadDrafts])
 
   // ── Actions ──────────────────────────────────────────────────────────
-
   const handleCreateEntry = useCallback(
     async (structureId: string) => {
       if (!selectedPeriod) return
