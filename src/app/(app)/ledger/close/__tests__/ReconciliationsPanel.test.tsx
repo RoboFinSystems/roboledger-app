@@ -8,6 +8,16 @@ const mockSignOffReconciliation = vi.fn()
 const mockSetReconciliationPolicy = vi.fn()
 const mockRecordStatementBalance = vi.fn()
 const mockListAccounts = vi.fn()
+const mockUploadDocumentFile = vi.fn()
+const mockDocumentFileUrl = vi.fn()
+
+vi.mock('@/lib/ledger/documents', () => ({
+  DOCUMENT_FILE_ACCEPT: 'application/pdf,image/png,image/jpeg',
+  isDocumentFileType: (type: string) =>
+    ['application/pdf', 'image/png', 'image/jpeg'].includes(type),
+  uploadDocumentFile: (...args: any[]) => mockUploadDocumentFile(...args),
+  documentFileUrl: (...args: any[]) => mockDocumentFileUrl(...args),
+}))
 
 vi.mock('@robosystems/core', () => ({
   clients: {
@@ -41,6 +51,10 @@ vi.mock('flowbite-react', () => ({
       {children}
     </button>
   ),
+  FileInput: ({ id, onChange, accept }: any) => (
+    <input id={id} type="file" accept={accept} onChange={onChange} />
+  ),
+  HelperText: ({ children }: any) => <p>{children}</p>,
   Label: ({ children, htmlFor }: any) => (
     <label htmlFor={htmlFor}>{children}</label>
   ),
@@ -66,6 +80,7 @@ vi.mock('flowbite-react', () => ({
 }))
 
 vi.mock('react-icons/hi', () => ({
+  HiDocumentText: () => <span />,
   HiExclamationCircle: () => <span />,
   HiPlus: () => <span />,
   HiRefresh: () => <span />,
@@ -181,7 +196,9 @@ describe('ReconciliationsPanel', () => {
     fireEvent.click(screen.getByText('Run reconciliations'))
 
     expect(await screen.findByText('Does not tie')).toBeInTheDocument()
-    expect(mockRefreshReconciliations).toHaveBeenCalledWith('kg1', '2026-08')
+    expect(mockRefreshReconciliations).toHaveBeenCalledWith('kg1', '2026-08', {
+      entityId: null,
+    })
     expect(
       screen.getByText('Source ledger (QuickBooks) was not compared.')
     ).toBeInTheDocument()
@@ -321,15 +338,121 @@ describe('ReconciliationsPanel', () => {
     await waitFor(() =>
       expect(mockRecordStatementBalance).toHaveBeenCalledWith('kg1', {
         elementId: 'elem_loan',
+        entityId: null,
         asOf: '2026-07-31',
         balance: 4800,
+        documentId: null,
         note: null,
       })
     )
+    expect(mockUploadDocumentFile).not.toHaveBeenCalled()
     await waitFor(() =>
       expect(mockListReconciliations).toHaveBeenCalledWith('kg1', '2026-07', {
         entityId: null,
       })
     )
+  })
+
+  it("uploads the statement first and records a subsidiary's balance against it", async () => {
+    mockUploadDocumentFile.mockResolvedValue('doc_stmt')
+    mockRecordStatementBalance.mockResolvedValue(
+      rec({
+        structureId: 'struct_cash',
+        method: 'statement',
+        period: '2026-07',
+      })
+    )
+    render(<ReconciliationsPanel graphId="kg1" entityId="ent_rfs" />)
+    await screen.findByText('Prepaid Insurance (schedules)')
+
+    fireEvent.click(screen.getByText('Record statement'))
+    await screen.findByText('2100 · Equipment Loan')
+    fireEvent.change(screen.getByLabelText('Account'), {
+      target: { value: 'elem_loan' },
+    })
+    fireEvent.change(screen.getByLabelText('Statement ending date'), {
+      target: { value: '2026-07-31' },
+    })
+    fireEvent.change(screen.getByLabelText('Ending balance'), {
+      target: { value: '4800' },
+    })
+    const statement = new File(['%PDF-1.7'], 'july.pdf', {
+      type: 'application/pdf',
+    })
+    fireEvent.change(screen.getByLabelText('Statement (optional)'), {
+      target: { files: [statement] },
+    })
+    fireEvent.click(screen.getByText('Record balance'))
+
+    await waitFor(() =>
+      expect(mockRecordStatementBalance).toHaveBeenCalledWith('kg1', {
+        elementId: 'elem_loan',
+        entityId: 'ent_rfs',
+        asOf: '2026-07-31',
+        balance: 4800,
+        documentId: 'doc_stmt',
+        note: null,
+      })
+    )
+    expect(mockUploadDocumentFile).toHaveBeenCalledWith('kg1', statement, {
+      title: 'Equipment Loan statement ending 2026-07-31',
+      tags: ['bank-statement'],
+    })
+  })
+
+  it('refuses a file type the ledger cannot store', async () => {
+    render(<ReconciliationsPanel graphId="kg1" />)
+    await screen.findByText('Prepaid Insurance (schedules)')
+    fireEvent.click(screen.getByText('Record statement'))
+    await screen.findByText('2100 · Equipment Loan')
+    fireEvent.change(screen.getByLabelText('Statement (optional)'), {
+      target: {
+        files: [new File(['x'], 'notes.docx', { type: 'application/msword' })],
+      },
+    })
+    expect(
+      await screen.findByText('Attach a PDF, PNG or JPEG.')
+    ).toBeInTheDocument()
+  })
+
+  it('downloads the statement a reconciliation rests on', async () => {
+    mockListReconciliations.mockResolvedValue(
+      listOf(
+        rec({
+          name: 'Operating Checking (statement)',
+          method: 'statement',
+          components: [
+            {
+              name: 'Statement ending 2026-08-31',
+              amount: 1200,
+              structureId: null,
+              eventId: 'evt_1',
+              documentId: 'doc_stmt',
+              note: null,
+            },
+          ],
+        })
+      )
+    )
+    mockDocumentFileUrl.mockResolvedValue('https://files.example/stmt.pdf')
+    const assign = vi.fn()
+    const location = window.location
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...location, assign },
+    })
+    render(<ReconciliationsPanel graphId="kg1" />)
+
+    fireEvent.click(await screen.findByText('Operating Checking (statement)'))
+    fireEvent.click(await screen.findByText('Download statement'))
+
+    await waitFor(() =>
+      expect(assign).toHaveBeenCalledWith('https://files.example/stmt.pdf')
+    )
+    expect(mockDocumentFileUrl).toHaveBeenCalledWith('kg1', 'doc_stmt')
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: location,
+    })
   })
 })

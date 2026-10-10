@@ -1,5 +1,6 @@
 'use client'
 
+import ChangeCalendarStartModal from '@/components/ChangeCalendarStartModal'
 import { FilterBar, SearchField } from '@/components/FilterBar'
 import FiscalCalendarSetupModal from '@/components/FiscalCalendarSetupModal'
 import { hierarchyDepth, useEntityScope } from '@/lib/entity-scope'
@@ -69,6 +70,7 @@ const EntitiesListPageContent: FC = function () {
     null
   )
   const [calendarsRead, setCalendarsRead] = useState(0)
+  const [startFor, setStartFor] = useState<LedgerEntitySummary | null>(null)
   const [closedThrough, setClosedThrough] = useState<
     Record<string, string | null | undefined>
   >({})
@@ -260,7 +262,18 @@ const EntitiesListPageContent: FC = function () {
                           ) : month !== null ? (
                             month
                           ) : hasCalendar[row.id] ? (
-                            'Nothing closed yet'
+                            <span className="inline-flex items-center gap-2">
+                              Nothing closed yet
+                              {graphId && (
+                                <Button
+                                  size="xs"
+                                  color="light"
+                                  onClick={() => setStartFor(row)}
+                                >
+                                  Change start
+                                </Button>
+                              )}
+                            </span>
                           ) : graphId ? (
                             <Button
                               size="xs"
@@ -306,6 +319,17 @@ const EntitiesListPageContent: FC = function () {
           )}
         </div>
       </Card>
+
+      {graphId && startFor && (
+        <ChangeCalendarStartModal
+          graphId={graphId}
+          entityId={scopeOf(startFor)}
+          entityName={startFor.name}
+          open
+          onClose={() => setStartFor(null)}
+          onChanged={() => setCalendarsRead((n) => n + 1)}
+        />
+      )}
 
       {graphId && calendarFor && (
         <FiscalCalendarSetupModal
