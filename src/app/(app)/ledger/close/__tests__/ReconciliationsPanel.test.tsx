@@ -62,8 +62,14 @@ vi.mock('flowbite-react', () => ({
   ModalBody: ({ children }: any) => <div>{children}</div>,
   ModalFooter: ({ children }: any) => <div>{children}</div>,
   ModalHeader: ({ children }: any) => <div>{children}</div>,
-  Select: ({ children, onChange, value, id }: any) => (
-    <select id={id} onChange={onChange} value={value}>
+  Select: ({ children, onChange, value, id, disabled, ...rest }: any) => (
+    <select
+      id={id}
+      onChange={onChange}
+      value={value}
+      disabled={disabled}
+      aria-label={rest['aria-label']}
+    >
       {children}
     </select>
   ),
@@ -413,6 +419,136 @@ describe('ReconciliationsPanel', () => {
     expect(
       await screen.findByText('Attach a PDF, PNG or JPEG.')
     ).toBeInTheDocument()
+  })
+
+  const bankStatement = (overrides: Record<string, unknown> = {}) =>
+    rec({
+      structureId: 'struct_checking',
+      name: 'Checking (statement)',
+      method: 'statement',
+      statementCycle: 'monthly',
+      ledgerBalance: 1450,
+      independentBalance: 1450,
+      balanceAsOf: '2026-08-05',
+      components: [
+        {
+          name: 'Statement ending 2026-08-05',
+          amount: 1500,
+          kind: 'statement',
+          postingDate: null,
+          entryId: null,
+          structureId: null,
+          eventId: 'evt_1',
+          documentId: null,
+          note: null,
+        },
+        {
+          name: 'Vendor payment',
+          amount: -50,
+          kind: 'outstanding',
+          postingDate: '2026-08-04',
+          entryId: 'je_1',
+          structureId: null,
+          eventId: null,
+          documentId: null,
+          note: null,
+        },
+        {
+          name: 'Journal entry',
+          amount: 0.5,
+          kind: 'outstanding',
+          postingDate: '2026-08-04',
+          entryId: 'je_2',
+          structureId: null,
+          eventId: null,
+          documentId: null,
+          note: null,
+        },
+      ],
+      rollForward: {
+        statementAsOf: '2026-08-05',
+        through: '2026-08-31',
+        bankLines: 1,
+        bankActivity: -200,
+        bankBalance: 1300,
+        ledgerBalance: 1250.5,
+        outstanding: -49.5,
+        feedBalance: 1290,
+        feedBalanceReadOn: '2026-09-02',
+      },
+      ...overrides,
+    })
+
+  it('lists what the bank had not cleared and carries the statement to the period end', async () => {
+    mockListReconciliations.mockResolvedValue(listOf(bankStatement()))
+    render(<ReconciliationsPanel graphId="kg1" />)
+
+    fireEvent.click(await screen.findByText('Checking (statement)'))
+
+    expect(
+      await screen.findAllByText('Not yet cleared by the bank')
+    ).toHaveLength(2)
+    expect(screen.getByText('Vendor payment')).toBeInTheDocument()
+    expect(screen.getByText('Journal entry')).toBeInTheDocument()
+    expect(
+      screen.getByText(/1 bank line since the statement/)
+    ).toBeInTheDocument()
+    expect(screen.getByText(/does not agree/)).toBeInTheDocument()
+  })
+
+  it('stays quiet when the feed agrees with the carried balance', async () => {
+    mockListReconciliations.mockResolvedValue(
+      listOf(
+        bankStatement({
+          rollForward: {
+            statementAsOf: '2026-08-05',
+            through: '2026-08-31',
+            bankLines: 2,
+            bankActivity: -200,
+            bankBalance: 1300,
+            ledgerBalance: 1300,
+            outstanding: 0,
+            feedBalance: 1300,
+            feedBalanceReadOn: '2026-09-02',
+          },
+        })
+      )
+    )
+    render(<ReconciliationsPanel graphId="kg1" />)
+
+    fireEvent.click(await screen.findByText('Checking (statement)'))
+
+    expect(await screen.findByText(/2 bank lines since/)).toBeInTheDocument()
+    expect(screen.queryByText(/does not agree/)).not.toBeInTheDocument()
+  })
+
+  it("changes how often an account's statement is issued", async () => {
+    mockListReconciliations.mockResolvedValue(listOf(bankStatement()))
+    mockSetReconciliationPolicy.mockResolvedValue({})
+    render(<ReconciliationsPanel graphId="kg1" />)
+
+    fireEvent.click(await screen.findByText('Checking (statement)'))
+    fireEvent.change(
+      await screen.findByLabelText('Checking (statement) statement cycle'),
+      { target: { value: 'quarterly' } }
+    )
+
+    await waitFor(() =>
+      expect(mockSetReconciliationPolicy).toHaveBeenCalledWith(
+        'kg1',
+        'struct_checking',
+        { statementCycle: 'quarterly' }
+      )
+    )
+  })
+
+  it('offers no statement cycle on a schedule reconciliation', async () => {
+    render(<ReconciliationsPanel graphId="kg1" />)
+
+    fireEvent.click(await screen.findByText('Prepaid Insurance (schedules)'))
+
+    await screen.findByText('Insurance policy')
+    expect(screen.queryByLabelText(/statement cycle/)).not.toBeInTheDocument()
   })
 
   it('downloads the statement a reconciliation rests on', async () => {

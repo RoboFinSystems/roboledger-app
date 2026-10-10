@@ -9,7 +9,10 @@ import {
 } from '@/lib/ledger/formatters'
 import type {
   LedgerReconciliation,
+  LedgerReconciliationComponent,
   LedgerReconciliationList,
+  LedgerReconciliationRollForward,
+  StatementCycle,
 } from '@robosystems/client/clients'
 import { clients, LoadingState } from '@robosystems/core'
 import {
@@ -54,6 +57,12 @@ const METHOD_LABELS: Record<string, string> = {
   schedule_register: 'Against its schedules',
   statement: 'Against its statement',
 }
+
+const STATEMENT_CYCLES: { value: StatementCycle; label: string }[] = [
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'quarterly', label: 'Quarterly' },
+  { value: 'annual', label: 'Annual' },
+]
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -211,6 +220,24 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({
         await load()
       } catch (err) {
         setError(describeError(err, 'The policy was not changed.'))
+      } finally {
+        setBusyId(null)
+      }
+    },
+    [graphId, load]
+  )
+
+  const handleCycleChange = useCallback(
+    async (rec: LedgerReconciliation, statementCycle: StatementCycle) => {
+      try {
+        setBusyId(rec.structureId)
+        setError(null)
+        await clients.ledger.setReconciliationPolicy(graphId, rec.structureId, {
+          statementCycle,
+        })
+        await load()
+      } catch (err) {
+        setError(describeError(err, 'The statement cycle was not changed.'))
       } finally {
         setBusyId(null)
       }
@@ -397,7 +424,12 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({
                   {isOpen && (
                     <TableRow>
                       <TableCell colSpan={7}>
-                        <ReconciliationDetail graphId={graphId} rec={rec} />
+                        <ReconciliationDetail
+                          graphId={graphId}
+                          rec={rec}
+                          busy={busy}
+                          onCycleChange={handleCycleChange}
+                        />
                       </TableCell>
                     </TableRow>
                   )}
@@ -448,83 +480,208 @@ const DownloadDocumentButton: FC<{ graphId: string; documentId: string }> = ({
   )
 }
 
+/** One part of the independent balance: a schedule, a statement, or a line. */
+const ComponentLine: FC<{
+  graphId: string
+  component: LedgerReconciliationComponent
+}> = ({ graphId, component }) => (
+  <li className="flex justify-between gap-4">
+    <span>
+      {component.postingDate && (
+        <span className="mr-2 text-xs text-gray-500 tabular-nums dark:text-gray-400">
+          {formatDate(component.postingDate)}
+        </span>
+      )}
+      {component.name}
+      {component.documentId && (
+        <DownloadDocumentButton
+          graphId={graphId}
+          documentId={component.documentId}
+        />
+      )}
+      {component.note && (
+        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+          {component.note}
+        </span>
+      )}
+    </span>
+    <span className="tabular-nums">{formatDollars(component.amount)}</span>
+  </li>
+)
+
+const componentKey = (
+  component: LedgerReconciliationComponent,
+  index: number
+): string =>
+  component.entryId ??
+  component.structureId ??
+  component.eventId ??
+  `${component.name}-${index}`
+
+/**
+ * A statement carried to the period's last day by the bank feed's own
+ * lines. The feed's balance beside it is a check, never what is reconciled.
+ */
+const RollForward: FC<{ carried: LedgerReconciliationRollForward }> = ({
+  carried,
+}) => {
+  const feedDiffers =
+    carried.feedBalance !== null &&
+    Math.round(carried.feedBalance * 100) !==
+      Math.round(carried.bankBalance * 100)
+  return (
+    <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+      <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">
+        Carried from {formatDate(carried.statementAsOf)} to{' '}
+        {formatDate(carried.through)}
+      </p>
+      <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
+        <dt>
+          {carried.bankLines} bank {carried.bankLines === 1 ? 'line' : 'lines'}{' '}
+          since the statement
+        </dt>
+        <dd className="text-right tabular-nums">
+          {formatDollars(carried.bankActivity)}
+        </dd>
+        <dt>Bank balance at {formatDate(carried.through)}</dt>
+        <dd className="text-right tabular-nums">
+          {formatDollars(carried.bankBalance)}
+        </dd>
+        <dt>Ledger balance</dt>
+        <dd className="text-right tabular-nums">
+          {formatDollars(carried.ledgerBalance)}
+        </dd>
+        <dt>Not yet cleared by the bank</dt>
+        <dd className="text-right tabular-nums">
+          {formatDollars(carried.outstanding)}
+        </dd>
+      </dl>
+      {carried.feedBalance !== null && carried.feedBalanceReadOn && (
+        <p
+          className={`mt-2 text-xs ${
+            feedDiffers
+              ? 'text-yellow-700 dark:text-yellow-300'
+              : 'text-gray-500 dark:text-gray-400'
+          }`}
+        >
+          The bank feed&apos;s own balance, read{' '}
+          {formatDate(carried.feedBalanceReadOn)}, puts it at{' '}
+          {formatDollars(carried.feedBalance)}
+          {feedDiffers
+            ? ': it does not agree, so a line may be missing or dated differently.'
+            : '.'}
+        </p>
+      )}
+    </div>
+  )
+}
+
 /** What a reconciliation compared: its parts, and the accounts that differ. */
 const ReconciliationDetail: FC<{
   graphId: string
   rec: LedgerReconciliation
-}> = ({ graphId, rec }) => (
-  <div className="space-y-3 text-sm text-gray-700 dark:text-gray-200">
-    {rec.status === 'not_started' ? (
-      <p>This period has not been compared yet.</p>
-    ) : (
-      <p className="text-xs text-gray-500 dark:text-gray-400">
-        Compared {formatDateTime(rec.comparedAt)}
-        {rec.comparedVia === 'sync' && ' by a sync'}
-        {rec.balanceAsOf && rec.balanceAsOf !== rec.asOf && (
-          <> · balances as of {formatDate(rec.balanceAsOf)}</>
-        )}
-        {rec.accountsCompared !== null && (
-          <>
-            {' '}
-            · {rec.accountsCompared} accounts compared,{' '}
-            {rec.accountsDifferent ?? 0} do not tie
-          </>
-        )}
-      </p>
-    )}
+  busy: boolean
+  onCycleChange: (rec: LedgerReconciliation, cycle: StatementCycle) => void
+}> = ({ graphId, rec, busy, onCycleChange }) => {
+  const parts = rec.components.filter((c) => c.kind !== 'outstanding')
+  const outstanding = rec.components.filter((c) => c.kind === 'outstanding')
+  return (
+    <div className="space-y-3 text-sm text-gray-700 dark:text-gray-200">
+      {rec.status === 'not_started' ? (
+        <p>This period has not been compared yet.</p>
+      ) : (
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Compared {formatDateTime(rec.comparedAt)}
+          {rec.comparedVia === 'sync' && ' by a sync'}
+          {rec.balanceAsOf && rec.balanceAsOf !== rec.asOf && (
+            <> · balances as of {formatDate(rec.balanceAsOf)}</>
+          )}
+          {rec.accountsCompared !== null && (
+            <>
+              {' '}
+              · {rec.accountsCompared} accounts compared,{' '}
+              {rec.accountsDifferent ?? 0} do not tie
+            </>
+          )}
+        </p>
+      )}
 
-    {rec.components.length > 0 && (
-      <ul className="space-y-1">
-        {rec.components.map((component) => (
-          <li
-            key={`${component.structureId ?? component.eventId ?? component.name}`}
-            className="flex justify-between gap-4"
+      {rec.method === 'statement' && (
+        <label className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          Statement issued
+          <Select
+            sizing="sm"
+            aria-label={`${rec.name} statement cycle`}
+            value={rec.statementCycle ?? 'monthly'}
+            disabled={busy}
+            onChange={(e) =>
+              onCycleChange(rec, e.target.value as StatementCycle)
+            }
           >
-            <span>
-              {component.name}
-              {component.documentId && (
-                <DownloadDocumentButton
-                  graphId={graphId}
-                  documentId={component.documentId}
-                />
-              )}
-              {component.note && (
-                <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
-                  {component.note}
-                </span>
-              )}
-            </span>
-            <span className="tabular-nums">
-              {formatDollars(component.amount)}
-            </span>
-          </li>
-        ))}
-      </ul>
-    )}
+            {STATEMENT_CYCLES.map((cycle) => (
+              <option key={cycle.value} value={cycle.value}>
+                {cycle.label}
+              </option>
+            ))}
+          </Select>
+        </label>
+      )}
 
-    {rec.differences.length > 0 && rec.scope === 'ledger' && (
-      <Table>
-        <TableHead>
-          <tr>
-            <TableHeadCell>Account</TableHeadCell>
-            <TableHeadCell>Ledger</TableHeadCell>
-            <TableHeadCell>Source</TableHeadCell>
-            <TableHeadCell>Difference</TableHeadCell>
-          </tr>
-        </TableHead>
-        <TableBody>
-          {rec.differences.map((row) => (
-            <TableRow key={`${row.elementId ?? row.sourceAccountId}`}>
-              <TableCell>{row.accountName}</TableCell>
-              <TableCell>{formatDollars(row.ledgerBalance)}</TableCell>
-              <TableCell>{formatDollars(row.independentBalance)}</TableCell>
-              <TableCell>{formatDollars(row.difference)}</TableCell>
-            </TableRow>
+      {parts.length > 0 && (
+        <ul className="space-y-1">
+          {parts.map((component, index) => (
+            <ComponentLine
+              key={componentKey(component, index)}
+              graphId={graphId}
+              component={component}
+            />
           ))}
-        </TableBody>
-      </Table>
-    )}
-  </div>
-)
+        </ul>
+      )}
+
+      {outstanding.length > 0 && (
+        <div>
+          <p className="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+            Not yet cleared by the bank
+          </p>
+          <ul className="space-y-1">
+            {outstanding.map((component, index) => (
+              <ComponentLine
+                key={componentKey(component, index)}
+                graphId={graphId}
+                component={component}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {rec.rollForward && <RollForward carried={rec.rollForward} />}
+
+      {rec.differences.length > 0 && rec.scope === 'ledger' && (
+        <Table>
+          <TableHead>
+            <tr>
+              <TableHeadCell>Account</TableHeadCell>
+              <TableHeadCell>Ledger</TableHeadCell>
+              <TableHeadCell>Source</TableHeadCell>
+              <TableHeadCell>Difference</TableHeadCell>
+            </tr>
+          </TableHead>
+          <TableBody>
+            {rec.differences.map((row) => (
+              <TableRow key={`${row.elementId ?? row.sourceAccountId}`}>
+                <TableCell>{row.accountName}</TableCell>
+                <TableCell>{formatDollars(row.ledgerBalance)}</TableCell>
+                <TableCell>{formatDollars(row.independentBalance)}</TableCell>
+                <TableCell>{formatDollars(row.difference)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </div>
+  )
+}
 
 export default ReconciliationsPanel
