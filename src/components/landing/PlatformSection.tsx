@@ -58,22 +58,17 @@ export default function PlatformSection() {
                   </ul>
                 </div>
 
-                <div className="rounded-lg border border-gray-700/60 bg-gradient-to-br from-zinc-800/40 to-zinc-900/40 p-4">
+                <div className="rounded-lg border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 p-4">
                   <div className="mb-2 flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-700">
                       <span className="text-xs font-bold text-white">$</span>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <div className="font-semibold text-white">Plaid</div>
-                        <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400">
-                          Coming soon
-                        </span>
-                      </div>
+                    <div>
+                      <div className="font-semibold text-white">Plaid</div>
                       <div className="text-xs text-gray-400">Bank feeds</div>
                     </div>
                   </div>
-                  <ul className="space-y-1 text-xs text-gray-500">
+                  <ul className="space-y-1 text-xs text-gray-400">
                     <li>• Direct bank & card transactions</li>
                     <li>• Account balances</li>
                   </ul>

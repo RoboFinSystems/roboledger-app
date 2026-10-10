@@ -69,14 +69,14 @@ const spotlights: Spotlight[] = [
   },
   {
     id: 'console',
-    label: 'Natural language',
-    title: 'Ask about your books in plain English',
+    label: 'AI Console',
+    title: 'Ask about your books, or have it do the work',
     description:
-      'Get the answer yourself instead of waiting on a report. Query your ledger in the AI Console, or connect Claude, ChatGPT, or any MCP client and ask from the chat you already use.',
+      'Get the answer yourself instead of waiting on a report, and hand off the routine work. Use the AI Console in the app, or connect Claude, ChatGPT, or any MCP client and use the same tools from the chat you already use.',
     bullets: [
-      'Natural language → Cypher, with the generated query shown and results one copy away',
-      'Grounded in your actual ledger — transactions, trial balance, statements',
-      'Add one MCP address to your AI client and sign in to run RoboLedger tools — no install',
+      'Ask in plain English; answers come from your ledger, with the generated query beside the result',
+      'Start with /do to sort bank-feed lines, draft the month’s schedule entries, or build a metric, forecast, or draft report — on a stronger model than questions use, because a wrong change costs more than a wrong answer',
+      'Nothing posts on its own: what it sorts or drafts waits for a person to commit, close, or file',
     ],
     caption: 'Console',
     demo: 'console',
