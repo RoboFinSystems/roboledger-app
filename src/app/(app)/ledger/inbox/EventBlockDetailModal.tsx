@@ -30,6 +30,7 @@ import {
   HiTag,
   HiX,
 } from 'react-icons/hi'
+import EventDocumentSection from './EventDocumentSection'
 
 interface Entry {
   memo?: string
@@ -487,6 +488,15 @@ const EventBlockDetailModal: FC<Props> = function ({
                 </span>
               </div>
             </div>
+
+            <EventDocumentSection
+              graphId={graphId}
+              eventId={event.id}
+              status={event.status}
+              description={event.description ?? null}
+              documentId={event.documentId ?? null}
+              onChanged={loadEvent}
+            />
 
             {/* Bank-feed classification — the account this line posts to */}
             {isClassifiable && (

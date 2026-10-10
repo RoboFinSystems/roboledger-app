@@ -5,6 +5,16 @@ const mockGetEventBlock = vi.fn()
 const mockGetAccountTree = vi.fn()
 const mockUpdateEventBlock = vi.fn()
 const mockPreviewEventBlock = vi.fn()
+const mockUploadDocumentFile = vi.fn()
+const mockDocumentFileUrl = vi.fn()
+
+vi.mock('@/lib/ledger/documents', () => ({
+  DOCUMENT_FILE_ACCEPT: 'application/pdf,image/png,image/jpeg',
+  isDocumentFileType: (type: string) =>
+    ['application/pdf', 'image/png', 'image/jpeg'].includes(type),
+  uploadDocumentFile: (...args: any[]) => mockUploadDocumentFile(...args),
+  documentFileUrl: (...args: any[]) => mockDocumentFileUrl(...args),
+}))
 
 vi.mock('@robosystems/core', () => ({
   clients: {
@@ -30,9 +40,20 @@ vi.mock('flowbite-react', () => ({
       {children}
     </button>
   ),
+  FileInput: ({ id, onChange, accept, ...rest }: any) => (
+    <input
+      id={id}
+      type="file"
+      accept={accept}
+      aria-label={rest['aria-label']}
+      onChange={onChange}
+    />
+  ),
+  HelperText: ({ children }: any) => <p>{children}</p>,
   Label: ({ children, htmlFor }: any) => (
     <label htmlFor={htmlFor}>{children}</label>
   ),
+  Spinner: () => <span />,
   Modal: ({ children }: any) => <div>{children}</div>,
   ModalBody: ({ children }: any) => <div>{children}</div>,
   ModalFooter: ({ children }: any) => <div>{children}</div>,
@@ -363,5 +384,78 @@ describe('EventBlockDetailModal — bank-feed classification', () => {
     expect(
       screen.queryByText('No journal entries in metadata.')
     ).not.toBeInTheDocument()
+  })
+})
+
+describe('EventBlockDetailModal — the document behind an event', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetAccountTree.mockResolvedValue(tree)
+    mockUpdateEventBlock.mockResolvedValue({})
+  })
+
+  it('uploads a receipt and points the event at it', async () => {
+    mockGetEventBlock
+      .mockResolvedValueOnce(bankEvent({ documentId: null }))
+      .mockResolvedValue(bankEvent({ documentId: 'doc_receipt' }))
+    mockUploadDocumentFile.mockResolvedValue('doc_receipt')
+    renderModal()
+
+    const receipt = new File(['jpeg'], 'staples.jpg', { type: 'image/jpeg' })
+    fireEvent.change(await screen.findByLabelText('Attach a document'), {
+      target: { files: [receipt] },
+    })
+    fireEvent.click(screen.getByText('Attach'))
+
+    await waitFor(() =>
+      expect(mockUpdateEventBlock).toHaveBeenCalledWith('kg_test', {
+        event_id: 'evt_bank',
+        document_id: 'doc_receipt',
+      })
+    )
+    expect(mockUploadDocumentFile).toHaveBeenCalledWith('kg_test', receipt, {
+      title: 'Staples (card)',
+    })
+    expect(await screen.findByText('Download')).toBeInTheDocument()
+  })
+
+  it('downloads the attached document and can detach it', async () => {
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({ status: 'committed', documentId: 'doc_receipt' })
+    )
+    mockDocumentFileUrl.mockResolvedValue('https://files.example/r.jpg')
+    const assign = vi.fn()
+    const location = window.location
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...location, assign },
+    })
+    renderModal()
+
+    fireEvent.click(await screen.findByText('Download'))
+    await waitFor(() =>
+      expect(assign).toHaveBeenCalledWith('https://files.example/r.jpg')
+    )
+
+    fireEvent.click(screen.getByText('Detach'))
+    await waitFor(() =>
+      expect(mockUpdateEventBlock).toHaveBeenCalledWith('kg_test', {
+        event_id: 'evt_bank',
+        document_id: '',
+      })
+    )
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: location,
+    })
+  })
+
+  it('offers nothing to attach on a voided event', async () => {
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({ status: 'voided', documentId: null })
+    )
+    renderModal()
+    await screen.findByText('Staples (card)')
+    expect(screen.queryByLabelText('Attach a document')).not.toBeInTheDocument()
   })
 })
