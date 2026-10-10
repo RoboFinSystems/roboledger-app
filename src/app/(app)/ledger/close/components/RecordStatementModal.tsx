@@ -1,10 +1,17 @@
 'use client'
 
+import {
+  DOCUMENT_FILE_ACCEPT,
+  isDocumentFileType,
+  uploadDocumentFile,
+} from '@/lib/ledger/documents'
 import { extractDetail } from '@/lib/ledger/errors'
 import type { LedgerReconciliation } from '@robosystems/client/clients'
 import { clients } from '@robosystems/core'
 import {
   Button,
+  FileInput,
+  HelperText,
   Label,
   Modal,
   ModalBody,
@@ -15,6 +22,9 @@ import {
   TextInput,
 } from 'flowbite-react'
 import { type FC, useEffect, useState } from 'react'
+
+/** The API's own cap on a stored file. */
+const MAX_FILE_BYTES = 25 * 1024 * 1024
 
 /** The API's own words for a refusal, or a fallback when there are none. */
 const describeError = (err: unknown, fallback: string): string =>
@@ -36,8 +46,9 @@ interface RecordStatementModalProps {
 }
 
 /**
- * Record a statement's ending balance for one account. The account is then
- * reconciled to it for the period the statement ends in.
+ * Record a statement's ending balance for one account, with the statement
+ * itself attached. The account is then reconciled to it for the period the
+ * statement ends in, and the reconciliation keeps the file as its evidence.
  */
 const RecordStatementModal: FC<RecordStatementModalProps> = ({
   graphId,
@@ -51,6 +62,10 @@ const RecordStatementModal: FC<RecordStatementModalProps> = ({
   const [asOf, setAsOf] = useState('')
   const [balance, setBalance] = useState('')
   const [note, setNote] = useState('')
+  const [file, setFile] = useState<File | null>(null)
+  // Kept so a retry after a refused balance does not upload the file again.
+  const [documentId, setDocumentId] = useState<string | null>(null)
+  const [stage, setStage] = useState<'uploading' | 'recording' | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -85,24 +100,75 @@ const RecordStatementModal: FC<RecordStatementModalProps> = ({
   }, [graphId, entityId, open])
 
   const amount = Number(balance)
+  const fileProblem = !file
+    ? null
+    : !isDocumentFileType(file.type)
+      ? 'Attach a PDF, PNG or JPEG.'
+      : file.size > MAX_FILE_BYTES
+        ? 'The file is larger than 25 MB.'
+        : null
   const ready =
-    elementId !== '' && asOf !== '' && balance !== '' && !Number.isNaN(amount)
+    elementId !== '' &&
+    asOf !== '' &&
+    balance !== '' &&
+    !Number.isNaN(amount) &&
+    fileProblem === null
+
+  const handleFile = (next: File | null) => {
+    setFile(next)
+    setDocumentId(null)
+  }
+
+  const accountName = (id: string) => {
+    const account = accounts.find((a) => a.id === id)
+    return account ? account.name : 'Account'
+  }
 
   const handleSubmit = async () => {
     if (!ready) return
+    // Read in the catch, where `stage` would be the value from this render.
+    let phase: 'uploading' | 'recording' = 'recording'
     try {
       setSubmitting(true)
       setError(null)
+      let statementId = documentId
+      if (file && !statementId) {
+        phase = 'uploading'
+        setStage('uploading')
+        statementId = await uploadDocumentFile(graphId, file, {
+          title: `${accountName(elementId)} statement ending ${asOf}`,
+          tags: ['bank-statement'],
+        })
+        setDocumentId(statementId)
+      }
+      phase = 'recording'
+      setStage('recording')
       const reconciliation = await clients.ledger.recordStatementBalance(
         graphId,
-        { elementId, asOf, balance: amount, note: note.trim() || null }
+        {
+          elementId,
+          entityId,
+          asOf,
+          balance: amount,
+          documentId: statementId,
+          note: note.trim() || null,
+        }
       )
       setBalance('')
       setNote('')
+      handleFile(null)
       onRecorded(reconciliation)
     } catch (err) {
-      setError(describeError(err, 'The statement balance was not recorded.'))
+      setError(
+        describeError(
+          err,
+          phase === 'uploading'
+            ? 'The statement did not upload.'
+            : 'The statement balance was not recorded.'
+        )
+      )
     } finally {
+      setStage(null)
       setSubmitting(false)
     }
   }
@@ -151,6 +217,20 @@ const RecordStatementModal: FC<RecordStatementModalProps> = ({
             </p>
           </div>
           <div>
+            <Label htmlFor="statement-file">Statement (optional)</Label>
+            <FileInput
+              id="statement-file"
+              accept={DOCUMENT_FILE_ACCEPT}
+              onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+            />
+            <HelperText>
+              {fileProblem ??
+                (documentId
+                  ? 'Uploaded. It will be kept with this reconciliation.'
+                  : 'The PDF or a photo of it, up to 25 MB. It is kept as the evidence for the balance.')}
+            </HelperText>
+          </div>
+          <div>
             <Label htmlFor="statement-note">Note (optional)</Label>
             <TextInput
               id="statement-note"
@@ -170,7 +250,7 @@ const RecordStatementModal: FC<RecordStatementModalProps> = ({
           onClick={handleSubmit}
         >
           {submitting && <Spinner size="sm" className="mr-2 text-white" />}
-          Record balance
+          {stage === 'uploading' ? 'Uploading statement…' : 'Record balance'}
         </Button>
         <Button color="light" onClick={onClose}>
           Cancel

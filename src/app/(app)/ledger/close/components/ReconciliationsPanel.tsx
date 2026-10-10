@@ -1,5 +1,6 @@
 'use client'
 
+import { documentFileUrl } from '@/lib/ledger/documents'
 import { extractDetail } from '@/lib/ledger/errors'
 import {
   formatDate,
@@ -25,7 +26,12 @@ import {
 } from 'flowbite-react'
 import type { FC } from 'react'
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
-import { HiExclamationCircle, HiPlus, HiRefresh } from 'react-icons/hi'
+import {
+  HiDocumentText,
+  HiExclamationCircle,
+  HiPlus,
+  HiRefresh,
+} from 'react-icons/hi'
 import RecordStatementModal from './RecordStatementModal'
 
 /** The API's own words for a refusal, or a fallback when there are none. */
@@ -158,7 +164,8 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({
       setError(null)
       const result = await clients.ledger.refreshReconciliations(
         graphId,
-        period
+        period,
+        { entityId }
       )
       if (seq !== loadSeq.current) return
       setList(result)
@@ -169,7 +176,7 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({
     } finally {
       setIsRunning(false)
     }
-  }, [graphId, period])
+  }, [graphId, entityId, period])
 
   const handleSignOff = useCallback(
     async (rec: LedgerReconciliation) => {
@@ -390,7 +397,7 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({
                   {isOpen && (
                     <TableRow>
                       <TableCell colSpan={7}>
-                        <ReconciliationDetail rec={rec} />
+                        <ReconciliationDetail graphId={graphId} rec={rec} />
                       </TableCell>
                     </TableRow>
                   )}
@@ -412,8 +419,40 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({
   )
 }
 
+/**
+ * Download a stored document's file. The link is served as an attachment, so
+ * pointing this page at it downloads the file without leaving the page.
+ */
+const DownloadDocumentButton: FC<{ graphId: string; documentId: string }> = ({
+  graphId,
+  documentId,
+}) => {
+  const [failed, setFailed] = useState(false)
+  const handleClick = async () => {
+    setFailed(false)
+    try {
+      window.location.assign(await documentFileUrl(graphId, documentId))
+    } catch {
+      setFailed(true)
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className="text-primary-600 dark:text-primary-400 ml-2 inline-flex items-center gap-1 text-xs hover:underline"
+    >
+      <HiDocumentText className="h-3.5 w-3.5" />
+      {failed ? 'Could not download' : 'Download statement'}
+    </button>
+  )
+}
+
 /** What a reconciliation compared: its parts, and the accounts that differ. */
-const ReconciliationDetail: FC<{ rec: LedgerReconciliation }> = ({ rec }) => (
+const ReconciliationDetail: FC<{
+  graphId: string
+  rec: LedgerReconciliation
+}> = ({ graphId, rec }) => (
   <div className="space-y-3 text-sm text-gray-700 dark:text-gray-200">
     {rec.status === 'not_started' ? (
       <p>This period has not been compared yet.</p>
@@ -443,6 +482,12 @@ const ReconciliationDetail: FC<{ rec: LedgerReconciliation }> = ({ rec }) => (
           >
             <span>
               {component.name}
+              {component.documentId && (
+                <DownloadDocumentButton
+                  graphId={graphId}
+                  documentId={component.documentId}
+                />
+              )}
               {component.note && (
                 <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
                   {component.note}
