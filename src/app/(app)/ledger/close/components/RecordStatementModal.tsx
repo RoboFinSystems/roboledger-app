@@ -69,11 +69,20 @@ const RecordStatementModal: FC<RecordStatementModalProps> = ({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Load the chart when the modal opens. The API refuses an account that is
-  // not on the balance sheet, so the list is not filtered here.
+  // Each opening starts blank: the dialog stays mounted between openings, and a
+  // file or upload kept from a cancelled one would be cited by the next record.
+  // The chart loads here too. The API refuses an account that is not on the
+  // balance sheet, so the list is not filtered here.
   useEffect(() => {
     if (!open) return
     let cancelled = false
+    setElementId('')
+    setAsOf('')
+    setBalance('')
+    setNote('')
+    setFile(null)
+    setDocumentId(null)
+    setStage(null)
     setError(null)
     void (async () => {
       try {
@@ -116,6 +125,18 @@ const RecordStatementModal: FC<RecordStatementModalProps> = ({
 
   const handleFile = (next: File | null) => {
     setFile(next)
+    setDocumentId(null)
+  }
+
+  // An upload is titled for its account and date, so a change to either
+  // uploads the file again under the new title.
+  const handleAccount = (next: string) => {
+    setElementId(next)
+    setDocumentId(null)
+  }
+
+  const handleAsOf = (next: string) => {
+    setAsOf(next)
     setDocumentId(null)
   }
 
@@ -183,7 +204,7 @@ const RecordStatementModal: FC<RecordStatementModalProps> = ({
             <Select
               id="statement-account"
               value={elementId}
-              onChange={(e) => setElementId(e.target.value)}
+              onChange={(e) => handleAccount(e.target.value)}
             >
               <option value="">Choose an account</option>
               {accounts.map((a) => (
@@ -199,7 +220,7 @@ const RecordStatementModal: FC<RecordStatementModalProps> = ({
               id="statement-as-of"
               type="date"
               value={asOf}
-              onChange={(e) => setAsOf(e.target.value)}
+              onChange={(e) => handleAsOf(e.target.value)}
             />
           </div>
           <div>
