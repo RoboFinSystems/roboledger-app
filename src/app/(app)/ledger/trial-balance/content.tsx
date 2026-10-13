@@ -109,7 +109,10 @@ const VIEW_MODES: readonly SegmentedOption<ViewMode>[] = [
 
 const TrialBalanceContent: FC = function () {
   const { state: graphState } = useGraphContext()
-  const { entityId } = useEntityScope()
+  const { entityId, parent } = useEntityScope()
+  // Mappings are listed for every entity when none is named, so the parent
+  // is named too: the default-to-parent rule of the other reads.
+  const mappingEntityId = entityId ?? parent?.id ?? null
   const [data, setData] = useState<TrialBalanceRowWithGraph[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -148,7 +151,7 @@ const TrialBalanceContent: FC = function () {
         // The entity in scope's own mapping: omitted, every entity's comes back.
         const structures = await clients.ledger.listMappings(
           currentGraph.graphId,
-          { entityId }
+          { entityId: mappingEntityId }
         )
         if (seq !== mappingSeq.current) return // superseded by a newer load
         const active = structures.find((s) => s.isActive) ?? structures[0]
@@ -164,7 +167,7 @@ const TrialBalanceContent: FC = function () {
       }
     }
     loadMapping()
-  }, [graphState.graphs, graphState.currentGraphId, entityId])
+  }, [graphState.graphs, graphState.currentGraphId, entityId, mappingEntityId])
 
   // Load trial balance data. `viewMode` swaps the endpoint:
   //

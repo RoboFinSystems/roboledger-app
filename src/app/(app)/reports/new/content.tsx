@@ -92,7 +92,10 @@ const PRESETS: PresetOption[] = [
 ]
 
 const ReportBuilderContent: FC = function () {
-  const { entityId } = useEntityScope()
+  const { entityId, parent } = useEntityScope()
+  // Unnamed, every entity's mappings come back under one name; the parent's
+  // page offers the parent's.
+  const mappingEntityId = entityId ?? parent?.id ?? null
   const router = useRouter()
 
   // Form state
@@ -151,7 +154,7 @@ const ReportBuilderContent: FC = function () {
       try {
         setIsLoadingMappings(true)
         const result = await clients.ledger.listMappings(currentGraph.graphId, {
-          entityId,
+          entityId: mappingEntityId,
         })
         if (cancelled) return
         setMappings(result)
@@ -174,7 +177,7 @@ const ReportBuilderContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph, entityId])
+  }, [currentGraph, mappingEntityId])
 
   // Load coverage when mapping selected
   useEffect(() => {
