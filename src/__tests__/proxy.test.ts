@@ -28,8 +28,9 @@ describe('proxy CSP', () => {
     'keeps %s out of the policy',
     (value) => {
       vi.stubEnv('NEXT_PUBLIC_ROBOSYSTEMS_API_URL', value)
-      const directive = connectSrc()
-      expect(directive).not.toContain('https://*')
+      const sources = connectSrc().trim().split(/\s+/)
+      const directive = sources.join(' ')
+      expect(sources).not.toContain('https://*')
       expect(directive).not.toContain('a;b')
       expect(directive).not.toContain("'unsafe-eval'")
     }
@@ -54,4 +55,16 @@ describe('proxy CSP (as the deployed server receives the request)', () => {
     expect(directive).toContain('https://api.robosystems.ai')
     expect(directive).not.toContain('http://localhost:*')
   })
+
+  // A document upload PUTs the file straight to the presigned S3 URL the API
+  // returns, in either the global or the us-east-1 regional host form.
+  it.each(['production', 'development'])(
+    'lets the %s policy reach the storage a document uploads to',
+    (env) => {
+      vi.stubEnv('NODE_ENV', env)
+      const sources = connectSrc().trim().split(/\s+/)
+      expect(sources).toContain('https://*.s3.amazonaws.com')
+      expect(sources).toContain('https://*.s3.us-east-1.amazonaws.com')
+    }
+  )
 })

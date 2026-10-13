@@ -27,6 +27,14 @@ export function proxy(request: NextRequest) {
   // robosystems-content-machine alongside the post body). Named because two directives
   // need it; robosystems-app's proxy.ts carries the same constant for the same reason.
   const BLOG_ASSETS = 'https://assets.robosystems.ai'
+
+  // A statement or event document upload PUTs the file straight to the
+  // presigned URL the API returns for the user-data bucket, which comes back in
+  // either the global or the us-east-1 regional S3 host form. robosystems-app's
+  // proxy.ts carries the same constant for its Data Lake upload.
+  const S3_UPLOAD_HOSTS =
+    'https://*.s3.amazonaws.com https://*.s3.us-east-1.amazonaws.com'
+
   const API_ORIGIN = configuredApiOrigin()
 
   // Comprehensive CSP configuration for modern web apps
@@ -72,6 +80,7 @@ export function proxy(request: NextRequest) {
     isDevelopment
       ? "connect-src 'self' http://localhost:* ws://localhost:* wss://localhost:* " +
         'https://api.robosystems.ai https://staging.api.robosystems.ai ' +
+        `${S3_UPLOAD_HOSTS} ` +
         'https://cloudflareinsights.com https://static.cloudflareinsights.com ' +
         'https://www.google-analytics.com https://analytics.google.com ' +
         'https://region1.google-analytics.com https://www.googletagmanager.com ' +
@@ -80,6 +89,7 @@ export function proxy(request: NextRequest) {
         API_ORIGIN
       : "connect-src 'self' " +
         'https://api.robosystems.ai https://staging.api.robosystems.ai ' +
+        `${S3_UPLOAD_HOSTS} ` +
         'https://cloudflareinsights.com https://static.cloudflareinsights.com ' +
         'https://www.google-analytics.com https://analytics.google.com ' +
         'https://region1.google-analytics.com https://www.googletagmanager.com ' +
