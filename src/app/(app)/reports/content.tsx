@@ -2,6 +2,7 @@
 
 import DocsLink from '@/components/DocsLink'
 import SegmentedControl from '@/components/SegmentedControl'
+import { useEntityScope } from '@/lib/entity-scope'
 import { useConsoleReload } from '@/lib/useConsoleReload'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { ReportListItem } from '@robosystems/client/clients'
@@ -77,6 +78,7 @@ interface ReportWithGraph extends ReportListItem {
 }
 
 const ReportsContent: FC = function () {
+  const { entityId } = useEntityScope()
   const [reports, setReports] = useState<ReportWithGraph[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -104,7 +106,7 @@ const ReportsContent: FC = function () {
 
         const reportList = await clients.reports.listReports(
           currentGraph.graphId,
-          { lifecycle: view === 'archived' ? 'ARCHIVED' : 'CURRENT' }
+          { lifecycle: view === 'archived' ? 'ARCHIVED' : 'CURRENT', entityId }
         )
         if (cancelled) return
 
@@ -133,7 +135,7 @@ const ReportsContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph, view, reloadKey, takeQuiet])
+  }, [currentGraph, view, reloadKey, takeQuiet, entityId])
 
   return (
     <PageLayout>

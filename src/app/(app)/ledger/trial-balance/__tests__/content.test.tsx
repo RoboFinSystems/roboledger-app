@@ -36,6 +36,9 @@ vi.mock('@robosystems/core', () => ({
   ),
 }))
 
+const mockScope = vi.fn(() => ({ entityId: null as string | null }))
+vi.mock('@/lib/entity-scope', () => ({ useEntityScope: () => mockScope() }))
+
 vi.mock('flowbite-react', () => ({
   Alert: ({ children }: any) => <div data-testid="alert">{children}</div>,
   Badge: ({ children }: any) => <span>{children}</span>,
@@ -132,6 +135,19 @@ describe('TrialBalanceContent', () => {
       })
     })
     expect(await screen.findByText('Cash')).toBeInTheDocument()
+  })
+
+  it("maps a subsidiary's trial balance with its own mapping", async () => {
+    mockScope.mockReturnValue({ entityId: 'ent_sub' })
+    mockListMappings.mockResolvedValue([{ id: 'map_sub', isActive: true }])
+    render(<TrialBalanceContent />)
+
+    await waitFor(() =>
+      expect(mockListMappings).toHaveBeenCalledWith('kg_a', {
+        entityId: 'ent_sub',
+      })
+    )
+    mockScope.mockReturnValue({ entityId: null })
   })
 
   it('sorts by a column on click and keeps TOTALS pinned last', async () => {

@@ -43,6 +43,8 @@ const { GRAPH } = vi.hoisted(() => ({ GRAPH: { graphId: 'kg1' } }))
 vi.mock('@/lib/useLedgerGraph', () => ({
   useLedgerGraph: () => ({ graph: GRAPH }),
 }))
+const mockScope = vi.fn(() => ({ entityId: null as string | null }))
+vi.mock('@/lib/entity-scope', () => ({ useEntityScope: () => mockScope() }))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
 }))
@@ -68,6 +70,17 @@ describe('Report builder', () => {
       unmappedCount: 0,
     })
     mockCreateReport.mockResolvedValue({ id: 'rpt_1' })
+  })
+
+  it("offers the subsidiary's own mappings when it is in scope", async () => {
+    mockScope.mockReturnValue({ entityId: 'ent_sub' })
+    render(<ReportBuilderContent />)
+    await waitFor(() =>
+      expect(mockListMappings).toHaveBeenCalledWith('kg1', {
+        entityId: 'ent_sub',
+      })
+    )
+    mockScope.mockReturnValue({ entityId: null })
   })
 
   // Unset, the SDK labels every report quarterly, whatever its period.

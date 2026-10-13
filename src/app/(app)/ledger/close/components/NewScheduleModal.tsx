@@ -243,6 +243,7 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
         ])
       )
       const created = await clients.ledger.createSchedule(graphId, {
+        entityId,
         name: name.trim(),
         elementIds,
         periodStart,
@@ -281,6 +282,7 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
   }, [
     canSubmit,
     graphId,
+    entityId,
     name,
     debitElementId,
     creditElementId,

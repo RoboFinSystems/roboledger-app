@@ -1,5 +1,6 @@
 'use client'
 
+import { useEntityScope } from '@/lib/entity-scope'
 import type { FriendlyError } from '@/lib/ledger/errors'
 import { friendlyError } from '@/lib/ledger/errors'
 import { formatDateTime } from '@/lib/ledger/formatters'
@@ -160,6 +161,8 @@ const EventBlockDetailModal: FC<Props> = function ({
   onRejected,
   onClassified,
 }) {
+  // The Inbox lists one entity's lines; its chart is the one they post to.
+  const { entityId } = useEntityScope()
   const [event, setEvent] = useState<LedgerEventBlockDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionInFlight, setActionInFlight] = useState<Action | null>(null)
@@ -217,7 +220,7 @@ const EventBlockDetailModal: FC<Props> = function ({
     setClassifiedElementId(prior || suggestedElementId)
     let cancelled = false
     clients.ledger
-      .getAccountTree(graphId)
+      .getAccountTree(graphId, { entityId })
       .then((tree) => {
         if (cancelled) return
         const options = flattenAccountTree(
@@ -240,7 +243,7 @@ const EventBlockDetailModal: FC<Props> = function ({
     }
     // The event id is what changes; the derived strings follow from it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphId, event?.id, isClassifiable])
+  }, [graphId, event?.id, isClassifiable, entityId])
 
   /** The classification patch a commit or classify call carries, or null
    *  when this event does not take one (a split set over MCP, a non-bank
@@ -282,13 +285,14 @@ const EventBlockDetailModal: FC<Props> = function ({
       amount: e.amount ?? null,
       currency: e.currency,
       description: e.description ?? null,
+      entity_id: entityId ?? null,
       metadata: {
         ...((e.metadata ?? {}) as Record<string, unknown>),
         ...(classificationPatch ?? {}),
       },
       apply_handlers: false,
     }),
-    [classificationPatch]
+    [classificationPatch, entityId]
   )
 
   const handlePreview = useCallback(async () => {
