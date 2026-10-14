@@ -73,6 +73,7 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
   // The default account: the one its bank lines are suggested, learned from
   // committed lines or set here. `alwaysAsk` keeps it without offering it.
   const [accounts, setAccounts] = useState<AccountOption[] | null>(null)
+  const [chartFailed, setChartFailed] = useState(false)
   const [defaultElementId, setDefaultElementId] = useState('')
   const [alwaysAsk, setAlwaysAsk] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -130,6 +131,7 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
         if (cancelled) return
         console.error('Error loading chart of accounts:', err)
         setAccounts([])
+        setChartFailed(true)
       })
     return () => {
       cancelled = true
@@ -137,18 +139,23 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
   }, [graphId, entityId])
 
   const current = agent?.classification ?? null
+  // Always-ask means nothing without an account to hold back.
+  const effectiveAlwaysAsk = defaultElementId ? alwaysAsk : false
   const dirty =
     !!agent &&
     (defaultElementId !== (current?.elementId ?? '') ||
-      alwaysAsk !== (current?.mode === 'always_ask'))
+      effectiveAlwaysAsk !== (current?.mode === 'always_ask'))
   // A default the chart no longer offers (retired, or another entity's)
-  // stays visible as what it is rather than vanishing from the picker.
+  // stays visible as what it is rather than vanishing from the picker; one
+  // the chart could not be checked against is just kept.
   const strandedDefault =
     current &&
     accounts !== null &&
+    !chartFailed &&
     !accounts.some((account) => account.id === current.elementId)
       ? current
       : null
+  const unloadedDefault = current && chartFailed ? current : null
 
   const handleSave = useCallback(async () => {
     if (!agent || !dirty) return
@@ -304,7 +311,10 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
               <Select
                 id="agent-default-account"
                 value={defaultElementId}
-                onChange={(e) => setDefaultElementId(e.target.value)}
+                onChange={(e) => {
+                  setDefaultElementId(e.target.value)
+                  if (!e.target.value) setAlwaysAsk(false)
+                }}
                 disabled={accounts === null || saving}
               >
                 <option value="">
@@ -316,6 +326,11 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
                   <option value={strandedDefault.elementId}>
                     {strandedDefault.accountName ?? strandedDefault.elementId}{' '}
                     (not on this chart)
+                  </option>
+                )}
+                {unloadedDefault && (
+                  <option value={unloadedDefault.elementId}>
+                    {unloadedDefault.accountName ?? unloadedDefault.elementId}
                   </option>
                 )}
                 {(accounts ?? []).map((account) => (

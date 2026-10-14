@@ -79,9 +79,8 @@ vi.mock('flowbite-react', () => ({
   ),
 }))
 
-import EventBlockDetailModal, {
-  flattenAccountTree,
-} from '../EventBlockDetailModal'
+import { flattenAccountTree } from '@/lib/ledger/accounts'
+import EventBlockDetailModal from '../EventBlockDetailModal'
 
 const bankEvent = (overrides: Record<string, unknown> = {}) => ({
   id: 'evt_bank',
@@ -514,6 +513,30 @@ describe('EventBlockDetailModal — learned suggestions', () => {
     ).toBe(true)
   })
 
+  it("the line's own learned suggestion outranks a stale agent list", async () => {
+    // The list was loaded before the default was taught; the line was
+    // re-suggested since, so it knows better.
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({ agentId: 'agt_staples', metadata: learned })
+    )
+    renderModal(vi.fn(), staples(null))
+    const select = await screen.findByLabelText('Post to account')
+    await waitFor(() =>
+      expect((select as HTMLSelectElement).value).toBe('elem_office')
+    )
+    expect(screen.queryByLabelText(/Remember for/)).not.toBeInTheDocument()
+    fireEvent.change(select, { target: { value: 'elem_expenses' } })
+    const remember = screen.getByLabelText(
+      /Remember for Staples/
+    ) as HTMLInputElement
+    expect(remember.checked).toBe(false)
+    expect(
+      screen.getByText(
+        /Make Expenses the default instead of Office supplies & equipment/
+      )
+    ).toBeInTheDocument()
+  })
+
   it('a counterparty with no default is taught unless unticked', async () => {
     mockGetEventBlock.mockResolvedValue(bankEvent({ agentId: 'agt_staples' }))
     renderModal(vi.fn(), staples(null))
@@ -624,6 +647,26 @@ describe('EventBlockDetailModal — the flow', () => {
       metadata_patch: { classified_flow_qname: null },
     })
     await waitFor(() => expect(mockGetEventBlock).toHaveBeenCalledTimes(2))
+  })
+
+  it('when the rows cannot load, the current tag is kept and said so', async () => {
+    mockGetFlowCandidates.mockRejectedValue(new Error('Flow candidates failed'))
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({
+        metadata: {
+          classified_element_id: 'elem_office',
+          classified_flow_qname: 'rs-gaap:ProceedsFromShortTermDebt',
+        },
+      })
+    )
+    renderModal()
+    const picker = (await screen.findByLabelText(
+      'Cash flow row'
+    )) as HTMLSelectElement
+    await waitFor(() => expect(picker.disabled).toBe(false))
+    expect(picker.value).toBe('rs-gaap:ProceedsFromShortTermDebt')
+    expect(screen.queryByText(/not a row of this statement/)).toBeNull()
+    expect(screen.getByText(/rows could not be loaded/)).toBeInTheDocument()
   })
 
   it('a tag the statement no longer presents stays visible as such', async () => {

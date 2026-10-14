@@ -46,9 +46,6 @@ import {
 } from 'react-icons/hi'
 import EventDocumentSection from './EventDocumentSection'
 
-// The inbox test imports the flattener from here.
-export { flattenAccountTree }
-
 interface Entry {
   memo?: string
   posting_date?: string
@@ -163,6 +160,7 @@ const EventBlockDetailModal: FC<Props> = function ({
   // account's default on the cash flow and equity statements. '' keeps the
   // default.
   const [flows, setFlows] = useState<LedgerFlowCandidate[] | null>(null)
+  const [flowsFailed, setFlowsFailed] = useState(false)
   const [flowQname, setFlowQname] = useState('')
   // Whether a commit teaches the counterparty this account. Null until the
   // reviewer touches the checkbox, which then follows the rule below.
@@ -199,7 +197,21 @@ const EventBlockDetailModal: FC<Props> = function ({
   const priorFlowQname = stringOf(eventMetadata.classified_flow_qname)
 
   const agent = event?.agentId ? agentById[event.agentId] : null
-  const agentDefault = agent?.classification ?? null
+  // The counterparty's default as this line saw it. A learned suggestion is
+  // the default itself, re-suggested the moment one is set or moved, so it
+  // outranks the agent list, which the inbox loaded earlier.
+  const agentDefault =
+    suggestionSource === 'agent_default' && suggestedElementId
+      ? {
+          elementId: suggestedElementId,
+          accountName: suggestedAccountName || null,
+        }
+      : agent?.classification
+        ? {
+            elementId: agent.classification.elementId,
+            accountName: agent.classification.accountName ?? null,
+          }
+        : null
 
   useEffect(() => {
     if (!isClassifiable) return
@@ -236,8 +248,12 @@ const EventBlockDetailModal: FC<Props> = function ({
   const offersFlow = (isClassifiable || isPostedBankLine) && !hasSplit
 
   useEffect(() => {
-    if (!offersFlow) return
+    if (!offersFlow) {
+      setFlowQname('')
+      return
+    }
     setFlowQname(priorFlowQname)
+    setFlowsFailed(false)
     let cancelled = false
     clients.ledger
       .getFlowCandidates(graphId, { entityId })
@@ -248,6 +264,7 @@ const EventBlockDetailModal: FC<Props> = function ({
         if (cancelled) return
         console.error('Error loading cash flow rows:', err)
         setFlows([])
+        setFlowsFailed(true)
       })
     return () => {
       cancelled = true
@@ -457,13 +474,16 @@ const EventBlockDetailModal: FC<Props> = function ({
   const chosenAccount = (accounts ?? []).find(
     (account) => account.id === classifiedElementId
   )
-  // A tag the statement no longer presents stays visible as what it is.
+  // A tag the statement no longer presents stays visible as what it is;
+  // one the rows could not be checked against is just kept.
   const strandedFlow =
     priorFlowQname &&
     flows !== null &&
+    !flowsFailed &&
     !flows.some((flow) => flow.qname === priorFlowQname)
       ? priorFlowQname
       : null
+  const unloadedFlow = priorFlowQname && flowsFailed ? priorFlowQname : null
 
   const flowPicker = (
     <div className="mt-3">
@@ -492,6 +512,7 @@ const EventBlockDetailModal: FC<Props> = function ({
             {strandedFlow} (not a row of this statement)
           </option>
         )}
+        {unloadedFlow && <option value={unloadedFlow}>{unloadedFlow}</option>}
         {FLOW_SECTIONS.map((section) => {
           const rows = (flows ?? []).filter(
             (flow) => flow.activity === section.activity
@@ -509,9 +530,9 @@ const EventBlockDetailModal: FC<Props> = function ({
         })}
       </Select>
       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-        Only for a loan drawn or repaid, capital put in or taken out, or an
-        asset bought or sold: the row the cash flow statement shows it on
-        instead of the account&apos;s own.
+        {flowsFailed
+          ? "The statement's rows could not be loaded; the current tag is kept."
+          : "Only for a loan drawn or repaid, capital put in or taken out, or an asset bought or sold: the row the cash flow statement shows it on instead of the account's own."}
       </p>
     </div>
   )

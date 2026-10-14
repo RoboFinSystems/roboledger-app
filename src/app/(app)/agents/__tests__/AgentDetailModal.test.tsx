@@ -205,6 +205,36 @@ describe('AgentDetailModal — the default account', () => {
     })
   })
 
+  it('always ask without an account is not a change', async () => {
+    mockGetAgent.mockResolvedValue(agent(null))
+    renderModal()
+    const select = await screen.findByLabelText('Default account')
+    await waitFor(() =>
+      expect((select as HTMLSelectElement).options.length).toBe(3)
+    )
+    fireEvent.change(select, { target: { value: 'elem_software' } })
+    fireEvent.click(screen.getByLabelText(/Always ask/))
+    fireEvent.change(select, { target: { value: '' } })
+    const save = screen.getByText('Save default') as HTMLButtonElement
+    expect(save.disabled).toBe(true)
+    expect(
+      (screen.getByLabelText(/Always ask/) as HTMLInputElement).checked
+    ).toBe(false)
+  })
+
+  it('a chart that fails to load does not retire the default', async () => {
+    mockGetAgent.mockResolvedValue(agent(learned))
+    mockGetAccountTree.mockRejectedValue(new Error('Account tree failed'))
+    renderModal()
+    const select = (await screen.findByLabelText(
+      'Default account'
+    )) as HTMLSelectElement
+    await waitFor(() => expect(select.disabled).toBe(false))
+    expect(select.value).toBe('elem_office')
+    expect(screen.queryByText(/not on this chart/)).toBeNull()
+    expect(screen.getByText('Office supplies & equipment')).toBeInTheDocument()
+  })
+
   it('a refusal is shown, and the choice kept', async () => {
     mockGetAgent.mockResolvedValue(agent(null))
     mockUpdateAgent.mockRejectedValueOnce(

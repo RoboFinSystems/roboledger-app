@@ -109,6 +109,9 @@ const InboxContent: FC = function () {
 
   // Selection (modal)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  // Bumped after a transition: a commit may have taught a counterparty its
+  // default, which the next line's modal reads from this list.
+  const [agentsVersion, setAgentsVersion] = useState(0)
 
   const { graph: currentGraph } = useLedgerGraph()
   const { entityId } = useEntityScope()
@@ -186,7 +189,8 @@ const InboxContent: FC = function () {
     takeQuiet,
   ])
 
-  // Load agents once per graph for the filter Select + name lookup.
+  // Load agents per graph for the filter Select + name lookup, and again
+  // after a transition.
   useEffect(() => {
     if (!currentGraph) {
       setAgents([])
@@ -206,7 +210,7 @@ const InboxContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph])
+  }, [currentGraph, agentsVersion])
 
   const filteredEvents = useMemo(() => {
     if (!searchTerm) return events
@@ -243,6 +247,7 @@ const InboxContent: FC = function () {
     (eventId: string, newStatus: 'committed' | 'voided') => {
       updateRow(eventId, newStatus)
       setSelectedId(null)
+      if (newStatus === 'committed') setAgentsVersion((v) => v + 1)
     },
     [updateRow]
   )
