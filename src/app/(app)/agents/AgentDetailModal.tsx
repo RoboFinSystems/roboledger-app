@@ -1,5 +1,13 @@
 'use client'
 
+import { useEntityScope } from '@/lib/entity-scope'
+import {
+  accountLabel,
+  type AccountOption,
+  type AccountTreeNode,
+  flattenAccountTree,
+} from '@/lib/ledger/accounts'
+import { friendlyError } from '@/lib/ledger/errors'
 import {
   formatAddress,
   formatAmount,
@@ -14,10 +22,13 @@ import {
   Alert,
   Badge,
   Button,
+  Checkbox,
+  Label,
   Modal,
   ModalBody,
   ModalFooter,
   ModalHeader,
+  Select,
   Table,
   TableBody,
   TableCell,
@@ -26,8 +37,8 @@ import {
   TableRow,
 } from 'flowbite-react'
 import Link from 'next/link'
-import { type FC, useEffect, useState } from 'react'
-import { HiExclamationCircle } from 'react-icons/hi'
+import { type FC, useCallback, useEffect, useState } from 'react'
+import { HiExclamationCircle, HiTag } from 'react-icons/hi'
 
 interface Props {
   graphId: string
@@ -41,13 +52,37 @@ const TYPE_BADGE_COLOR: Record<string, string> = {
   employee: 'purple',
 }
 
+/** How often the default held, for the counts the server keeps on it. */
+const heldOn = (confirmations: number, overrides: number): string => {
+  const seen = confirmations + overrides
+  if (seen === 0) return 'Set by hand; no committed line has tested it yet.'
+  const lines = seen === 1 ? 'line' : 'lines'
+  return `Held on ${confirmations} of ${seen} committed ${lines}.`
+}
+
 const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
+  // The chart a default is chosen from is the one in scope, the same chart
+  // the inbox posts this counterparty's lines to.
+  const { entityId } = useEntityScope()
   const [agent, setAgent] = useState<LedgerAgentDetail | null>(null)
   const [events, setEvents] = useState<LedgerEventBlock[]>([])
   // Single flag — agent + events are fetched in one Promise.all and always
   // resolve together, so two flags would never differ in practice.
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // The default account: the one its bank lines are suggested, learned from
+  // committed lines or set here. `alwaysAsk` keeps it without offering it.
+  const [accounts, setAccounts] = useState<AccountOption[] | null>(null)
+  const [chartFailed, setChartFailed] = useState(false)
+  const [defaultElementId, setDefaultElementId] = useState('')
+  const [alwaysAsk, setAlwaysAsk] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  const seedDefault = useCallback((detail: LedgerAgentDetail) => {
+    setDefaultElementId(detail.classification?.elementId ?? '')
+    setAlwaysAsk(detail.classification?.mode === 'always_ask')
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -65,6 +100,7 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
             new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
         )
         setAgent(agentDetail)
+        if (agentDetail) seedDefault(agentDetail)
         setEvents(eventList)
       } catch (err) {
         if (cancelled) return
@@ -77,7 +113,76 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
     return () => {
       cancelled = true
     }
-  }, [graphId, agentId])
+  }, [graphId, agentId, seedDefault])
+
+  useEffect(() => {
+    let cancelled = false
+    clients.ledger
+      .getAccountTree(graphId, { entityId })
+      .then((tree) => {
+        if (cancelled) return
+        setAccounts(
+          flattenAccountTree(
+            (tree?.roots ?? []) as unknown as AccountTreeNode[]
+          )
+        )
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return
+        console.error('Error loading chart of accounts:', err)
+        setAccounts([])
+        setChartFailed(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [graphId, entityId])
+
+  const current = agent?.classification ?? null
+  // Always-ask means nothing without an account to hold back.
+  const effectiveAlwaysAsk = defaultElementId ? alwaysAsk : false
+  const dirty =
+    !!agent &&
+    (defaultElementId !== (current?.elementId ?? '') ||
+      effectiveAlwaysAsk !== (current?.mode === 'always_ask'))
+  // A default the chart no longer offers (retired, or another entity's)
+  // stays visible as what it is rather than vanishing from the picker; one
+  // the chart could not be checked against is just kept.
+  const strandedDefault =
+    current &&
+    accounts !== null &&
+    !chartFailed &&
+    !accounts.some((account) => account.id === current.elementId)
+      ? current
+      : null
+  const unloadedDefault = current && chartFailed ? current : null
+
+  const handleSave = useCallback(async () => {
+    if (!agent || !dirty) return
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await clients.ledger.updateAgent(graphId, {
+        agent_id: agent.id,
+        ...(defaultElementId
+          ? {
+              classification_element_id: defaultElementId,
+              classification_mode: alwaysAsk ? 'always_ask' : 'suggest',
+            }
+          : { classification_element_id: '' }),
+      })
+      const fresh = await clients.ledger.getAgent(graphId, agentId)
+      if (fresh) {
+        setAgent(fresh)
+        seedDefault(fresh)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setSaveError(friendlyError(message).message)
+    } finally {
+      setSaving(false)
+    }
+  }, [agent, agentId, alwaysAsk, defaultElementId, dirty, graphId, seedDefault])
 
   return (
     <Modal show onClose={onClose} size="3xl">
@@ -184,6 +289,89 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
                   {agent.is1099Recipient ? 'Yes' : 'No'}
                 </span>
               </div>
+            </div>
+
+            {/* The default account its bank lines are suggested */}
+            <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+              <div className="mb-2 flex items-center gap-2">
+                <HiTag className="h-4 w-4 text-gray-400" />
+                <h4 className="font-heading text-sm font-bold text-gray-900 dark:text-white">
+                  Default account
+                </h4>
+              </div>
+              <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                {current
+                  ? heldOn(current.confirmations, current.overrides) +
+                    (current.setAt ? ` Set ${formatDate(current.setAt)}.` : '')
+                  : 'None yet. The first bank line committed for this counterparty sets it, or choose one here.'}
+              </p>
+              <Label htmlFor="agent-default-account" className="sr-only">
+                Default account
+              </Label>
+              <Select
+                id="agent-default-account"
+                value={defaultElementId}
+                onChange={(e) => {
+                  setDefaultElementId(e.target.value)
+                  if (!e.target.value) setAlwaysAsk(false)
+                }}
+                disabled={accounts === null || saving}
+              >
+                <option value="">
+                  {accounts === null
+                    ? 'Loading chart of accounts…'
+                    : 'No default'}
+                </option>
+                {strandedDefault && (
+                  <option value={strandedDefault.elementId}>
+                    {strandedDefault.accountName ?? strandedDefault.elementId}{' '}
+                    (not on this chart)
+                  </option>
+                )}
+                {unloadedDefault && (
+                  <option value={unloadedDefault.elementId}>
+                    {unloadedDefault.accountName ?? unloadedDefault.elementId}
+                  </option>
+                )}
+                {(accounts ?? []).map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {accountLabel(account)}
+                  </option>
+                ))}
+              </Select>
+              <div className="mt-3 flex items-start gap-2">
+                <Checkbox
+                  id="agent-always-ask"
+                  checked={alwaysAsk}
+                  onChange={(e) => setAlwaysAsk(e.target.checked)}
+                  disabled={!defaultElementId || saving}
+                />
+                <Label
+                  htmlFor="agent-always-ask"
+                  className="text-sm text-gray-700 dark:text-gray-300"
+                >
+                  Always ask
+                  <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">
+                    Keep the default but never suggest it, for a counterparty
+                    whose lines go to different accounts.
+                  </span>
+                </Label>
+              </div>
+              {saveError && (
+                <Alert color="failure" className="mt-3">
+                  <HiExclamationCircle className="h-4 w-4" />
+                  {saveError}
+                </Alert>
+              )}
+              <Button
+                size="xs"
+                color="light"
+                className="mt-3"
+                onClick={handleSave}
+                disabled={!dirty || saving}
+              >
+                {saving ? 'Saving…' : 'Save default'}
+              </Button>
             </div>
 
             <div>

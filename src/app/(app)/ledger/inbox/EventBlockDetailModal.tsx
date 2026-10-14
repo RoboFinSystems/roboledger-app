@@ -1,19 +1,32 @@
 'use client'
 
 import { useEntityScope } from '@/lib/entity-scope'
+import {
+  accountLabel,
+  type AccountOption,
+  type AccountTreeNode,
+  flattenAccountTree,
+} from '@/lib/ledger/accounts'
 import type { FriendlyError } from '@/lib/ledger/errors'
 import { friendlyError } from '@/lib/ledger/errors'
 import { formatDateTime } from '@/lib/ledger/formatters'
+import {
+  suggestionSourceColor,
+  suggestionSourceLabel,
+  suggestionSourceOf,
+} from '@/lib/ledger/suggestions'
 import type { PreviewEventBlockResponse } from '@robosystems/client'
 import type {
   LedgerAgent,
   LedgerEventBlockDetail,
+  LedgerFlowCandidate,
 } from '@robosystems/client/clients'
 import { clients, LoadingState } from '@robosystems/core'
 import {
   Alert,
   Badge,
   Button,
+  Checkbox,
   Label,
   Modal,
   ModalBody,
@@ -87,44 +100,10 @@ const CLASSIFIABLE_EVENT_TYPES = new Set([
   'external_transfer',
 ])
 
-interface AccountOption {
-  id: string
-  code: string | null
-  name: string
-}
-
-interface AccountTreeNode {
-  id: string
-  code: string | null
-  name: string
-  isActive: boolean
-  children?: AccountTreeNode[] | null
-}
-
-/** Every active account in the tree, depth-first, as picker options. */
-export const flattenAccountTree = (
-  nodes: AccountTreeNode[] | null | undefined
-): AccountOption[] => {
-  const out: AccountOption[] = []
-  const walk = (list: AccountTreeNode[]) => {
-    for (const node of list) {
-      if (node.isActive) {
-        out.push({ id: node.id, code: node.code ?? null, name: node.name })
-      }
-      if (node.children?.length) walk(node.children)
-    }
-  }
-  walk(nodes ?? [])
-  return out.sort(
-    (a, b) =>
-      (a.code ?? '').localeCompare(b.code ?? '', undefined, {
-        numeric: true,
-      }) || a.name.localeCompare(b.name)
-  )
-}
-
-const accountLabel = (account: AccountOption): string =>
-  account.code ? `${account.code} — ${account.name}` : account.name
+const FLOW_SECTIONS: { activity: string; label: string }[] = [
+  { activity: 'investing', label: 'Investing' },
+  { activity: 'financing', label: 'Financing' },
+]
 
 interface Props {
   graphId: string
@@ -150,7 +129,10 @@ const formatCurrency = (
   }).format(cents / 100)
 }
 
-type Action = 'preview' | 'approve' | 'reject' | 'classify'
+type Action = 'preview' | 'approve' | 'reject' | 'classify' | 'retag'
+
+const stringOf = (value: unknown): string =>
+  typeof value === 'string' ? value : ''
 
 const EventBlockDetailModal: FC<Props> = function ({
   graphId,
@@ -174,6 +156,15 @@ const EventBlockDetailModal: FC<Props> = function ({
   // from an earlier classification, then the feed's suggestion.
   const [accounts, setAccounts] = useState<AccountOption[] | null>(null)
   const [classifiedElementId, setClassifiedElementId] = useState('')
+  // The flow: a second classification beside the account, overriding the
+  // account's default on the cash flow and equity statements. '' keeps the
+  // default.
+  const [flows, setFlows] = useState<LedgerFlowCandidate[] | null>(null)
+  const [flowsFailed, setFlowsFailed] = useState(false)
+  const [flowQname, setFlowQname] = useState('')
+  // Whether a commit teaches the counterparty this account. Null until the
+  // reviewer touches the checkbox, which then follows the rule below.
+  const [rememberChoice, setRememberChoice] = useState<boolean | null>(null)
 
   const loadEvent = useCallback(async () => {
     try {
@@ -193,31 +184,40 @@ const EventBlockDetailModal: FC<Props> = function ({
   }, [loadEvent])
 
   const eventMetadata = (event?.metadata ?? {}) as Record<string, unknown>
+  const isBankLine = !!event && CLASSIFIABLE_EVENT_TYPES.has(event.eventType)
   const isClassifiable =
-    !!event &&
-    CLASSIFIABLE_EVENT_TYPES.has(event.eventType) &&
-    ['captured', 'classified'].includes(event.status)
+    isBankLine && ['captured', 'classified'].includes(event.status)
+  // A posted line keeps its account; only its flow can change here.
+  const isPostedBankLine = isBankLine && event.status === 'committed'
   const hasSplit = Array.isArray(eventMetadata.classified_allocations)
-  const suggestedElementId =
-    typeof eventMetadata.suggested_element_id === 'string'
-      ? eventMetadata.suggested_element_id
-      : ''
-  const suggestedAccountName =
-    typeof eventMetadata.suggested_account_name === 'string'
-      ? eventMetadata.suggested_account_name
-      : null
-  const classificationSource =
-    typeof eventMetadata.classification_source === 'string'
-      ? eventMetadata.classification_source
-      : null
+  const suggestedElementId = stringOf(eventMetadata.suggested_element_id)
+  const suggestedAccountName = stringOf(eventMetadata.suggested_account_name)
+  const suggestionSource = suggestionSourceOf(eventMetadata)
+  const suggestionBasis = stringOf(eventMetadata.suggestion_basis)
+  const priorFlowQname = stringOf(eventMetadata.classified_flow_qname)
+
+  const agent = event?.agentId ? agentById[event.agentId] : null
+  // The counterparty's default as this line saw it. A learned suggestion is
+  // the default itself, re-suggested the moment one is set or moved, so it
+  // outranks the agent list, which the inbox loaded earlier.
+  const agentDefault =
+    suggestionSource === 'agent_default' && suggestedElementId
+      ? {
+          elementId: suggestedElementId,
+          accountName: suggestedAccountName || null,
+        }
+      : agent?.classification
+        ? {
+            elementId: agent.classification.elementId,
+            accountName: agent.classification.accountName ?? null,
+          }
+        : null
 
   useEffect(() => {
     if (!isClassifiable) return
-    const prior =
-      typeof eventMetadata.classified_element_id === 'string'
-        ? eventMetadata.classified_element_id
-        : ''
+    const prior = stringOf(eventMetadata.classified_element_id)
     setClassifiedElementId(prior || suggestedElementId)
+    setRememberChoice(null)
     let cancelled = false
     clients.ledger
       .getAccountTree(graphId, { entityId })
@@ -245,17 +245,68 @@ const EventBlockDetailModal: FC<Props> = function ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphId, event?.id, isClassifiable, entityId])
 
+  const offersFlow = (isClassifiable || isPostedBankLine) && !hasSplit
+
+  useEffect(() => {
+    if (!offersFlow) {
+      setFlowQname('')
+      return
+    }
+    setFlowQname(priorFlowQname)
+    setFlowsFailed(false)
+    let cancelled = false
+    clients.ledger
+      .getFlowCandidates(graphId, { entityId })
+      .then((rows) => {
+        if (!cancelled) setFlows(rows)
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return
+        console.error('Error loading cash flow rows:', err)
+        setFlows([])
+        setFlowsFailed(true)
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphId, event?.id, offersFlow, entityId])
+
+  // The commit teaches the counterparty: with no default yet, the account
+  // becomes it unless the reviewer says not to; overriding one moves it only
+  // when the reviewer asks. So the box is on by default when there is no
+  // default, off when overriding one, and absent when confirming it.
+  const rememberOffered =
+    isClassifiable &&
+    !hasSplit &&
+    !!agent &&
+    !!classifiedElementId &&
+    agentDefault?.elementId !== classifiedElementId
+  const rememberChecked = rememberChoice ?? agentDefault === null
+
   /** The classification patch a commit or classify call carries, or null
    *  when this event does not take one (a split set over MCP, a non-bank
    *  event, an internal transfer). */
   const classificationPatch = useMemo(() => {
     if (!isClassifiable || hasSplit) return null
     if (!classifiedElementId) return null
-    return {
+    const patch: Record<string, unknown> = {
       classified_element_id: classifiedElementId,
       classified_by: 'user',
     }
-  }, [isClassifiable, hasSplit, classifiedElementId])
+    if (flowQname) patch.classified_flow_qname = flowQname
+    else if (priorFlowQname) patch.classified_flow_qname = null
+    if (rememberOffered) patch.remember_classification = rememberChecked
+    return patch
+  }, [
+    isClassifiable,
+    hasSplit,
+    classifiedElementId,
+    flowQname,
+    priorFlowQname,
+    rememberOffered,
+    rememberChecked,
+  ])
 
   const needsClassification =
     isClassifiable && !hasSplit && !classifiedElementId
@@ -364,6 +415,27 @@ const EventBlockDetailModal: FC<Props> = function ({
     }
   }, [event, graphId, classificationPatch, loadEvent, onClassified])
 
+  // A posted line's flow changes in place: the server re-tags its lines,
+  // closed month or not, and records the change on the event.
+  const handleRetag = useCallback(async () => {
+    if (!event) return
+    setError(null)
+    setActionInFlight('retag')
+    try {
+      await clients.ledger.updateEventBlock(graphId, {
+        event_id: event.id,
+        metadata_patch: { classified_flow_qname: flowQname || null },
+      })
+      await loadEvent()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setError(friendlyError(message))
+      setFailedAction('retag')
+    } finally {
+      setActionInFlight(null)
+    }
+  }, [event, graphId, flowQname, loadEvent])
+
   const handleReject = useCallback(async () => {
     if (!event) return
     setError(null)
@@ -388,16 +460,82 @@ const EventBlockDetailModal: FC<Props> = function ({
     preview: handlePreview,
     approve: handleApprove,
     classify: handleClassify,
+    retag: handleRetag,
     reject: handleReject,
   }
 
-  const agent = event?.agentId ? agentById[event.agentId] : null
   const entries = journalEntries(event?.metadata)
 
   const isTerminal =
     event && ['voided', 'fulfilled', 'superseded'].includes(event.status)
   // Approve commits the event; only these statuses can move to `committed`.
   const canApprove = !!event && APPROVABLE_STATUSES.has(event.status)
+
+  const chosenAccount = (accounts ?? []).find(
+    (account) => account.id === classifiedElementId
+  )
+  // A tag the statement no longer presents stays visible as what it is;
+  // one the rows could not be checked against is just kept.
+  const strandedFlow =
+    priorFlowQname &&
+    flows !== null &&
+    !flowsFailed &&
+    !flows.some((flow) => flow.qname === priorFlowQname)
+      ? priorFlowQname
+      : null
+  const unloadedFlow = priorFlowQname && flowsFailed ? priorFlowQname : null
+
+  const flowPicker = (
+    <div className="mt-3">
+      <Label
+        htmlFor="bank-classified-flow"
+        className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
+      >
+        Cash flow row
+      </Label>
+      <Select
+        id="bank-classified-flow"
+        value={flowQname}
+        onChange={(e) => {
+          setFlowQname(e.target.value)
+          setPreview(null)
+        }}
+        disabled={flows === null || actionInFlight !== null}
+      >
+        <option value="">
+          {flows === null
+            ? 'Loading cash flow rows…'
+            : "Account's default flow"}
+        </option>
+        {strandedFlow && (
+          <option value={strandedFlow}>
+            {strandedFlow} (not a row of this statement)
+          </option>
+        )}
+        {unloadedFlow && <option value={unloadedFlow}>{unloadedFlow}</option>}
+        {FLOW_SECTIONS.map((section) => {
+          const rows = (flows ?? []).filter(
+            (flow) => flow.activity === section.activity
+          )
+          if (rows.length === 0) return null
+          return (
+            <optgroup key={section.activity} label={section.label}>
+              {rows.map((flow) => (
+                <option key={flow.qname} value={flow.qname}>
+                  {flow.name}
+                </option>
+              ))}
+            </optgroup>
+          )
+        })}
+      </Select>
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        {flowsFailed
+          ? "The statement's rows could not be loaded; the current tag is kept."
+          : "Only for a loan drawn or repaid, capital put in or taken out, or an asset bought or sold: the row the cash flow statement shows it on instead of the account's own."}
+      </p>
+    </div>
+  )
 
   return (
     <Modal show onClose={onClose} size="4xl">
@@ -510,6 +648,14 @@ const EventBlockDetailModal: FC<Props> = function ({
                   <h4 className="font-heading text-sm font-bold text-gray-900 dark:text-white">
                     Post to account
                   </h4>
+                  {suggestionSource && (
+                    <Badge
+                      color={suggestionSourceColor(suggestionSource)}
+                      size="sm"
+                    >
+                      {suggestionSourceLabel(suggestionSource)}
+                    </Badge>
+                  )}
                 </div>
                 {hasSplit ? (
                   <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -531,6 +677,7 @@ const EventBlockDetailModal: FC<Props> = function ({
                       value={classifiedElementId}
                       onChange={(e) => {
                         setClassifiedElementId(e.target.value)
+                        setRememberChoice(null)
                         setPreview(null)
                       }}
                       disabled={accounts === null || actionInFlight !== null}
@@ -552,16 +699,70 @@ const EventBlockDetailModal: FC<Props> = function ({
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       {suggestedAccountName
                         ? `Suggested: ${suggestedAccountName}` +
-                          (classificationSource
-                            ? ` (from ${classificationSource.replace(/_/g, ' ')})`
-                            : '') +
                           (suggestedElementId
                             ? ''
                             : ' — no matching account on this chart; choose one.')
                         : 'No suggestion for this line; choose the account it posts to.'}
                     </p>
+                    {suggestionBasis && (
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {suggestionBasis}
+                      </p>
+                    )}
+                    {rememberOffered && agent && (
+                      <div className="mt-3 flex items-start gap-2">
+                        <Checkbox
+                          id="bank-remember-classification"
+                          checked={rememberChecked}
+                          onChange={(e) => setRememberChoice(e.target.checked)}
+                          disabled={actionInFlight !== null}
+                        />
+                        <Label
+                          htmlFor="bank-remember-classification"
+                          className="text-sm text-gray-700 dark:text-gray-300"
+                        >
+                          Remember for {agent.name}
+                          <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">
+                            {agentDefault
+                              ? `Make ${chosenAccount?.name ?? 'this account'} the default instead of ${agentDefault.accountName ?? 'the current one'}.`
+                              : `Suggest ${chosenAccount?.name ?? 'this account'} on ${agent.name}'s next lines.`}
+                          </span>
+                        </Label>
+                      </div>
+                    )}
+                    {flowPicker}
                   </>
                 )}
+              </div>
+            )}
+
+            {/* A posted bank line: the account is fixed, the flow can move */}
+            {isPostedBankLine && !hasSplit && (
+              <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                <div className="mb-2 flex items-center gap-2">
+                  <HiTag className="h-4 w-4 text-gray-400" />
+                  <h4 className="font-heading text-sm font-bold text-gray-900 dark:text-white">
+                    Cash flow row
+                  </h4>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  This line has posted. Its account is fixed here; its flow can
+                  still change, and the statement re-reads it in place.
+                </p>
+                {flowPicker}
+                <Button
+                  size="xs"
+                  color="light"
+                  className="mt-2"
+                  onClick={handleRetag}
+                  disabled={
+                    actionInFlight !== null ||
+                    flows === null ||
+                    flowQname === priorFlowQname
+                  }
+                >
+                  {actionInFlight === 'retag' ? 'Saving…' : 'Save flow'}
+                </Button>
               </div>
             )}
 
