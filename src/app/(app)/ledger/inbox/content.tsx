@@ -1,8 +1,14 @@
 'use client'
 
 import DocsLink from '@/components/DocsLink'
-import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
+import {
+  FilterActions,
+  FilterBar,
+  FilterSelect,
+  SearchField,
+} from '@/components/FilterBar'
 import { useEntityScope } from '@/lib/entity-scope'
+import { friendlyError } from '@/lib/ledger/errors'
 import { formatAmount, formatDate } from '@/lib/ledger/formatters'
 import {
   suggestionSourceColor,
@@ -22,7 +28,9 @@ import {
 import {
   Alert,
   Badge,
+  Button,
   Card,
+  Checkbox,
   Table,
   TableBody,
   TableCell,
@@ -67,6 +75,54 @@ export const SOURCE_OPTIONS = [
   { value: 'system', label: 'System' },
 ]
 
+/**
+ * A line's suggestion source, as the row badge shows it; "none" is a line
+ * that carries no suggestion and needs a choice.
+ */
+export const SUGGESTION_OPTIONS = [
+  { value: '', label: 'Any suggestion' },
+  { value: 'agent_default', label: 'Learned' },
+  { value: 'tier0', label: 'Bank category' },
+  { value: 'ai', label: 'AI' },
+  { value: 'none', label: 'No suggestion' },
+]
+
+/** Why the batch left a line alone, in the reviewer's words. */
+const SKIP_REASON_LABEL: Record<string, string> = {
+  not_open: 'already handled',
+  no_suggestion: 'no suggestion to take',
+  source_changed: 'changed by the feed since capture',
+  closed_period: 'in a closed month',
+  locked: 'busy, try again',
+  refused: 'refused',
+}
+
+type BatchResult = Awaited<ReturnType<typeof clients.ledger.acceptSuggestions>>
+
+/** One line for the reviewer, and one per line the batch did not take. */
+export const summarizeBatch = (
+  result: BatchResult,
+  describe: (eventId: string) => string
+): { summary: string; details: string[] } => {
+  const taken = result.committed + result.classified
+  const looked = result.lines.length
+  const verb = result.committed > 0 ? 'Posted' : 'Classified'
+  const summary =
+    taken === looked
+      ? `${verb} ${taken} of ${looked}.`
+      : `${verb} ${taken} of ${looked}; ${result.skipped} left as they were.`
+  const details = result.lines
+    .filter((line) => line.outcome === 'skipped')
+    .map((line) => {
+      const why =
+        SKIP_REASON_LABEL[line.reason ?? ''] ?? line.reason ?? 'skipped'
+      return line.detail
+        ? `${describe(line.event_id)}: ${why} — ${line.detail}`
+        : `${describe(line.event_id)}: ${why}`
+    })
+  return { summary, details }
+}
+
 const CATEGORY_BADGE_COLOR: Record<string, string> = {
   sales: 'success',
   purchase: 'warning',
@@ -106,6 +162,17 @@ const InboxContent: FC = function () {
   const [source, setSource] = useState('')
   const [agentId, setAgentId] = useState(initialAgentId)
   const [searchTerm, setSearchTerm] = useState('')
+  const [suggestion, setSuggestion] = useState('')
+
+  // The lines ticked for a batch approval, by id. Only an open line with a
+  // suggestion can be ticked; ids that scroll out of the filters stay in
+  // the set but are not counted or sent.
+  const [checked, setChecked] = useState<Set<string>>(() => new Set())
+  const [isApproving, setIsApproving] = useState(false)
+  const [batch, setBatch] = useState<{
+    summary: string
+    details: string[]
+  } | null>(null)
 
   // Selection (modal)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -213,9 +280,16 @@ const InboxContent: FC = function () {
   }, [currentGraph, agentsVersion])
 
   const filteredEvents = useMemo(() => {
-    if (!searchTerm) return events
+    let list = events
+    if (suggestion) {
+      list = list.filter((e) => {
+        const source = suggestionSourceOf(e.metadata)
+        return suggestion === 'none' ? source === null : source === suggestion
+      })
+    }
+    if (!searchTerm) return list
     const needle = searchTerm.toLowerCase()
-    return events.filter((e) => {
+    return list.filter((e) => {
       const agentName = e.agentId ? (agentById[e.agentId]?.name ?? '') : ''
       return (
         (e.description || '').toLowerCase().includes(needle) ||
@@ -223,7 +297,41 @@ const InboxContent: FC = function () {
         agentName.toLowerCase().includes(needle)
       )
     })
-  }, [events, searchTerm, agentById])
+  }, [events, searchTerm, suggestion, agentById])
+
+  // What a batch may take: an open line whose suggestion names an account.
+  const isSelectable = (e: LedgerEventBlock) =>
+    e.status === 'captured' && suggestionSourceOf(e.metadata) !== null
+  const selectableIds = useMemo(
+    () => filteredEvents.filter(isSelectable).map((e) => e.id),
+    [filteredEvents]
+  )
+  const learnedIds = useMemo(
+    () =>
+      filteredEvents
+        .filter(
+          (e) =>
+            isSelectable(e) &&
+            suggestionSourceOf(e.metadata) === 'agent_default'
+        )
+        .map((e) => e.id),
+    [filteredEvents]
+  )
+  const checkedVisible = useMemo(
+    () => selectableIds.filter((id) => checked.has(id)),
+    [selectableIds, checked]
+  )
+  const allVisibleChecked =
+    selectableIds.length > 0 && checkedVisible.length === selectableIds.length
+
+  const toggleChecked = useCallback((id: string) => {
+    setChecked((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
 
   // After a transition, either drop the row (if the active status filter
   // would exclude the new state) or update it in place (if the user is
@@ -268,6 +376,42 @@ const InboxContent: FC = function () {
     (eventId: string) => applyTransition(eventId, 'voided'),
     [applyTransition]
   )
+
+  // Every ticked line takes its suggestion and posts, through the same
+  // update a single Approve goes through; a line the server will not take
+  // stays in the list with its reason under the summary.
+  const approveChecked = useCallback(async () => {
+    if (!currentGraph || checkedVisible.length === 0) return
+    setIsApproving(true)
+    setBatch(null)
+    const describe = (eventId: string) => {
+      const line = events.find((e) => e.id === eventId)
+      return line?.description || line?.externalId || eventId
+    }
+    try {
+      const result = await clients.ledger.acceptSuggestions(
+        currentGraph.graphId,
+        { event_ids: checkedVisible, commit: true, entity_id: entityId }
+      )
+      for (const line of result.lines) {
+        if (line.outcome === 'committed') updateRow(line.event_id, 'committed')
+        else if (line.outcome === 'classified')
+          updateRow(line.event_id, 'classified')
+      }
+      setBatch(summarizeBatch(result, describe))
+      setChecked(new Set())
+      if (result.committed > 0) setAgentsVersion((v) => v + 1)
+    } catch (err) {
+      console.error('Error approving suggestions:', err)
+      const message = err instanceof Error ? err.message : String(err)
+      setBatch({
+        summary: 'The approval did not run; nothing changed.',
+        details: [friendlyError(message).message],
+      })
+    } finally {
+      setIsApproving(false)
+    }
+  }, [currentGraph, checkedVisible, entityId, events, updateRow])
 
   return (
     <PageLayout>
@@ -340,7 +484,55 @@ const InboxContent: FC = function () {
             </option>
           ))}
         </FilterSelect>
+        <FilterSelect
+          id="suggestion"
+          label="Suggestion"
+          value={suggestion}
+          onChange={setSuggestion}
+        >
+          {SUGGESTION_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </FilterSelect>
+        {selectableIds.length > 0 && (
+          <FilterActions>
+            <Button
+              color="light"
+              size="sm"
+              onClick={() => setChecked(new Set(learnedIds))}
+              disabled={learnedIds.length === 0 || isApproving}
+            >
+              Select learned ({learnedIds.length})
+            </Button>
+            <Button
+              color="blue"
+              size="sm"
+              onClick={() => void approveChecked()}
+              disabled={checkedVisible.length === 0 || isApproving}
+            >
+              {isApproving ? 'Approving…' : `Approve ${checkedVisible.length}`}
+            </Button>
+          </FilterActions>
+        )}
       </FilterBar>
+
+      {batch && (
+        <Alert
+          color={batch.details.length > 0 ? 'warning' : 'success'}
+          onDismiss={() => setBatch(null)}
+        >
+          <span className="font-medium">{batch.summary}</span>
+          {batch.details.length > 0 && (
+            <ul className="mt-1 list-inside list-disc text-sm">
+              {batch.details.map((detail) => (
+                <li key={detail}>{detail}</li>
+              ))}
+            </ul>
+          )}
+        </Alert>
+      )}
 
       {error && (
         <Alert color="failure">
@@ -371,6 +563,21 @@ const InboxContent: FC = function () {
             <Table>
               <TableHead>
                 <tr>
+                  <TableHeadCell className="w-8">
+                    {selectableIds.length > 0 && (
+                      <Checkbox
+                        aria-label="Select every line with a suggestion"
+                        checked={allVisibleChecked}
+                        onChange={() =>
+                          setChecked(
+                            allVisibleChecked
+                              ? new Set()
+                              : new Set(selectableIds)
+                          )
+                        }
+                      />
+                    )}
+                  </TableHeadCell>
                   <TableHeadCell>Date</TableHeadCell>
                   <TableHeadCell>Event</TableHeadCell>
                   <TableHeadCell>Agent</TableHeadCell>
@@ -397,6 +604,18 @@ const InboxContent: FC = function () {
                       className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
                       onClick={() => setSelectedId(evt.id)}
                     >
+                      <TableCell
+                        className="w-8"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {isSelectable(evt) && (
+                          <Checkbox
+                            aria-label={`Select ${evt.externalId || evt.id}`}
+                            checked={checked.has(evt.id)}
+                            onChange={() => toggleChecked(evt.id)}
+                          />
+                        )}
+                      </TableCell>
                       <TableCell className="font-medium whitespace-nowrap text-gray-900 dark:text-white">
                         {formatDate(evt.occurredAt)}
                       </TableCell>
