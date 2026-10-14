@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockGetEventBlock = vi.fn()
 const mockGetAccountTree = vi.fn()
+const mockGetFlowCandidates = vi.fn()
 const mockUpdateEventBlock = vi.fn()
 const mockPreviewEventBlock = vi.fn()
 const mockUploadDocumentFile = vi.fn()
@@ -21,6 +22,7 @@ vi.mock('@robosystems/core', () => ({
     ledger: {
       getEventBlock: (...args: any[]) => mockGetEventBlock(...args),
       getAccountTree: (...args: any[]) => mockGetAccountTree(...args),
+      getFlowCandidates: (...args: any[]) => mockGetFlowCandidates(...args),
       updateEventBlock: (...args: any[]) => mockUpdateEventBlock(...args),
       previewEventBlock: (...args: any[]) => mockPreviewEventBlock(...args),
     },
@@ -42,6 +44,15 @@ vi.mock('flowbite-react', () => ({
     <button onClick={onClick} disabled={disabled} title={title}>
       {children}
     </button>
+  ),
+  Checkbox: ({ id, checked, onChange, disabled }: any) => (
+    <input
+      id={id}
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      disabled={disabled}
+    />
   ),
   FileInput: ({ id, onChange, accept, ...rest }: any) => (
     <input
@@ -92,9 +103,34 @@ const bankEvent = (overrides: Record<string, unknown> = {}) => ({
     connection_id: 'conn_1',
     suggested_element_id: 'elem_office',
     suggested_account_name: 'Office supplies & equipment',
-    classification_source: 'gl_allocation',
+    suggestion_source: 'tier0',
   },
   ...overrides,
+})
+
+const flowRows = [
+  {
+    elementId: 'el_capex',
+    qname: 'rs-gaap:PaymentsToAcquirePropertyPlantAndEquipment',
+    name: 'Payments to Acquire Property, Plant, and Equipment',
+    activity: 'investing',
+  },
+  {
+    elementId: 'el_std',
+    qname: 'rs-gaap:ProceedsFromShortTermDebt',
+    name: 'Proceeds from Short-Term Debt',
+    activity: 'financing',
+  },
+]
+
+const staples = (classification: Record<string, unknown> | null) => ({
+  agt_staples: {
+    id: 'agt_staples',
+    agentType: 'vendor',
+    name: 'Staples',
+    isActive: true,
+    classification,
+  } as any,
 })
 
 const tree = {
@@ -132,12 +168,12 @@ const tree = {
   ],
 }
 
-const renderModal = (onClassified = vi.fn()) =>
+const renderModal = (onClassified = vi.fn(), agentById: any = {}) =>
   render(
     <EventBlockDetailModal
       graphId="kg_test"
       eventId="evt_bank"
-      agentById={{}}
+      agentById={agentById}
       onClose={vi.fn()}
       onApproved={vi.fn()}
       onRejected={vi.fn()}
@@ -161,6 +197,7 @@ describe('EventBlockDetailModal — bank-feed classification', () => {
     vi.clearAllMocks()
     mockGetEventBlock.mockResolvedValue(bankEvent())
     mockGetAccountTree.mockResolvedValue(tree)
+    mockGetFlowCandidates.mockResolvedValue(flowRows)
     mockUpdateEventBlock.mockResolvedValue({})
   })
 
@@ -173,7 +210,10 @@ describe('EventBlockDetailModal — bank-feed classification', () => {
     const ids = Array.from(select.options).map((o) => o.value)
     expect(ids).toEqual(['', 'elem_expenses', 'elem_office'])
     expect(screen.getByText(/Suggested: Office supplies/)).toBeInTheDocument()
-    expect(screen.getByText(/from gl allocation/)).toBeInTheDocument()
+    expect(screen.getByText('Bank category')).toBeInTheDocument()
+    // The bank's category is nobody's default: nothing to remember yet
+    // without a counterparty.
+    expect(screen.queryByLabelText(/Remember for/)).not.toBeInTheDocument()
   })
 
   it('approve carries the chosen account into the commit', async () => {
@@ -387,6 +427,223 @@ describe('EventBlockDetailModal — bank-feed classification', () => {
     expect(
       screen.queryByText('No journal entries in metadata.')
     ).not.toBeInTheDocument()
+  })
+})
+
+describe('EventBlockDetailModal — learned suggestions', () => {
+  const learned = {
+    suggested_element_id: 'elem_office',
+    suggested_account_name: 'Office supplies & equipment',
+    suggestion_source: 'agent_default',
+    suggestion_basis:
+      'Staples, classified to Office supplies & equipment on 3 of 3 committed lines.',
+  }
+  const stapleDefault = {
+    elementId: 'elem_office',
+    accountName: 'Office supplies & equipment',
+    mode: 'suggest',
+    confirmations: 3,
+    overrides: 0,
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetAccountTree.mockResolvedValue(tree)
+    mockGetFlowCandidates.mockResolvedValue(flowRows)
+    mockUpdateEventBlock.mockResolvedValue({})
+  })
+
+  it('shows where a learned suggestion came from, and why', async () => {
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({ agentId: 'agt_staples', metadata: learned })
+    )
+    renderModal(vi.fn(), staples(stapleDefault))
+    await screen.findByLabelText('Post to account')
+    expect(screen.getByText('Learned')).toBeInTheDocument()
+    expect(screen.getByText(/on 3 of 3 committed lines/)).toBeInTheDocument()
+  })
+
+  it('taking the default is a confirmation: nothing to remember', async () => {
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({ agentId: 'agt_staples', metadata: learned })
+    )
+    renderModal(vi.fn(), staples(stapleDefault))
+    const select = await screen.findByLabelText('Post to account')
+    await waitFor(() =>
+      expect((select as HTMLSelectElement).value).toBe('elem_office')
+    )
+    expect(screen.queryByLabelText(/Remember for/)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByText('Approve'))
+    await waitFor(() => expect(mockUpdateEventBlock).toHaveBeenCalled())
+    expect(mockUpdateEventBlock.mock.calls[0][1].metadata_patch).toEqual({
+      classified_element_id: 'elem_office',
+      classified_by: 'user',
+    })
+  })
+
+  it('overriding a default offers Remember, off unless asked', async () => {
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({ agentId: 'agt_staples', metadata: learned })
+    )
+    renderModal(vi.fn(), staples(stapleDefault))
+    const select = await screen.findByLabelText('Post to account')
+    await waitFor(() =>
+      expect((select as HTMLSelectElement).value).toBe('elem_office')
+    )
+    fireEvent.change(select, { target: { value: 'elem_expenses' } })
+    const remember = screen.getByLabelText(
+      /Remember for Staples/
+    ) as HTMLInputElement
+    expect(remember.checked).toBe(false)
+    expect(screen.getByText(/Make Expenses the default/)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('Approve'))
+    await waitFor(() => expect(mockUpdateEventBlock).toHaveBeenCalled())
+    expect(mockUpdateEventBlock.mock.calls[0][1].metadata_patch).toEqual({
+      classified_element_id: 'elem_expenses',
+      classified_by: 'user',
+      remember_classification: false,
+    })
+
+    fireEvent.click(remember)
+    fireEvent.click(screen.getByText('Approve'))
+    await waitFor(() => expect(mockUpdateEventBlock).toHaveBeenCalledTimes(2))
+    expect(
+      mockUpdateEventBlock.mock.calls[1][1].metadata_patch
+        .remember_classification
+    ).toBe(true)
+  })
+
+  it('a counterparty with no default is taught unless unticked', async () => {
+    mockGetEventBlock.mockResolvedValue(bankEvent({ agentId: 'agt_staples' }))
+    renderModal(vi.fn(), staples(null))
+    const select = await screen.findByLabelText('Post to account')
+    await waitFor(() =>
+      expect((select as HTMLSelectElement).value).toBe('elem_office')
+    )
+    const remember = screen.getByLabelText(
+      /Remember for Staples/
+    ) as HTMLInputElement
+    expect(remember.checked).toBe(true)
+    expect(
+      screen.getByText(/Suggest Office supplies & equipment on Staples/)
+    ).toBeInTheDocument()
+
+    fireEvent.click(remember)
+    fireEvent.click(screen.getByText('Approve'))
+    await waitFor(() => expect(mockUpdateEventBlock).toHaveBeenCalled())
+    expect(
+      mockUpdateEventBlock.mock.calls[0][1].metadata_patch
+        .remember_classification
+    ).toBe(false)
+  })
+})
+
+describe('EventBlockDetailModal — the flow', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetAccountTree.mockResolvedValue(tree)
+    mockGetFlowCandidates.mockResolvedValue(flowRows)
+    mockUpdateEventBlock.mockResolvedValue({})
+  })
+
+  it("offers the statement's rows by section and keeps the default unless chosen", async () => {
+    mockGetEventBlock.mockResolvedValue(bankEvent())
+    renderModal()
+    const picker = (await screen.findByLabelText(
+      'Cash flow row'
+    )) as HTMLSelectElement
+    await waitFor(() => expect(mockGetFlowCandidates).toHaveBeenCalled())
+    expect(mockGetFlowCandidates).toHaveBeenCalledWith('kg_test', {
+      entityId: null,
+    })
+    await waitFor(() =>
+      expect(Array.from(picker.options).map((o) => o.value)).toEqual([
+        '',
+        'rs-gaap:PaymentsToAcquirePropertyPlantAndEquipment',
+        'rs-gaap:ProceedsFromShortTermDebt',
+      ])
+    )
+    expect(picker.value).toBe('')
+    expect(
+      Array.from(picker.querySelectorAll('optgroup')).map((g) => g.label)
+    ).toEqual(['Investing', 'Financing'])
+
+    fireEvent.click(screen.getByText('Approve'))
+    await waitFor(() => expect(mockUpdateEventBlock).toHaveBeenCalled())
+    expect(mockUpdateEventBlock.mock.calls[0][1].metadata_patch).toEqual({
+      classified_element_id: 'elem_office',
+      classified_by: 'user',
+    })
+  })
+
+  it('a chosen row rides the commit as the flow', async () => {
+    mockGetEventBlock.mockResolvedValue(bankEvent())
+    renderModal()
+    const picker = await screen.findByLabelText('Cash flow row')
+    await waitFor(() =>
+      expect((picker as HTMLSelectElement).options.length).toBe(3)
+    )
+    fireEvent.change(picker, {
+      target: { value: 'rs-gaap:ProceedsFromShortTermDebt' },
+    })
+    fireEvent.click(screen.getByText('Approve'))
+    await waitFor(() => expect(mockUpdateEventBlock).toHaveBeenCalled())
+    expect(mockUpdateEventBlock.mock.calls[0][1].metadata_patch).toEqual({
+      classified_element_id: 'elem_office',
+      classified_by: 'user',
+      classified_flow_qname: 'rs-gaap:ProceedsFromShortTermDebt',
+    })
+  })
+
+  it('a posted line keeps its account and moves only its flow', async () => {
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({
+        status: 'committed',
+        metadata: {
+          classified_element_id: 'elem_office',
+          classified_flow_qname: 'rs-gaap:ProceedsFromShortTermDebt',
+        },
+      })
+    )
+    renderModal()
+    const picker = (await screen.findByLabelText(
+      'Cash flow row'
+    )) as HTMLSelectElement
+    expect(screen.queryByLabelText('Post to account')).not.toBeInTheDocument()
+    await waitFor(() => expect(picker.options.length).toBe(3))
+    expect(picker.value).toBe('rs-gaap:ProceedsFromShortTermDebt')
+    const save = screen.getByText('Save flow') as HTMLButtonElement
+    expect(save.disabled).toBe(true)
+
+    fireEvent.change(picker, { target: { value: '' } })
+    fireEvent.click(save)
+    await waitFor(() => expect(mockUpdateEventBlock).toHaveBeenCalled())
+    expect(mockUpdateEventBlock).toHaveBeenCalledWith('kg_test', {
+      event_id: 'evt_bank',
+      metadata_patch: { classified_flow_qname: null },
+    })
+    await waitFor(() => expect(mockGetEventBlock).toHaveBeenCalledTimes(2))
+  })
+
+  it('a tag the statement no longer presents stays visible as such', async () => {
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({
+        metadata: {
+          classified_element_id: 'elem_office',
+          classified_flow_qname: 'rs-gaap:PaymentsOfDividends',
+        },
+      })
+    )
+    renderModal()
+    const picker = (await screen.findByLabelText(
+      'Cash flow row'
+    )) as HTMLSelectElement
+    await waitFor(() => expect(picker.options.length).toBe(4))
+    expect(picker.value).toBe('rs-gaap:PaymentsOfDividends')
+    expect(
+      screen.getByText(/PaymentsOfDividends \(not a row of this statement\)/)
+    ).toBeInTheDocument()
   })
 })
 

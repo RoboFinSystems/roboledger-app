@@ -4,6 +4,11 @@ import DocsLink from '@/components/DocsLink'
 import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
 import { useEntityScope } from '@/lib/entity-scope'
 import { formatAmount, formatDate } from '@/lib/ledger/formatters'
+import {
+  suggestionSourceColor,
+  suggestionSourceLabel,
+  suggestionSourceOf,
+} from '@/lib/ledger/suggestions'
 import { useConsoleReload } from '@/lib/useConsoleReload'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LedgerAgent, LedgerEventBlock } from '@robosystems/client/clients'
@@ -372,6 +377,15 @@ const InboxContent: FC = function () {
               <TableBody>
                 {filteredEvents.map((evt) => {
                   const agent = evt.agentId ? agentById[evt.agentId] : null
+                  // A bank line waiting on a choice shows where its
+                  // suggestion came from, so a learned one reads as safe.
+                  const suggestionSource =
+                    evt.status === 'captured' || evt.status === 'classified'
+                      ? suggestionSourceOf(evt.metadata)
+                      : null
+                  const suggestedAccountName = (
+                    evt.metadata as { suggested_account_name?: unknown } | null
+                  )?.suggested_account_name
                   return (
                     <TableRow
                       key={evt.id}
@@ -397,6 +411,19 @@ const InboxContent: FC = function () {
                           {evt.externalId && (
                             <span className="mt-1 font-mono text-xs text-gray-500 dark:text-gray-400">
                               {evt.externalId}
+                            </span>
+                          )}
+                          {suggestionSource && (
+                            <span className="mt-1 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                              <Badge
+                                color={suggestionSourceColor(suggestionSource)}
+                                size="sm"
+                              >
+                                {suggestionSourceLabel(suggestionSource)}
+                              </Badge>
+                              {typeof suggestedAccountName === 'string' && (
+                                <span>{suggestedAccountName}</span>
+                              )}
                             </span>
                           )}
                         </div>
