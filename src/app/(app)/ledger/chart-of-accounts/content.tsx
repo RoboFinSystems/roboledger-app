@@ -34,6 +34,7 @@ import {
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  HiCheckCircle,
   HiCollection,
   HiExclamationCircle,
   HiPencil,
@@ -43,6 +44,7 @@ import {
 } from 'react-icons/hi'
 import { MdOutlineAccountBalanceWallet } from 'react-icons/md'
 
+import { apiErrorMessage } from '@/lib/ledger/errors'
 import { ChartTemplatePicker } from './components/ChartTemplatePicker'
 
 const CLASSIFICATION_COLORS: Record<ElementClassification, string> = {
@@ -333,6 +335,49 @@ function GaapDropdown({
   )
 }
 
+const MONTH_NAMES = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+]
+
+const monthLabel = (period: string): string => {
+  const [year, month] = period.split('-')
+  const name = MONTH_NAMES[Number(month) - 1]
+  return name ? `${name} ${year}` : period
+}
+
+/**
+ * What a move within the statement did to the closed months it reached: live
+ * statements read the account on its new line, while the statements saved at
+ * each close keep the answer as closed.
+ */
+export function describeReclassification(
+  conceptName: string,
+  periods: string[]
+): string {
+  const sorted = [...periods].sort()
+  const span =
+    sorted.length === 1
+      ? monthLabel(sorted[0])
+      : `${monthLabel(sorted[0])} to ${monthLabel(sorted[sorted.length - 1])}`
+  const months = sorted.length === 1 ? 'closed month' : 'closed months'
+  return (
+    `Reclassified. ${sorted.length} ${months} (${span}) now read as ` +
+    `${conceptName} on live statements; the statements saved at each ` +
+    `close keep the answer as closed.`
+  )
+}
+
 // ── Main Content ──────────────────────────────────────────────────────────
 
 const ChartOfAccountsContent: FC = function () {
@@ -342,6 +387,7 @@ const ChartOfAccountsContent: FC = function () {
   const [reloadKey, setReloadKey] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedClassification, setSelectedClassification] =
     useState<ElementClassification | null>(null)
@@ -583,31 +629,45 @@ const ChartOfAccountsContent: FC = function () {
       if (!currentGraph || !selectedMappingId) return
 
       setIsSaving(true)
+      setError(null)
+      setNotice(null)
       try {
-        const accountMappings = gaapByElementId.get(accountId)
-        const existing = accountMappings?.rsGaap
-        if (existing) {
+        const existing = gaapByElementId.get(accountId)?.rsGaap
+        // One write: the old arc goes and the new one is written together, so
+        // an account with activity in a closed month is judged as a move (a
+        // reclassification within its statement) instead of being refused at
+        // a delete that would leave it unmapped.
+        const result = await clients.ledger.createMappingAssociation(
+          currentGraph.graphId,
+          {
+            mapping_id: selectedMappingId,
+            from_element_id: accountId,
+            to_element_id: gaapElement.id,
+            confidence: 1.0,
+            ...(existing
+              ? { replaces_association_id: existing.associationId }
+              : {}),
+          }
+        )
+        // A server that does not know the replace field writes the new arc
+        // and reports no replacement; the old arc then goes the way it did
+        // before, so the page is right against either server.
+        if (existing && !result.replaced_association_id) {
           await clients.ledger.deleteMappingAssociation(currentGraph.graphId, {
             mapping_id: selectedMappingId,
             association_id: existing.associationId,
           })
         }
-
-        await clients.ledger.createMappingAssociation(currentGraph.graphId, {
-          mapping_id: selectedMappingId,
-          from_element_id: accountId,
-          to_element_id: gaapElement.id,
-          confidence: 1.0,
-        })
+        const reclassified = result.reclassified_periods ?? []
+        if (reclassified.length > 0) {
+          setNotice(describeReclassification(gaapElement.name, reclassified))
+        }
 
         await refreshMappingData()
         setEditingState(null)
       } catch (err) {
         console.error('Failed to save mapping:', err)
-        setError('Failed to save mapping.')
-        // A remap is a delete followed by a create. If the create is what
-        // failed, the account is now unmapped server-side — re-read so the row
-        // stops displaying an association that no longer exists.
+        setError(apiErrorMessage(err, 'Failed to save mapping.'))
         await refreshMappingData()
       } finally {
         setIsSaving(false)
@@ -635,7 +695,7 @@ const ChartOfAccountsContent: FC = function () {
         setEditingState(null)
       } catch (err) {
         console.error('Failed to clear mapping:', err)
-        setError('Failed to clear mapping.')
+        setError(apiErrorMessage(err, 'Failed to clear mapping.'))
       } finally {
         setIsSaving(false)
       }
@@ -848,6 +908,15 @@ const ChartOfAccountsContent: FC = function () {
           <div className="flex items-center gap-2 text-red-500">
             <HiExclamationCircle className="h-5 w-5" />
             <span>{error}</span>
+          </div>
+        </Card>
+      )}
+
+      {notice && (
+        <Card>
+          <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+            <HiCheckCircle className="h-5 w-5" />
+            <span>{notice}</span>
           </div>
         </Card>
       )}
