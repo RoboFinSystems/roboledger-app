@@ -375,7 +375,10 @@ const ChartOfAccountsContent: FC = function () {
   const [isSaving, setIsSaving] = useState(false)
 
   const { graph: currentGraph } = useLedgerGraph()
-  const { entityId } = useEntityScope()
+  const { entityId, parent } = useEntityScope()
+  // The entity whose mapping this chart writes to: unnamed, the list holds
+  // every entity's, and a subsidiary's account would land in the parent's.
+  const mappingEntityId = entityId ?? parent?.id ?? null
 
   // Load accounts and mappings
   useEffect(() => {
@@ -404,7 +407,7 @@ const ChartOfAccountsContent: FC = function () {
         const [accountTree, mappingList] = await Promise.all([
           clients.ledger.getAccountTree(currentGraph.graphId, { entityId }),
           clients.ledger
-            .listMappings(currentGraph.graphId)
+            .listMappings(currentGraph.graphId, { entityId: mappingEntityId })
             .catch(() => [] as LedgerMappingInfo[]),
         ])
         if (cancelled) return
@@ -445,7 +448,7 @@ const ChartOfAccountsContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph, entityId, reloadKey])
+  }, [currentGraph, entityId, mappingEntityId, reloadKey])
 
   // Load mapping detail, coverage, and elements when selected mapping changes
   useEffect(() => {

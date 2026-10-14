@@ -1,5 +1,6 @@
 'use client'
 
+import { useEntityScope } from '@/lib/entity-scope'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type {
   LedgerMappingCoverage,
@@ -91,6 +92,10 @@ const PRESETS: PresetOption[] = [
 ]
 
 const ReportBuilderContent: FC = function () {
+  const { entityId, parent } = useEntityScope()
+  // Unnamed, every entity's mappings come back under one name; the parent's
+  // page offers the parent's.
+  const mappingEntityId = entityId ?? parent?.id ?? null
   const router = useRouter()
 
   // Form state
@@ -148,7 +153,9 @@ const ReportBuilderContent: FC = function () {
     const loadMappings = async () => {
       try {
         setIsLoadingMappings(true)
-        const result = await clients.ledger.listMappings(currentGraph.graphId)
+        const result = await clients.ledger.listMappings(currentGraph.graphId, {
+          entityId: mappingEntityId,
+        })
         if (cancelled) return
         setMappings(result)
         // Always re-seed from this graph's mappings. Leaving a previous graph's
@@ -170,7 +177,7 @@ const ReportBuilderContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph])
+  }, [currentGraph, mappingEntityId])
 
   // Load coverage when mapping selected
   useEffect(() => {

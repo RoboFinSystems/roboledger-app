@@ -109,7 +109,10 @@ const VIEW_MODES: readonly SegmentedOption<ViewMode>[] = [
 
 const TrialBalanceContent: FC = function () {
   const { state: graphState } = useGraphContext()
-  const { entityId } = useEntityScope()
+  const { entityId, parent } = useEntityScope()
+  // Mappings are listed for every entity when none is named, so the parent
+  // is named too: the default-to-parent rule of the other reads.
+  const mappingEntityId = entityId ?? parent?.id ?? null
   const [data, setData] = useState<TrialBalanceRowWithGraph[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -126,6 +129,7 @@ const TrialBalanceContent: FC = function () {
   // the whole value being null — "not resolved yet".
   const [mapping, setMapping] = useState<{
     graphId: string
+    entityId: string | null
     id: string | null
   } | null>(null)
 
@@ -144,20 +148,26 @@ const TrialBalanceContent: FC = function () {
       }
       try {
         // Filtered server-side to structure_type='coa_mapping'.
+        // The entity in scope's own mapping: omitted, every entity's comes back.
         const structures = await clients.ledger.listMappings(
-          currentGraph.graphId
+          currentGraph.graphId,
+          { entityId: mappingEntityId }
         )
         if (seq !== mappingSeq.current) return // superseded by a newer load
         const active = structures.find((s) => s.isActive) ?? structures[0]
-        setMapping({ graphId: currentGraph.graphId, id: active?.id ?? null })
+        setMapping({
+          graphId: currentGraph.graphId,
+          entityId,
+          id: active?.id ?? null,
+        })
       } catch (err) {
         if (seq !== mappingSeq.current) return
         console.error('Error loading mappings:', err)
-        setMapping({ graphId: currentGraph.graphId, id: null })
+        setMapping({ graphId: currentGraph.graphId, entityId, id: null })
       }
     }
     loadMapping()
-  }, [graphState.graphs, graphState.currentGraphId])
+  }, [graphState.graphs, graphState.currentGraphId, entityId, mappingEntityId])
 
   // Load trial balance data. `viewMode` swaps the endpoint:
   //
@@ -236,7 +246,11 @@ const TrialBalanceContent: FC = function () {
           })
         } else {
           // usgaap mode
-          if (!mapping || mapping.graphId !== currentGraph.graphId) {
+          if (
+            !mapping ||
+            mapping.graphId !== currentGraph.graphId ||
+            mapping.entityId !== entityId
+          ) {
             // Either nothing has resolved yet, or what we hold belongs to the
             // graph we just left. Wait for this graph's own mapping rather than
             // pairing another graph's id with this graph's ledger.

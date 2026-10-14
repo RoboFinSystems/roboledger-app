@@ -325,6 +325,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
         return
       }
       await clients.ledger.createJournalEntry(graphId, {
+        entityId,
         postingDate,
         memo: memo.trim(),
         type: entryType,
@@ -355,6 +356,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
     draft,
     editing,
     graphId,
+    entityId,
     postingDate,
     memo,
     entryType,

@@ -54,10 +54,15 @@ const ACCOUNTS = {
   ],
 }
 
-const renderModal = (onCreated = vi.fn(), onClose = vi.fn()) => {
+const renderModal = (
+  onCreated = vi.fn(),
+  onClose = vi.fn(),
+  entityId: string | null = null
+) => {
   render(
     <NewScheduleModal
       graphId="kg_test"
+      entityId={entityId}
       open
       onClose={onClose}
       onCreated={onCreated}
@@ -152,6 +157,15 @@ describe('NewScheduleModal', () => {
 
     await waitFor(() => expect(onCreated).toHaveBeenCalledWith('struct_new'))
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it("files a subsidiary's schedule in the subsidiary's books", async () => {
+    renderModal(vi.fn(), vi.fn(), 'ent_sub')
+    await fillRequiredFields()
+    fireEvent.click(createButton())
+
+    await waitFor(() => expect(mockCreateSchedule).toHaveBeenCalledTimes(1))
+    expect(mockCreateSchedule.mock.calls[0][1].entityId).toBe('ent_sub')
   })
 
   it('pre-fills monthly amount and last period from straight-line math', async () => {

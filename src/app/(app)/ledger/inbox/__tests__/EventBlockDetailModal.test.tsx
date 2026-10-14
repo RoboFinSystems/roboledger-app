@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockGetEventBlock = vi.fn()
 const mockGetAccountTree = vi.fn()
@@ -27,6 +27,9 @@ vi.mock('@robosystems/core', () => ({
   },
   LoadingState: () => <div>loading</div>,
 }))
+
+const mockScope = vi.fn(() => ({ entityId: null as string | null }))
+vi.mock('@/lib/entity-scope', () => ({ useEntityScope: () => mockScope() }))
 
 vi.mock('next/link', () => ({
   default: ({ children, href }: any) => <a href={href}>{children}</a>,
@@ -384,6 +387,36 @@ describe('EventBlockDetailModal — bank-feed classification', () => {
     expect(
       screen.queryByText('No journal entries in metadata.')
     ).not.toBeInTheDocument()
+  })
+})
+
+describe('EventBlockDetailModal — a subsidiary in scope', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockScope.mockReturnValue({ entityId: 'ent_sub' })
+    mockGetEventBlock.mockResolvedValue(bankEvent())
+    mockGetAccountTree.mockResolvedValue(tree)
+    mockPreviewEventBlock.mockResolvedValue({ wouldSucceed: true })
+  })
+
+  afterEach(() => {
+    mockScope.mockReturnValue({ entityId: null })
+  })
+
+  it("offers the subsidiary's chart, so the line's suggestion survives", async () => {
+    renderModal()
+    await waitFor(() =>
+      expect(mockGetAccountTree).toHaveBeenCalledWith('kg_test', {
+        entityId: 'ent_sub',
+      })
+    )
+  })
+
+  it('previews the line in its own entity', async () => {
+    renderModal()
+    fireEvent.click(await screen.findByRole('button', { name: /Preview/ }))
+    await waitFor(() => expect(mockPreviewEventBlock).toHaveBeenCalledTimes(1))
+    expect(mockPreviewEventBlock.mock.calls[0][1].entity_id).toBe('ent_sub')
   })
 })
 

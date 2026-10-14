@@ -44,6 +44,9 @@ vi.mock('@robosystems/core', () => ({
 
 vi.mock('@/components/DocsLink', () => ({ default: () => null }))
 
+const mockScope = vi.fn(() => ({ entityId: null as string | null }))
+vi.mock('@/lib/entity-scope', () => ({ useEntityScope: () => mockScope() }))
+
 // One stable object: the page reloads whenever the graph's identity changes.
 const { GRAPH } = vi.hoisted(() => ({
   GRAPH: { graphId: 'kg_mine', graphName: 'Mine' },
@@ -79,9 +82,24 @@ describe('ReportsContent', () => {
     await waitFor(() => expect(screen.getByText('FY2025')).toBeInTheDocument())
     expect(mockListReports).toHaveBeenCalledWith('kg_mine', {
       lifecycle: 'CURRENT',
+      entityId: null,
     })
     expect(screen.getByText('Filing')).toBeInTheDocument()
     expect(screen.getByText('Filed')).toBeInTheDocument()
+  })
+
+  it("lists the subsidiary's own reports when it is in scope", async () => {
+    mockScope.mockReturnValue({ entityId: 'ent_sub' })
+    mockListReports.mockResolvedValue([report('FY2025', 'filed')])
+    render(<ReportsContent />)
+
+    await waitFor(() =>
+      expect(mockListReports).toHaveBeenCalledWith('kg_mine', {
+        lifecycle: 'CURRENT',
+        entityId: 'ent_sub',
+      })
+    )
+    mockScope.mockReturnValue({ entityId: null })
   })
 
   it('switches to the archived reports', async () => {
@@ -98,6 +116,7 @@ describe('ReportsContent', () => {
     expect(await screen.findByText('FY2024')).toBeInTheDocument()
     expect(mockListReports).toHaveBeenLastCalledWith('kg_mine', {
       lifecycle: 'ARCHIVED',
+      entityId: null,
     })
     expect(screen.getAllByText('Archived').length).toBeGreaterThan(1)
   })

@@ -43,6 +43,11 @@ const { GRAPH } = vi.hoisted(() => ({ GRAPH: { graphId: 'kg1' } }))
 vi.mock('@/lib/useLedgerGraph', () => ({
   useLedgerGraph: () => ({ graph: GRAPH }),
 }))
+const mockScope = vi.fn(() => ({
+  entityId: null as string | null,
+  parent: null as { id: string } | null,
+}))
+vi.mock('@/lib/entity-scope', () => ({ useEntityScope: () => mockScope() }))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
 }))
@@ -68,6 +73,31 @@ describe('Report builder', () => {
       unmappedCount: 0,
     })
     mockCreateReport.mockResolvedValue({ id: 'rpt_1' })
+  })
+
+  it('names the parent when the parent is in scope', async () => {
+    mockScope.mockReturnValue({ entityId: null, parent: { id: 'ent_parent' } })
+    render(<ReportBuilderContent />)
+    await waitFor(() =>
+      expect(mockListMappings).toHaveBeenCalledWith('kg1', {
+        entityId: 'ent_parent',
+      })
+    )
+    mockScope.mockReturnValue({ entityId: null, parent: null })
+  })
+
+  it("offers the subsidiary's own mappings when it is in scope", async () => {
+    mockScope.mockReturnValue({
+      entityId: 'ent_sub',
+      parent: { id: 'ent_parent' },
+    })
+    render(<ReportBuilderContent />)
+    await waitFor(() =>
+      expect(mockListMappings).toHaveBeenCalledWith('kg1', {
+        entityId: 'ent_sub',
+      })
+    )
+    mockScope.mockReturnValue({ entityId: null, parent: null })
   })
 
   // Unset, the SDK labels every report quarterly, whatever its period.

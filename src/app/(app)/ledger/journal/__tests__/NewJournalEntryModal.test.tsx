@@ -117,6 +117,24 @@ describe('NewJournalEntryModal', () => {
     mockCreateJournalEntry.mockResolvedValue({ id: 'txn_1' })
   })
 
+  it("records a subsidiary's entry in the subsidiary's books", async () => {
+    render(
+      <NewJournalEntryModal
+        graphId="kg_test"
+        entityId="ent_sub"
+        open
+        onClose={vi.fn()}
+        onCreated={vi.fn()}
+      />
+    )
+    await fillBalancedEntry()
+
+    fireEvent.click(submitButton())
+
+    await waitFor(() => expect(mockCreateJournalEntry).toHaveBeenCalled())
+    expect(mockCreateJournalEntry.mock.calls[0][1].entityId).toBe('ent_sub')
+  })
+
   describe('amount handling', () => {
     it('submits amounts in cents, not dollars', async () => {
       renderModal()
