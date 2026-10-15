@@ -2,11 +2,15 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockListJournalEntries = vi.fn()
+const mockGetFlowCandidates = vi.fn()
+const mockUpdateJournalEntry = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
   clients: {
     ledger: {
       listJournalEntries: (...args: any[]) => mockListJournalEntries(...args),
+      getFlowCandidates: (...args: any[]) => mockGetFlowCandidates(...args),
+      updateJournalEntry: (...args: any[]) => mockUpdateJournalEntry(...args),
     },
   },
   EmptyState: ({ title }: any) => <div>{title}</div>,
@@ -134,6 +138,7 @@ const showOnly = (entry: Record<string, unknown>) =>
 describe('JournalEntriesPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockGetFlowCandidates.mockResolvedValue([])
     mockListJournalEntries.mockResolvedValue({
       entries: [STANDALONE_ENTRY],
       pagination: { total: 1, limit: 500, offset: 0, hasMore: false },
@@ -197,6 +202,46 @@ describe('JournalEntriesPanel', () => {
     expect(mockListJournalEntries.mock.calls[1][1]).toMatchObject({
       provenance: 'schedule_derived',
     })
+  })
+
+  it("re-tags a posted line's cash flow row in place and reloads", async () => {
+    const flow = 'rs-gaap:ProceedsFromIssuanceOfLongTermDebt'
+    mockGetFlowCandidates.mockResolvedValue([
+      {
+        qname: flow,
+        name: 'Proceeds from long-term debt',
+        activity: 'financing',
+      },
+    ])
+    mockUpdateJournalEntry.mockResolvedValue({})
+    const onChanged = vi.fn()
+    render(
+      <JournalEntriesPanel
+        graphId="kg_1"
+        startDate="2026-07-01"
+        endDate="2026-07-31"
+        refreshKey={0}
+        quickBooks="none"
+        closedThrough={null}
+        calendarLoaded
+        contextFailed={false}
+        onChanged={onChanged}
+      />
+    )
+    fireEvent.click(await screen.findByText('MacBook depreciation'))
+    const select = (
+      await screen.findByText('Proceeds from long-term debt')
+    ).closest('select') as HTMLSelectElement
+    expect(select.id).toBe('line-flow-li_1')
+
+    fireEvent.change(select, { target: { value: flow } })
+
+    await waitFor(() => expect(mockUpdateJournalEntry).toHaveBeenCalled())
+    expect(mockUpdateJournalEntry).toHaveBeenCalledWith('kg_1', {
+      entry_id: 'je_sched',
+      line_flows: [{ line_id: 'li_1', flow_qname: flow }],
+    })
+    await waitFor(() => expect(onChanged).toHaveBeenCalled())
   })
 
   it('expands line items without a second request', async () => {

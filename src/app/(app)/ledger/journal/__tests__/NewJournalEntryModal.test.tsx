@@ -5,10 +5,12 @@ const mockListAccounts = vi.fn()
 const mockCreateJournalEntry = vi.fn()
 const mockUpdateJournalEntry = vi.fn()
 const mockGetEventBlock = vi.fn()
+const mockGetFlowCandidates = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
   clients: {
     ledger: {
+      getFlowCandidates: (...args: any[]) => mockGetFlowCandidates(...args),
       listAccounts: (...args: any[]) => mockListAccounts(...args),
       createJournalEntry: (...args: any[]) => mockCreateJournalEntry(...args),
       updateJournalEntry: (...args: any[]) => mockUpdateJournalEntry(...args),
@@ -110,11 +112,84 @@ async function fillBalancedEntry(amount = '100.00') {
   fillLine(1, 'acct_rev', 'credit', amount)
 }
 
+const FLOW = 'rs-gaap:ProceedsFromIssuanceOfLongTermDebt'
+const FLOWS = [
+  { qname: FLOW, name: 'Proceeds from long-term debt', activity: 'financing' },
+]
+
 describe('NewJournalEntryModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockListAccounts.mockResolvedValue(ACCOUNTS)
     mockCreateJournalEntry.mockResolvedValue({ id: 'txn_1' })
+    mockGetFlowCandidates.mockResolvedValue(FLOWS)
+  })
+
+  describe('cash flow row', () => {
+    it('sends a tagged line with its row and the others without one', async () => {
+      renderModal()
+      await fillBalancedEntry()
+      await waitFor(() => expect(mockGetFlowCandidates).toHaveBeenCalled())
+      await screen.findAllByText('Proceeds from long-term debt')
+      fireEvent.change(document.getElementById('line-flow-1')!, {
+        target: { value: FLOW },
+      })
+
+      fireEvent.click(submitButton())
+
+      await waitFor(() => expect(mockCreateJournalEntry).toHaveBeenCalled())
+      const [, body] = mockCreateJournalEntry.mock.calls[0]
+      expect(body.lineItems[0].flowQname).toBeUndefined()
+      expect(body.lineItems[1].flowQname).toBe(FLOW)
+    })
+
+    it("carries a draft line's row into the form and sends a change as the new lines", async () => {
+      mockUpdateJournalEntry.mockResolvedValue({})
+      render(
+        <NewJournalEntryModal
+          graphId="kg_test"
+          open
+          onClose={vi.fn()}
+          onCreated={vi.fn()}
+          draft={{
+            id: 'je_draft',
+            postingDate: '2026-07-20',
+            memo: 'Note drawn',
+            type: 'standard',
+            triggeredByEventId: null,
+            lineItems: [
+              {
+                accountId: 'acct_cash',
+                debitAmount: 500,
+                creditAmount: 0,
+                description: null,
+              },
+              {
+                accountId: 'acct_rev',
+                debitAmount: 0,
+                creditAmount: 500,
+                description: null,
+                flowQname: FLOW,
+              },
+            ],
+          }}
+        />
+      )
+      await waitFor(() => expect(mockGetFlowCandidates).toHaveBeenCalled())
+      await screen.findAllByText('1000 — Cash')
+      const select = document.getElementById('line-flow-1') as HTMLSelectElement
+      await waitFor(() => expect(select.value).toBe(FLOW))
+
+      fireEvent.change(select, { target: { value: '' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+      await waitFor(() => expect(mockUpdateJournalEntry).toHaveBeenCalled())
+      const [, body] = mockUpdateJournalEntry.mock.calls[0]
+      expect(body.line_items.map((li: any) => li.flow_qname)).toEqual([
+        null,
+        null,
+      ])
+    })
   })
 
   it("records a subsidiary's entry in the subsidiary's books", async () => {
@@ -451,12 +526,14 @@ describe('NewJournalEntryModal', () => {
             debit_amount: 160000,
             credit_amount: 0,
             description: 'Rent',
+            flow_qname: null,
           },
           {
             element_id: 'acct_rev',
             debit_amount: 0,
             credit_amount: 160000,
             description: null,
+            flow_qname: null,
           },
         ],
       })
