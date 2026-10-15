@@ -75,9 +75,28 @@ describe('FlowRowSelect', () => {
     )
     expect(
       screen.getByText(
-        'rs-gaap:ProceedsFromContributedCapital (not a row of this statement)'
+        'ProceedsFromContributedCapital (not a row of this statement)'
       )
     ).toBeInTheDocument()
+  })
+
+  it('says so when the rows could not be loaded, and keeps the prior tag', () => {
+    render(
+      <FlowRowSelect
+        id="flow"
+        value="rs-gaap:ProceedsFromIssuanceOfLongTermDebt"
+        onChange={vi.fn()}
+        flows={[]}
+        flowsFailed
+        priorQname="rs-gaap:ProceedsFromIssuanceOfLongTermDebt"
+      />
+    )
+    expect(
+      screen.getByText(/rows could not be loaded; the current tag is kept/)
+    ).toBeInTheDocument()
+    const select = document.getElementById('flow') as HTMLSelectElement
+    expect(select.value).toBe('rs-gaap:ProceedsFromIssuanceOfLongTermDebt')
+    expect(select.disabled).toBe(false)
   })
 
   it('is disabled while the rows load', () => {

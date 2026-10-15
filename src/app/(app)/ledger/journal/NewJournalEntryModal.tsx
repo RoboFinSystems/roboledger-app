@@ -573,7 +573,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
               A cash flow row is only for a loan drawn or repaid, capital put in
               or taken out, or an asset bought or sold; everything else keeps
               the account&apos;s default. A row on one side of the entry tags
-              the other side too.
+              the other side when the entry is saved.
             </p>
 
             {/* Balance check */}

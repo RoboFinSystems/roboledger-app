@@ -26,8 +26,8 @@ vi.mock('flowbite-react', () => ({
     </button>
   ),
   Card: ({ children }: any) => <div>{children}</div>,
-  Select: ({ children, id, value, onChange }: any) => (
-    <select id={id} value={value} onChange={onChange}>
+  Select: ({ children, id, value, onChange, disabled }: any) => (
+    <select id={id} value={value} onChange={onChange} disabled={disabled}>
       {children}
     </select>
   ),
@@ -242,6 +242,35 @@ describe('JournalEntriesPanel', () => {
       line_flows: [{ line_id: 'li_1', flow_qname: flow }],
     })
     await waitFor(() => expect(onChanged).toHaveBeenCalled())
+  })
+
+  it('shows the chosen row at once while the re-tag is in flight', async () => {
+    const flow = 'rs-gaap:ProceedsFromIssuanceOfLongTermDebt'
+    mockGetFlowCandidates.mockResolvedValue([
+      {
+        qname: flow,
+        name: 'Proceeds from long-term debt',
+        activity: 'financing',
+      },
+    ])
+    // Never settles: the list cannot reload, so what shows is the overlay.
+    mockUpdateJournalEntry.mockReturnValue(new Promise(() => {}))
+    renderPanel()
+    fireEvent.click(await screen.findByText('MacBook depreciation'))
+    const select = (
+      await screen.findByText('Proceeds from long-term debt')
+    ).closest('select') as HTMLSelectElement
+
+    fireEvent.change(select, { target: { value: flow } })
+
+    await waitFor(() => expect(select.value).toBe(flow))
+    expect(select.disabled).toBe(true)
+  })
+
+  it('does not fetch the cash flow rows until a row is opened', async () => {
+    renderPanel()
+    await screen.findByText('MacBook depreciation')
+    expect(mockGetFlowCandidates).not.toHaveBeenCalled()
   })
 
   it('expands line items without a second request', async () => {

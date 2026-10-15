@@ -51,40 +51,51 @@ export const FlowRowSelect: FC<FlowRowSelectProps> = ({
       ? priorQname
       : null
   const unloaded = priorQname && flowsFailed ? priorQname : null
+  const localName = (qname: string) => qname.replace(/^[^:]+:/, '')
 
   return (
-    <Select
-      id={id}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={disabled || flows === null}
-      sizing={sizing}
-      aria-label={ariaLabel}
-    >
-      <option value="">
-        {flows === null ? 'Loading cash flow rows…' : "Account's default flow"}
-      </option>
-      {stranded && (
-        <option value={stranded}>
-          {stranded} (not a row of this statement)
+    <>
+      <Select
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled || flows === null}
+        sizing={sizing}
+        aria-label={ariaLabel}
+      >
+        <option value="">
+          {flows === null
+            ? 'Loading cash flow rows…'
+            : "Account's default flow"}
         </option>
+        {stranded && (
+          <option value={stranded}>
+            {localName(stranded)} (not a row of this statement)
+          </option>
+        )}
+        {unloaded && <option value={unloaded}>{localName(unloaded)}</option>}
+        {FLOW_SECTIONS.map((section) => {
+          const rows = (flows ?? []).filter(
+            (flow) => flow.activity === section.activity
+          )
+          if (rows.length === 0) return null
+          return (
+            <optgroup key={section.activity} label={section.label}>
+              {rows.map((flow) => (
+                <option key={flow.qname} value={flow.qname}>
+                  {flow.name}
+                </option>
+              ))}
+            </optgroup>
+          )
+        })}
+      </Select>
+      {flowsFailed && (
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          The statement&apos;s rows could not be loaded; the current tag is
+          kept.
+        </p>
       )}
-      {unloaded && <option value={unloaded}>{unloaded}</option>}
-      {FLOW_SECTIONS.map((section) => {
-        const rows = (flows ?? []).filter(
-          (flow) => flow.activity === section.activity
-        )
-        if (rows.length === 0) return null
-        return (
-          <optgroup key={section.activity} label={section.label}>
-            {rows.map((flow) => (
-              <option key={flow.qname} value={flow.qname}>
-                {flow.name}
-              </option>
-            ))}
-          </optgroup>
-        )
-      })}
-    </Select>
+    </>
   )
 }

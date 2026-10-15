@@ -149,17 +149,24 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
   const [reversing, setReversing] = useState<JournalEntryRow | null>(null)
   // A posted line's cash flow row changes in place; the rows come from the
   // entity's own statement.
-  const { flows, flowsFailed } = useFlowCandidates(graphId, entityId)
-  const [retagging, setRetagging] = useState<string | null>(null)
+  // Loaded once a row is open, since only the expanded lines show them.
+  const { flows, flowsFailed } = useFlowCandidates(
+    graphId,
+    entityId,
+    expandedIds.size > 0
+  )
+  // The row a line is being moved to, shown at once and dropped when the
+  // list reloads with the server's answer, or when the move fails.
+  const [pendingFlows, setPendingFlows] = useState<Record<string, string>>({})
   const [retagError, setRetagError] = useState<string | null>(null)
 
   const handleRetag = useCallback(
     async (entry: JournalEntryRow, line: JournalLineItem, qname: string) => {
       setRetagError(null)
-      setRetagging(line.id)
+      setPendingFlows((prev) => ({ ...prev, [line.id]: qname }))
       try {
         // A flow moves no balance: the server re-tags the line in place,
-        // closed month or not, and the other side of the entry follows.
+        // closed month or not, and the lines in step with it follow.
         await clients.ledger.updateJournalEntry(graphId, {
           entry_id: entry.id,
           line_flows: [{ line_id: line.id, flow_qname: qname || null }],
@@ -169,7 +176,10 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
         const message = err instanceof Error ? err.message : String(err)
         setRetagError(friendlyError(message).message)
       } finally {
-        setRetagging(null)
+        setPendingFlows((prev) => {
+          const { [line.id]: _done, ...rest } = prev
+          return rest
+        })
       }
     },
     [graphId, onChanged]
@@ -539,13 +549,17 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                                         {entry.status === 'posted' ? (
                                           <FlowRowSelect
                                             id={`line-flow-${li.id}`}
-                                            value={li.flowQname ?? ''}
+                                            value={
+                                              pendingFlows[li.id] ??
+                                              li.flowQname ??
+                                              ''
+                                            }
                                             onChange={(qname) =>
                                               void handleRetag(entry, li, qname)
                                             }
                                             flows={flows}
                                             flowsFailed={flowsFailed}
-                                            disabled={retagging !== null}
+                                            disabled={li.id in pendingFlows}
                                             priorQname={li.flowQname ?? ''}
                                             sizing="sm"
                                             aria-label={`Cash flow row for ${li.accountName ?? li.accountId}`}
