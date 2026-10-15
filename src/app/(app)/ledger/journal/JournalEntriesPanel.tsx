@@ -1,6 +1,9 @@
 'use client'
 
 import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
+import { FlowRowSelect } from '@/components/FlowRowSelect'
+import { friendlyError } from '@/lib/ledger/errors'
+import { flowDisplayName, useFlowCandidates } from '@/lib/ledger/flows'
 import { formatDate, formatDollars } from '@/lib/ledger/formatters'
 import { clients, EmptyState, LoadingState } from '@robosystems/core'
 import {
@@ -58,6 +61,8 @@ interface JournalLineItem {
   debitAmount: number
   creditAmount: number
   description: string | null
+  /** The cash flow row the line carries; null is the account's default. */
+  flowQname: string | null
 }
 
 interface JournalEntryRow {
@@ -142,6 +147,43 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
   const [editing, setEditing] = useState<JournalEntryRow | null>(null)
   const [deleting, setDeleting] = useState<JournalEntryRow | null>(null)
   const [reversing, setReversing] = useState<JournalEntryRow | null>(null)
+  // A posted line's cash flow row changes in place; the rows come from the
+  // entity's own statement.
+  // Loaded once a row is open, since only the expanded lines show them.
+  const { flows, flowsFailed } = useFlowCandidates(
+    graphId,
+    entityId,
+    expandedIds.size > 0
+  )
+  // The row a line is being moved to, shown at once and dropped when the
+  // list reloads with the server's answer, or when the move fails.
+  const [pendingFlows, setPendingFlows] = useState<Record<string, string>>({})
+  const [retagError, setRetagError] = useState<string | null>(null)
+
+  const handleRetag = useCallback(
+    async (entry: JournalEntryRow, line: JournalLineItem, qname: string) => {
+      setRetagError(null)
+      setPendingFlows((prev) => ({ ...prev, [line.id]: qname }))
+      try {
+        // A flow moves no balance: the server re-tags the line in place,
+        // closed month or not, and the lines in step with it follow.
+        await clients.ledger.updateJournalEntry(graphId, {
+          entry_id: entry.id,
+          line_flows: [{ line_id: line.id, flow_qname: qname || null }],
+        })
+        onChanged()
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        setRetagError(friendlyError(message).message)
+      } finally {
+        setPendingFlows((prev) => {
+          const { [line.id]: _done, ...rest } = prev
+          return rest
+        })
+      }
+    },
+    [graphId, onChanged]
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -186,6 +228,7 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
               debitAmount: li.debitAmount,
               creditAmount: li.creditAmount,
               description: li.description,
+              flowQname: li.flowQname ?? null,
             })),
           }))
         )
@@ -294,6 +337,12 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
         <Alert color="failure">
           <HiExclamationCircle className="h-4 w-4" />
           <span className="font-medium">Error!</span> {error}
+        </Alert>
+      )}
+      {retagError && (
+        <Alert color="failure" onDismiss={() => setRetagError(null)}>
+          <span className="font-medium">The cash flow row did not change.</span>{' '}
+          {retagError}
         </Alert>
       )}
 
@@ -468,6 +517,7 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                                   <tr className="border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase dark:border-gray-600 dark:text-gray-400">
                                     <th className="py-2">Account</th>
                                     <th className="py-2">Description</th>
+                                    <th className="py-2">Cash flow row</th>
                                     <th className="py-2 text-right">Debit</th>
                                     <th className="py-2 text-right">Credit</th>
                                   </tr>
@@ -494,6 +544,31 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                                       </td>
                                       <td className="py-2 text-gray-600 dark:text-gray-400">
                                         {li.description || '-'}
+                                      </td>
+                                      <td className="py-2 text-gray-600 dark:text-gray-400">
+                                        {entry.status === 'posted' ? (
+                                          <FlowRowSelect
+                                            id={`line-flow-${li.id}`}
+                                            value={
+                                              pendingFlows[li.id] ??
+                                              li.flowQname ??
+                                              ''
+                                            }
+                                            onChange={(qname) =>
+                                              void handleRetag(entry, li, qname)
+                                            }
+                                            flows={flows}
+                                            flowsFailed={flowsFailed}
+                                            disabled={li.id in pendingFlows}
+                                            priorQname={li.flowQname ?? ''}
+                                            sizing="sm"
+                                            aria-label={`Cash flow row for ${li.accountName ?? li.accountId}`}
+                                          />
+                                        ) : li.flowQname ? (
+                                          flowDisplayName(li.flowQname, flows)
+                                        ) : (
+                                          '-'
+                                        )}
                                       </td>
                                       <td className="text-primary-600 dark:text-primary-400 py-2 text-right font-mono">
                                         {li.debitAmount

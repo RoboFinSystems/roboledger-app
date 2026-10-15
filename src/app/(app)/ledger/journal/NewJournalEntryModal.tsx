@@ -1,6 +1,8 @@
 'use client'
 
+import { FlowRowSelect } from '@/components/FlowRowSelect'
 import { friendlyError } from '@/lib/ledger/errors'
+import { useFlowCandidates } from '@/lib/ledger/flows'
 import { formatDollars } from '@/lib/ledger/formatters'
 import { clients } from '@robosystems/core'
 import {
@@ -32,6 +34,8 @@ interface LineItemDraft {
   debit: string
   credit: string
   description: string
+  /** The cash flow row this line is tagged with; '' is the account's default. */
+  flowQname: string
 }
 
 type EntryType = 'standard' | 'adjusting' | 'closing' | 'reversing'
@@ -48,6 +52,7 @@ export interface EditableDraft {
     debitAmount: number
     creditAmount: number
     description: string | null
+    flowQname?: string | null
   }[]
 }
 
@@ -74,6 +79,7 @@ const newLine = (
   debit: '',
   credit: '',
   description: '',
+  flowQname: '',
   ...fields,
 })
 
@@ -98,10 +104,17 @@ const linesKey = (
     debit: number
     credit: number
     description: string
+    flowQname: string
   }[]
 ): string =>
   JSON.stringify(
-    lines.map((l) => [l.elementId, l.debit, l.credit, l.description.trim()])
+    lines.map((l) => [
+      l.elementId,
+      l.debit,
+      l.credit,
+      l.description.trim(),
+      l.flowQname,
+    ])
   )
 
 const RETRACTED_EVENT = new Set(['voided', 'superseded'])
@@ -142,6 +155,8 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
   // Save waits for the check; a failed check does not hold it, since the
   // API accepts the save either way.
   const [eventChecking, setEventChecking] = useState(false)
+  // The rows a line may be tagged with, from the entity's own statement.
+  const { flows, flowsFailed } = useFlowCandidates(graphId, entityId, open)
 
   useEffect(() => {
     setDraftRetracted(false)
@@ -225,6 +240,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
           debit: toInput(li.debitAmount),
           credit: toInput(li.creditAmount),
           description: li.description ?? '',
+          flowQname: li.flowQname ?? '',
         })
       )
       while (lines.length < 2) lines.push(newLine())
@@ -291,19 +307,20 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
     setSubmitError(null)
     try {
       if (draft) {
-        // Lines go only when they changed: the API replaces the whole set,
-        // and the form cannot carry a line's metadata (its flow tag).
+        // Lines go only when they changed: the API replaces the whole set.
         const edited = lineItems.map((l) => ({
           elementId: l.elementId,
           debit: parseMoney(l.debit),
           credit: parseMoney(l.credit),
           description: l.description,
+          flowQname: l.flowQname,
         }))
         const original = draft.lineItems.map((li) => ({
           elementId: li.accountId,
           debit: Math.round(li.debitAmount * 100),
           credit: Math.round(li.creditAmount * 100),
           description: li.description ?? '',
+          flowQname: li.flowQname ?? '',
         }))
         // A draft stays a draft; close is what posts it.
         await clients.ledger.updateJournalEntry(graphId, {
@@ -317,6 +334,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
               debit_amount: l.debit,
               credit_amount: l.credit,
               description: l.description.trim() || null,
+              flow_qname: l.flowQname || null,
             })),
           }),
         })
@@ -336,6 +354,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
           debitAmount: parseMoney(l.debit) || undefined,
           creditAmount: parseMoney(l.credit) || undefined,
           description: l.description.trim() || undefined,
+          flowQname: l.flowQname || undefined,
         })),
       })
       onCreated?.()
@@ -530,9 +549,32 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
                       <HiTrash className="h-3 w-3" />
                     </Button>
                   </div>
+                  <div className="col-span-12">
+                    <Label htmlFor={`line-flow-${idx}`} className="text-xs">
+                      Cash flow row (optional)
+                    </Label>
+                    <FlowRowSelect
+                      id={`line-flow-${idx}`}
+                      value={line.flowQname}
+                      onChange={(qname) =>
+                        updateLine(idx, { flowQname: qname })
+                      }
+                      flows={flows}
+                      flowsFailed={flowsFailed}
+                      disabled={submitting}
+                      priorQname={line.flowQname}
+                      sizing="sm"
+                    />
+                  </div>
                 </div>
               ))}
             </div>
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              A cash flow row is only for a loan drawn or repaid, capital put in
+              or taken out, or an asset bought or sold; everything else keeps
+              the account&apos;s default. A row on one side of the entry tags
+              the other side when the entry is saved.
+            </p>
 
             {/* Balance check */}
             <div className="mt-3 grid grid-cols-3 gap-2 rounded-md border border-gray-200 p-3 dark:border-gray-700">
