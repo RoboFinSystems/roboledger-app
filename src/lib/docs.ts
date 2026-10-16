@@ -1,5 +1,5 @@
 // Docs catalog access. The catalog is built by the robosystems repo's Publish Docs workflow
-// (robosystems/scripts/publish_docs.py) from two sources, the GitHub wiki (technical docs)
+// (robosystems/scripts/publish_docs.py) from two folders, docs/technical/ (technical docs)
 // and docs/product/{site}/ (product pages), and served from the content CDN as one
 // index.json plus a markdown body per page. Fetched server-side with ISR, like the blog,
 // so every docs page is real HTML for crawlers.

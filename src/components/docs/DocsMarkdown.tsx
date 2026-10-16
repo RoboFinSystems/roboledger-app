@@ -5,8 +5,8 @@ import rehypeSlug from 'rehype-slug'
 import remarkGfm from 'remark-gfm'
 
 // GitHub-flavored markdown, rendered on the server. The bodies are never compiled as
-// MDX and raw HTML is not interpreted, so the literal `{` and `<` throughout the wiki's
-// prose stay text. rehype-slug gives headings GitHub's ids, which the wiki's anchor
+// MDX and raw HTML is not interpreted, so the literal `{` and `<` throughout the technical
+// docs' prose stay text. rehype-slug gives headings GitHub's ids, which the docs' anchor
 // links and tableOfContents() both rely on.
 
 function DocsLink({ href = '', children, ...rest }: ComponentProps<'a'>) {
