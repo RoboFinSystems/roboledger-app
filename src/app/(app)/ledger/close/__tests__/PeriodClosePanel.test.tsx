@@ -21,7 +21,7 @@ vi.mock('@robosystems/core', () => ({
       reopenPeriod: (...args: any[]) => mockReopenPeriod(...args),
       initializeLedger: (...args: any[]) => mockInitializeLedger(...args),
       createClosingEntry: (...args: any[]) => mockCreateClosingEntry(...args),
-      listInformationBlocks: (...args: any[]) =>
+      listInformationBlockSummaries: (...args: any[]) =>
         mockListInformationBlocks(...args),
     },
   },
@@ -154,8 +154,8 @@ describe('PeriodClosePanel — close success', () => {
     })
     mockClosePeriod.mockResolvedValue(CLOSE_RESULT)
     mockListInformationBlocks.mockResolvedValue([
-      { id: 'struct_bs', blockType: 'balance_sheet', facts: [{ id: 'f_bs' }] },
-      { id: 'struct_m', blockType: 'metric', facts: [] },
+      { id: 'struct_bs', blockType: 'balance_sheet', factCount: 1 },
+      { id: 'struct_m', blockType: 'metric', factCount: 0 },
     ])
   })
 
@@ -192,7 +192,7 @@ describe('PeriodClosePanel — close success', () => {
 
   it('omits the stamped-statements line when no statement block has facts', async () => {
     mockListInformationBlocks.mockResolvedValue([
-      { id: 'struct_bs', blockType: 'balance_sheet', facts: [] },
+      { id: 'struct_bs', blockType: 'balance_sheet', factCount: 0 },
     ])
     render(<PeriodClosePanel graphId="kg1" />)
 

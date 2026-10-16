@@ -380,11 +380,12 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       // client version and proves the read path the Plan grid uses.)
       void (async () => {
         try {
-          const list = await clients.ledger.listInformationBlocks(graphId, {
-            limit: 200,
-          })
+          const list = await clients.ledger.listInformationBlockSummaries(
+            graphId,
+            { limit: 200 }
+          )
           const ready = list.some(
-            (b) => isStatementBlockType(b.blockType) && b.facts.length > 0
+            (b) => isStatementBlockType(b.blockType) && b.factCount > 0
           )
           setCloseResult((prev) =>
             prev && prev.period === period

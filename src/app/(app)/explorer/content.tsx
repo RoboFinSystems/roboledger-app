@@ -5,7 +5,7 @@ import ExportMenu, { type ExportMenuGroup } from '@/components/ExportMenu'
 import RefreshControl from '@/components/RefreshControl'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import { useRefetchOnFocus } from '@/lib/useRefetchOnFocus'
-import type { InformationBlockList } from '@robosystems/client/clients'
+import type { InformationBlockSummaryList } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
@@ -63,7 +63,7 @@ const BlockExplorerContent: FC = function () {
   const router = useRouter()
 
   // Block list (left rail)
-  const [blocks, setBlocks] = useState<InformationBlockList>([])
+  const [blocks, setBlocks] = useState<InformationBlockSummaryList>([])
   const [isListLoading, setIsListLoading] = useState(true)
   const [entityName, setEntityName] = useState<string | null>(null)
   const [listError, setListError] = useState<string | null>(null)
@@ -141,7 +141,7 @@ const BlockExplorerContent: FC = function () {
         }
         setListError(null)
         const [list, entity] = await Promise.all([
-          clients.ledger.listInformationBlocks(currentGraph.graphId, {
+          clients.ledger.listInformationBlockSummaries(currentGraph.graphId, {
             limit: 200,
           }),
           clients.ledger.getEntity(currentGraph.graphId).catch(() => null),
@@ -152,7 +152,8 @@ const BlockExplorerContent: FC = function () {
         // library-seeded structure variants (disclosure anchors, calc
         // structures, presentation umbrellas, per-equity-form clones) —
         // all fact-less, and near-duplicates of each other by name.
-        const withFacts = list.filter((b) => b.facts.length > 0)
+        // `factCount` is the facts the block's envelope would carry.
+        const withFacts = list.filter((b) => b.factCount > 0)
         setBlocks(withFacts)
         setEntityName(entity?.name ?? null)
         // Default selection: first metric block (the explorer home),

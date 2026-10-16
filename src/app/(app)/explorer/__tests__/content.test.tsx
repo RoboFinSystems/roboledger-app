@@ -20,7 +20,7 @@ vi.mock('@robosystems/core', () => ({
   customTheme: { card: {} },
   clients: {
     ledger: {
-      listInformationBlocks: (...args: any[]) =>
+      listInformationBlockSummaries: (...args: any[]) =>
         mockListInformationBlocks(...args),
       getInformationBlock: (...args: any[]) => mockGetInformationBlock(...args),
       getEntity: (...args: any[]) => mockGetEntity(...args),
@@ -158,25 +158,25 @@ const BLOCKS = [
     id: 'struct_bs_calc',
     blockType: 'balance_sheet',
     displayName: 'Balance Sheet',
-    facts: [],
+    factCount: 0,
   },
   {
     id: 'struct_bs',
     blockType: 'balance_sheet',
     displayName: 'Balance Sheet',
-    facts: [{ id: 'f_bs' }],
+    factCount: 1,
   },
   {
     id: 'struct_metrics',
     blockType: 'metric',
     displayName: 'Key Financial Metrics',
-    facts: [{ id: 'f_m' }],
+    factCount: 1,
   },
   {
     id: 'struct_sched',
     blockType: 'schedule',
     displayName: 'Business Insurance Amortization',
-    facts: [{ id: 'f_s' }],
+    factCount: 1,
   },
   {
     id: 'struct_budget',
@@ -186,7 +186,7 @@ const BLOCKS = [
     // 'FY27 Operating Budget' assertion below pins it).
     displayName: 'Forecast',
     name: 'FY27 Operating Budget',
-    facts: [{ id: 'f_lever' }],
+    factCount: 1,
   },
 ]
 

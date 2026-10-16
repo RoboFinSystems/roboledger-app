@@ -5,7 +5,7 @@ import ExportMenu, { type ExportMenuGroup } from '@/components/ExportMenu'
 import RefreshControl from '@/components/RefreshControl'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import { useRefetchOnFocus } from '@/lib/useRefetchOnFocus'
-import type { InformationBlockList } from '@robosystems/client/clients'
+import type { InformationBlockSummaryList } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
@@ -62,7 +62,7 @@ const PlanContent: FC = function () {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const [blocks, setBlocks] = useState<InformationBlockList>([])
+  const [blocks, setBlocks] = useState<InformationBlockSummaryList>([])
   const [isListLoading, setIsListLoading] = useState(true)
   const [entityName, setEntityName] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -133,13 +133,13 @@ const PlanContent: FC = function () {
         }
         setError(null)
         const [list, entity] = await Promise.all([
-          clients.ledger.listInformationBlocks(currentGraph.graphId, {
+          clients.ledger.listInformationBlockSummaries(currentGraph.graphId, {
             limit: 200,
           }),
           clients.ledger.getEntity(currentGraph.graphId).catch(() => null),
         ])
         if (cancelled) return
-        const withFacts = list.filter((b) => b.facts.length > 0)
+        const withFacts = list.filter((b) => b.factCount > 0)
         setBlocks(withFacts)
         setEntityName(entity?.name ?? null)
         // Scenario-centric default: the first forecast block — unless the
