@@ -20,7 +20,7 @@ vi.mock('@robosystems/core', () => ({
   customTheme: { card: {} },
   clients: {
     ledger: {
-      listInformationBlocks: (...args: any[]) =>
+      listInformationBlockSummaries: (...args: any[]) =>
         mockListInformationBlocks(...args),
       getInformationBlock: (...args: any[]) => mockGetInformationBlock(...args),
       getEntity: (...args: any[]) => mockGetEntity(...args),
@@ -137,21 +137,21 @@ const BLOCKS = [
     blockType: 'income_statement',
     displayName: 'Income Statement',
     name: 'Income Statement',
-    facts: [{ id: 'f_is' }],
+    factCount: 1,
   },
   {
     id: 'struct_bs',
     blockType: 'balance_sheet',
     displayName: 'Balance Sheet',
     name: 'Balance Sheet',
-    facts: [{ id: 'f_bs' }],
+    factCount: 1,
   },
   {
     id: 'struct_cf',
     blockType: 'cash_flow_statement',
     displayName: 'Cash Flow Statement',
     name: 'Cash Flow Statement',
-    facts: [{ id: 'f_cf' }],
+    factCount: 1,
   },
   {
     id: 'struct_budget',
@@ -160,7 +160,7 @@ const BLOCKS = [
     // the instance identity — the picker must show the latter.
     displayName: 'Forecast',
     name: 'FY27 Operating Budget',
-    facts: [{ id: 'f_lever' }],
+    factCount: 1,
   },
 ]
 

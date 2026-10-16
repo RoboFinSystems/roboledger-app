@@ -1,14 +1,14 @@
 'use client'
 
 import { withoutTaxonomy } from '@/lib/ledger/blockName'
-import type { InformationBlockList } from '@robosystems/client/clients'
+import type { InformationBlockSummaryList } from '@robosystems/client/clients'
 import { LoadingState } from '@robosystems/core'
 import { TextInput } from 'flowbite-react'
 import type { FC } from 'react'
 import { useMemo, useState } from 'react'
 import { HiSearch } from 'react-icons/hi'
 
-type BlockListItem = InformationBlockList[number]
+type BlockListItem = InformationBlockSummaryList[number]
 
 /**
  * Sidebar group headings by block type. The statement family collapses
@@ -82,7 +82,7 @@ export function blockLabels(
 }
 
 interface BlockPickerProps {
-  blocks: InformationBlockList
+  blocks: InformationBlockSummaryList
   selectedId: string | null
   onSelect: (block: BlockListItem) => void
   isLoading: boolean
@@ -92,7 +92,7 @@ interface BlockPickerProps {
  * Searchable Information Block picker — the left rail of `/explorer`.
  * Groups blocks by family (metrics first: they're the explorer home)
  * and filters by name client-side; the block list itself is one
- * `listInformationBlocks` fetch owned by the page.
+ * `listInformationBlockSummaries` fetch owned by the page.
  */
 const BlockPicker: FC<BlockPickerProps> = ({
   blocks,
