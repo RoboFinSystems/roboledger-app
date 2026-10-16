@@ -9,8 +9,8 @@ import withFlowbiteReact from 'flowbite-react/plugin/nextjs'
 //
 // NOTE: This is intended for host-run `next dev`. Running roboledger-app
 // inside Docker uses `next start` with NEXT_PUBLIC_* baked at build time, so
-// the env override below wouldn't take effect there. Follow the Connecting-
-// QuickBooks-Locally wiki for the host-run setup.
+// the env override below wouldn't take effect there. Follow the Connecting
+// QuickBooks Locally technical doc for the host-run setup.
 const tunnelDomain = process.env.PUBLIC_TUNNEL_DOMAIN?.replace(
   /^https?:\/\//,
   ''

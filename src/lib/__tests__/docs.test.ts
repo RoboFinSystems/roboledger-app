@@ -22,7 +22,8 @@ function page(overrides: Partial<DocsPage>): DocsPage {
     order: 0,
     updated: null,
     body: 'technical/x.md',
-    source_url: 'https://github.com/RoboFinSystems/robosystems/wiki/X',
+    source_url:
+      'https://github.com/RoboFinSystems/robosystems/blob/main/docs/technical/X.md',
     ...overrides,
   }
 }
