@@ -48,6 +48,20 @@ function formatOwnership(pct: number | null): string {
   return `${Number.isInteger(pct) ? pct : pct.toFixed(2)}%`
 }
 
+const TREATMENT_LABELS: Record<string, string> = {
+  full: 'Consolidated in full',
+  equity: 'Equity method, not summed',
+  cost: 'At cost, not summed',
+}
+
+/** How the group's consolidated statements treat a member, and whether it has left. */
+function formatTreatment(entity: LedgerEntitySummary): string {
+  if (entity.isParent || entity.entityRole === 'consolidation') return '—'
+  const label =
+    TREATMENT_LABELS[entity.consolidationMethod] ?? entity.consolidationMethod
+  return entity.leftOn ? `${label} · left ${entity.leftOn.slice(0, 7)}` : label
+}
+
 /**
  * The reporting group of the selected graph: the group parent and every
  * subsidiary under it, each with its own close. Selecting a row puts that
@@ -205,6 +219,7 @@ const EntitiesListPageContent: FC = function () {
                   <TableHeadCell>Entity</TableHeadCell>
                   <TableHeadCell>Legal form</TableHeadCell>
                   <TableHeadCell>Ownership</TableHeadCell>
+                  <TableHeadCell>Treatment</TableHeadCell>
                   <TableHeadCell>Closed through</TableHeadCell>
                   <TableHeadCell>Status</TableHeadCell>
                   <TableHeadCell>
@@ -235,6 +250,15 @@ const EntitiesListPageContent: FC = function () {
                                 group parent
                               </Badge>
                             )}
+                            {row.entityRole === 'consolidation' && (
+                              <Badge
+                                color="purple"
+                                size="xs"
+                                className="ml-2 inline"
+                              >
+                                consolidation entity
+                              </Badge>
+                            )}
                           </span>
                           <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
                             {row.ticker ?? row.id}
@@ -253,6 +277,11 @@ const EntitiesListPageContent: FC = function () {
                           {row.isParent
                             ? '—'
                             : formatOwnership(row.ownershipPct)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          {formatTreatment(row)}
                         </span>
                       </TableCell>
                       <TableCell>

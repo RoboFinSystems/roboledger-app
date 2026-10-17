@@ -46,7 +46,11 @@ export function EntitySelectorDropdown() {
     const needle = query.trim().toLowerCase()
     return roboledgerGraphs
       .map((graph) => {
-        const all = entitiesByGraph.get(graph.graphId) ?? []
+        // The consolidation entity holds the group's eliminations, not a
+        // company's books; the group page reaches it, the switcher does not.
+        const all = (entitiesByGraph.get(graph.graphId) ?? []).filter(
+          (e) => e.entityRole !== 'consolidation'
+        )
         const graphMatches =
           needle.length > 0 && graph.graphName.toLowerCase().includes(needle)
         const rows = all.filter(

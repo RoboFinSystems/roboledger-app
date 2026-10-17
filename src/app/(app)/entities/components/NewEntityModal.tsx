@@ -10,6 +10,7 @@ import { clients } from '@robosystems/core'
 import {
   Alert,
   Button,
+  Checkbox,
   Label,
   Modal,
   ModalBody,
@@ -65,6 +66,8 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
   const [entityType, setEntityType] = useState('')
   const [parentEntityId, setParentEntityId] = useState('')
   const [ownershipPct, setOwnershipPct] = useState('')
+  const [treatment, setTreatment] = useState('')
+  const [consolidationEntity, setConsolidationEntity] = useState(false)
   const [ticker, setTicker] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -77,6 +80,8 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
     setEntityType('')
     setParentEntityId(groupParentId)
     setOwnershipPct('')
+    setTreatment('')
+    setConsolidationEntity(false)
     setTicker('')
     setError(null)
     setSubmitting(false)
@@ -102,9 +107,17 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
       entity_type: entityType || null,
       ticker: ticker.trim() || null,
     }
-    if (!isFirstEntity) {
+    if (!isFirstEntity && consolidationEntity) {
+      // The group's one entity for the consolidating entries: no owner, no
+      // treatment; its chart starts from the Consolidation adjustments template.
+      body.entity_role = 'consolidation'
+    } else if (!isFirstEntity) {
       body.parent_entity_id = parentEntityId || null
       body.ownership_pct = ownershipPct === '' ? null : Number(ownershipPct)
+      if (treatment) {
+        body.consolidation_method =
+          treatment as CreateEntityRequest['consolidation_method']
+      }
     }
     try {
       const created = await clients.ledger.createEntity(graphId, body)
@@ -205,6 +218,21 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
             </div>
 
             {!isFirstEntity && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="new-entity-consolidation"
+                  checked={consolidationEntity}
+                  onChange={(e) => setConsolidationEntity(e.target.checked)}
+                />
+                <Label htmlFor="new-entity-consolidation">
+                  The group&apos;s consolidation entity — holds the
+                  consolidating entries that only the consolidated statements
+                  read
+                </Label>
+              </div>
+            )}
+
+            {!isFirstEntity && !consolidationEntity && (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="new-entity-parent" className="mb-1 block">
@@ -240,6 +268,26 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
                   />
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     The parent&apos;s share. Leave blank when not recorded.
+                  </p>
+                </div>
+                <div className="sm:col-span-2">
+                  <Label htmlFor="new-entity-treatment" className="mb-1 block">
+                    Treatment
+                  </Label>
+                  <Select
+                    id="new-entity-treatment"
+                    value={treatment}
+                    onChange={(e) => setTreatment(e.target.value)}
+                  >
+                    <option value="">From the share</option>
+                    <option value="full">Consolidated in full</option>
+                    <option value="equity">Equity method</option>
+                    <option value="cost">At cost</option>
+                  </Select>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Half or more consolidates in full, a fifth to a half takes
+                    the equity method, less is held at cost. Set it where
+                    control is not the percentage.
                   </p>
                 </div>
               </div>
