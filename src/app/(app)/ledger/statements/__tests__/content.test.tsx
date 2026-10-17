@@ -114,7 +114,7 @@ describe('LiveStatementsContent', () => {
     await waitFor(() => expect(mockLiveFinancialStatement).toHaveBeenCalled())
     expect(mockLiveFinancialStatement).toHaveBeenCalledWith(
       'kg_a',
-      expect.objectContaining({ entity_id: null, consolidated: false })
+      expect.objectContaining({ entity_id: null, scope: 'entity' })
     )
     expect(
       screen.queryByRole('group', { name: 'Scope' })
@@ -126,7 +126,7 @@ describe('LiveStatementsContent', () => {
     render(<LiveStatementsContent />)
     await waitFor(() => expect(mockLiveFinancialStatement).toHaveBeenCalled())
     expect(lastBody()).toEqual(
-      expect.objectContaining({ entity_id: 'ent_s', consolidated: false })
+      expect.objectContaining({ entity_id: 'ent_s', scope: 'entity' })
     )
     expect(
       screen.queryByRole('group', { name: 'Scope' })
@@ -136,27 +136,42 @@ describe('LiveStatementsContent', () => {
   it('offers the combined statement on the parent of a group, and names what it combined', async () => {
     scope({ entities: [parent, sub] })
     mockLiveFinancialStatement.mockImplementation(
-      (_graphId: string, body: { consolidated?: boolean }) =>
+      (_graphId: string, body: { scope?: string }) =>
         Promise.resolve(
           statement(
-            body.consolidated ? { combined_entity_ids: ['ent_p', 'ent_s'] } : {}
+            body.scope && body.scope !== 'entity'
+              ? { combined_entity_ids: ['ent_p', 'ent_s'] }
+              : {}
           )
         )
     )
     render(<LiveStatementsContent />)
     await waitFor(() => expect(mockLiveFinancialStatement).toHaveBeenCalled())
-    expect(lastBody()).toEqual(expect.objectContaining({ consolidated: false }))
+    expect(lastBody()).toEqual(expect.objectContaining({ scope: 'entity' }))
     expect(screen.queryByText(/combined across/)).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Combined' }))
 
     await waitFor(() =>
       expect(lastBody()).toEqual(
-        expect.objectContaining({ entity_id: null, consolidated: true })
+        expect.objectContaining({ entity_id: null, scope: 'combined' })
       )
     )
     expect(
       await screen.findByText(/combined across 2 entities, nothing eliminated/)
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Consolidated' }))
+
+    await waitFor(() =>
+      expect(lastBody()).toEqual(
+        expect.objectContaining({ entity_id: null, scope: 'consolidated' })
+      )
+    )
+    expect(
+      await screen.findByText(
+        /consolidated across 2 entities, the consolidation entity's adjustments in/
+      )
     ).toBeInTheDocument()
   })
 })

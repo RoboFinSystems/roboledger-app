@@ -112,6 +112,10 @@ const entity = (over: Record<string, unknown>) => ({
   isParent: false,
   parentEntityId: null,
   ownershipPct: null,
+  consolidationMethod: 'full',
+  entityRole: 'operating',
+  joinedOn: null,
+  leftOn: null,
   source: 'native',
   sourceGraphId: null,
   connectionId: null,
@@ -212,6 +216,7 @@ describe('EntitiesListPageContent', () => {
     expect(screen.getByText('Corporation')).toBeInTheDocument()
     expect(screen.getByText('LLC')).toBeInTheDocument()
     expect(screen.getByText('100%')).toBeInTheDocument()
+    expect(screen.getByText('Consolidated in full')).toBeInTheDocument()
 
     // Each entity closes on its own calendar: the parent is the server's
     // default (null), the subsidiary is named.

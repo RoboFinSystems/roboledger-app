@@ -51,11 +51,12 @@ const STATEMENT_TYPES: readonly SegmentedOption<StatementType>[] = [
 
 type PresetKey = 'this_month' | 'this_quarter' | 'ytd' | 'last_fy' | 'custom'
 
-type StatementScope = 'entity' | 'combined'
+type StatementScope = 'entity' | 'combined' | 'consolidated'
 
 const SCOPE_OPTIONS: readonly SegmentedOption<StatementScope>[] = [
   { value: 'entity', label: 'This entity' },
   { value: 'combined', label: 'Combined' },
+  { value: 'consolidated', label: 'Consolidated' },
 ]
 
 const PRESETS: { key: PresetKey; label: string }[] = [
@@ -108,9 +109,10 @@ function presetRange(
 const LiveStatementsContent: FC = function () {
   const { graph: currentGraph } = useLedgerGraph()
   const { entityId, entities } = useEntityScope()
-  // A combined statement is the group parent's Reporting Style over every
-  // entity's books, summed per concept with nothing eliminated. It is only
-  // offered on the parent of a graph that holds more than one entity.
+  // A group statement is the group parent's Reporting Style over its members'
+  // books, summed per concept: combined is the members alone, nothing
+  // eliminated; consolidated adds the consolidation entity's adjustments. Both
+  // are only offered on the parent of a graph that holds more than one entity.
   const canCombine = entityId === null && entities.length > 1
   const [scope, setScope] = useState<StatementScope>('entity')
   // Back to the entity's own books whenever the entity or the graph changes:
@@ -119,7 +121,8 @@ const LiveStatementsContent: FC = function () {
   useEffect(() => {
     setScope('entity')
   }, [entityId, graphId])
-  const combined = canCombine && scope === 'combined'
+  const requestScope: StatementScope = canCombine ? scope : 'entity'
+  const grouped = requestScope !== 'entity'
 
   const [statementType, setStatementType] =
     useState<StatementType>('balance_sheet')
@@ -164,7 +167,7 @@ const LiveStatementsContent: FC = function () {
           statement_type: statementType,
           period_start: range.start,
           period_end: range.end,
-          consolidated: combined,
+          scope: requestScope,
         }
       )
       if (seq !== loadSeq.current) return // superseded by a newer load
@@ -192,7 +195,7 @@ const LiveStatementsContent: FC = function () {
   }, [
     currentGraph,
     entityId,
-    combined,
+    requestScope,
     statementType,
     preset,
     customStart,
@@ -338,13 +341,17 @@ const LiveStatementsContent: FC = function () {
                 statement.unmapped_count === 1 ? '' : 's'
               } not included`}
             {statement.truncated && ' • results truncated — narrow the period'}
-            {combined &&
+            {grouped &&
               statement.combined_entity_ids &&
-              ` • combined across ${statement.combined_entity_ids.length} ${
+              ` • ${requestScope} across ${statement.combined_entity_ids.length} ${
                 statement.combined_entity_ids.length === 1
                   ? 'entity'
                   : 'entities'
-              }, nothing eliminated`}
+              }${
+                requestScope === 'consolidated'
+                  ? ", the consolidation entity's adjustments in"
+                  : ', nothing eliminated'
+              }`}
           </div>
         )}
       </Card>

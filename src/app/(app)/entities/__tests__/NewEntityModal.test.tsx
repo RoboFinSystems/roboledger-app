@@ -18,6 +18,7 @@ vi.mock('flowbite-react', () => ({
       {children}
     </button>
   ),
+  Checkbox: (props: any) => <input type="checkbox" {...props} />,
   Label: ({ children, htmlFor }: any) => (
     <label htmlFor={htmlFor}>{children}</label>
   ),
@@ -45,6 +46,10 @@ const entity = (over: Record<string, unknown>) => ({
   isParent: false,
   parentEntityId: null,
   ownershipPct: null,
+  consolidationMethod: 'full',
+  entityRole: 'operating',
+  joinedOn: null,
+  leftOn: null,
   source: 'native',
   sourceGraphId: null,
   connectionId: null,
@@ -130,6 +135,9 @@ describe('NewEntityModal', () => {
     fireEvent.change(screen.getByLabelText('Ownership %'), {
       target: { value: '60' },
     })
+    fireEvent.change(screen.getByLabelText('Treatment'), {
+      target: { value: 'equity' },
+    })
     submit(container)
 
     await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1))
@@ -140,6 +148,38 @@ describe('NewEntityModal', () => {
       ticker: 'MPA',
       parent_entity_id: 'ent_s',
       ownership_pct: 60,
+      consolidation_method: 'equity',
+    })
+  })
+
+  it("creates the group's consolidation entity with no owner and no treatment", async () => {
+    const { container } = render(
+      <NewEntityModal
+        graphId="kg_a"
+        entities={[parent, sub]}
+        open
+        onClose={onClose}
+        onCreated={onCreated}
+      />
+    )
+    fireEvent.change(screen.getByLabelText('Name'), {
+      target: { value: 'Consolidation Adjustments' },
+    })
+    fireEvent.change(screen.getByLabelText('Legal form'), {
+      target: { value: 'llc' },
+    })
+    fireEvent.click(screen.getByLabelText(/consolidation entity/))
+    expect(screen.queryByLabelText('Ownership %')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Treatment')).not.toBeInTheDocument()
+    submit(container)
+
+    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1))
+    expect(mockCreateEntity).toHaveBeenCalledWith('kg_a', {
+      name: 'Consolidation Adjustments',
+      legal_name: null,
+      entity_type: 'llc',
+      ticker: null,
+      entity_role: 'consolidation',
     })
   })
 

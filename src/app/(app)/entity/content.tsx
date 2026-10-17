@@ -11,11 +11,19 @@ import {
   Button,
   Card,
   Label,
+  Select,
   Spinner,
   TextInput,
 } from 'flowbite-react'
 import { type FC, useEffect, useRef, useState } from 'react'
 import { HiOfficeBuilding, HiPencil, HiSave, HiX } from 'react-icons/hi'
+
+const TREATMENT_LABELS: Record<string, string> = {
+  full: 'consolidated in full',
+  equity: 'equity method, not summed',
+  cost: 'at cost, not summed',
+  none: 'not consolidated',
+}
 
 const EntityInfoPageContent: FC = function () {
   const graphId = useLedgerGraph().graph?.graphId ?? null
@@ -105,6 +113,9 @@ const EntityInfoPageContent: FC = function () {
       address_state: entity.addressState || '',
       address_postal_code: entity.addressPostalCode || '',
       address_country: entity.addressCountry || '',
+      consolidation_method: entity.consolidationMethod || '',
+      joined_on: entity.joinedOn || '',
+      left_on: entity.leftOn || '',
     })
     setSaveError(null)
     setEditing(true)
@@ -138,6 +149,9 @@ const EntityInfoPageContent: FC = function () {
     address_state: 'addressState',
     address_postal_code: 'addressPostalCode',
     address_country: 'addressCountry',
+    consolidation_method: 'consolidationMethod',
+    joined_on: 'joinedOn',
+    left_on: 'leftOn',
   }
 
   const handleSave = async () => {
@@ -344,10 +358,74 @@ const EntityInfoPageContent: FC = function () {
                         {entity.ownershipPct !== null && (
                           <> · {entity.ownershipPct}% owned</>
                         )}
+                        {entity.entityRole === 'consolidation' ? (
+                          <>
+                            {' '}
+                            <Badge color="purple" size="sm">
+                              consolidation entity
+                            </Badge>
+                          </>
+                        ) : (
+                          <>
+                            {' '}
+                            ·{' '}
+                            {TREATMENT_LABELS[entity.consolidationMethod] ??
+                              entity.consolidationMethod}
+                          </>
+                        )}
+                        {entity.joinedOn && (
+                          <> · member since {entity.joinedOn.slice(0, 7)}</>
+                        )}
+                        {entity.leftOn && (
+                          <> · left {entity.leftOn.slice(0, 7)}</>
+                        )}
                       </>
                     )}
                   </dd>
                 </div>
+                {editing &&
+                  !entity.isParent &&
+                  entity.entityRole !== 'consolidation' && (
+                    <>
+                      <div>
+                        <Label
+                          htmlFor="consolidation_method"
+                          className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400"
+                        >
+                          Treatment
+                        </Label>
+                        <Select
+                          id="consolidation_method"
+                          value={formData.consolidation_method || ''}
+                          onChange={(e) =>
+                            updateField('consolidation_method', e.target.value)
+                          }
+                        >
+                          <option value="full">Consolidated in full</option>
+                          <option value="equity">Equity method</option>
+                          <option value="cost">At cost</option>
+                        </Select>
+                      </div>
+                      <EditableField
+                        label="Member since"
+                        value={entity.joinedOn}
+                        field="joined_on"
+                        editing={editing}
+                        formData={formData}
+                        onChange={updateField}
+                        placeholder="YYYY-MM-DD, blank since the beginning"
+                      />
+                      <EditableField
+                        label="Left the group"
+                        value={entity.leftOn}
+                        field="left_on"
+                        editing={editing}
+                        formData={formData}
+                        onChange={updateField}
+                        placeholder="YYYY-MM-DD, blank while a member"
+                      />
+                    </>
+                  )}
                 <div>
                   <dt className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">
                     Source

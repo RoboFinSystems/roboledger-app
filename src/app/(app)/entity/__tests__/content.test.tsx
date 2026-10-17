@@ -53,6 +53,9 @@ vi.mock('flowbite-react', () => ({
   ),
   Card: ({ children }: any) => <div>{children}</div>,
   Label: ({ children }: any) => <label>{children}</label>,
+  Select: ({ children, ...props }: any) => (
+    <select {...props}>{children}</select>
+  ),
   Spinner: () => <div data-testid="spinner" />,
   TextInput: (props: any) => <input {...props} />,
 }))
@@ -95,6 +98,10 @@ const entityFor = (graphId: string) => ({
   addressCountry: '',
   parentEntityId: null,
   isParent: true,
+  consolidationMethod: 'none',
+  entityRole: 'operating',
+  joinedOn: null,
+  leftOn: null,
 })
 
 function setGraph(graphId: string) {
@@ -196,6 +203,10 @@ describe('EntityInfoPageContent', () => {
       isParent: false,
       parentEntityId: 'ent_kg_a',
       ownershipPct: 100,
+      consolidationMethod: 'full',
+      entityRole: 'operating',
+      joinedOn: '2026-03-01',
+      leftOn: null,
     }
     mockScope.mockReturnValue({
       entityId: 'ent_s',
@@ -217,6 +228,8 @@ describe('EntityInfoPageContent', () => {
     expect(await screen.findByText(/Held under/)).toBeInTheDocument()
     expect(screen.getByText('Entity kg_a')).toBeInTheDocument()
     expect(screen.getByText(/100% owned/)).toBeInTheDocument()
+    expect(screen.getByText(/consolidated in full/)).toBeInTheDocument()
+    expect(screen.getByText(/member since 2026-03/)).toBeInTheDocument()
 
     await user.click(screen.getByText('Edit'))
     const nameInput = await screen.findByDisplayValue('Maple Court')
