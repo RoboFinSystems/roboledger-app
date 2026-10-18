@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockLiveFinancialStatement = vi.fn()
+const mockConsolidationWorksheet = vi.fn()
 const mockScope = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
@@ -9,6 +10,8 @@ vi.mock('@robosystems/core', () => ({
     ledger: {
       liveFinancialStatement: (...args: any[]) =>
         mockLiveFinancialStatement(...args),
+      consolidationWorksheet: (...args: any[]) =>
+        mockConsolidationWorksheet(...args),
     },
   },
   PageLayout: ({ children }: any) => <div>{children}</div>,
@@ -31,6 +34,10 @@ vi.mock('@/lib/entity-scope', () => ({
 
 vi.mock('../components/LiveStatementTable', () => ({
   default: () => <div data-testid="statement-table" />,
+}))
+
+vi.mock('../components/WorksheetTable', () => ({
+  default: () => <div data-testid="worksheet-table" />,
 }))
 
 vi.mock('@/components/RefreshControl', () => ({
@@ -173,5 +180,36 @@ describe('LiveStatementsContent', () => {
         /consolidated across 2 entities, the consolidation entity's adjustments in/
       )
     ).toBeInTheDocument()
+  })
+
+  it('lays the group out by entity on the worksheet, and says what sits beside the sum', async () => {
+    scope({ entities: [parent, sub] })
+    mockConsolidationWorksheet.mockResolvedValue({
+      period: { start: '2026-01-01', end: '2026-08-31' },
+      columns: [
+        { key: 'consolidated', kind: 'consolidated', in_sum: true },
+        { key: 'ent_k', kind: 'not_summed', in_sum: false },
+      ],
+      rows: [{ qname: 'rs-gaap:Cash', name: 'Cash', values: [1, 2] }],
+      validation: null,
+      unmapped_entity_ids: [],
+      truncated: false,
+    })
+    render(<LiveStatementsContent />)
+    await waitFor(() => expect(mockLiveFinancialStatement).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Worksheet' }))
+
+    await waitFor(() =>
+      expect(mockConsolidationWorksheet).toHaveBeenCalledWith(
+        'kg_a',
+        expect.objectContaining({ statement_type: 'balance_sheet' })
+      )
+    )
+    expect(await screen.findByTestId('worksheet-table')).toBeInTheDocument()
+    expect(
+      screen.getByText(/shown beside the sum, not in it/)
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId('statement-table')).not.toBeInTheDocument()
   })
 })

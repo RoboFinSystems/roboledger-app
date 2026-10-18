@@ -15,7 +15,10 @@ import ValidationBanner from '@/components/ValidationBanner'
 import { useEntityScope } from '@/lib/entity-scope'
 import { friendlyError, type FriendlyError } from '@/lib/ledger/errors'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
-import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
+import type {
+  ConsolidationWorksheetResponse,
+  LiveFinancialStatementResponse,
+} from '@robosystems/client/types'
 import {
   clients,
   EmptyState,
@@ -30,6 +33,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
 import { TbReportMoney } from 'react-icons/tb'
 import LiveStatementTable from './components/LiveStatementTable'
+import WorksheetTable from './components/WorksheetTable'
 
 // The SDK types this directly now — liveFinancialStatement returns
 // LiveFinancialStatementResponse rather than Record<string, unknown>, so the
@@ -51,12 +55,13 @@ const STATEMENT_TYPES: readonly SegmentedOption<StatementType>[] = [
 
 type PresetKey = 'this_month' | 'this_quarter' | 'ytd' | 'last_fy' | 'custom'
 
-type StatementScope = 'entity' | 'combined' | 'consolidated'
+type StatementScope = 'entity' | 'combined' | 'consolidated' | 'worksheet'
 
 const SCOPE_OPTIONS: readonly SegmentedOption<StatementScope>[] = [
   { value: 'entity', label: 'This entity' },
   { value: 'combined', label: 'Combined' },
   { value: 'consolidated', label: 'Consolidated' },
+  { value: 'worksheet', label: 'Worksheet' },
 ]
 
 const PRESETS: { key: PresetKey; label: string }[] = [
@@ -111,8 +116,9 @@ const LiveStatementsContent: FC = function () {
   const { entityId, entities } = useEntityScope()
   // A group statement is the group parent's Reporting Style over its members'
   // books, summed per concept: combined is the members alone, nothing
-  // eliminated; consolidated adds the consolidation entity's adjustments. Both
-  // are only offered on the parent of a graph that holds more than one entity.
+  // eliminated; consolidated adds the consolidation entity's adjustments; the
+  // worksheet lays them out side by side, one column per entity. All three are
+  // only offered on the parent of a graph that holds more than one entity.
   const canCombine = entityId === null && entities.length > 1
   const [scope, setScope] = useState<StatementScope>('entity')
   // Back to the entity's own books whenever the entity or the graph changes:
@@ -123,6 +129,7 @@ const LiveStatementsContent: FC = function () {
   }, [entityId, graphId])
   const requestScope: StatementScope = canCombine ? scope : 'entity'
   const grouped = requestScope !== 'entity'
+  const asWorksheet = requestScope === 'worksheet'
 
   const [statementType, setStatementType] =
     useState<StatementType>('balance_sheet')
@@ -130,6 +137,8 @@ const LiveStatementsContent: FC = function () {
   const [customStart, setCustomStart] = useState('')
   const [customEnd, setCustomEnd] = useState('')
   const [statement, setStatement] = useState<LiveStatement | null>(null)
+  const [worksheet, setWorksheet] =
+    useState<ConsolidationWorksheetResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<FriendlyError | null>(null)
   const [fetchedAt, setFetchedAt] = useState<Date | null>(null)
@@ -142,6 +151,7 @@ const LiveStatementsContent: FC = function () {
   const load = useCallback(async () => {
     if (!currentGraph) {
       setStatement(null)
+      setWorksheet(null)
       setFetchedAt(null)
       return
     }
@@ -154,12 +164,28 @@ const LiveStatementsContent: FC = function () {
     // Wait for both ends of a custom range before rendering.
     if (!range.start || !range.end) {
       setStatement(null)
+      setWorksheet(null)
       return
     }
     const seq = ++loadSeq.current
     try {
       setIsLoading(true)
       setError(null)
+      if (requestScope === 'worksheet') {
+        const sheet = await clients.ledger.consolidationWorksheet(
+          currentGraph.graphId,
+          {
+            statement_type: statementType,
+            period_start: range.start,
+            period_end: range.end,
+          }
+        )
+        if (seq !== loadSeq.current) return // superseded by a newer load
+        setWorksheet(Array.isArray(sheet?.columns) ? sheet : null)
+        setStatement(null)
+        setFetchedAt(new Date())
+        return
+      }
       const result = await clients.ledger.liveFinancialStatement(
         currentGraph.graphId,
         {
@@ -171,6 +197,7 @@ const LiveStatementsContent: FC = function () {
         }
       )
       if (seq !== loadSeq.current) return // superseded by a newer load
+      setWorksheet(null)
       // The SDK now throws on an empty envelope rather than resolving `{}`, so a
       // missing result surfaces through the catch below instead of rendering as
       // "no data". The periods check stays as a shape guard.
@@ -189,6 +216,7 @@ const LiveStatementsContent: FC = function () {
         )
       )
       setStatement(null)
+      setWorksheet(null)
     } finally {
       if (seq === loadSeq.current) setIsLoading(false)
     }
@@ -299,62 +327,108 @@ const LiveStatementsContent: FC = function () {
         </Alert>
       )}
 
-      <Card>
-        <div className="relative overflow-x-auto">
-          {isLoading && statement && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center rounded bg-white/60 dark:bg-gray-900/60">
-              <LoadingState size="lg" />
+      {asWorksheet ? (
+        <Card>
+          <div className="relative overflow-x-auto">
+            {isLoading && worksheet && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded bg-white/60 dark:bg-gray-900/60">
+                <LoadingState size="lg" />
+              </div>
+            )}
+            {isLoading && !worksheet ? (
+              <LoadingState />
+            ) : !worksheet || worksheet.rows.length === 0 ? (
+              <EmptyState
+                icon={TbReportMoney}
+                title="No data for this statement"
+                description="No ledger activity falls in the selected period."
+              />
+            ) : (
+              <WorksheetTable worksheet={worksheet} />
+            )}
+          </div>
+          {!isLoading && worksheet && worksheet.rows.length > 0 && (
+            <div className="border-t border-gray-200 p-4 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              {worksheet.validation && (
+                <ValidationBanner
+                  validation={worksheet.validation}
+                  className="mb-3"
+                />
+              )}
+              {worksheet.period.start} to {worksheet.period.end} • the checks
+              ran on the consolidated column
+              {worksheet.columns.some((c) => c.kind === 'not_summed') &&
+                ' • equity-method and cost members are shown beside the sum, not in it'}
+              {worksheet.unmapped_entity_ids &&
+                worksheet.unmapped_entity_ids.length > 0 &&
+                ` • ${worksheet.unmapped_entity_ids.length} ${
+                  worksheet.unmapped_entity_ids.length === 1
+                    ? 'entity has'
+                    : 'entities have'
+                } no mapping yet and no column`}
+              {worksheet.truncated && ' • results truncated'}
             </div>
           )}
-          {isLoading && !statement ? (
-            <LoadingState />
-          ) : !statement || statement.facts.length === 0 ? (
-            <EmptyState
-              icon={TbReportMoney}
-              title="No data for this statement"
-              description={
-                preset === 'custom' && (!customStart || !customEnd)
-                  ? 'Pick a start and end date to render.'
-                  : 'No ledger activity falls in the selected period.'
-              }
-            />
-          ) : (
-            <LiveStatementTable statement={statement} />
-          )}
-        </div>
+        </Card>
+      ) : (
+        <Card>
+          <div className="relative overflow-x-auto">
+            {isLoading && statement && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded bg-white/60 dark:bg-gray-900/60">
+                <LoadingState size="lg" />
+              </div>
+            )}
+            {isLoading && !statement ? (
+              <LoadingState />
+            ) : !statement || statement.facts.length === 0 ? (
+              <EmptyState
+                icon={TbReportMoney}
+                title="No data for this statement"
+                description={
+                  preset === 'custom' && (!customStart || !customEnd)
+                    ? 'Pick a start and end date to render.'
+                    : 'No ledger activity falls in the selected period.'
+                }
+              />
+            ) : (
+              <LiveStatementTable statement={statement} />
+            )}
+          </div>
 
-        {!isLoading && statement && statement.facts.length > 0 && (
-          <div className="border-t border-gray-200 p-4 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-            {/* Guard rails ran on exactly the rendered columns — a plug that
+          {!isLoading && statement && statement.facts.length > 0 && (
+            <div className="border-t border-gray-200 p-4 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              {/* Guard rails ran on exactly the rendered columns — a plug that
                 foots the cash flow by construction, or a column that does
                 not balance, is reported here rather than hidden. */}
-            {statement.validation && (
-              <ValidationBanner
-                validation={statement.validation}
-                className="mb-3"
-              />
-            )}
-            {statement.fact_count} concept
-            {statement.fact_count === 1 ? '' : 's'}
-            {statement.unmapped_count > 0 &&
-              ` • ${statement.unmapped_count} unmapped CoA element${
-                statement.unmapped_count === 1 ? '' : 's'
-              } not included`}
-            {statement.truncated && ' • results truncated — narrow the period'}
-            {grouped &&
-              statement.combined_entity_ids &&
-              ` • ${requestScope} across ${statement.combined_entity_ids.length} ${
-                statement.combined_entity_ids.length === 1
-                  ? 'entity'
-                  : 'entities'
-              }${
-                requestScope === 'consolidated'
-                  ? ", the consolidation entity's adjustments in"
-                  : ', nothing eliminated'
-              }`}
-          </div>
-        )}
-      </Card>
+              {statement.validation && (
+                <ValidationBanner
+                  validation={statement.validation}
+                  className="mb-3"
+                />
+              )}
+              {statement.fact_count} concept
+              {statement.fact_count === 1 ? '' : 's'}
+              {statement.unmapped_count > 0 &&
+                ` • ${statement.unmapped_count} unmapped CoA element${
+                  statement.unmapped_count === 1 ? '' : 's'
+                } not included`}
+              {statement.truncated &&
+                ' • results truncated — narrow the period'}
+              {grouped &&
+                statement.combined_entity_ids &&
+                ` • ${requestScope} across ${statement.combined_entity_ids.length} ${
+                  statement.combined_entity_ids.length === 1
+                    ? 'entity'
+                    : 'entities'
+                }${
+                  requestScope === 'consolidated'
+                    ? ", the consolidation entity's adjustments in"
+                    : ', nothing eliminated'
+                }`}
+            </div>
+          )}
+        </Card>
+      )}
     </PageLayout>
   )
 }
