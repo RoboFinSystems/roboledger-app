@@ -118,6 +118,15 @@ const ConsolidationEntriesPanel: FC<ConsolidationEntriesPanelProps> = ({
   const reconciling = preview?.reconciling_items ?? []
   const notes = preview?.notes ?? []
   const draftedCount = preview?.drafted_entry_ids?.length ?? 0
+  // The month's drafts hold what it needs: they are the entries, listed
+  // under Draft review, so the proposals are not shown twice.
+  const drafted = Boolean(preview?.up_to_date) && draftedCount > 0
+  // Drafts that no longer match the books, even with nothing left to
+  // propose, are replaced (or cleared) by drafting again.
+  const canDraft =
+    Boolean(preview) &&
+    !preview?.up_to_date &&
+    (proposals.length > 0 || draftedCount > 0)
 
   return (
     <Card>
@@ -133,7 +142,7 @@ const ConsolidationEntriesPanel: FC<ConsolidationEntriesPanelProps> = ({
           <Button
             color="primary"
             size="sm"
-            disabled={isDrafting || isLoading || proposals.length === 0}
+            disabled={isDrafting || isLoading || !canDraft}
             onClick={handleDraft}
           >
             {isDrafting ? (
@@ -161,7 +170,16 @@ const ConsolidationEntriesPanel: FC<ConsolidationEntriesPanelProps> = ({
         </p>
       ) : (
         <div className="space-y-3">
-          {proposals.length > 0 ? (
+          {drafted ? (
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              <Badge color="success" size="sm" className="mr-2 inline-flex">
+                Up to date: drafted
+              </Badge>
+              {draftedCount} draft{draftedCount === 1 ? '' : 's'} hold this
+              month&apos;s entries, listed under Draft review. Closing the month
+              posts them.
+            </p>
+          ) : proposals.length > 0 ? (
             <Table>
               <TableHead>
                 <tr>
@@ -200,11 +218,11 @@ const ConsolidationEntriesPanel: FC<ConsolidationEntriesPanelProps> = ({
             )
           )}
 
-          {draftedCount > 0 && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {draftedCount} draft{draftedCount === 1 ? '' : 's'} written for
-              this month, listed under Draft review. Draft again after a
-              member&apos;s books change to replace them.
+          {draftedCount > 0 && !preview.up_to_date && (
+            <p className="text-xs text-yellow-700 dark:text-yellow-300">
+              The month&apos;s {draftedCount} draft
+              {draftedCount === 1 ? '' : 's'} no longer match the books. Draft
+              again to replace them.
             </p>
           )}
 

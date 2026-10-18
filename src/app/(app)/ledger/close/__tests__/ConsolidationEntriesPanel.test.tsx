@@ -118,17 +118,38 @@ describe('ConsolidationEntriesPanel', () => {
       />
     )
 
-    mockPreview.mockResolvedValue({ ...PREVIEW, drafted_entry_ids: ['je_1'] })
+    mockPreview.mockResolvedValue({
+      ...PREVIEW,
+      up_to_date: true,
+      drafted_entry_ids: ['je_1'],
+    })
     fireEvent.click(await screen.findByText('Draft entries'))
 
-    // Once drafted, they are named, and a second run replaces them.
+    // Drafted, the month is up to date: the drafts are the entries, so the
+    // proposals are not listed again, and there is nothing to draft.
+    expect(await screen.findByText('Up to date: drafted')).toBeInTheDocument()
     expect(
-      await screen.findByText(/1 draft written for this month/)
-    ).toBeInTheDocument()
-    expect(screen.getByText('Draft again')).toBeInTheDocument()
+      screen.queryByText('Investment elimination — Harbor Café LLC')
+    ).not.toBeInTheDocument()
+    expect(screen.getByText('Draft again').closest('button')).toBeDisabled()
     expect(mockPropose).toHaveBeenCalledWith('kg1', '2026-09')
     expect(onDrafted).toHaveBeenCalled()
     expect(mockPreview).toHaveBeenCalledTimes(2)
+  })
+
+  it('offers to replace drafts that no longer match, even with nothing to propose', async () => {
+    mockPreview.mockResolvedValue({
+      ...PREVIEW,
+      proposals: [],
+      up_to_date: false,
+      drafted_entry_ids: ['je_1', 'je_2'],
+    })
+    render(<ConsolidationEntriesPanel graphId="kg1" period="2026-09" />)
+
+    expect(
+      await screen.findByText(/no longer match the books/)
+    ).toBeInTheDocument()
+    expect(screen.getByText('Draft again').closest('button')).toBeEnabled()
   })
 
   it('shows a residual as withheld, never as an entry', async () => {
