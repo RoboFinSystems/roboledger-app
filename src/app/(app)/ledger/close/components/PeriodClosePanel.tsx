@@ -44,6 +44,7 @@ import {
 import { TbFileInvoice } from 'react-icons/tb'
 import { formatCurrencyDollars } from '../utils'
 import { isStatementBlockType } from './blockview/types'
+import ConsolidationEntriesPanel from './ConsolidationEntriesPanel'
 
 const STATUS_COLORS: Record<string, string> = {
   posted: 'success',
@@ -349,6 +350,12 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     },
     [graphId, selectedPeriod, onEntryCreated, loadCloseStatus, loadDrafts]
   )
+
+  const handleConsolidationDrafted = useCallback(() => {
+    onEntryCreated?.()
+    void loadCloseStatus()
+    void loadDrafts()
+  }, [onEntryCreated, loadCloseStatus, loadDrafts])
 
   const handleClosePeriod = useCallback(async () => {
     if (!selectedPeriod) return
@@ -660,6 +667,15 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
             <span>Posted: {closeStatus.totalPosted}</span>
           </div>
         </>
+      )}
+
+      {/* The consolidation entity's month starts from the engine's entries. */}
+      {scopedEntity?.entityRole === 'consolidation' && selectedPeriod && (
+        <ConsolidationEntriesPanel
+          graphId={graphId}
+          period={selectedPeriod}
+          onDrafted={handleConsolidationDrafted}
+        />
       )}
 
       {/* Draft review + close action */}

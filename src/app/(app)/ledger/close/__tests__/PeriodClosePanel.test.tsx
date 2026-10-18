@@ -95,6 +95,18 @@ vi.mock('next/link', () => ({
   default: ({ href, children }: any) => <a href={href}>{children}</a>,
 }))
 
+let mockScopedEntity: { entityRole: string } | null = null
+
+vi.mock('@/lib/entity-scope', () => ({
+  useEntityScope: () => ({ entity: mockScopedEntity }),
+}))
+
+vi.mock('../components/ConsolidationEntriesPanel', () => ({
+  default: ({ period }: any) => (
+    <div data-testid="consolidation-entries">{period}</div>
+  ),
+}))
+
 import PeriodClosePanel from '../components/PeriodClosePanel'
 
 const CALENDAR = {
@@ -573,5 +585,47 @@ describe('PeriodClosePanel — close overrides', () => {
 
     expect(await screen.findByText(/3 drafts posted/)).toBeInTheDocument()
     expect(screen.queryByText(/to QuickBooks/)).not.toBeInTheDocument()
+  })
+})
+
+describe('PeriodClosePanel — consolidating entries', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetFiscalCalendar.mockResolvedValue(CALENDAR)
+    mockGetPeriodCloseStatus.mockResolvedValue({
+      schedules: [],
+      totalDraft: 0,
+      totalPosted: 0,
+    })
+    mockListPeriodDrafts.mockResolvedValue({
+      draftCount: 0,
+      totalDebit: 0,
+      totalCredit: 0,
+      allBalanced: true,
+      qbPublishCount: 0,
+      localOnlyCount: 0,
+      drafts: [],
+    })
+  })
+
+  it("shows the engine's entries on the consolidation entity's close", async () => {
+    mockScopedEntity = { entityRole: 'consolidation' }
+    render(<PeriodClosePanel graphId="kg1" entityId="ent_cons" />)
+
+    expect(
+      await screen.findByTestId('consolidation-entries')
+    ).toHaveTextContent('2026-05')
+    mockScopedEntity = null
+  })
+
+  it('leaves them off an operating company', async () => {
+    mockScopedEntity = { entityRole: 'operating' }
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    await screen.findByText('Close Period')
+    expect(
+      screen.queryByTestId('consolidation-entries')
+    ).not.toBeInTheDocument()
+    mockScopedEntity = null
   })
 })
