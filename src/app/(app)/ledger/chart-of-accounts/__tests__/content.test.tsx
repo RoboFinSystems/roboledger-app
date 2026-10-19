@@ -168,12 +168,15 @@ describe('remapping a mapped account', () => {
   })
 
   it("shows the server's reason when the move is refused", async () => {
+    // The facade's shape: the server's body stringified into the message.
     mockCreateMappingAssociation.mockRejectedValue(
-      Object.assign(new Error('refused'), {
-        status: 422,
-        detail:
-          'refusing to disturb facts that the ledger treats as immutable: 7 canonical statement set(s) of closed period(s) 2026-03–2026-09 were computed through the mapping arcs or element attributes this change alters (reopen latest-first down to 2026-03 — closed history is immutable) Moving coa:2110 from the balance sheet to the income statement changes net income and every later carry-in: a restatement, not a reclassification.',
-      })
+      new Error(
+        'Create mapping association failed: ' +
+          JSON.stringify({
+            detail:
+              'refusing to disturb facts that the ledger treats as immutable: 7 canonical statement set(s) of closed period(s) 2026-03–2026-09 were computed through the mapping arcs or element attributes this change alters (reopen latest-first down to 2026-03 — closed history is immutable) Moving coa:2110 from the balance sheet to the income statement changes net income and every later carry-in: a restatement, not a reclassification.',
+          })
+      )
     )
 
     await chooseOtherCurrentLiabilities()

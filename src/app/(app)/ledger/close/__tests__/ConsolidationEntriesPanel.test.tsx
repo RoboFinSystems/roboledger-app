@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockPreview = vi.fn()
@@ -221,6 +221,99 @@ describe('ConsolidationEntriesPanel', () => {
     ).toBeInTheDocument()
     expect(
       screen.queryByText(/no longer match the books/)
+    ).not.toBeInTheDocument()
+  })
+
+  it('holds back Draft again when the only gap is an entry it cannot compute', async () => {
+    mockPreview.mockResolvedValue({
+      ...PREVIEW,
+      up_to_date: false,
+      incomplete: true,
+      drafted_entry_ids: ['je_1'],
+      notes: [
+        'Consolidation Adjustments has no account mapped to rs-gaap:AccountsPayableCurrent.',
+      ],
+    })
+    render(<ConsolidationEntriesPanel graphId="kg1" period="2026-09" />)
+
+    await screen.findByText(/An entry the month needs is left out/)
+    expect(screen.getByText('Draft again').closest('button')).toBeDisabled()
+  })
+
+  it('still drafts a month with an entry left out when nothing is drafted yet', async () => {
+    mockPreview.mockResolvedValue({
+      ...PREVIEW,
+      up_to_date: false,
+      incomplete: true,
+      drafted_entry_ids: [],
+    })
+    render(<ConsolidationEntriesPanel graphId="kg1" period="2026-09" />)
+
+    await screen.findByText(/An entry the month needs is left out/)
+    expect(screen.getByText('Draft entries').closest('button')).toBeEnabled()
+  })
+
+  it('re-reads the month when the close panel says it moved', async () => {
+    mockPreview.mockResolvedValue({ ...PREVIEW, closed: true, proposals: [] })
+    const { rerender } = render(
+      <ConsolidationEntriesPanel graphId="kg1" period="2026-09" reloadKey={0} />
+    )
+    await screen.findByText(/This month is closed here/)
+
+    // Reopened: the same month, no longer closed.
+    mockPreview.mockResolvedValue(PREVIEW)
+    rerender(
+      <ConsolidationEntriesPanel graphId="kg1" period="2026-09" reloadKey={1} />
+    )
+
+    expect(await screen.findByText('Draft entries')).toBeInTheDocument()
+    expect(screen.queryByText(/This month is closed here/)).toBeNull()
+    expect(mockPreview).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps a draft that returns after a month switch off the new month', async () => {
+    let finishPropose: () => void = () => {}
+    mockPropose.mockReturnValue(
+      new Promise<void>((resolve) => {
+        finishPropose = resolve
+      })
+    )
+    mockPreview.mockImplementation((_g: string, period: string) =>
+      Promise.resolve({
+        ...PREVIEW,
+        period,
+        proposals: period === '2026-09' ? [PROPOSAL] : [],
+        up_to_date: period !== '2026-09',
+      })
+    )
+    const onDraftedSept = vi.fn()
+    const onDraftedOct = vi.fn()
+    const { rerender } = render(
+      <ConsolidationEntriesPanel
+        graphId="kg1"
+        period="2026-09"
+        onDrafted={onDraftedSept}
+      />
+    )
+    fireEvent.click(await screen.findByText('Draft entries'))
+
+    rerender(
+      <ConsolidationEntriesPanel
+        graphId="kg1"
+        period="2026-10"
+        onDrafted={onDraftedOct}
+      />
+    )
+    expect(await screen.findByText('Up to date')).toBeInTheDocument()
+
+    await act(async () => {
+      finishPropose()
+    })
+    expect(onDraftedSept).not.toHaveBeenCalled()
+    expect(mockPreview).toHaveBeenLastCalledWith('kg1', '2026-10')
+    expect(screen.getByText('Up to date')).toBeInTheDocument()
+    expect(
+      screen.queryByText('Investment elimination — Harbor Café LLC')
     ).not.toBeInTheDocument()
   })
 

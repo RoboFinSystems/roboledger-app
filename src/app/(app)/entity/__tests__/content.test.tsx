@@ -244,4 +244,64 @@ describe('EntityInfoPageContent', () => {
     )
     await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1))
   })
+
+  describe('a member of a group that has closed months', () => {
+    const member = {
+      id: 'ent_s',
+      name: 'Maple Court',
+      isParent: false,
+      parentEntityId: 'ent_kg_a',
+      ownershipPct: 100,
+      consolidationMethod: 'full',
+      entityRole: 'operating',
+      joinedOn: '2026-03-01',
+      leftOn: null,
+    }
+
+    beforeEach(() => {
+      mockScope.mockReturnValue({
+        entityId: 'ent_s',
+        entities: [entityFor('kg_a'), member],
+        entity: member,
+        refresh: mockRefresh,
+      })
+      mockGetEntity.mockResolvedValue({ ...entityFor('kg_a'), ...member })
+    })
+
+    it('edits the membership dates as dates', async () => {
+      const user = userEvent.setup()
+      render(<EntityInfoPageContent />)
+      await user.click(await screen.findByText('Edit'))
+
+      expect(await screen.findByDisplayValue('2026-03-01')).toHaveAttribute(
+        'type',
+        'date'
+      )
+      expect(document.getElementById('left_on')).toHaveAttribute('type', 'date')
+    })
+
+    it("shows the server's refusal, never the raw envelope", async () => {
+      const user = userEvent.setup()
+      mockUpdateEntity.mockRejectedValue(
+        new Error(
+          'Update entity failed: ' +
+            JSON.stringify({
+              detail:
+                'The group has closed its consolidated months through 2026-09; a change of method from a date is not supported yet.',
+            })
+        )
+      )
+      render(<EntityInfoPageContent />)
+      await user.click(await screen.findByText('Edit'))
+      await user.selectOptions(
+        await screen.findByDisplayValue('Consolidated in full'),
+        'equity'
+      )
+      await user.click(screen.getByText('Save'))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        /^The group has closed its consolidated months through 2026-09; a change of method from a date is not supported yet\.$/
+      )
+    })
+  })
 })

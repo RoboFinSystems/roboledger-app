@@ -23,6 +23,17 @@ describe('extractDetail', () => {
     expect(extractDetail(raw)).toBe('field required; not a string')
   })
 
+  it("takes the message out of a refused close's structured detail", () => {
+    const raw = sdkError('Close period', {
+      detail: {
+        message: "Cannot close period '2026-10'.",
+        blockers: ['entity_open'],
+        group_open_entities: ['Driftline Café LLC'],
+      },
+    })
+    expect(extractDetail(raw)).toBe("Cannot close period '2026-10'.")
+  })
+
   it('keeps a detail that itself contains braces intact', () => {
     const raw = sdkError('Revoke report share', {
       detail: "Report '{rpt_1}' not found.",
@@ -237,6 +248,41 @@ describe('apiErrorMessage', () => {
   it('maps an ApiError refusal through friendlyError', () => {
     const err = new ApiError({ status: 404, detail: 'Connection not found' })
     expect(apiErrorMessage(err, 'fallback')).toBe('Connection not found')
+  })
+
+  it("unwraps the facade's `<label> failed: <JSON>` refusal", () => {
+    const err = new Error(
+      sdkError('Create mapping association', {
+        detail: 'Reopen 2026-09 first: a restatement, not a reclassification.',
+      })
+    )
+    expect(apiErrorMessage(err, 'fallback')).toBe(
+      'Reopen 2026-09 first: a restatement, not a reclassification.'
+    )
+  })
+
+  it('uses the fallback for a facade failure that carries no detail', () => {
+    expect(
+      apiErrorMessage(
+        new Error('Link bank account failed: empty response'),
+        'fallback'
+      )
+    ).toBe('fallback')
+    expect(
+      apiErrorMessage(
+        new Error(sdkError('Link bank account', { error: 'x' })),
+        'fallback'
+      )
+    ).toBe('fallback')
+    // A GraphQL read's error list is not a refusal written for a user.
+    expect(
+      apiErrorMessage(
+        new Error(
+          sdkError('List bank accounts', [{ message: 'Traceback (most…' }])
+        ),
+        'fallback'
+      )
+    ).toBe('fallback')
   })
 
   it('uses the fallback for a network failure or a detail-less refusal', () => {

@@ -188,6 +188,38 @@ describe('NewEntityModal', () => {
     })
   })
 
+  it('offers no second consolidation entity, and never holds a member under it', () => {
+    const consolidation = entity({
+      id: 'ent_c',
+      name: 'Consolidation Adjustments',
+      parentEntityId: 'ent_p',
+      consolidationMethod: 'none',
+      entityRole: 'consolidation',
+    })
+    render(
+      <NewEntityModal
+        graphId="kg_a"
+        entities={[parent, sub, consolidation]}
+        open
+        onClose={onClose}
+        onCreated={onCreated}
+      />
+    )
+
+    expect(
+      screen.queryByLabelText(/consolidation entity/)
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /Consolidation Adjustments is this group's consolidation/
+      )
+    ).toBeInTheDocument()
+    const heldUnder = screen.getByLabelText('Held under')
+    expect(
+      [...heldUnder.querySelectorAll('option')].map((o) => o.value)
+    ).toEqual(['ent_p', 'ent_s'])
+  })
+
   it('refuses an ownership outside 0–100 before asking the server', () => {
     render(
       <NewEntityModal

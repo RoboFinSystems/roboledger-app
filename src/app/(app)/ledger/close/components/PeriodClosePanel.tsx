@@ -2,6 +2,7 @@
 
 import FiscalCalendarSetupModal from '@/components/FiscalCalendarSetupModal'
 import { useEntityScope } from '@/lib/entity-scope'
+import { friendlyError } from '@/lib/ledger/errors'
 import type {
   LedgerFiscalCalendar,
   LedgerPeriodCloseStatus,
@@ -78,7 +79,7 @@ const BLOCKER_MESSAGES: Record<string, string> = {
   entity_open:
     "This is the group's close: every company the month consolidates closes it first.",
   adjustments_unposted:
-    "The month's consolidating entries are not drafted. Draft them under Consolidating entries, then close.",
+    "The month's consolidating entries are not all drafted, or one the engine could not compute is left out. Draft them under Consolidating entries, or clear what the notes there name, then close.",
   residual_unexplained:
     'A difference the consolidating entries cannot explain is left. Correct the books or post the explaining entry, or close over it knowingly.',
   consolidated_does_not_foot:
@@ -263,11 +264,12 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   const calendarSeq = useRef(0)
 
   const loadCalendar = useCallback(async () => {
-    ++calendarSeq.current
+    const seq = ++calendarSeq.current
     try {
       setIsLoadingCalendar(true)
       setError(null)
       const cal = await clients.ledger.getFiscalCalendar(graphId, { entityId })
+      if (seq !== calendarSeq.current) return
       // SDK returns null (not an error) when the ledger isn't
       // initialized yet — surface as a first-class state so the UI
       // shows the Initialize button instead of a red error banner.
@@ -281,10 +283,11 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
         setSelectedPeriod(null)
       }
     } catch (err: unknown) {
+      if (seq !== calendarSeq.current) return
       console.error('Error loading fiscal calendar:', err)
       setError('Failed to load fiscal calendar.')
     } finally {
-      setIsLoadingCalendar(false)
+      if (seq === calendarSeq.current) setIsLoadingCalendar(false)
     }
   }, [graphId, entityId])
 
@@ -296,6 +299,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       const cal = await clients.ledger.getFiscalCalendar(graphId, { entityId })
       if (seq !== calendarSeq.current) return
       setCalendar(cal)
+      setIsLoadingCalendar(false)
     } catch (err) {
       if (seq !== calendarSeq.current) return
       console.error('Error refreshing fiscal calendar:', err)
@@ -308,6 +312,9 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   // button's hasUnbalancedDrafts gate reads exactly that state.
   const closeStatusSeq = useRef(0)
   const draftsSeq = useRef(0)
+  // Bumped by a close or reopen: the selected month may not change (a reopen
+  // of the month on screen), yet everything read for it is now out of date.
+  const [periodVersion, setPeriodVersion] = useState(0)
 
   const loadCloseStatus = useCallback(async () => {
     if (!selectedPeriod) return
@@ -378,7 +385,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       setCloseStatus(null)
       setDrafts(null)
     }
-  }, [selectedPeriod, loadCloseStatus, loadDrafts])
+  }, [selectedPeriod, loadCloseStatus, loadDrafts, periodVersion])
 
   // ── Actions ──────────────────────────────────────────────────────────
   const handleCreateEntry = useCallback(
@@ -467,10 +474,14 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
         result.fiscalCalendar.catchUpSequence[0] ??
         result.fiscalCalendar.closedThrough
       setSelectedPeriod(next ?? null)
+      setPeriodVersion((v) => v + 1)
       onEntryCreated?.()
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      setError(`Close period failed: ${message}`)
+      setError(friendlyError(message).message)
+      // A refusal means the calendar on screen was out of date: show what
+      // holds the month now.
+      void refreshCalendar()
     } finally {
       setIsClosing(false)
     }
@@ -483,6 +494,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     allowUnreconciledAccounts,
     allowUnexplainedResiduals,
     onEntryCreated,
+    refreshCalendar,
   ])
 
   const openReopenModal = (period: string) => {
@@ -504,6 +516,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       )
       setCalendar(newCal)
       setSelectedPeriod(reopenTarget)
+      setPeriodVersion((v) => v + 1)
       setReopenTarget(null)
       setReopenReason('')
       // A reopen retracts the month's stamped statements — a lingering
@@ -512,7 +525,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       onEntryCreated?.()
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      setError(`Reopen period failed: ${message}`)
+      setError(friendlyError(message).message)
     } finally {
       setIsReopening(false)
     }
@@ -734,6 +747,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
         <ConsolidationEntriesPanel
           graphId={graphId}
           period={selectedPeriod}
+          reloadKey={periodVersion}
           onDrafted={handleConsolidationDrafted}
         />
       )}

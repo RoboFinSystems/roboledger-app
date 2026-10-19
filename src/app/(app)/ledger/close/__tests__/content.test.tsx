@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const mockGetClosingBookStructures = vi.fn()
 const mockGetEntity = vi.fn()
@@ -123,13 +123,27 @@ vi.mock('../components/AccountRollupsPanel', () => ({
   ),
 }))
 
-vi.mock('../components/PeriodClosePanel', () => ({
-  default: ({ onReviewChanges }: any) => (
-    <div data-testid="period-close-panel">
-      <button onClick={onReviewChanges}>review changes</button>
-    </div>
-  ),
+const scope = vi.hoisted(() => ({
+  entityId: null as string | null,
+  panelMounts: 0,
 }))
+vi.mock('@/lib/entity-scope', () => ({
+  useEntityScope: () => ({ entityId: scope.entityId }),
+}))
+
+vi.mock('../components/PeriodClosePanel', async () => {
+  const { useState } = await import('react')
+  return {
+    default: function PeriodClosePanel({ onReviewChanges }: any) {
+      const [mount] = useState(() => ++scope.panelMounts)
+      return (
+        <div data-testid="period-close-panel" data-mount={mount}>
+          <button onClick={onReviewChanges}>review changes</button>
+        </div>
+      )
+    },
+  }
+})
 
 vi.mock('../components/ChangedTransactionsPanel', () => ({
   default: ({ graphId }: any) => (
@@ -170,6 +184,10 @@ const makeGraphState = (
 })
 
 describe('CloseContent', () => {
+  afterEach(() => {
+    scope.entityId = null
+  })
+
   it('shows "No Ledger Found" when no qualifying graph', () => {
     mockUseGraphContext.mockReturnValue(makeGraphState())
     render(<CloseContent />)
@@ -266,6 +284,29 @@ describe('CloseContent', () => {
     await waitFor(() => {
       expect(screen.getByTestId('period-close-panel')).toBeInTheDocument()
     })
+  })
+
+  it("starts the period close afresh for each entity, so one entity's reads never land on another", async () => {
+    const graph = makeGraph('kg_test')
+    mockUseGraphContext.mockReturnValue(makeGraphState([graph], 'kg_test'))
+    mockGetClosingBookStructures.mockResolvedValue({
+      categories: [],
+      has_data: true,
+    })
+    mockGetEntity.mockResolvedValue(null)
+    scope.entityId = 'ent_cons'
+
+    const { rerender } = render(<CloseContent />)
+    const first = (await screen.findByTestId('period-close-panel')).dataset
+      .mount
+
+    scope.entityId = 'ent_member'
+    rerender(<CloseContent />)
+    await waitFor(() =>
+      expect(screen.getByTestId('period-close-panel').dataset.mount).not.toBe(
+        first
+      )
+    )
   })
 
   it('falls back to period_close when no categories have items', async () => {
