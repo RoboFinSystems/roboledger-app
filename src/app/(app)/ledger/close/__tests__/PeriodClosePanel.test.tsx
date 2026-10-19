@@ -102,8 +102,11 @@ vi.mock('@/lib/entity-scope', () => ({
 }))
 
 vi.mock('../components/ConsolidationEntriesPanel', () => ({
-  default: ({ period }: any) => (
-    <div data-testid="consolidation-entries">{period}</div>
+  default: ({ period, onDrafted }: any) => (
+    <div>
+      <div data-testid="consolidation-entries">{period}</div>
+      <button onClick={() => onDrafted?.()}>Draft entries</button>
+    </div>
   ),
 }))
 
@@ -671,6 +674,69 @@ describe('PeriodClosePanel — the group close', () => {
     expect(
       screen.getByText(/every company the month consolidates/)
     ).toBeInTheDocument()
+  })
+
+  it('re-reads the blockers once the entries are drafted', async () => {
+    mockScopedEntity = { entityRole: 'consolidation' }
+    const BLOCKED = {
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['adjustments_unposted', 'residual_unexplained'],
+      groupOpenEntities: [],
+      groupPendingAdjustments: ['nci_allocation for Driftline Harbor Café LLC'],
+      groupUnexplained: ['Harbor Café LLC: 500.00 more than its share'],
+      groupNotFooting: [],
+    }
+    mockGetFiscalCalendar.mockResolvedValue(BLOCKED)
+    render(<PeriodClosePanel graphId="kg1" entityId="ent_cons" />)
+
+    await screen.findByText('nci_allocation for Driftline Harbor Café LLC')
+    // Two blockers: the residual override is not offered yet.
+    expect(
+      screen.queryByLabelText('Close with the difference unexplained')
+    ).not.toBeInTheDocument()
+
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...BLOCKED,
+      blockers: ['residual_unexplained'],
+      groupPendingAdjustments: [],
+    })
+    fireEvent.click(screen.getByText('Draft entries'))
+
+    // Drafted, the residual is the only blocker left and can be closed over.
+    expect(
+      await screen.findByLabelText('Close with the difference unexplained')
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText('nci_allocation for Driftline Harbor Café LLC')
+    ).not.toBeInTheDocument()
+    expect(mockGetFiscalCalendar).toHaveBeenCalledTimes(2)
+    mockScopedEntity = null
+  })
+
+  it('keeps the selected month when it re-reads the blockers', async () => {
+    mockScopedEntity = { entityRole: 'consolidation' }
+    mockGetFiscalCalendar.mockResolvedValue(CALENDAR)
+    render(<PeriodClosePanel graphId="kg1" entityId="ent_cons" />)
+
+    const select = (await screen.findByTestId(
+      'period-select'
+    )) as HTMLSelectElement
+    fireEvent.change(select, { target: { value: '2026-06' } })
+    await waitFor(() =>
+      expect(screen.getByTestId('consolidation-entries')).toHaveTextContent(
+        '2026-06'
+      )
+    )
+
+    fireEvent.click(screen.getByText('Draft entries'))
+
+    await waitFor(() => expect(mockGetFiscalCalendar).toHaveBeenCalledTimes(2))
+    expect(select.value).toBe('2026-06')
+    expect(screen.getByTestId('consolidation-entries')).toHaveTextContent(
+      '2026-06'
+    )
+    mockScopedEntity = null
   })
 
   it('offers to close over an unexplained difference when it is the only blocker', async () => {
