@@ -258,7 +258,12 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   } | null>(null)
 
   // ── Data loaders ─────────────────────────────────────────────────────
+  // Bumped by every calendar read, so a quiet refresh that lands after a
+  // newer read cannot put the older calendar back.
+  const calendarSeq = useRef(0)
+
   const loadCalendar = useCallback(async () => {
+    ++calendarSeq.current
     try {
       setIsLoadingCalendar(true)
       setError(null)
@@ -280,6 +285,20 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       setError('Failed to load fiscal calendar.')
     } finally {
       setIsLoadingCalendar(false)
+    }
+  }, [graphId, entityId])
+
+  // Re-reads the blockers after a write on the selected period: no loading
+  // state (it would unmount the panels below) and the selection stays put.
+  const refreshCalendar = useCallback(async () => {
+    const seq = ++calendarSeq.current
+    try {
+      const cal = await clients.ledger.getFiscalCalendar(graphId, { entityId })
+      if (seq !== calendarSeq.current) return
+      setCalendar(cal)
+    } catch (err) {
+      if (seq !== calendarSeq.current) return
+      console.error('Error refreshing fiscal calendar:', err)
     }
   }, [graphId, entityId])
 
@@ -391,9 +410,10 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
 
   const handleConsolidationDrafted = useCallback(() => {
     onEntryCreated?.()
+    void refreshCalendar()
     void loadCloseStatus()
     void loadDrafts()
-  }, [onEntryCreated, loadCloseStatus, loadDrafts])
+  }, [onEntryCreated, refreshCalendar, loadCloseStatus, loadDrafts])
 
   const handleClosePeriod = useCallback(async () => {
     if (!selectedPeriod) return
