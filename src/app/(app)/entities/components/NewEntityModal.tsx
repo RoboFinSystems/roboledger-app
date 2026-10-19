@@ -67,6 +67,7 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
   const [parentEntityId, setParentEntityId] = useState('')
   const [ownershipPct, setOwnershipPct] = useState('')
   const [treatment, setTreatment] = useState('')
+  const [joinedOn, setJoinedOn] = useState('')
   const [consolidationEntity, setConsolidationEntity] = useState(false)
   const [ticker, setTicker] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -81,6 +82,7 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
     setParentEntityId(groupParentId)
     setOwnershipPct('')
     setTreatment('')
+    setJoinedOn('')
     setConsolidationEntity(false)
     setTicker('')
     setError(null)
@@ -118,6 +120,7 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
         body.consolidation_method =
           treatment as CreateEntityRequest['consolidation_method']
       }
+      body.joined_on = joinedOn || null
     }
     try {
       const created = await clients.ledger.createEntity(graphId, body)
@@ -288,6 +291,22 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
                     Half or more consolidates in full, a fifth to a half takes
                     the equity method, less is held at cost. Set it where
                     control is not the percentage.
+                  </p>
+                </div>
+                <div className="sm:col-span-2">
+                  <Label htmlFor="new-entity-joined-on" className="mb-1 block">
+                    Member since
+                  </Label>
+                  <TextInput
+                    id="new-entity-joined-on"
+                    type="date"
+                    value={joinedOn}
+                    onChange={(e) => setJoinedOn(e.target.value)}
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    The day it joined the group, such as an acquisition date.
+                    Blank counts it from the beginning, which a group that has
+                    closed a month refuses.
                   </p>
                 </div>
               </div>

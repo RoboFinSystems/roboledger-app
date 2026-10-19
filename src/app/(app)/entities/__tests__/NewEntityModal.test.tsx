@@ -138,6 +138,9 @@ describe('NewEntityModal', () => {
     fireEvent.change(screen.getByLabelText('Treatment'), {
       target: { value: 'equity' },
     })
+    fireEvent.change(screen.getByLabelText('Member since'), {
+      target: { value: '2026-11-01' },
+    })
     submit(container)
 
     await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1))
@@ -149,6 +152,7 @@ describe('NewEntityModal', () => {
       parent_entity_id: 'ent_s',
       ownership_pct: 60,
       consolidation_method: 'equity',
+      joined_on: '2026-11-01',
     })
   })
 
@@ -171,6 +175,7 @@ describe('NewEntityModal', () => {
     fireEvent.click(screen.getByLabelText(/consolidation entity/))
     expect(screen.queryByLabelText('Ownership %')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Treatment')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Member since')).not.toBeInTheDocument()
     submit(container)
 
     await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1))
