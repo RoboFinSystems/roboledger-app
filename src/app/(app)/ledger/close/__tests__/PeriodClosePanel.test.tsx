@@ -199,6 +199,7 @@ describe('PeriodClosePanel — close success', () => {
       allowStaleSync: false,
       allowStrandedObligations: false,
       allowUnreconciledAccounts: false,
+      allowUnexplainedResiduals: false,
     })
   })
 
@@ -509,6 +510,7 @@ describe('PeriodClosePanel — close overrides', () => {
         allowStaleSync: false,
         allowStrandedObligations: true,
         allowUnreconciledAccounts: false,
+        allowUnexplainedResiduals: false,
       })
     )
   })
@@ -542,6 +544,7 @@ describe('PeriodClosePanel — close overrides', () => {
         allowStaleSync: false,
         allowStrandedObligations: false,
         allowUnreconciledAccounts: true,
+        allowUnexplainedResiduals: false,
       })
     )
   })
@@ -627,5 +630,76 @@ describe('PeriodClosePanel — consolidating entries', () => {
       screen.queryByTestId('consolidation-entries')
     ).not.toBeInTheDocument()
     mockScopedEntity = null
+  })
+})
+
+describe('PeriodClosePanel — the group close', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetPeriodCloseStatus.mockResolvedValue({
+      schedules: [],
+      totalDraft: 0,
+      totalPosted: 0,
+    })
+    mockListPeriodDrafts.mockResolvedValue({
+      draftCount: 0,
+      totalDebit: 0,
+      totalCredit: 0,
+      allBalanced: true,
+      qbPublishCount: 0,
+      localOnlyCount: 0,
+      drafts: [],
+    })
+  })
+
+  it('names the companies still open and the entries not drafted', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['entity_open', 'adjustments_unposted'],
+      groupOpenEntities: ['Driftline Café LLC'],
+      groupPendingAdjustments: ['nci_allocation for Driftline Harbor Café LLC'],
+      groupUnexplained: [],
+      groupNotFooting: [],
+    })
+    render(<PeriodClosePanel graphId="kg1" entityId="ent_cons" />)
+
+    expect(await screen.findByText('Driftline Café LLC')).toBeInTheDocument()
+    expect(
+      screen.getByText('nci_allocation for Driftline Harbor Café LLC')
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/every company the month consolidates/)
+    ).toBeInTheDocument()
+  })
+
+  it('offers to close over an unexplained difference when it is the only blocker', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['residual_unexplained'],
+      groupOpenEntities: [],
+      groupPendingAdjustments: [],
+      groupUnexplained: ['Harbor Café LLC: 500.00 more than its share'],
+      groupNotFooting: [],
+    })
+    mockClosePeriod.mockResolvedValue(CLOSE_RESULT)
+    render(<PeriodClosePanel graphId="kg1" entityId="ent_cons" />)
+
+    const close = await screen.findByText('Close Period')
+    expect(close.closest('button')).toBeDisabled()
+    fireEvent.click(
+      screen.getByLabelText('Close with the difference unexplained')
+    )
+    expect(close.closest('button')).toBeEnabled()
+    fireEvent.click(close)
+
+    await waitFor(() =>
+      expect(mockClosePeriod).toHaveBeenCalledWith(
+        'kg1',
+        '2026-05',
+        expect.objectContaining({ allowUnexplainedResiduals: true })
+      )
+    )
   })
 })
