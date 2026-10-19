@@ -1,6 +1,7 @@
 'use client'
 
 import { useEntityScope } from '@/lib/entity-scope'
+import { friendlyError } from '@/lib/ledger/errors'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LedgerEntity } from '@robosystems/client/clients'
 import type { UpdateEntityRequest } from '@robosystems/client/types'
@@ -193,7 +194,9 @@ const EntityInfoPageContent: FC = function () {
     } catch (err) {
       if (scopeRef.current !== requestScope) return
       setSaveError(
-        err instanceof Error ? err.message : 'Failed to update entity.'
+        err instanceof Error
+          ? friendlyError(err.message).message
+          : 'Failed to update entity.'
       )
     } finally {
       if (scopeRef.current === requestScope) setSaving(false)
@@ -410,19 +413,21 @@ const EntityInfoPageContent: FC = function () {
                         label="Member since"
                         value={entity.joinedOn}
                         field="joined_on"
+                        type="date"
                         editing={editing}
                         formData={formData}
                         onChange={updateField}
-                        placeholder="YYYY-MM-DD, blank since the beginning"
+                        hint="Blank counts it from the beginning."
                       />
                       <EditableField
                         label="Left the group"
                         value={entity.leftOn}
                         field="left_on"
+                        type="date"
                         editing={editing}
                         formData={formData}
                         onChange={updateField}
-                        placeholder="YYYY-MM-DD, blank while a member"
+                        hint="Blank while it is a member."
                       />
                     </>
                   )}
@@ -654,6 +659,8 @@ function EditableField({
   formData,
   onChange,
   placeholder,
+  type,
+  hint,
   className,
 }: {
   label: string
@@ -663,6 +670,8 @@ function EditableField({
   formData: Record<string, string>
   onChange: (field: string, value: string) => void
   placeholder?: string
+  type?: 'date'
+  hint?: string
   className?: string
 }) {
   if (editing) {
@@ -676,11 +685,17 @@ function EditableField({
         </Label>
         <TextInput
           id={field}
+          type={type}
           value={formData[field] || ''}
           onChange={(e) => onChange(field, e.target.value)}
           placeholder={placeholder || `Enter ${label.toLowerCase()}`}
           sizing="sm"
         />
+        {hint && (
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {hint}
+          </p>
+        )}
       </div>
     )
   }

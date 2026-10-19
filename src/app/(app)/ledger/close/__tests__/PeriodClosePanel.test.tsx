@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockGetFiscalCalendar = vi.fn()
@@ -102,9 +102,11 @@ vi.mock('@/lib/entity-scope', () => ({
 }))
 
 vi.mock('../components/ConsolidationEntriesPanel', () => ({
-  default: ({ period, onDrafted }: any) => (
+  default: ({ period, onDrafted, reloadKey }: any) => (
     <div>
-      <div data-testid="consolidation-entries">{period}</div>
+      <div data-testid="consolidation-entries" data-reload-key={reloadKey}>
+        {period}
+      </div>
       <button onClick={() => onDrafted?.()}>Draft entries</button>
     </div>
   ),
@@ -231,13 +233,15 @@ describe('PeriodClosePanel — close success', () => {
   })
 
   it('shows the error and no card when the close fails', async () => {
-    mockClosePeriod.mockRejectedValue(new Error('STATEMENT_STAMP_FAILED'))
+    mockClosePeriod.mockRejectedValue(
+      new Error('Close period failed: {"detail":"STATEMENT_STAMP_FAILED"}')
+    )
     render(<PeriodClosePanel graphId="kg1" />)
 
     fireEvent.click(await screen.findByText('Close Period'))
 
     expect(
-      await screen.findByText(/Close period failed: STATEMENT_STAMP_FAILED/)
+      await screen.findByText('STATEMENT_STAMP_FAILED')
     ).toBeInTheDocument()
     expect(screen.queryByText(/Closed May 2026/)).not.toBeInTheDocument()
     expect(mockListInformationBlocks).not.toHaveBeenCalled()
@@ -674,6 +678,11 @@ describe('PeriodClosePanel — the group close', () => {
     expect(
       screen.getByText(/every company the month consolidates/)
     ).toBeInTheDocument()
+    // The same blocker holds a month whose drafts lack an entry the engine
+    // left out, so its copy covers both.
+    expect(
+      screen.getByText(/one the engine could not compute is left out/)
+    ).toBeInTheDocument()
   })
 
   it('re-reads the blockers once the entries are drafted', async () => {
@@ -767,5 +776,169 @@ describe('PeriodClosePanel — the group close', () => {
         expect.objectContaining({ allowUnexplainedResiduals: true })
       )
     )
+  })
+})
+
+describe('PeriodClosePanel — refusals and stale reads', () => {
+  const DRAFTS = {
+    draftCount: 0,
+    totalDebit: 0,
+    totalCredit: 0,
+    allBalanced: true,
+    qbPublishCount: 0,
+    localOnlyCount: 0,
+    drafts: [],
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetFiscalCalendar.mockReset()
+    mockGetPeriodCloseStatus.mockResolvedValue({
+      schedules: [],
+      totalDraft: 0,
+      totalPosted: 0,
+    })
+    mockListPeriodDrafts.mockResolvedValue(DRAFTS)
+  })
+
+  it("keeps the entity in scope's calendar when the previous entity's read lands last", async () => {
+    let finishGroupRead: (cal: unknown) => void = () => {}
+    mockGetFiscalCalendar.mockImplementation(
+      (_g: string, { entityId }: { entityId: string }) =>
+        entityId === 'ent_c'
+          ? new Promise((resolve) => {
+              finishGroupRead = resolve
+            })
+          : Promise.resolve(CALENDAR_AFTER)
+    )
+    const { rerender } = render(
+      <PeriodClosePanel graphId="kg1" entityId="ent_c" />
+    )
+    rerender(<PeriodClosePanel graphId="kg1" entityId="ent_m" />)
+    const select = (await screen.findByTestId(
+      'period-select'
+    )) as HTMLSelectElement
+    expect(select.value).toBe('2026-06')
+
+    await act(async () => {
+      finishGroupRead(CALENDAR)
+    })
+    expect(select.value).toBe('2026-06')
+    expect(mockListPeriodDrafts).not.toHaveBeenCalledWith(
+      'kg1',
+      '2026-05',
+      expect.anything()
+    )
+  })
+
+  it("shows a refused reopen's reason once, unwrapped", async () => {
+    mockGetFiscalCalendar.mockResolvedValue(CALENDAR_AFTER)
+    mockReopenPeriod.mockRejectedValue(
+      new Error(
+        'Reopen period failed: ' +
+          JSON.stringify({
+            detail:
+              "Cannot reopen '2026-05': the group has closed it. Reopen '2026-05' on Consolidation Adjustments, the consolidation entity, first.",
+          })
+      )
+    )
+    render(<PeriodClosePanel graphId="kg1" entityId="ent_m" />)
+    const select = (await screen.findByTestId(
+      'period-select'
+    )) as HTMLSelectElement
+    fireEvent.change(select, { target: { value: '2026-05' } })
+    fireEvent.click(await screen.findByRole('button', { name: /^Reopen$/ }))
+    fireEvent.change(screen.getByTestId('reopen-reason'), {
+      target: { value: 'Missed accrual' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Reopen Period/ }))
+
+    expect(
+      await screen.findByText(
+        "Cannot reopen '2026-05': the group has closed it. Reopen '2026-05' on Consolidation Adjustments, the consolidation entity, first."
+      )
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/failed/)).not.toBeInTheDocument()
+  })
+
+  it("shows a refused close's message and re-reads what holds the month", async () => {
+    mockGetFiscalCalendar.mockResolvedValueOnce(CALENDAR)
+    mockGetFiscalCalendar.mockResolvedValueOnce({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['entity_open'],
+      groupOpenEntities: ['Driftline Café LLC'],
+      groupPendingAdjustments: [],
+      groupUnexplained: [],
+      groupNotFooting: [],
+    })
+    mockClosePeriod.mockRejectedValue(
+      new Error(
+        'Close period failed: ' +
+          JSON.stringify({
+            detail: {
+              message: "Cannot close period '2026-05'.",
+              blockers: ['entity_open'],
+              group_open_entities: ['Driftline Café LLC'],
+            },
+          })
+      )
+    )
+    render(<PeriodClosePanel graphId="kg1" entityId="ent_cons" />)
+    fireEvent.click(await screen.findByText('Close Period'))
+
+    expect(
+      await screen.findByText("Cannot close period '2026-05'.")
+    ).toBeInTheDocument()
+    expect(await screen.findByText('Driftline Café LLC')).toBeInTheDocument()
+    expect(mockGetFiscalCalendar).toHaveBeenCalledTimes(2)
+  })
+
+  it('re-reads the month on screen after reopening it', async () => {
+    mockScopedEntity = { entityRole: 'consolidation' }
+    const REOPENED = {
+      ...CALENDAR,
+      periods: [
+        { name: '2026-04', status: 'closed' },
+        { name: '2026-05', status: 'closing' },
+        { name: '2026-06', status: 'open' },
+      ],
+    }
+    mockGetFiscalCalendar.mockResolvedValue(CALENDAR_AFTER)
+    mockReopenPeriod.mockResolvedValue(REOPENED)
+    render(<PeriodClosePanel graphId="kg1" entityId="ent_cons" />)
+    const select = (await screen.findByTestId(
+      'period-select'
+    )) as HTMLSelectElement
+    fireEvent.change(select, { target: { value: '2026-05' } })
+    fireEvent.click(await screen.findByRole('button', { name: /^Reopen$/ }))
+    await waitFor(() =>
+      expect(mockListPeriodDrafts).toHaveBeenLastCalledWith(
+        'kg1',
+        '2026-05',
+        expect.anything()
+      )
+    )
+    const statusReads = mockGetPeriodCloseStatus.mock.calls.length
+    const draftReads = mockListPeriodDrafts.mock.calls.length
+    const reloadKey = screen
+      .getByTestId('consolidation-entries')
+      .getAttribute('data-reload-key')
+
+    fireEvent.change(screen.getByTestId('reopen-reason'), {
+      target: { value: 'Missed accrual' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Reopen Period/ }))
+
+    await waitFor(() =>
+      expect(mockGetPeriodCloseStatus.mock.calls.length).toBe(statusReads + 1)
+    )
+    expect(mockListPeriodDrafts.mock.calls.length).toBe(draftReads + 1)
+    expect(
+      screen
+        .getByTestId('consolidation-entries')
+        .getAttribute('data-reload-key')
+    ).not.toBe(reloadKey)
+    mockScopedEntity = null
   })
 })

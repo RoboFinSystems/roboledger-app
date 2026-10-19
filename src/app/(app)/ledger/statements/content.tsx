@@ -234,6 +234,15 @@ const LiveStatementsContent: FC = function () {
     load()
   }, [load])
 
+  // Columns the server dropped because they reach back before the books
+  // begin; with every one dropped there is no table, only its reason.
+  const omittedLabels = (statement?.omitted_periods ?? []).map(
+    (p) => p.label || `${p.start} to ${p.end}`
+  )
+  const noColumns = statement !== null && statement.periods.length === 0
+  const hasTable =
+    statement !== null && !noColumns && statement.facts.length > 0
+
   return (
     <PageLayout>
       <PageHeader
@@ -378,8 +387,22 @@ const LiveStatementsContent: FC = function () {
                 <LoadingState size="lg" />
               </div>
             )}
+            {omittedLabels.length > 0 && (
+              <p className="px-4 pt-4 text-sm text-gray-500 dark:text-gray-400">
+                Left out: {omittedLabels.join(', ')}, before the books begin.
+              </p>
+            )}
             {isLoading && !statement ? (
               <LoadingState />
+            ) : noColumns ? (
+              <EmptyState
+                icon={TbReportMoney}
+                title="No column to show"
+                description={
+                  statement.validation?.warnings?.[0] ??
+                  'Every column reaches back before the books begin.'
+                }
+              />
             ) : !statement || statement.facts.length === 0 ? (
               <EmptyState
                 icon={TbReportMoney}
@@ -395,7 +418,7 @@ const LiveStatementsContent: FC = function () {
             )}
           </div>
 
-          {!isLoading && statement && statement.facts.length > 0 && (
+          {!isLoading && hasTable && (
             <div className="border-t border-gray-200 p-4 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
               {/* Guard rails ran on exactly the rendered columns — a plug that
                 foots the cash flow by construction, or a column that does

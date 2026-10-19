@@ -60,6 +60,14 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
     [entities]
   )
   const isFirstEntity = entities.length === 0
+  // A group has one consolidation entity, and it holds no operating member.
+  const existingConsolidation = entities.find(
+    (e) => e.entityRole === 'consolidation'
+  )
+  const parentChoices = useMemo(
+    () => entities.filter((e) => e.entityRole !== 'consolidation'),
+    [entities]
+  )
 
   const [name, setName] = useState('')
   const [legalName, setLegalName] = useState('')
@@ -220,7 +228,14 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
               </div>
             </div>
 
-            {!isFirstEntity && (
+            {!isFirstEntity && existingConsolidation && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {existingConsolidation.name} is this group&apos;s consolidation
+                entity.
+              </p>
+            )}
+
+            {!isFirstEntity && !existingConsolidation && (
               <div className="flex items-center gap-2">
                 <Checkbox
                   id="new-entity-consolidation"
@@ -246,7 +261,7 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
                     value={parentEntityId}
                     onChange={(e) => setParentEntityId(e.target.value)}
                   >
-                    {entities.map((e) => (
+                    {parentChoices.map((e) => (
                       <option key={e.id} value={e.id}>
                         {e.name}
                         {e.isParent ? ' (group parent)' : ''}

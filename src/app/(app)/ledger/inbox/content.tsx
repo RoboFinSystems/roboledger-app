@@ -95,6 +95,8 @@ const SKIP_REASON_LABEL: Record<string, string> = {
   closed_period: 'in a closed month',
   locked: 'busy, try again',
   refused: 'refused',
+  suggestion_changed:
+    'its suggestion changed while the batch ran; review it again',
 }
 
 type BatchResult = Awaited<ReturnType<typeof clients.ledger.acceptSuggestions>>
@@ -185,7 +187,9 @@ const InboxContent: FC = function () {
 
   // A /do in the console drawer that changed this graph, such as a line
   // classified there. The reload keeps the table on screen.
-  const { reloadKey, takeQuiet } = useConsoleReload(currentGraph?.graphId)
+  const { reloadKey, takeQuiet, reloadQuietly } = useConsoleReload(
+    currentGraph?.graphId
+  )
 
   // Index agents by id for the table column.
   const agentById = useMemo(() => {
@@ -351,13 +355,21 @@ const InboxContent: FC = function () {
     [status]
   )
 
+  // A commit can teach its counterparty a default, which re-suggests that
+  // counterparty's other open lines on the server, so a commit re-reads the
+  // whole list rather than trusting the badges already on screen.
+  const afterCommit = useCallback(() => {
+    setAgentsVersion((v) => v + 1)
+    reloadQuietly()
+  }, [reloadQuietly])
+
   const applyTransition = useCallback(
     (eventId: string, newStatus: 'committed' | 'voided') => {
       updateRow(eventId, newStatus)
       setSelectedId(null)
-      if (newStatus === 'committed') setAgentsVersion((v) => v + 1)
+      if (newStatus === 'committed') afterCommit()
     },
-    [updateRow]
+    [updateRow, afterCommit]
   )
 
   // Classify keeps the modal open (the reviewer usually approves next), but
@@ -400,18 +412,23 @@ const InboxContent: FC = function () {
       }
       setBatch(summarizeBatch(result, describe))
       setChecked(new Set())
-      if (result.committed > 0) setAgentsVersion((v) => v + 1)
+      if (result.committed > 0) afterCommit()
     } catch (err) {
+      // Each line commits on its own, so a failure partway (a timeout on a
+      // long batch) can leave the earlier lines posted.
       console.error('Error approving suggestions:', err)
       const message = err instanceof Error ? err.message : String(err)
       setBatch({
-        summary: 'The approval did not run; nothing changed.',
+        summary:
+          'The approval may have stopped partway; the list has been reloaded.',
         details: [friendlyError(message).message],
       })
+      setChecked(new Set())
+      afterCommit()
     } finally {
       setIsApproving(false)
     }
-  }, [currentGraph, checkedVisible, entityId, events, updateRow])
+  }, [currentGraph, checkedVisible, entityId, events, updateRow, afterCommit])
 
   return (
     <PageLayout>

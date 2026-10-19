@@ -17,7 +17,12 @@ vi.mock('@robosystems/core', () => ({
   PageLayout: ({ children }: any) => <div>{children}</div>,
   PageHeader: ({ title }: any) => <h1>{title}</h1>,
   LoadingState: () => <div data-testid="loading-state" />,
-  EmptyState: ({ title }: any) => <div data-testid="empty-state">{title}</div>,
+  EmptyState: ({ title, description }: any) => (
+    <div data-testid="empty-state">
+      {title}
+      <p>{description}</p>
+    </div>
+  ),
 }))
 
 vi.mock('@/lib/useLedgerGraph', () => ({
@@ -113,6 +118,61 @@ describe('LiveStatementsContent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockLiveFinancialStatement.mockResolvedValue(statement())
+  })
+
+  it('names a column left out because it reaches back before the books begin', async () => {
+    scope()
+    mockLiveFinancialStatement.mockResolvedValue(
+      statement({
+        omitted_periods: [
+          { start: '2025-01-01', end: '2025-08-31', label: 'YTD 2025' },
+        ],
+      })
+    )
+    render(<LiveStatementsContent />)
+
+    expect(
+      await screen.findByText('Left out: YTD 2025, before the books begin.')
+    ).toBeInTheDocument()
+    expect(screen.getByTestId('statement-table')).toBeInTheDocument()
+  })
+
+  it("shows the server's reason, not an empty table, when every column is left out", async () => {
+    scope()
+    mockLiveFinancialStatement.mockResolvedValue(
+      statement({
+        periods: [],
+        omitted_periods: [
+          { start: '2025-01-01', end: '2025-12-31', label: '2025' },
+        ],
+        // An equity roll-forward row survives with no values.
+        facts: [
+          {
+            qname: 'rs-gaap:MembersEquity',
+            values: [],
+            period_role: 'opening',
+          },
+        ],
+        validation: {
+          passed: false,
+          status: 'inconclusive',
+          checks: [],
+          warnings: [
+            'Every column reaches back before the books begin; record the window from the first month the books cover.',
+          ],
+        },
+      })
+    )
+    render(<LiveStatementsContent />)
+
+    expect(
+      await screen.findByText(/record the window from the first month/)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Left out: 2025, before the books begin.')
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId('statement-table')).not.toBeInTheDocument()
+    expect(screen.queryByText(/No ledger activity/)).not.toBeInTheDocument()
   })
 
   it('renders the group parent of a single-entity graph with no scope control', async () => {

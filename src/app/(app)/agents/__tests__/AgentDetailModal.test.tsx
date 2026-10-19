@@ -78,6 +78,9 @@ const agent = (classification: Record<string, unknown> | null) => ({
   isActive: true,
   is1099Recipient: false,
   classification,
+  classifications: classification
+    ? [{ entityId: 'ent_parent', ...classification }]
+    : [],
 })
 
 const learned = {
@@ -123,6 +126,7 @@ const renderModal = () =>
 describe('AgentDetailModal — the default account', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockScope.mockReturnValue({ entityId: null })
     mockListEventBlocks.mockResolvedValue([])
     mockGetAccountTree.mockResolvedValue(tree)
     mockUpdateAgent.mockResolvedValue({})
@@ -143,6 +147,47 @@ describe('AgentDetailModal — the default account', () => {
     })
     const save = screen.getByText('Save default') as HTMLButtonElement
     expect(save.disabled).toBe(true)
+  })
+
+  it("a subsidiary in scope sees and sets its own default, not the parent's", async () => {
+    mockScope.mockReturnValue({ entityId: 'ent_sub' })
+    const withSub = (sub: Record<string, unknown> | null) => ({
+      ...agent(learned),
+      classifications: [
+        { entityId: 'ent_parent', ...learned },
+        ...(sub ? [{ entityId: 'ent_sub', ...sub }] : []),
+      ],
+    })
+    mockGetAgent.mockResolvedValueOnce(withSub(null)).mockResolvedValueOnce(
+      withSub({
+        ...learned,
+        elementId: 'elem_software',
+        confirmations: 0,
+        overrides: 0,
+      })
+    )
+    renderModal()
+    const select = (await screen.findByLabelText(
+      'Default account'
+    )) as HTMLSelectElement
+    await waitFor(() => expect(select.options.length).toBe(3))
+    expect(select.value).toBe('')
+    expect(screen.getByText(/None yet/)).toBeInTheDocument()
+    expect(mockGetAccountTree).toHaveBeenCalledWith('kg_test', {
+      entityId: 'ent_sub',
+    })
+
+    fireEvent.change(select, { target: { value: 'elem_software' } })
+    fireEvent.click(screen.getByText('Save default'))
+    await waitFor(() =>
+      expect(mockUpdateAgent).toHaveBeenCalledWith('kg_test', {
+        agent_id: 'agt_staples',
+        classification_entity_id: 'ent_sub',
+        classification_element_id: 'elem_software',
+        classification_mode: 'suggest',
+      })
+    )
+    await waitFor(() => expect(select.value).toBe('elem_software'))
   })
 
   it('choosing an account sets it, in suggest mode, and reloads', async () => {

@@ -41,6 +41,8 @@ interface ConsolidationEntriesPanelProps {
   graphId: string
   /** The month, as YYYY-MM. */
   period: string
+  /** Changed by the close panel when the month's state moved, e.g. a reopen. */
+  reloadKey?: number
   /** Called after drafts are written, so the drafts list reloads. */
   onDrafted?: () => void
 }
@@ -54,6 +56,7 @@ interface ConsolidationEntriesPanelProps {
 const ConsolidationEntriesPanel: FC<ConsolidationEntriesPanelProps> = ({
   graphId,
   period,
+  reloadKey,
   onDrafted,
 }) => {
   const [preview, setPreview] =
@@ -62,6 +65,9 @@ const ConsolidationEntriesPanel: FC<ConsolidationEntriesPanelProps> = ({
   const [error, setError] = useState<string | null>(null)
   const [isDrafting, setIsDrafting] = useState(false)
   const seq = useRef(0)
+  // The month on screen now, for a draft that returns after the user moved on.
+  const periodRef = useRef(period)
+  periodRef.current = period
 
   const loadPreview = useCallback(async () => {
     const current = ++seq.current
@@ -91,16 +97,20 @@ const ConsolidationEntriesPanel: FC<ConsolidationEntriesPanelProps> = ({
 
   useEffect(() => {
     loadPreview()
-  }, [loadPreview])
+  }, [loadPreview, reloadKey])
 
   const handleDraft = useCallback(async () => {
     try {
       setIsDrafting(true)
       setError(null)
       await clients.ledger.proposeConsolidationEntries(graphId, period)
+      // This click's callbacks are bound to the month it drafted; once
+      // another month is selected their reads would land on it.
+      if (periodRef.current !== period) return
       onDrafted?.()
       await loadPreview()
     } catch (err) {
+      if (periodRef.current !== period) return
       setError(
         friendlyError(
           err instanceof Error
@@ -121,12 +131,16 @@ const ConsolidationEntriesPanel: FC<ConsolidationEntriesPanelProps> = ({
   // The month's drafts hold what it needs: they are the entries, listed
   // under Draft review, so the proposals are not shown twice.
   const drafted = Boolean(preview?.up_to_date) && draftedCount > 0
+  // An entry left out (with nothing withheld) is what keeps drafts from
+  // being up to date, and drafting again cannot add it.
+  const leftOut = Boolean(preview?.incomplete) && residuals.length === 0
   // Drafts that no longer match the books, even with nothing left to
   // propose, are replaced (or cleared) by drafting again.
   const canDraft =
     Boolean(preview) &&
     !preview?.up_to_date &&
-    (proposals.length > 0 || draftedCount > 0)
+    (proposals.length > 0 || draftedCount > 0) &&
+    !(leftOut && draftedCount > 0)
 
   return (
     <Card>

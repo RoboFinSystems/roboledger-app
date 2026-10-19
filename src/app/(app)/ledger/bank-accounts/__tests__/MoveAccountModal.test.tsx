@@ -190,10 +190,10 @@ describe('MoveAccountModal', () => {
 
   it('shows the refusal and reports it', async () => {
     mockLinkBankAccount.mockRejectedValueOnce(
-      Object.assign(new Error('Account is already fed by mercury'), {
-        status: 409,
-        detail: 'Account is already fed by mercury',
-      })
+      new Error(
+        'Link bank account failed: ' +
+          JSON.stringify({ detail: 'Account is already fed by mercury' })
+      )
     )
     const onError = vi.fn()
     const { onMoved } = renderModal({ onError })

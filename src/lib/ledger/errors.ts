@@ -67,10 +67,15 @@ export const extractDetail = (raw: string): string => {
     if (typeof detail === 'string') return detail
     // 422 validation errors arrive as a list of {loc, msg, type}.
     if (Array.isArray(detail)) return joinValidationMessages(detail) ?? raw
-    // Some routers nest it: `{"detail": {"detail": "…", "code": "…"}}`.
+    // Some routers nest it: `{"detail": {"detail": "…", "code": "…"}}`, or
+    // a refused close: `{"detail": {"message": "…", "blockers": […]}}`.
     if (typeof detail === 'object' && detail !== null) {
-      const inner = (detail as { detail?: unknown }).detail
+      const { detail: inner, message } = detail as {
+        detail?: unknown
+        message?: unknown
+      }
       if (typeof inner === 'string') return inner
+      if (typeof message === 'string') return message
     }
   }
 
@@ -123,7 +128,9 @@ export const friendlyError = (raw: string): FriendlyError => {
     return {
       message:
         detail +
-        " Reopen it from the close page or change the event's posting_date.",
+        (lower.includes('posting date')
+          ? " Reopen it from the close page or change the event's posting_date."
+          : ' Reopen it from the close page.'),
       link: { href: '/ledger/close', label: 'Open close page' },
     }
   }
@@ -204,11 +211,15 @@ export const friendlyError = (raw: string): FriendlyError => {
   return { message: detail }
 }
 
+/** The facade's `<label> failed: <JSON>` message, as opposed to a TypeError's. */
+const FACADE_FAILURE = /^[^{[]+ failed: [{[]/
+
 /**
  * User-facing copy for a failed call. An `ApiError` (what core's `unwrapSdk`
- * throws) carries the server's refusal as `detail`, which is mapped through
- * `friendlyError`; anything else — a network failure, a thrown TypeError —
- * gets the caller's fallback, never a raw message.
+ * throws) carries the server's refusal as `detail`, and a facade error
+ * carries it inside its message; either is mapped through `friendlyError`.
+ * Anything else — a network failure, a thrown TypeError, a body with no
+ * `detail` — gets the caller's fallback, never a raw message.
  *
  * Duck-typed rather than `isApiError` so this module stays free of a core
  * import (it is imported by surfaces whose tests mock core wholesale).
@@ -230,6 +241,11 @@ export const apiErrorMessage = (err: unknown, fallback: string): string => {
       !detail.trimStart().startsWith('<')
     ) {
       return friendlyError(detail).message
+    }
+  } else if (err instanceof Error && FACADE_FAILURE.test(err.message)) {
+    const detail = extractDetail(err.message)
+    if (detail !== err.message && !detail.trimStart().startsWith('<')) {
+      return friendlyError(err.message).message
     }
   }
   return fallback

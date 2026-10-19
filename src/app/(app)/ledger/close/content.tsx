@@ -313,6 +313,9 @@ const CloseContent: FC = function () {
               />
             ) : selectedItem.type === 'period_close' && currentGraph ? (
               <PeriodClosePanel
+                // Remounted per entity: nothing read or begun for one
+                // entity's close may land on another's.
+                key={entityId ?? 'parent'}
                 graphId={currentGraph.graphId}
                 entityId={entityId}
                 onEntryCreated={handleEntryCreated}
