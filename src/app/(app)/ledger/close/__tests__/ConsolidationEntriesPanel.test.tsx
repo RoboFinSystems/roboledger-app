@@ -177,6 +177,53 @@ describe('ConsolidationEntriesPanel', () => {
     expect(screen.getByText('Draft entries').closest('button')).toBeDisabled()
   })
 
+  it('does not call matching drafts stale when a residual holds the month', async () => {
+    mockPreview.mockResolvedValue({
+      ...PREVIEW,
+      up_to_date: false,
+      drafted_entry_ids: ['je_1'],
+      residuals: [
+        {
+          entity_id: 'ent_harbor',
+          entity_name: 'Harbor Café LLC',
+          amount: 50000,
+          explanation: 'The parent carries more than its share of capital.',
+        },
+      ],
+    })
+    render(<ConsolidationEntriesPanel graphId="kg1" period="2026-09" />)
+
+    expect(
+      await screen.findByText('Withheld until explained')
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/no longer match the books/)
+    ).not.toBeInTheDocument()
+  })
+
+  it('says an entry is left out, and why, rather than that drafts are stale', async () => {
+    mockPreview.mockResolvedValue({
+      ...PREVIEW,
+      up_to_date: false,
+      incomplete: true,
+      drafted_entry_ids: ['je_1'],
+      notes: [
+        'Consolidation Adjustments has no account mapped to rs-gaap:AccountsPayableCurrent.',
+      ],
+    })
+    render(<ConsolidationEntriesPanel graphId="kg1" period="2026-09" />)
+
+    expect(
+      await screen.findByText(/An entry the month needs is left out/)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/no account mapped to rs-gaap:AccountsPayableCurrent/)
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/no longer match the books/)
+    ).not.toBeInTheDocument()
+  })
+
   it('says a closed month is as posted, with nothing to draft', async () => {
     mockPreview.mockResolvedValue({
       ...PREVIEW,
