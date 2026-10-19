@@ -942,3 +942,92 @@ describe('PeriodClosePanel — refusals and stale reads', () => {
     mockScopedEntity = null
   })
 })
+
+describe('PeriodClosePanel — where the drafts go on close', () => {
+  const draft = {
+    entryId: 'je_1',
+    postingDate: '2026-05-31',
+    type: 'adjusting',
+    memo: 'Accrue rent',
+    provenance: 'system_computed',
+    sourceStructureId: null,
+    sourceStructureName: null,
+    totalDebit: 10000,
+    totalCredit: 10000,
+    balanced: true,
+    willPublishToQb: false,
+    lineItems: [
+      {
+        lineItemId: 'li_1',
+        elementCode: '6100',
+        elementName: 'Rent',
+        debitAmount: 10000,
+        creditAmount: 0,
+      },
+      {
+        lineItemId: 'li_2',
+        elementCode: '2100',
+        elementName: 'Accrued Liabilities',
+        debitAmount: 0,
+        creditAmount: 10000,
+      },
+    ],
+  }
+  const drafts = (qb: Record<string, unknown>) => ({
+    draftCount: 1,
+    totalDebit: 10000,
+    totalCredit: 10000,
+    allBalanced: true,
+    qbWritebackConnectionId: null,
+    qbWritePolicy: null,
+    qbPublishCount: 0,
+    localOnlyCount: 1,
+    drafts: [draft],
+    ...qb,
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetFiscalCalendar.mockResolvedValue(CALENDAR)
+    mockGetPeriodCloseStatus.mockResolvedValue({
+      schedules: [],
+      totalDraft: 1,
+      totalPosted: 0,
+    })
+  })
+
+  it('says nothing about QuickBooks on books that have none', async () => {
+    mockListPeriodDrafts.mockResolvedValue(drafts({}))
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    await screen.findByText('Draft review (1)')
+    expect(screen.queryByText(/QuickBooks/)).not.toBeInTheDocument()
+  })
+
+  it('says nothing is written back when a write-back connection takes none', async () => {
+    mockListPeriodDrafts.mockResolvedValue(
+      drafts({ qbWritebackConnectionId: 'conn_qb', qbWritePolicy: 'hybrid' })
+    )
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    expect(
+      await screen.findByText(/nothing will be written back to QuickBooks/)
+    ).toBeInTheDocument()
+  })
+
+  it('says a shadowed close posts nothing', async () => {
+    mockListPeriodDrafts.mockResolvedValue(
+      drafts({
+        qbWritebackConnectionId: 'conn_qb',
+        qbWritePolicy: 'shadow',
+        localOnlyCount: 0,
+      })
+    )
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    expect(
+      await screen.findByText(/QuickBooks runs in shadow/)
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/post locally only/)).not.toBeInTheDocument()
+  })
+})

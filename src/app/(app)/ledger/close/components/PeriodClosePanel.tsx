@@ -1056,7 +1056,13 @@ const DraftReviewPanel: FC<DraftReviewPanelProps> = ({ drafts, isLoading }) => {
         </div>
       </div>
       {drafts.draftCount > 0 &&
-        (drafts.qbPublishCount > 0 ? (
+        (drafts.qbWritePolicy === 'shadow' ? (
+          <div className="mb-3 rounded border border-gray-200 bg-gray-50 p-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+            QuickBooks runs in shadow: closing this period posts none of these
+            drafts and writes nothing to QuickBooks. Each is compared with what
+            QuickBooks holds.
+          </div>
+        ) : drafts.qbPublishCount > 0 ? (
           <div className="border-primary-200 bg-primary-50 text-primary-800 dark:border-primary-900 dark:bg-primary-950 dark:text-primary-200 mb-3 rounded border p-2 text-xs">
             <span className="font-medium">{drafts.qbPublishCount}</span> of{' '}
             {drafts.draftCount} draft{drafts.draftCount === 1 ? '' : 's'} will
@@ -1065,12 +1071,12 @@ const DraftReviewPanel: FC<DraftReviewPanelProps> = ({ drafts, isLoading }) => {
             {drafts.localOnlyCount > 0 &&
               ` The remaining ${drafts.localOnlyCount} post locally only.`}
           </div>
-        ) : (
+        ) : drafts.qbWritebackConnectionId ? (
           <div className="mb-3 rounded border border-gray-200 bg-gray-50 p-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
             These drafts post locally only — nothing will be written back to
             QuickBooks when this period is closed.
           </div>
-        ))}
+        ) : null)}
       <div className="space-y-3">
         {drafts.drafts.map((d) => (
           <div
