@@ -72,6 +72,17 @@ describe('friendlyError — pre-existing ledger cases', () => {
     })
   })
 
+  it('offers a new posting date only when the refusal is about one', () => {
+    const result = friendlyError(
+      sdkError('Create mapping association', {
+        detail:
+          'The account has activity in closed period(s) 2026-03; reopen them to remap it.',
+      })
+    )
+    expect(result.message).toContain('Reopen it from the close page.')
+    expect(result.message).not.toContain('posting_date')
+  })
+
   it('sends an account missing from the chart of accounts to a sync', () => {
     const result = friendlyError(
       sdkError('Approve event', {

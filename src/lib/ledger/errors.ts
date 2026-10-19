@@ -128,7 +128,9 @@ export const friendlyError = (raw: string): FriendlyError => {
     return {
       message:
         detail +
-        " Reopen it from the close page or change the event's posting_date.",
+        (lower.includes('posting date')
+          ? " Reopen it from the close page or change the event's posting_date."
+          : ' Reopen it from the close page.'),
       link: { href: '/ledger/close', label: 'Open close page' },
     }
   }
