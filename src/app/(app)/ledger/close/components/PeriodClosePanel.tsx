@@ -75,6 +75,28 @@ const BLOCKER_MESSAGES: Record<string, string> = {
     'Events dated in this period were captured but never posted, and once the period closes they can no longer post into it. In the Inbox, check both Captured and Classified, approve or reject each one, then close.',
   unreconciled_accounts:
     'A reconciliation this close waits on does not tie for the period, or has not been run for it. Open Reconciliations to see what is different, clear it, and run them again.',
+  entity_open:
+    "This is the group's close: every company the month consolidates closes it first.",
+  adjustments_unposted:
+    "The month's consolidating entries are not drafted. Draft them under Consolidating entries, then close.",
+  residual_unexplained:
+    'A difference the consolidating entries cannot explain is left. Correct the books or post the explaining entry, or close over it knowingly.',
+  consolidated_does_not_foot:
+    "The group's consolidated statements do not pass their checks for the month.",
+}
+
+/** The group close's blockers name their items in a list of their own. */
+const GROUP_ITEMS: Record<
+  string,
+  | 'groupOpenEntities'
+  | 'groupPendingAdjustments'
+  | 'groupUnexplained'
+  | 'groupNotFooting'
+> = {
+  entity_open: 'groupOpenEntities',
+  adjustments_unposted: 'groupPendingAdjustments',
+  residual_unexplained: 'groupUnexplained',
+  consolidated_does_not_foot: 'groupNotFooting',
 }
 
 /**
@@ -113,6 +135,19 @@ function obligationDetailFor(
         {calendar.syncStaleDays} day
         {calendar.syncStaleDays === 1 ? '' : 's'} behind this period
       </div>
+    )
+  }
+
+  const group = GROUP_ITEMS[code]
+  if (group) {
+    const items = calendar[group] ?? []
+    if (items.length === 0) return null
+    return (
+      <ul className="mt-1 list-disc pl-5 text-xs text-yellow-700 dark:text-yellow-300">
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
     )
   }
 
@@ -201,6 +236,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   const [allowStrandedObligations, setAllowStrandedObligations] =
     useState(false)
   const [allowUnreconciledAccounts, setAllowUnreconciledAccounts] =
+    useState(false)
+  const [allowUnexplainedResiduals, setAllowUnexplainedResiduals] =
     useState(false)
 
   // Reopen modal
@@ -312,6 +349,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       setAllowStaleSync(false)
       setAllowStrandedObligations(false)
       setAllowUnreconciledAccounts(false)
+      setAllowUnexplainedResiduals(false)
       loadCloseStatus()
       loadDrafts()
     } else {
@@ -368,6 +406,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
         allowStaleSync,
         allowStrandedObligations,
         allowUnreconciledAccounts,
+        allowUnexplainedResiduals,
       })
       setCalendar(result.fiscalCalendar)
       // Show what the close did — the close is the act that stamps the
@@ -422,6 +461,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     allowStaleSync,
     allowStrandedObligations,
     allowUnreconciledAccounts,
+    allowUnexplainedResiduals,
     onEntryCreated,
   ])
 
@@ -695,6 +735,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
           onToggleStrandedObligations={setAllowStrandedObligations}
           allowUnreconciledAccounts={allowUnreconciledAccounts}
           onToggleUnreconciledAccounts={setAllowUnreconciledAccounts}
+          allowUnexplainedResiduals={allowUnexplainedResiduals}
+          onToggleUnexplainedResiduals={setAllowUnexplainedResiduals}
           onClose={handleClosePeriod}
         />
       )}
@@ -1071,6 +1113,8 @@ interface ClosePeriodActionProps {
   onToggleStrandedObligations: (value: boolean) => void
   allowUnreconciledAccounts: boolean
   onToggleUnreconciledAccounts: (value: boolean) => void
+  allowUnexplainedResiduals: boolean
+  onToggleUnexplainedResiduals: (value: boolean) => void
   onClose: () => void
 }
 
@@ -1085,6 +1129,8 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
   onToggleStrandedObligations,
   allowUnreconciledAccounts,
   onToggleUnreconciledAccounts,
+  allowUnexplainedResiduals,
+  onToggleUnexplainedResiduals,
   onClose,
 }) => {
   const blocked = !calendar.closeableNow
@@ -1097,10 +1143,12 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
   const syncStaleOnly = onlyBlocker('sync_stale')
   const strandedOnly = onlyBlocker('stranded_obligations')
   const unreconciledOnly = onlyBlocker('unreconciled_accounts')
+  const residualOnly = onlyBlocker('residual_unexplained')
   const overridden =
     (syncStaleOnly && allowStaleSync) ||
     (strandedOnly && allowStrandedObligations) ||
-    (unreconciledOnly && allowUnreconciledAccounts)
+    (unreconciledOnly && allowUnreconciledAccounts) ||
+    (residualOnly && allowUnexplainedResiduals)
   const hasUnbalancedDrafts = drafts ? !drafts.allBalanced : false
 
   return (
@@ -1158,6 +1206,20 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
                 className="rounded border-amber-400"
               />
               Close without reconciling
+            </label>
+          )}
+          {/* The group closes with a difference its entries do not explain;
+              it stays in the consolidated statements, and the API names
+              each item in the close audit note. */}
+          {residualOnly && (
+            <label className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
+              <input
+                type="checkbox"
+                checked={allowUnexplainedResiduals}
+                onChange={(e) => onToggleUnexplainedResiduals(e.target.checked)}
+                className="rounded border-amber-400"
+              />
+              Close with the difference unexplained
             </label>
           )}
           <Button
