@@ -60,9 +60,18 @@ const heldOn = (confirmations: number, overrides: number): string => {
   return `Held on ${confirmations} of ${seen} committed ${lines}.`
 }
 
+/** The entity in scope's own default; each entity keeps one, on its chart. */
+const defaultFor = (
+  detail: LedgerAgentDetail | null,
+  entityId: string | null
+) =>
+  (entityId
+    ? detail?.classifications.find((c) => c.entityId === entityId)
+    : detail?.classification) ?? null
+
 const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
-  // The chart a default is chosen from is the one in scope, the same chart
-  // the inbox posts this counterparty's lines to.
+  // The default shown and set is the entity in scope's, chosen from its
+  // chart: the one the inbox posts its lines from this counterparty to.
   const { entityId } = useEntityScope()
   const [agent, setAgent] = useState<LedgerAgentDetail | null>(null)
   const [events, setEvents] = useState<LedgerEventBlock[]>([])
@@ -79,10 +88,14 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  const seedDefault = useCallback((detail: LedgerAgentDetail) => {
-    setDefaultElementId(detail.classification?.elementId ?? '')
-    setAlwaysAsk(detail.classification?.mode === 'always_ask')
-  }, [])
+  const seedDefault = useCallback(
+    (detail: LedgerAgentDetail) => {
+      const own = defaultFor(detail, entityId)
+      setDefaultElementId(own?.elementId ?? '')
+      setAlwaysAsk(own?.mode === 'always_ask')
+    },
+    [entityId]
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -138,7 +151,7 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
     }
   }, [graphId, entityId])
 
-  const current = agent?.classification ?? null
+  const current = defaultFor(agent, entityId)
   // Always-ask means nothing without an account to hold back.
   const effectiveAlwaysAsk = defaultElementId ? alwaysAsk : false
   const dirty =
@@ -164,6 +177,7 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
     try {
       await clients.ledger.updateAgent(graphId, {
         agent_id: agent.id,
+        ...(entityId ? { classification_entity_id: entityId } : {}),
         ...(defaultElementId
           ? {
               classification_element_id: defaultElementId,
@@ -182,7 +196,16 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
     } finally {
       setSaving(false)
     }
-  }, [agent, agentId, alwaysAsk, defaultElementId, dirty, graphId, seedDefault])
+  }, [
+    agent,
+    agentId,
+    alwaysAsk,
+    defaultElementId,
+    dirty,
+    entityId,
+    graphId,
+    seedDefault,
+  ])
 
   return (
     <Modal show onClose={onClose} size="3xl">
