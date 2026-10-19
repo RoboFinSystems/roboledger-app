@@ -245,7 +245,7 @@ const EntitiesListPageContent: FC = function () {
                               <Badge
                                 color="indigo"
                                 size="xs"
-                                className="ml-2 inline"
+                                className="ml-2 inline-flex whitespace-nowrap"
                               >
                                 group parent
                               </Badge>
@@ -254,7 +254,7 @@ const EntitiesListPageContent: FC = function () {
                               <Badge
                                 color="purple"
                                 size="xs"
-                                className="ml-2 inline"
+                                className="ml-2 inline-flex whitespace-nowrap"
                               >
                                 consolidation entity
                               </Badge>
