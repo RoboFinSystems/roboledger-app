@@ -218,13 +218,25 @@ const ConsolidationEntriesPanel: FC<ConsolidationEntriesPanelProps> = ({
             )
           )}
 
-          {draftedCount > 0 && !preview.up_to_date && (
+          {preview.incomplete && (
             <p className="text-xs text-yellow-700 dark:text-yellow-300">
-              The month&apos;s {draftedCount} draft
-              {draftedCount === 1 ? '' : 's'} no longer match the books. Draft
-              again to replace them.
+              An entry the month needs is left out; the notes below say why.
+              Drafting again will not add it.
             </p>
           )}
+
+          {/* Out of date only for that reason when nothing is withheld or
+              left out: either of those holds the month whatever the drafts. */}
+          {draftedCount > 0 &&
+            !preview.up_to_date &&
+            !preview.incomplete &&
+            residuals.length === 0 && (
+              <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                The month&apos;s {draftedCount} draft
+                {draftedCount === 1 ? '' : 's'} no longer match the books. Draft
+                again to replace them.
+              </p>
+            )}
 
           {residuals.length > 0 && (
             <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-200">
