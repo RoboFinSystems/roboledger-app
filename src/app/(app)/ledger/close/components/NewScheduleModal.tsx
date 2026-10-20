@@ -140,7 +140,8 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
     }
   }, [open, graphId, entityId])
 
-  // Reset state every time the modal opens.
+  // Reset state every time the modal opens, and when the entity changes
+  // under it: the account picks belong to one entity's chart.
   useEffect(() => {
     if (!open) return
     setName('')
@@ -158,7 +159,7 @@ export const NewScheduleModal: FC<NewScheduleModalProps> = ({
     setAssetElementId('')
     setBookedOn('')
     setSubmitError(null)
-  }, [open])
+  }, [open, entityId])
 
   // When both the write-off total and useful life are known, pre-fill the
   // monthly amount and end date from straight-line math. Both stay

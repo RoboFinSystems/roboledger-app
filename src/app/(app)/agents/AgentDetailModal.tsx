@@ -105,7 +105,11 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
         setError(null)
         const [agentDetail, eventList] = await Promise.all([
           clients.ledger.getAgent(graphId, agentId),
-          clients.ledger.listEventBlocks(graphId, { agentId, limit: 20 }),
+          clients.ledger.listEventBlocks(graphId, {
+            agentId,
+            entityId,
+            limit: 20,
+          }),
         ])
         if (cancelled) return
         eventList.sort(
@@ -126,7 +130,7 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
     return () => {
       cancelled = true
     }
-  }, [graphId, agentId, seedDefault])
+  }, [graphId, agentId, entityId, seedDefault])
 
   useEffect(() => {
     let cancelled = false

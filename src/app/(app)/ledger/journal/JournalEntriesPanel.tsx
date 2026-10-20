@@ -629,6 +629,7 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
 
       <NewJournalEntryModal
         graphId={graphId}
+        entityId={entityId}
         open={editing !== null}
         draft={editing}
         onClose={() => setEditing(null)}

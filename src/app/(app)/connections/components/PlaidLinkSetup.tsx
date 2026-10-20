@@ -6,9 +6,10 @@ import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import { SDK, unwrapSdk } from '@robosystems/core'
 import { Spinner } from '@robosystems/core/ui-components'
 import { Alert, Button, Label, TextInput } from 'flowbite-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { HiLibrary } from 'react-icons/hi'
 import FeedEntityField, {
+  feedEntities,
   feedEntityAllowed,
   feedEntityDefault,
   feedEntityScope,
@@ -40,10 +41,11 @@ export default function PlaidLinkSetup({
   parentKept = false,
 }: PlaidLinkSetupProps) {
   const currentGraphId = useLedgerGraph().graph?.graphId ?? null
-  const { entities } = useEntityScope()
+  const { entities: scopeEntities, entity: focused } = useEntityScope()
+  const entities = useMemo(() => feedEntities(scopeEntities), [scopeEntities])
   const [sinceDate, setSinceDate] = useState(defaultSinceDate)
   const [entityId, setEntityId] = useState(() =>
-    feedEntityDefault(entities, parentKept)
+    feedEntityDefault(entities, parentKept, focused?.id)
   )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -52,9 +54,9 @@ export default function PlaidLinkSetup({
   // one the server would take (or never was) falls back to the default.
   useEffect(() => {
     if (!feedEntityAllowed(entities, entityId, parentKept)) {
-      setEntityId(feedEntityDefault(entities, parentKept))
+      setEntityId(feedEntityDefault(entities, parentKept, focused?.id))
     }
-  }, [entities, entityId, parentKept])
+  }, [entities, entityId, parentKept, focused?.id])
 
   const canConnect =
     entities.length === 0

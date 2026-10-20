@@ -48,7 +48,7 @@ const scopeOf = (entity: LedgerEntitySummary): string | null =>
 export default function MoveAccountModal({
   show,
   account,
-  entities,
+  entities: groupEntities,
   graphId,
   onClose,
   onMoved,
@@ -61,6 +61,12 @@ export default function MoveAccountModal({
   const [loadingCandidates, setLoadingCandidates] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // The consolidation entity holds the group's eliminations; a feed's lines
+  // never book there.
+  const entities = useMemo(
+    () => groupEntities.filter((e) => e.entityRole !== 'consolidation'),
+    [groupEntities]
+  )
 
   // Reset for each account: default to the first entity that is not the
   // one the account is in, since moving is the reason the modal opens.
@@ -83,6 +89,10 @@ export default function MoveAccountModal({
   useEffect(() => {
     if (!show || mode !== 'existing' || !graphId || !entity) return
     let cancelled = false
+    // The previous entity's account must not stay submittable while this
+    // entity's accounts load.
+    setElementId('')
+    setCandidates([])
     setLoadingCandidates(true)
     void clients.ledger
       .listAccounts(graphId, {
@@ -115,7 +125,9 @@ export default function MoveAccountModal({
 
   const canSubmit =
     Boolean(graphId && account?.feedAccountId && account.connectionId) &&
-    (mode === 'create' ? Boolean(entityId) : Boolean(elementId)) &&
+    (mode === 'create'
+      ? Boolean(entityId)
+      : Boolean(elementId) && !loadingCandidates) &&
     !submitting
 
   const handleSubmit = async () => {

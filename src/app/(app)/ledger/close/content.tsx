@@ -14,7 +14,7 @@ import {
 } from '@robosystems/core'
 import { Card } from 'flowbite-react'
 import type { FC } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
 import { TbBook2 } from 'react-icons/tb'
 import AccountRollupsPanel from './components/AccountRollupsPanel'
@@ -115,6 +115,9 @@ const CloseContent: FC = function () {
   // Current graph, and the entity in it whose books this closes
   const { graph: currentGraph } = useLedgerGraph()
   const { entityId } = useEntityScope()
+  // A switch can land the previous entity's structures after the current
+  // one's; only the latest load may set the sidebar.
+  const sidebarSeq = useRef(0)
 
   // Load sidebar data — single call to closing book structures endpoint.
   // `select` lets callers land on a specific item after the refresh (e.g.
@@ -126,6 +129,7 @@ const CloseContent: FC = function () {
         return
       }
 
+      const seq = ++sidebarSeq.current
       try {
         setIsSidebarLoading(true)
         setError(null)
@@ -138,6 +142,7 @@ const CloseContent: FC = function () {
             .getEntity(currentGraph.graphId, { entityId })
             .catch(() => null),
         ])
+        if (seq !== sidebarSeq.current) return
 
         setCategories(response?.categories ?? [])
         setEntityName(entity?.name ?? null)
@@ -146,9 +151,7 @@ const CloseContent: FC = function () {
         const rollupItem = (response?.categories ?? [])
           .flatMap((c) => c.items)
           .find((i) => i.itemType === 'account_rollups')
-        if (rollupItem) {
-          setMappingId(rollupItem.id)
-        }
+        setMappingId(rollupItem?.id ?? null)
 
         // Default to the Period Close hub — it's the operational home for
         // the close workflow (fiscal calendar state, drafts, close button).
@@ -163,11 +166,14 @@ const CloseContent: FC = function () {
           return { type: 'period_close' }
         })
       } catch (err) {
+        if (seq !== sidebarSeq.current) return
         console.error('Error loading closing book data:', err)
         setError('Failed to load closing book data.')
       } finally {
-        setIsSidebarLoading(false)
-        setHasLoadedOnce(true)
+        if (seq === sidebarSeq.current) {
+          setIsSidebarLoading(false)
+          setHasLoadedOnce(true)
+        }
       }
     },
     [currentGraph, entityId]
@@ -277,6 +283,7 @@ const CloseContent: FC = function () {
             ) : selectedItem.type === 'statement' && currentGraph ? (
               <StatementPanel
                 graphId={currentGraph.graphId}
+                entityId={entityId}
                 structureId={selectedItem.structureId}
                 viewMode={viewMode}
                 entityName={entityName}
@@ -303,6 +310,9 @@ const CloseContent: FC = function () {
               />
             ) : selectedItem.type === 'reconciliations' && currentGraph ? (
               <ReconciliationsPanel
+                // Remounted per entity: one entity's rows, and their
+                // sign-off buttons, never show under another.
+                key={entityId ?? 'parent'}
                 graphId={currentGraph.graphId}
                 entityId={entityId}
               />

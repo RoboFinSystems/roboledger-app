@@ -113,13 +113,16 @@ function presetRange(
 
 const LiveStatementsContent: FC = function () {
   const { graph: currentGraph } = useLedgerGraph()
-  const { entityId, entities } = useEntityScope()
+  const { entityId, entity, entities } = useEntityScope()
   // A group statement is the group parent's Reporting Style over its members'
   // books, summed per concept: combined is the members alone, nothing
   // eliminated; consolidated adds the consolidation entity's adjustments; the
   // worksheet lays them out side by side, one column per entity. All three are
   // only offered on the parent of a graph that holds more than one entity.
-  const canCombine = entityId === null && entities.length > 1
+  const canCombine =
+    entityId === null &&
+    entities.filter((e) => e.entityRole !== 'consolidation').length > 1
+  const isConsolidationEntity = entity?.entityRole === 'consolidation'
   const [scope, setScope] = useState<StatementScope>('entity')
   // Back to the entity's own books whenever the entity or the graph changes:
   // two group parents both resolve to a null entity id.
@@ -149,6 +152,9 @@ const LiveStatementsContent: FC = function () {
   const loadSeq = useRef(0)
 
   const load = useCallback(async () => {
+    // Taken before the early returns too: a load that renders nothing still
+    // supersedes the one in flight, or its response lands on the new choice.
+    const seq = ++loadSeq.current
     if (!currentGraph) {
       setStatement(null)
       setWorksheet(null)
@@ -167,7 +173,6 @@ const LiveStatementsContent: FC = function () {
       setWorksheet(null)
       return
     }
-    const seq = ++loadSeq.current
     try {
       setIsLoading(true)
       setError(null)
@@ -333,6 +338,17 @@ const LiveStatementsContent: FC = function () {
               </Link>
             </>
           )}
+        </Alert>
+      )}
+
+      {isConsolidationEntity && (
+        <Alert color="info">
+          <HiExclamationCircle className="h-4 w-4" />
+          <span>
+            These are {entity?.name}&apos;s books: the group&apos;s
+            consolidating adjustments alone. The consolidated statement is the
+            group parent&apos;s, under Consolidated.
+          </span>
         </Alert>
       )}
 

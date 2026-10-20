@@ -128,6 +128,12 @@ export function EntityScopeProvider({ children }: PropsWithChildren) {
   const [statusByGraph, setStatusByGraph] = useState<
     Map<string, 'loaded' | 'failed'>
   >(new Map())
+  // A pick in another graph, held while that graph becomes current so the
+  // pages read the picked entity the moment it does, not its parent first.
+  const [pendingPick, setPendingPick] = useState<{
+    entityId: string
+    graphId: string
+  } | null>(null)
 
   const ledgerGraphs = useMemo(
     () => graphState.graphs.filter(GraphFilters.roboledger),
@@ -162,9 +168,13 @@ export function EntityScopeProvider({ children }: PropsWithChildren) {
       const next = new Map<string, LedgerEntitySummary[]>()
       for (const result of results) {
         if (result.status === 'fulfilled') {
+          // A linked entity is another graph's company, copied in with a
+          // report shared here: it has no books in this graph to select.
           next.set(
             result.value.graphId,
-            orderByHierarchy(result.value.entities)
+            orderByHierarchy(
+              result.value.entities.filter((e) => e.source !== 'linked')
+            )
           )
         }
       }
@@ -211,11 +221,15 @@ export function EntityScopeProvider({ children }: PropsWithChildren) {
   // another graph (the cookie remembers one per user, and the graph can be
   // switched from another app) falls back to the parent.
   const entity = useMemo(() => {
-    const picked = currentEntity
-      ? entities.find((e) => e.id === currentEntity.identifier)
+    const pickedId =
+      pendingPick && pendingPick.graphId === currentGraphId
+        ? pendingPick.entityId
+        : currentEntity?.identifier
+    const picked = pickedId
+      ? entities.find((e) => e.id === pickedId)
       : undefined
     return picked ?? parent
-  }, [currentEntity, entities, parent])
+  }, [pendingPick, currentGraphId, currentEntity, entities, parent])
   const entityId = entity && !entity.isParent ? entity.id : null
 
   // A ledger page must not act on the parent's books because the list has not
@@ -245,6 +259,8 @@ export function EntityScopeProvider({ children }: PropsWithChildren) {
     if (needsSync) {
       setCurrentEntity(toContextEntity(entity, currentGraphId))
     }
+    // The held pick is now the persisted one.
+    if (pendingPick?.graphId === currentGraphId) setPendingPick(null)
     // currentEntity is read, not depended on: setting it re-runs the effect
     // once, finds nothing to sync, and stops.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -253,8 +269,18 @@ export function EntityScopeProvider({ children }: PropsWithChildren) {
   const select = useCallback(
     async (target: LedgerEntitySummary, graphId: string) => {
       if (graphId !== graphState.currentGraphId) {
-        await setCurrentGraph(graphId)
+        // The sync effect persists the pick once the graph is current; set
+        // here, it would be saved against the graph being left.
+        setPendingPick({ entityId: target.id, graphId })
+        try {
+          await setCurrentGraph(graphId)
+        } catch (err) {
+          setPendingPick(null)
+          throw err
+        }
+        return
       }
+      setPendingPick(null)
       setCurrentEntity(toContextEntity(target, graphId))
     },
     [graphState.currentGraphId, setCurrentGraph, setCurrentEntity]

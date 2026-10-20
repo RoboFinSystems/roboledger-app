@@ -15,6 +15,9 @@ const mockReplace = vi.fn()
 
 let searchParams = new URLSearchParams()
 
+const mockScope = vi.fn(() => ({ entityId: null as string | null }))
+vi.mock('@/lib/entity-scope', () => ({ useEntityScope: () => mockScope() }))
+
 vi.mock('@robosystems/core', () => ({
   useGraphWrites: vi.fn(),
   customTheme: { card: {} },
@@ -220,6 +223,7 @@ const wideEnvelopeFor = (id: string) => {
 describe('PlanContent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockScope.mockReturnValue({ entityId: null })
     searchParams = new URLSearchParams()
     mockUseGraphContext.mockReturnValue({
       state: { graphs: [GRAPH], currentGraphId: 'kg1', isLoading: false },
@@ -238,6 +242,25 @@ describe('PlanContent', () => {
     expect(select).not.toHaveTextContent(/^Forecast$/)
   })
 
+  it('reads the entity in focus, not the group parent', async () => {
+    mockScope.mockReturnValue({ entityId: 'ent_sub' })
+    render(<PlanContent />)
+
+    await waitFor(() =>
+      expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_is', {
+        scenarioId: 'struct_budget',
+        series: true,
+        seriesHistory: 12,
+        entityId: 'ent_sub',
+      })
+    )
+    expect(mockListInformationBlocks).toHaveBeenCalledWith('kg1', {
+      limit: 200,
+      entityId: 'ent_sub',
+    })
+    expect(mockGetEntity).toHaveBeenCalledWith('kg1', { entityId: 'ent_sub' })
+  })
+
   it('defaults to the first forecast scenario and loads every section in series mode', async () => {
     render(<PlanContent />)
 
@@ -248,7 +271,7 @@ describe('PlanContent', () => {
       expect(mockGetInformationBlock).toHaveBeenCalledWith(
         'kg1',
         'struct_budget',
-        { seriesHistory: 12 }
+        { seriesHistory: 12, entityId: null }
       )
     )
     // Every statement family reads in series mode with the scenario,
@@ -259,6 +282,7 @@ describe('PlanContent', () => {
         scenarioId: 'struct_budget',
         series: true,
         seriesHistory: 12,
+        entityId: null,
       })
     }
     expect(await screen.findByTestId('plan-grid')).toBeInTheDocument()
@@ -276,6 +300,7 @@ describe('PlanContent', () => {
       expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_is', {
         series: true,
         seriesHistory: 12,
+        entityId: null,
       })
     )
     expect(mockGetInformationBlock).not.toHaveBeenCalledWith(
@@ -298,7 +323,7 @@ describe('PlanContent', () => {
       expect(mockGetInformationBlock).toHaveBeenCalledWith(
         'kg1',
         'struct_budget',
-        { seriesHistory: 12 }
+        { seriesHistory: 12, entityId: null }
       )
     )
     expect(mockReplace).toHaveBeenCalledWith('/plan?scenario=struct_budget', {
@@ -335,6 +360,7 @@ describe('PlanContent', () => {
     expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_is', {
       series: true,
       seriesHistory: 12,
+      entityId: null,
     })
   })
 
@@ -419,6 +445,7 @@ describe('PlanContent', () => {
         scenarioId: 'struct_budget',
         series: true,
         seriesHistory: 3,
+        entityId: null,
       })
     )
   })
@@ -488,7 +515,7 @@ describe('PlanContent', () => {
       expect(mockGetInformationBlock).toHaveBeenCalledWith(
         'kg1',
         'struct_budget',
-        { seriesHistory: 12 }
+        { seriesHistory: 12, entityId: null }
       )
     )
     for (const id of ['struct_is', 'struct_bs', 'struct_cf']) {
@@ -496,6 +523,7 @@ describe('PlanContent', () => {
         scenarioId: 'struct_budget',
         series: true,
         seriesHistory: 12,
+        entityId: null,
       })
     }
     expect(screen.getByTestId('plan-grid')).toBeInTheDocument()

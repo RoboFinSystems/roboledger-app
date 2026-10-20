@@ -3,6 +3,7 @@
 import DocsLink from '@/components/DocsLink'
 import ExportMenu, { type ExportMenuGroup } from '@/components/ExportMenu'
 import RefreshControl from '@/components/RefreshControl'
+import { useEntityScope } from '@/lib/entity-scope'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import { useRefetchOnFocus } from '@/lib/useRefetchOnFocus'
 import type { InformationBlockSummaryList } from '@robosystems/client/clients'
@@ -91,6 +92,10 @@ const BlockExplorerContent: FC = function () {
   const refreshForGraphId = useRef<string | null>(null)
 
   const { graph: currentGraph } = useLedgerGraph()
+  const { entityId } = useEntityScope()
+  // The entity the loaded block list belongs to; envelopes wait until it is
+  // the one in scope, so a switch never reads one entity's list for another.
+  const [blocksFor, setBlocksFor] = useState<string | null>(null)
 
   const updateUrl = useCallback(
     (blockId: string | null, mode: ViewMode, scenario: string | null) => {
@@ -138,13 +143,17 @@ const BlockExplorerContent: FC = function () {
         } else {
           setIsListLoading(true)
           setFetchedAt(null)
+          setEnvelope(null)
         }
         setListError(null)
         const [list, entity] = await Promise.all([
           clients.ledger.listInformationBlockSummaries(currentGraph.graphId, {
             limit: 200,
+            entityId,
           }),
-          clients.ledger.getEntity(currentGraph.graphId).catch(() => null),
+          clients.ledger
+            .getEntity(currentGraph.graphId, { entityId })
+            .catch(() => null),
         ])
         if (cancelled) return
         // The explorer shows blocks as standing time series, so only
@@ -152,10 +161,23 @@ const BlockExplorerContent: FC = function () {
         // library-seeded structure variants (disclosure anchors, calc
         // structures, presentation umbrellas, per-equity-form clones) —
         // all fact-less, and near-duplicates of each other by name.
-        // `factCount` is the facts the block's envelope would carry.
-        const withFacts = list.filter((b) => b.factCount > 0)
+        // `factCount` is the facts the block's envelope would carry, for the
+        // entity in scope. A metric block stays listed without any: its
+        // compute bar is how an entity gets its first period.
+        const withFacts = list.filter(
+          (b) => b.factCount > 0 || b.blockType === 'metric'
+        )
         setBlocks(withFacts)
+        setBlocksFor(`${currentGraph.graphId}:${entityId}`)
         setEntityName(entity?.name ?? null)
+        // A scenario is one entity's forecast; another entity's reads as
+        // actuals with nothing ahead, so it falls back to actuals.
+        setScenarioId((current) =>
+          current &&
+          withFacts.some((b) => b.blockType === 'forecast' && b.id === current)
+            ? current
+            : null
+        )
         // Default selection: first metric block (the explorer home),
         // else the first block. A URL-seeded selection wins.
         setSelectedId((current) => {
@@ -184,7 +206,7 @@ const BlockExplorerContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph, reloadKey])
+  }, [currentGraph, entityId, reloadKey])
 
   // Load the selected block's envelope; sequence guard drops stale
   // responses when the selection changes mid-flight.
@@ -193,6 +215,7 @@ const BlockExplorerContent: FC = function () {
       setEnvelope(null)
       return
     }
+    if (blocksFor !== `${currentGraph.graphId}:${entityId}`) return
     const seq = ++envelopeSeq.current
     try {
       setIsEnvelopeLoading(true)
@@ -206,13 +229,11 @@ const BlockExplorerContent: FC = function () {
       const selected = blocks.find((b) => b.id === selectedId)
       const series =
         selected !== undefined && isStatementBlockType(selected.blockType)
-      const options =
-        scenarioId || series
-          ? {
-              ...(scenarioId ? { scenarioId } : {}),
-              ...(series ? { series: true } : {}),
-            }
-          : undefined
+      const options = {
+        ...(scenarioId ? { scenarioId } : {}),
+        ...(series ? { series: true } : {}),
+        entityId,
+      }
       const block = await clients.ledger.getInformationBlock(
         currentGraph.graphId,
         selectedId,
@@ -228,7 +249,7 @@ const BlockExplorerContent: FC = function () {
     } finally {
       if (seq === envelopeSeq.current) setIsEnvelopeLoading(false)
     }
-  }, [currentGraph, selectedId, scenarioId, blocks])
+  }, [currentGraph, entityId, blocksFor, selectedId, scenarioId, blocks])
 
   useEffect(() => {
     loadEnvelope()
@@ -421,6 +442,7 @@ const BlockExplorerContent: FC = function () {
                   <ComputePanel
                     graphId={currentGraph.graphId}
                     structureId={envelope.id}
+                    entityId={entityId}
                     onComputed={loadEnvelope}
                   />
                 )}

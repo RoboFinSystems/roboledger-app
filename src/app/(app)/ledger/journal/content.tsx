@@ -147,18 +147,21 @@ const JournalContent: FC = function () {
   }, [transactions])
 
   // What the entry row verbs depend on: how QuickBooks relates to this
-  // ledger, and the closed months. Cleared only when the graph changes, so a
-  // reload after a write does not briefly offer verbs on closed rows.
+  // ledger, and the closed months. Cleared only when the graph (or, for the
+  // months, the entity) changes, so a reload after a write does not briefly
+  // offer verbs on closed rows.
   const [quickBooks, setQuickBooks] = useState<QuickBooksMode | null>(null)
   const [closedThrough, setClosedThrough] = useState<string | null>(null)
   const [calendarLoaded, setCalendarLoaded] = useState(false)
   const [verbContextFailed, setVerbContextFailed] = useState(false)
   useEffect(() => {
     setQuickBooks(null)
-    setClosedThrough(null)
-    setCalendarLoaded(false)
     setVerbContextFailed(false)
   }, [ledgerGraphId])
+  useEffect(() => {
+    setClosedThrough(null)
+    setCalendarLoaded(false)
+  }, [ledgerGraphId, entityId])
   useEffect(() => {
     if (!ledgerGraphId) return
     let cancelled = false

@@ -47,6 +47,7 @@ describe('ComputePanel', () => {
       <ComputePanel
         graphId="kg1"
         structureId="struct_metrics"
+        entityId="ent_sub"
         onComputed={onComputed}
       />
     )
@@ -102,6 +103,8 @@ describe('ComputePanel', () => {
       expect(mockComputeMetrics).toHaveBeenCalledWith('kg1', {
         structure_id: 'struct_metrics',
         period_end: '2026-06-30',
+        // The entity in focus's metric set, never the group parent's.
+        entity_id: 'ent_sub',
       })
     )
     expect(onComputed).toHaveBeenCalled()

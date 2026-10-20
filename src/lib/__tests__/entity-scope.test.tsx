@@ -251,22 +251,54 @@ describe('EntityScopeProvider', () => {
     consoleError.mockRestore()
   })
 
-  it('switches the graph before persisting a pick from another graph', async () => {
+  it('reads a pick from another graph the moment that graph is current', async () => {
+    const bSub = entity({
+      id: 'ent_bs',
+      name: 'Beta Sub',
+      parentEntityId: 'ent_b',
+    })
+    mockListEntities.mockImplementation((graphId: string) =>
+      Promise.resolve(graphId === 'kg_a' ? [sub, parent] : [bParent, bSub])
+    )
     withState([ledgerA, ledgerB], 'kg_a')
     withPick(null)
-    const { result } = renderHook(() => useEntityScope(), { wrapper })
+    const { result, rerender } = renderHook(() => useEntityScope(), {
+      wrapper,
+    })
     await waitFor(() => expect(result.current.entities).toHaveLength(2))
     mockSetCurrentEntity.mockClear()
+    mockSetCurrentGraph.mockImplementation(async (graphId: string) => {
+      withState([ledgerA, ledgerB], graphId)
+    })
+    mockSetCurrentEntity.mockImplementation((pick: Record<string, unknown>) =>
+      withPick(pick)
+    )
 
-    await act(() => result.current.select(bParent, 'kg_b'))
+    await act(() => result.current.select(bSub, 'kg_b'))
+    rerender()
 
     expect(mockSetCurrentGraph).toHaveBeenCalledWith('kg_b')
-    expect(mockSetCurrentEntity).toHaveBeenCalledWith(
-      expect.objectContaining({ identifier: 'ent_b', graphId: 'kg_b' })
+    // Never the new graph's parent first: the pages read the pick at once.
+    expect(result.current.entityId).toBe('ent_bs')
+    await waitFor(() =>
+      expect(mockSetCurrentEntity).toHaveBeenCalledWith(
+        expect.objectContaining({ identifier: 'ent_bs', graphId: 'kg_b' })
+      )
     )
-    expect(mockSetCurrentGraph.mock.invocationCallOrder[0]).toBeLessThan(
-      mockSetCurrentEntity.mock.invocationCallOrder[0]
+    expect(mockSetCurrentEntity).not.toHaveBeenCalledWith(
+      expect.objectContaining({ identifier: 'ent_b' })
     )
+  })
+
+  it('leaves out entities copied in with a shared report', async () => {
+    const linked = entity({ id: 'ent_l', name: 'Sender Co', source: 'linked' })
+    mockListEntities.mockResolvedValue([parent, sub, linked])
+    withState([ledgerA], 'kg_a')
+    withPick(null)
+    const { result } = renderHook(() => useEntityScope(), { wrapper })
+
+    await waitFor(() => expect(result.current.entities).toHaveLength(2))
+    expect(result.current.entities.map((e) => e.id)).toEqual(['ent_p', 'ent_s'])
   })
 
   it('does not switch the graph for a pick in the selected one', async () => {

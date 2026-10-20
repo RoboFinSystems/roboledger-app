@@ -78,7 +78,7 @@ interface ReportWithGraph extends ReportListItem {
 }
 
 const ReportsContent: FC = function () {
-  const { entityId } = useEntityScope()
+  const { entityId, entity } = useEntityScope()
   const [reports, setReports] = useState<ReportWithGraph[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -144,7 +144,9 @@ const ReportsContent: FC = function () {
         title="Reports"
         subtitle={
           <>
-            View and manage financial reports.{' '}
+            {entity
+              ? `View and manage ${entity.name}'s financial reports.`
+              : 'View and manage financial reports.'}{' '}
             <DocsLink href="/docs/reports-and-sharing" />
           </>
         }
