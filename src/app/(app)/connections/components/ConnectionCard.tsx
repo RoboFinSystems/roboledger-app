@@ -65,6 +65,12 @@ export interface ConnectionData {
   metadata: Record<string, any>
 }
 
+/** An entity a feed's accounts book to; `entityId` is null for the parent. */
+export interface FeedEntity {
+  entityId: string | null
+  name: string
+}
+
 /** What a live QuickBooks card may choose; native is what severing leaves. */
 export type WritePolicyChoice = 'qb_authoritative' | 'shadow'
 
@@ -83,6 +89,13 @@ interface ConnectionCardProps {
    * bootstrap state (§3.0). Optional because non-QB providers ignore it.
    */
   graphId?: string | null
+  /**
+   * The entities a bank feed's accounts book to, read from the accounts
+   * themselves: each moves to its own entity. Empty before the first sync.
+   */
+  feedEntities?: FeedEntity[]
+  /** The group parent's name, whose books QuickBooks keeps. */
+  parentName?: string | null
   /**
    * Resume an OAuth sign-in the user never finished: re-initialize the
    * flow for this connection and send them to the provider. Rendered in
@@ -137,6 +150,8 @@ export default function ConnectionCard({
   onDelete,
   onSetWritePolicy,
   graphId,
+  feedEntities = [],
+  parentName = null,
   onContinueOAuth,
 }: ConnectionCardProps) {
   // Optimistic write-policy value: reflects the user's pick immediately
@@ -159,6 +174,12 @@ export default function ConnectionCard({
   // consent): the row keeps its history and resumes from a new sign-in.
   const needsReauth = connection.status === 'needs_reauth'
 
+  // Whose calendars the card reports: QuickBooks keeps the parent's books, a
+  // bank feed books to the entities its accounts are in.
+  const calendarEntities: FeedEntity[] =
+    provider === 'quickbooks'
+      ? [{ entityId: null, name: parentName ?? 'the company' }]
+      : feedEntities
   const subtitle =
     provider === 'plaid' && connection.metadata?.institution_name
       ? `Bank: ${connection.metadata.institution_name}`
@@ -201,6 +222,12 @@ export default function ConnectionCard({
               </div>
             )}
 
+            {provider !== 'quickbooks' && feedEntities.length > 0 && (
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Books to: {feedEntities.map((e) => e.name).join(', ')}
+              </p>
+            )}
+
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
               {status.message}
             </p>
@@ -234,11 +261,17 @@ export default function ConnectionCard({
             {/* §3.0 — fiscal-calendar bootstrap state (QuickBooks, Mercury) */}
             {CALENDAR_BOOTSTRAP_PROVIDERS.has(provider) &&
               graphId &&
-              !awaitingConsent && (
-                <div className="mt-3">
-                  <FiscalCalendarBootstrap graphId={graphId} />
+              !awaitingConsent &&
+              calendarEntities.map((entity) => (
+                <div key={entity.entityId ?? 'parent'} className="mt-3">
+                  <FiscalCalendarBootstrap
+                    graphId={graphId}
+                    entityId={entity.entityId}
+                    entityName={entity.name}
+                    showName={calendarEntities.length > 1}
+                  />
                 </div>
-              )}
+              ))}
 
             {/* Write-back policy — outbound only; governs whether
                 close-period publishes RL-originated entries to QuickBooks. */}

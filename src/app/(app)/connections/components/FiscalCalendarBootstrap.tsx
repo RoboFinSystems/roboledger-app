@@ -1,7 +1,6 @@
 'use client'
 
 import FiscalCalendarSetupModal from '@/components/FiscalCalendarSetupModal'
-import { useEntityScope } from '@/lib/entity-scope'
 import type { LedgerFiscalCalendar } from '@robosystems/client/clients'
 import { clients } from '@robosystems/core'
 import { Alert, Badge, Button } from 'flowbite-react'
@@ -10,26 +9,32 @@ import { HiCalendar, HiExclamationCircle } from 'react-icons/hi'
 
 interface FiscalCalendarBootstrapProps {
   graphId: string
+  /** The entity whose calendar this is; null for the group parent. */
+  entityId: string | null
+  entityName: string
+  /** Name the entity, when a card reports more than one calendar. */
+  showName?: boolean
 }
 
-// §3.0 — Calendar bootstrap fallback for the QB connection card when
-// the first-sync auto-init couldn't derive a fiscal-year start.
+// §3.0 — Calendar bootstrap fallback for a connection card when the
+// first-sync auto-init couldn't derive a fiscal-year start, for one entity
+// the connection keeps books for.
 export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
   graphId,
+  entityId,
+  entityName,
+  showName = false,
 }) => {
   const [calendar, setCalendar] = useState<
     LedgerFiscalCalendar | null | undefined
   >(undefined)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [setupOpen, setSetupOpen] = useState(false)
-  const { entities } = useEntityScope()
-  const parentName = entities.find((e) => e.isParent)?.name ?? 'the company'
-
   const load = useCallback(async () => {
     if (!graphId) return
     setLoadError(null)
     try {
-      const cal = await clients.ledger.getFiscalCalendar(graphId)
+      const cal = await clients.ledger.getFiscalCalendar(graphId, { entityId })
       setCalendar(cal)
     } catch (err) {
       setLoadError(
@@ -37,7 +42,7 @@ export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
       )
       setCalendar(null)
     }
-  }, [graphId])
+  }, [graphId, entityId])
 
   useEffect(() => {
     void load()
@@ -60,7 +65,7 @@ export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
     return (
       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
         <HiCalendar className="h-4 w-4 text-gray-400" />
-        <span>Calendar:</span>
+        <span>{showName ? `${entityName} calendar:` : 'Calendar:'}</span>
         <Badge color="success" size="xs">
           Closed through {calendar.closedThrough || '—'}
         </Badge>
@@ -81,7 +86,9 @@ export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
           <HiCalendar className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
           <div>
             <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-              Fiscal calendar not initialized
+              {showName
+                ? `${entityName}'s fiscal calendar not initialized`
+                : 'Fiscal calendar not initialized'}
             </p>
             <p className="text-xs text-amber-800 dark:text-amber-200">
               The close needs a calendar before it can run. Set where the books
@@ -95,8 +102,8 @@ export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
       </div>
       <FiscalCalendarSetupModal
         graphId={graphId}
-        entityId={null}
-        entityName={parentName}
+        entityId={entityId}
+        entityName={entityName}
         open={setupOpen}
         onClose={() => setSetupOpen(false)}
         onInitialized={(cal) => {

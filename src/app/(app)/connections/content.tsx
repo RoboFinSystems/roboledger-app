@@ -1,5 +1,6 @@
 'use client'
 
+import { useEntityScope } from '@/lib/entity-scope'
 import { apiErrorMessage } from '@/lib/ledger/errors'
 import {
   linkPlaidConnection,
@@ -7,7 +8,9 @@ import {
   plaidRefusalMessage,
 } from '@/lib/plaid-link'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
+import type { LedgerBankAccount } from '@robosystems/client/clients'
 import {
+  clients,
   EmptyState,
   PageHeader,
   PageLayout,
@@ -34,6 +37,7 @@ import DocsLink from '@/components/DocsLink'
 import ConnectionCard, {
   type ConnectionData,
   type ConnectionStatus,
+  type FeedEntity,
   type WritePolicyChoice,
 } from './components/ConnectionCard'
 import DeleteConnectionModal, {
@@ -126,6 +130,10 @@ export default function ModernConnectionsContent() {
   const [setupProvider, setSetupProvider] = useState<string | null>(null)
   const { showError, showSuccess, ToastContainer } = useToast()
   const currentGraphId = useLedgerGraph().graph?.graphId ?? null
+  const { entities } = useEntityScope()
+  // The feed accounts across the group: each books to the entity whose chart
+  // holds it, so one connection can feed several entities.
+  const [feedAccounts, setFeedAccounts] = useState<LedgerBankAccount[]>([])
   const searchParams = useSearchParams()
   const router = useRouter()
   const shownSuccessRef = useRef(false)
@@ -145,6 +153,24 @@ export default function ModernConnectionsContent() {
     }
   }, [searchParams, showSuccess])
 
+  // The entities each connection's accounts book to, in the group's order.
+  // The ledger facades take null for the group parent.
+  const feedEntitiesByConnection = useMemo(() => {
+    const byConnection = new Map<string, FeedEntity[]>()
+    for (const entity of entities) {
+      for (const account of feedAccounts) {
+        if (!account.connectionId || account.entityId !== entity.id) continue
+        const entityId = entity.isParent ? null : entity.id
+        const rows = byConnection.get(account.connectionId) ?? []
+        if (!rows.some((row) => row.entityId === entityId)) {
+          rows.push({ entityId, name: entity.name })
+        }
+        byConnection.set(account.connectionId, rows)
+      }
+    }
+    return byConnection
+  }, [entities, feedAccounts])
+
   // ── Load connections (all providers) ──
 
   // Which graph is currently selected, readable from inside an in-flight
@@ -160,11 +186,14 @@ export default function ModernConnectionsContent() {
         if (!background) setLoading(true)
         if (!currentGraphId) return [] as ConnectionData[]
 
-        const data = unwrapSdk(
-          await SDK.listConnections({
+        const [response, bankAccounts] = await Promise.all([
+          SDK.listConnections({
             path: { graph_id: currentGraphId },
-          })
-        )
+          }),
+          // Labels only: a failed read leaves the cards without them.
+          clients.ledger.listBankAccounts(currentGraphId).catch(() => null),
+        ])
+        const data = unwrapSdk(response)
 
         const list = (Array.isArray(data) ? data : []) as ConnectionData[]
         // A slow response from the previously selected graph must not render
@@ -173,6 +202,7 @@ export default function ModernConnectionsContent() {
           return [] as ConnectionData[]
         }
         setConnections(list)
+        setFeedAccounts(bankAccounts?.accounts ?? [])
         setError(null)
         return list
       } catch (err) {
@@ -183,6 +213,7 @@ export default function ModernConnectionsContent() {
         if (!background) {
           // Never leave another graph's cards on screen under this one.
           setConnections([])
+          setFeedAccounts([])
           setError(errorMsg)
           showError(errorMsg)
         }
@@ -600,6 +631,10 @@ export default function ModernConnectionsContent() {
                 handleSetWritePolicy(connection.connection_id, wp)
               }
               graphId={currentGraphId}
+              feedEntities={
+                feedEntitiesByConnection.get(connection.connection_id) ?? []
+              }
+              parentName={entities.find((e) => e.isParent)?.name ?? null}
               onContinueOAuth={() => handleContinueOAuth(connection)}
             />
           ))}

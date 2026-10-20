@@ -19,7 +19,11 @@ vi.mock('flowbite-react', () => ({
 }))
 
 vi.mock('../components/FiscalCalendarBootstrap', () => ({
-  FiscalCalendarBootstrap: () => <div>calendar-bootstrap</div>,
+  FiscalCalendarBootstrap: ({ entityId, entityName }: any) => (
+    <div>
+      calendar-bootstrap:{entityId ?? 'parent'}:{entityName}
+    </div>
+  ),
 }))
 
 import ConnectionCard, {
@@ -125,10 +129,55 @@ describe('ConnectionCard', () => {
         onSync={() => {}}
         onDelete={() => {}}
         graphId="kg_test"
+        feedEntities={[{ entityId: null, name: 'Harbor Holdings' }]}
       />
     )
     expect(screen.getByText('Sync Now')).toBeTruthy()
-    expect(screen.getByText('calendar-bootstrap')).toBeTruthy()
+    expect(
+      screen.getByText('calendar-bootstrap:parent:Harbor Holdings')
+    ).toBeTruthy()
     expect(screen.queryByText('Continue sign-in')).toBeNull()
+  })
+
+  it('a feed names, and checks the calendar of, each entity its accounts book to', () => {
+    render(
+      <ConnectionCard
+        connection={connection({ provider: 'plaid' })}
+        status={{ status: 'connected', message: 'Connected' }}
+        onSync={() => {}}
+        onDelete={() => {}}
+        graphId="kg_test"
+        feedEntities={[
+          { entityId: null, name: 'Harbor Holdings' },
+          { entityId: 'ent_sub', name: 'Cadence Studio' },
+        ]}
+      />
+    )
+    expect(
+      screen.getByText('Books to: Harbor Holdings, Cadence Studio')
+    ).toBeTruthy()
+    expect(
+      screen.getByText('calendar-bootstrap:parent:Harbor Holdings')
+    ).toBeTruthy()
+    expect(
+      screen.getByText('calendar-bootstrap:ent_sub:Cadence Studio')
+    ).toBeTruthy()
+  })
+
+  it("a QuickBooks card checks the parent's calendar, whose books it keeps", () => {
+    render(
+      <ConnectionCard
+        connection={connection({ provider: 'quickbooks' })}
+        status={{ status: 'connected', message: 'Connected' }}
+        onSync={() => {}}
+        onDelete={() => {}}
+        graphId="kg_test"
+        parentName="Harbor Holdings"
+      />
+    )
+    expect(
+      screen.getByText('calendar-bootstrap:parent:Harbor Holdings')
+    ).toBeTruthy()
+    expect(screen.queryByText(/Books to:/)).toBeNull()
   })
 })
