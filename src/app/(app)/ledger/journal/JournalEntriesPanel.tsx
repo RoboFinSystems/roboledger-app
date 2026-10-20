@@ -422,6 +422,16 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                             <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
                               {entry.number || entry.id}
                             </span>
+                            {entry.triggeredByEventId && (
+                              <span className="mt-1">
+                                <EventChip
+                                  eventType={entry.triggeredByEventType}
+                                  onOpen={() =>
+                                    setOpenEventId(entry.triggeredByEventId)
+                                  }
+                                />
+                              </span>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -442,14 +452,6 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                               <Badge color="failure" size="sm">
                                 unbalanced
                               </Badge>
-                            )}
-                            {entry.triggeredByEventId && (
-                              <EventChip
-                                eventType={entry.triggeredByEventType}
-                                onOpen={() =>
-                                  setOpenEventId(entry.triggeredByEventId)
-                                }
-                              />
                             )}
                           </div>
                         </TableCell>

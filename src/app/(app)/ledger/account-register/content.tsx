@@ -229,7 +229,7 @@ const AccountRegisterContent: FC = function () {
         title="Account Register"
         subtitle={
           entityName
-            ? `One account's posted lines in ${entityName}'s books, each with the balance it leaves`
+            ? `${entityName} · one account's posted lines, each with the balance it leaves`
             : "One account's posted lines, each with the balance it leaves"
         }
       />

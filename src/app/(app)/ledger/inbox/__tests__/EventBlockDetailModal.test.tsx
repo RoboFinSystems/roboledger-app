@@ -940,6 +940,10 @@ describe('EventBlockDetailModal — opened from a posting', () => {
 
     expect(await screen.findByText('What posted (1)')).toBeInTheDocument()
     expect(screen.getByText('6100 Office supplies')).toBeInTheDocument()
+    // What the event said it would post gives way to what did.
+    expect(
+      screen.queryByText('No journal entries in metadata.')
+    ).not.toBeInTheDocument()
     expect(screen.queryByText('Reject')).not.toBeInTheDocument()
     expect(screen.queryByText('Preview')).not.toBeInTheDocument()
   })
