@@ -1,14 +1,20 @@
 'use client'
 
-import { FilterBar, FilterField, SearchField } from '@/components/FilterBar'
+import {
+  FilterActions,
+  FilterBar,
+  FilterField,
+  SearchField,
+} from '@/components/FilterBar'
 import SegmentedControl, {
   type SegmentedOption,
 } from '@/components/SegmentedControl'
 import SortableHeadCell from '@/components/SortableHeadCell'
 import { useEntityScope } from '@/lib/entity-scope'
 import type { ElementClassification } from '@/lib/ledger'
+import { dollars, toCsv } from '@/lib/ledger/csv'
 import { formatDollars } from '@/lib/ledger/formatters'
-import { registerHref } from '@/lib/ledger/register'
+import { monthToDate, registerHref } from '@/lib/ledger/register'
 import { type SortColumn, useTableSort } from '@/lib/useTableSort'
 import {
   clients,
@@ -22,6 +28,7 @@ import {
 import {
   Alert,
   Badge,
+  Button,
   Card,
   Table,
   TableBody,
@@ -34,11 +41,16 @@ import type { FC } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   HiCheckCircle,
+  HiDownload,
   HiExclamationCircle,
   HiScale,
   HiSearch,
 } from 'react-icons/hi'
 import { TbReportMoney } from 'react-icons/tb'
+import {
+  downloadCsv,
+  exportFilename,
+} from '../../explorer/components/serialize'
 
 const CLASSIFICATION_COLORS: Record<ElementClassification, string> = {
   asset: 'success',
@@ -56,7 +68,7 @@ const CLASSIFICATION_LABELS: Record<ElementClassification, string> = {
   expense: 'Expense',
 }
 
-interface TrialBalanceRowWithGraph {
+export interface TrialBalanceRowWithGraph {
   accountId: string
   accountCode: string
   accountName: string
@@ -67,6 +79,42 @@ interface TrialBalanceRowWithGraph {
   netBalance: number
   _graphId: string
   _graphName: string
+}
+
+/** The trial balance on screen as CSV: one row per account, then the
+ *  totals. In the US-GAAP view each row is a reporting concept. */
+export function trialBalanceCsv(
+  rows: readonly TrialBalanceRowWithGraph[],
+  view: ViewMode
+): string {
+  const debits = rows.reduce((sum, row) => sum + row.totalDebits, 0)
+  const credits = rows.reduce((sum, row) => sum + row.totalCredits, 0)
+  return toCsv([
+    [
+      view === 'coa' ? 'Code' : 'Concept',
+      view === 'coa' ? 'Account' : 'Reporting line',
+      'Classification',
+      'Debits',
+      'Credits',
+      'Net balance',
+    ],
+    ...rows.map((row) => [
+      row.accountCode,
+      row.accountName,
+      CLASSIFICATION_LABELS[row.classification] ?? row.classification,
+      dollars(row.totalDebits),
+      dollars(row.totalCredits),
+      dollars(row.netBalance),
+    ]),
+    [
+      '',
+      'Total',
+      '',
+      dollars(debits),
+      dollars(credits),
+      dollars(debits - credits),
+    ],
+  ])
 }
 
 // QB's standard Chart of Accounts ordering by AccountType
@@ -111,7 +159,7 @@ const VIEW_MODES: readonly SegmentedOption<ViewMode>[] = [
 
 const TrialBalanceContent: FC = function () {
   const { state: graphState } = useGraphContext()
-  const { entityId, parent } = useEntityScope()
+  const { entityId, entity, parent } = useEntityScope()
   // Mappings are listed for every entity when none is named, so the parent
   // is named too: the default-to-parent rule of the other reads.
   const mappingEntityId = entityId ?? parent?.id ?? null
@@ -401,6 +449,28 @@ const TrialBalanceContent: FC = function () {
             ariaLabel="View"
           />
         </FilterField>
+        <FilterActions>
+          <Button
+            size="sm"
+            color="light"
+            disabled={tableSort.sorted.length === 0}
+            onClick={() =>
+              downloadCsv(
+                trialBalanceCsv(tableSort.sorted, viewMode),
+                exportFilename(
+                  `trial balance ${entity?.name ?? parent?.name ?? ''} ${
+                    monthToDate(new Date()).end
+                  }`,
+                  'csv',
+                  'trial-balance'
+                )
+              )
+            }
+          >
+            <HiDownload className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+        </FilterActions>
       </FilterBar>
 
       {/* US-GAAP Mode Notice */}

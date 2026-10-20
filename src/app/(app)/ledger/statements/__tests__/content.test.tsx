@@ -57,6 +57,11 @@ vi.mock('@/components/ValidationBanner', () => ({
 
 vi.mock('flowbite-react', () => ({
   Alert: ({ children }: any) => <div role="alert">{children}</div>,
+  Button: ({ children, onClick, disabled }: any) => (
+    <button onClick={onClick} disabled={disabled}>
+      {children}
+    </button>
+  ),
   Card: ({ children }: any) => <div>{children}</div>,
   Label: ({ children, htmlFor }: any) => (
     <label htmlFor={htmlFor}>{children}</label>
@@ -68,6 +73,7 @@ vi.mock('flowbite-react', () => ({
 }))
 
 vi.mock('react-icons/hi', () => ({
+  HiDownload: () => <span />,
   HiExclamationCircle: () => <span />,
   HiSearch: () => <span />,
 }))

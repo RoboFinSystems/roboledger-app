@@ -45,6 +45,11 @@ vi.mock('@/lib/entity-scope', () => ({ useEntityScope: () => mockScope() }))
 vi.mock('flowbite-react', () => ({
   Alert: ({ children }: any) => <div data-testid="alert">{children}</div>,
   Badge: ({ children }: any) => <span>{children}</span>,
+  Button: ({ children, onClick, disabled }: any) => (
+    <button onClick={onClick} disabled={disabled}>
+      {children}
+    </button>
+  ),
   Card: ({ children }: any) => <div>{children}</div>,
   Table: ({ children }: any) => <table>{children}</table>,
   TableBody: ({ children }: any) => <tbody>{children}</tbody>,
@@ -56,6 +61,7 @@ vi.mock('flowbite-react', () => ({
 }))
 
 vi.mock('react-icons/hi', () => ({
+  HiDownload: () => <span />,
   HiChevronDown: () => <span />,
   HiChevronUp: () => <span />,
   HiCheckCircle: () => <span />,
@@ -69,7 +75,7 @@ vi.mock('react-icons/tb', () => ({
   TbReportMoney: () => <span />,
 }))
 
-import TrialBalanceContent from '../content'
+import TrialBalanceContent, { trialBalanceCsv } from '../content'
 
 function graph(graphId: string) {
   return {
@@ -324,5 +330,38 @@ describe('TrialBalanceContent', () => {
       })
       expect(screen.queryByText('Cash')).not.toBeInTheDocument()
     })
+  })
+})
+
+describe('trialBalanceCsv', () => {
+  it('writes one row per account, then the totals', () => {
+    const row = (
+      code: string,
+      name: string,
+      debits: number,
+      credits: number
+    ) => ({
+      accountId: code,
+      accountCode: code,
+      accountName: name,
+      classification: 'asset' as const,
+      accountType: null,
+      totalDebits: debits,
+      totalCredits: credits,
+      netBalance: debits - credits,
+      _graphId: 'kg_a',
+      _graphName: 'A',
+    })
+    const csv = trialBalanceCsv(
+      [row('1000', 'Cash', 100.5, 0), row('1100', '=Receivables', 0, 40)],
+      'coa'
+    ).split('\n')
+
+    expect(csv).toEqual([
+      'Code,Account,Classification,Debits,Credits,Net balance',
+      '1000,Cash,Asset,100.50,0.00,100.50',
+      "1100,'=Receivables,Asset,0.00,40.00,-40.00",
+      ',Total,,100.50,40.00,60.50',
+    ])
   })
 })

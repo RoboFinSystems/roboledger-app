@@ -10,6 +10,7 @@ import SegmentedControl, {
   type SegmentedOption,
 } from '@/components/SegmentedControl'
 import { useEntityScope } from '@/lib/entity-scope'
+import { toCsv } from '@/lib/ledger/csv'
 import { formatAmount, formatDate } from '@/lib/ledger/formatters'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type {
@@ -84,16 +85,6 @@ function today(): string {
   ).padStart(2, '0')}`
 }
 
-const csvCell = (value: string | number | null): string => {
-  const text = value === null ? '' : String(value)
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
-}
-
-/** A synced name opened in a spreadsheet must stay text: one that starts like
- *  a formula is prefixed so it never runs as one. */
-export const textCell = (text: string): string =>
-  /^[=+\-@\t\r]/.test(text) ? `'${text}` : text
-
 /** The counterparty table as CSV: one row per counterparty, amounts in the
  *  currency's units. */
 export function agingCsv(aged: LedgerAgedBalances): string {
@@ -106,14 +97,14 @@ export function agingCsv(aged: LedgerAgedBalances): string {
     'Oldest due date',
   ]
   const rows = aged.agents.map((row) => [
-    textCell(row.agentName ?? 'No counterparty'),
+    row.agentName ?? 'No counterparty',
     ...BUCKETS.map((b) => row.buckets[b.key] / 100),
     row.buckets.unappliedCreditCents / 100,
     row.buckets.totalCents / 100,
     row.openItemCount,
     row.oldestDueDate,
   ])
-  return [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\n')
+  return toCsv([header, ...rows])
 }
 
 function downloadCsv(aged: LedgerAgedBalances): void {

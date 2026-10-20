@@ -9,6 +9,7 @@ import {
 } from '@/components/FilterBar'
 import { useEntityScope } from '@/lib/entity-scope'
 import { accountLabel, type AccountOption } from '@/lib/ledger/accounts'
+import { type CsvValue, dollars, toCsv } from '@/lib/ledger/csv'
 import { friendlyError } from '@/lib/ledger/errors'
 import { formatDate, formatDollars } from '@/lib/ledger/formatters'
 import { monthToDate } from '@/lib/ledger/register'
@@ -37,10 +38,88 @@ import {
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { HiExclamationCircle, HiOutlineBookOpen } from 'react-icons/hi'
+import {
+  HiDownload,
+  HiExclamationCircle,
+  HiOutlineBookOpen,
+} from 'react-icons/hi'
+import {
+  downloadCsv,
+  exportFilename,
+} from '../../explorer/components/serialize'
 import EventBlockDetailModal from '../inbox/EventBlockDetailModal'
 
 type RegisterLine = LedgerAccountRegister['lines'][number]
+
+/** The most lines an export reads; past it the file says it stops short. */
+export const EXPORT_LINE_CAP = 50_000
+
+/** The register as CSV: the opening balance, every line in the window with
+ *  the balance it leaves, then the closing balance and the window's totals. */
+export function registerCsv(
+  register: LedgerAccountRegister,
+  lines: readonly RegisterLine[],
+  truncated = false
+): string {
+  const rows: CsvValue[][] = [
+    [
+      'Date',
+      'Description',
+      'Memo',
+      'Entry',
+      'Status',
+      'Counterparty',
+      'Source event',
+      'Debit',
+      'Credit',
+      'Balance',
+    ],
+    [
+      register.startDate ?? '',
+      'Opening balance',
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      dollars(register.openingBalance),
+    ],
+    ...lines.map((line) => [
+      line.postingDate,
+      line.description ?? '',
+      line.memo ?? '',
+      line.entryNumber ?? line.entryId,
+      line.status,
+      line.agentName ?? '',
+      line.triggeredByEventType ?? '',
+      dollars(line.debit),
+      dollars(line.credit),
+      dollars(line.balance),
+    ]),
+  ]
+  if (truncated) {
+    rows.push([
+      '',
+      `Stopped at ${lines.length} lines: narrow the window to export the rest`,
+    ])
+  } else {
+    rows.push([
+      register.endDate ?? '',
+      'Closing balance',
+      null,
+      null,
+      null,
+      null,
+      null,
+      dollars(register.totalDebits),
+      dollars(register.totalCredits),
+      dollars(register.closingBalance),
+    ])
+  }
+  return toCsv(rows)
+}
 
 const NUMERIC_CELL = 'text-right font-mono whitespace-nowrap'
 
@@ -206,6 +285,52 @@ const AccountRegisterContent: FC = function () {
       .finally(() => setIsLoadingMore(false))
   }
 
+  // The whole window, not the page on screen: a reviewer's file is every line.
+  const [isExporting, setIsExporting] = useState(false)
+  const exportCsv = async () => {
+    if (!graphId || !register) return
+    setIsExporting(true)
+    try {
+      const all: RegisterLine[] = []
+      let cursor: string | null = null
+      do {
+        const page: LedgerAccountRegister | null =
+          await clients.ledger.getAccountRegister(graphId, accountId, {
+            ...query,
+            includeDrafts: false,
+            after: cursor,
+            limit: 1000,
+          })
+        if (!page) break
+        all.push(...page.lines)
+        cursor = page.nextCursor ?? null
+      } while (cursor && all.length < EXPORT_LINE_CAP)
+      const truncated = cursor !== null
+      if (truncated) {
+        console.warn(
+          `Account register export stopped at ${all.length} lines (cap ${EXPORT_LINE_CAP}).`
+        )
+      }
+      const { code, name } = register.account
+      downloadCsv(
+        registerCsv(register, all, truncated),
+        exportFilename(
+          `register ${code ?? ''} ${name} ${start} to ${end}`,
+          'csv',
+          'account-register'
+        )
+      )
+    } catch (err) {
+      setError(
+        friendlyError(
+          err instanceof Error ? err.message : 'Failed to export the register.'
+        ).message
+      )
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   // An account outside the chart the picker lists (a consolidation entity's
   // line on the parent's account) still shows by name.
   const options = useMemo(() => {
@@ -267,6 +392,15 @@ const AccountRegisterContent: FC = function () {
             onChange={setIncludeDrafts}
             label="Show drafts"
           />
+          <Button
+            size="sm"
+            color="light"
+            disabled={!register || isExporting}
+            onClick={() => void exportCsv()}
+          >
+            <HiDownload className="mr-2 h-4 w-4" />
+            {isExporting ? 'Exporting…' : 'Export CSV'}
+          </Button>
         </FilterActions>
       </FilterBar>
 
