@@ -222,6 +222,15 @@ const ReportsContent: FC = function () {
                     <TableCell className="font-medium text-gray-900 dark:text-white">
                       <div className="flex flex-col">
                         <span className="font-semibold">{report.name}</span>
+                        {/* The group's consolidated reports list on the
+                            parent beside its own. */}
+                        {!report.sourceGraphId &&
+                          report.entityName &&
+                          report.entityName !== entity?.name && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {report.entityName}
+                            </span>
+                          )}
                         {report.sourceGraphId && (
                           <span className="text-primary-400 flex items-center gap-1 text-xs">
                             <HiShare className="h-3 w-3" />

@@ -761,13 +761,16 @@ describe('PeriodClosePanel — the group close', () => {
     mockClosePeriod.mockResolvedValue(CLOSE_RESULT)
     render(<PeriodClosePanel graphId="kg1" entityId="ent_cons" />)
 
-    const close = await screen.findByText('Close Period')
-    expect(close.closest('button')).toBeDisabled()
+    // Queried afresh each time: a late load re-renders the card, and a node
+    // held from before it is detached and stays disabled.
+    const closeButton = () => screen.getByText('Close Period').closest('button')
+    await screen.findByText('Close Period')
+    await waitFor(() => expect(closeButton()).toBeDisabled())
     fireEvent.click(
-      screen.getByLabelText('Close with the difference unexplained')
+      await screen.findByLabelText('Close with the difference unexplained')
     )
-    expect(close.closest('button')).toBeEnabled()
-    fireEvent.click(close)
+    await waitFor(() => expect(closeButton()).toBeEnabled())
+    fireEvent.click(closeButton()!)
 
     await waitFor(() =>
       expect(mockClosePeriod).toHaveBeenCalledWith(

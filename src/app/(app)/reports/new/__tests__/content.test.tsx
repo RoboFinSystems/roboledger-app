@@ -43,10 +43,20 @@ const { GRAPH } = vi.hoisted(() => ({ GRAPH: { graphId: 'kg1' } }))
 vi.mock('@/lib/useLedgerGraph', () => ({
   useLedgerGraph: () => ({ graph: GRAPH }),
 }))
-const mockScope = vi.fn(() => ({
-  entityId: null as string | null,
-  parent: null as { id: string } | null,
+const mockScope = vi.fn((): any => ({
+  entityId: null,
+  entity: null,
+  entities: [],
+  parent: null,
 }))
+const UNSCOPED = { entityId: null, entity: null, entities: [], parent: null }
+const PARENT = { id: 'ent_parent', name: 'Harbor Holdings', isParent: true }
+const GROUP = {
+  id: 'ent_cons',
+  name: 'Consolidation Adjustments',
+  isParent: false,
+  entityRole: 'consolidation',
+}
 vi.mock('@/lib/entity-scope', () => ({ useEntityScope: () => mockScope() }))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
@@ -65,6 +75,7 @@ const generate = async () => {
 describe('Report builder', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockScope.mockReturnValue(UNSCOPED)
     mockListMappings.mockResolvedValue([{ id: 'map_1', name: 'Default' }])
     mockGetMappingCoverage.mockResolvedValue({
       coveragePercent: 100,
@@ -76,18 +87,18 @@ describe('Report builder', () => {
   })
 
   it('names the parent when the parent is in scope', async () => {
-    mockScope.mockReturnValue({ entityId: null, parent: { id: 'ent_parent' } })
+    mockScope.mockReturnValue({ ...UNSCOPED, parent: { id: 'ent_parent' } })
     render(<ReportBuilderContent />)
     await waitFor(() =>
       expect(mockListMappings).toHaveBeenCalledWith('kg1', {
         entityId: 'ent_parent',
       })
     )
-    mockScope.mockReturnValue({ entityId: null, parent: null })
   })
 
   it("offers the subsidiary's own mappings when it is in scope", async () => {
     mockScope.mockReturnValue({
+      ...UNSCOPED,
       entityId: 'ent_sub',
       parent: { id: 'ent_parent' },
     })
@@ -97,7 +108,50 @@ describe('Report builder', () => {
         entityId: 'ent_sub',
       })
     )
-    mockScope.mockReturnValue({ entityId: null, parent: null })
+  })
+
+  it("the parent's page builds the group's consolidated report", async () => {
+    mockScope.mockReturnValue({
+      entityId: null,
+      entity: PARENT,
+      entities: [PARENT, GROUP],
+      parent: PARENT,
+    })
+    mockListMappings.mockImplementation(
+      async (_g: string, { entityId }: { entityId: string }) => [
+        { id: `map_${entityId}`, name: 'Default' },
+      ]
+    )
+    render(<ReportBuilderContent />)
+    fireEvent.click(await screen.findByText('Consolidated group'))
+    await waitFor(() =>
+      expect(mockListMappings).toHaveBeenCalledWith('kg1', {
+        entityId: 'ent_cons',
+      })
+    )
+
+    const options = await generate()
+
+    expect(options.entityId).toBe('ent_cons')
+    expect(options.mappingId).toBe('map_ent_cons')
+  })
+
+  it('the consolidation entity builds the consolidated report', async () => {
+    mockScope.mockReturnValue({
+      entityId: 'ent_cons',
+      entity: GROUP,
+      entities: [PARENT, GROUP],
+      parent: PARENT,
+    })
+    render(<ReportBuilderContent />)
+    expect(
+      await screen.findByText(/consolidated report sums every member/)
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Consolidated group')).not.toBeInTheDocument()
+
+    const options = await generate()
+
+    expect(options.entityId).toBe('ent_cons')
   })
 
   // Unset, the SDK labels every report quarterly, whatever its period.
