@@ -31,6 +31,7 @@ vi.mock('@/lib/useLedgerGraph', () => ({
 
 const mockScope = vi.fn(() => ({
   entityId: null as string | null,
+  isResolved: true,
   entities: [
     { id: 'ent_parent', name: 'Harbor Holdings' },
     { id: 'ent_sub', name: 'Maple Court' },
@@ -143,6 +144,15 @@ function register(overrides: Record<string, unknown> = {}) {
 describe('AccountRegisterContent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockScope.mockReset()
+    mockScope.mockReturnValue({
+      entityId: null,
+      isResolved: true,
+      entities: [
+        { id: 'ent_parent', name: 'Harbor Holdings' },
+        { id: 'ent_sub', name: 'Maple Court' },
+      ],
+    })
     modalProps = null
     search = new URLSearchParams('')
     mockListAccounts.mockResolvedValue({
@@ -228,6 +238,33 @@ describe('AccountRegisterContent', () => {
     expect(screen.getByTestId('event-modal')).toBeInTheDocument()
     expect(modalProps.eventId).toBe('evt_1')
     expect(modalProps.readOnly).toBe(true)
+    expect(modalProps.booksEntityId).toBeNull()
+  })
+
+  it('keeps a linked account while the saved entity resolves, and drops it on a real change', async () => {
+    search = new URLSearchParams('accountId=elem_cash')
+    const entities = mockScope().entities
+    mockScope.mockReturnValue({ entityId: null, isResolved: false, entities })
+    const { rerender } = render(<AccountRegisterContent />)
+    expect(mockGetAccountRegister).not.toHaveBeenCalled()
+
+    mockScope.mockReturnValue({
+      entityId: 'ent_sub',
+      isResolved: true,
+      entities,
+    })
+    rerender(<AccountRegisterContent />)
+    await waitFor(() => expect(mockGetAccountRegister).toHaveBeenCalled())
+    expect(mockGetAccountRegister.mock.calls[0][2].entityId).toBe('ent_sub')
+    expect(mockReplace).not.toHaveBeenCalled()
+
+    mockScope.mockReturnValue({
+      entityId: 'ent_parent',
+      isResolved: true,
+      entities,
+    })
+    rerender(<AccountRegisterContent />)
+    expect(mockReplace).toHaveBeenCalledWith('/ledger/account-register?')
   })
 
   it('changing the account rewrites the URL', async () => {

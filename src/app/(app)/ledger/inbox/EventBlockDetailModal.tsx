@@ -123,6 +123,9 @@ interface Props {
   /** Opened from a posting (the journal, a register): the event is read, not
    *  triaged, so the inbox's actions are hidden. */
   readOnly?: boolean
+  /** Whose books the opener shows, when not the selected entity's (a register
+   *  opened from a member's statement figure): what posted links there. */
+  booksEntityId?: string | null
 }
 
 // Local alias kept so existing call sites read naturally; the shared
@@ -152,6 +155,7 @@ const EventBlockDetailModal: FC<Props> = function ({
   onRejected,
   onClassified,
   readOnly = false,
+  booksEntityId,
 }) {
   // The Inbox lists one entity's lines; its chart is the one they post to.
   const { entityId } = useEntityScope()
@@ -931,7 +935,7 @@ const EventBlockDetailModal: FC<Props> = function ({
                               <Link
                                 href={registerHref({
                                   accountId: li.accountId,
-                                  entityId,
+                                  entityId: booksEntityId ?? entityId,
                                   start: posted.postingDate,
                                   end: posted.postingDate,
                                 })}

@@ -682,6 +682,7 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
           eventId={openEventId}
           agentById={{}}
           readOnly
+          booksEntityId={entityId}
           onClose={() => setOpenEventId(null)}
           onApproved={() => undefined}
           onRejected={() => undefined}

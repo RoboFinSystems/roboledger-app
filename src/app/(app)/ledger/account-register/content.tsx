@@ -53,7 +53,7 @@ const AccountRegisterContent: FC = function () {
   const pathname = usePathname()
   const { graph } = useLedgerGraph()
   const graphId = graph?.graphId ?? null
-  const { entityId: scopeEntityId, entities } = useEntityScope()
+  const { entityId: scopeEntityId, entities, isResolved } = useEntityScope()
 
   // The URL names what a link opened: a statement figure names a member's
   // books, which need not be the selected entity's.
@@ -83,15 +83,21 @@ const AccountRegisterContent: FC = function () {
   }
 
   // Choosing another entity in the selector reads its books: the account the
-  // URL named belongs to the last one's chart.
-  const lastScope = useRef(scopeEntityId)
+  // URL named belongs to the last one's chart. The scope settling on the saved
+  // entity as the page loads is not a choice, and keeps the link.
+  const lastScope = useRef<string | null | undefined>(undefined)
   useEffect(() => {
+    if (!isResolved) return
+    if (lastScope.current === undefined) {
+      lastScope.current = scopeEntityId
+      return
+    }
     if (lastScope.current === scopeEntityId) return
     lastScope.current = scopeEntityId
     setParams({ entityId: null, accountId: null })
     // setParams reads the current URL; it need not re-run the effect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scopeEntityId])
+  }, [scopeEntityId, isResolved])
 
   const [accounts, setAccounts] = useState<AccountOption[]>([])
   useEffect(() => {
@@ -143,6 +149,7 @@ const AccountRegisterContent: FC = function () {
     [entityId, start, end, dimension, includeDrafts]
   )
   useEffect(() => {
+    if (!isResolved) return
     if (!graphId || !accountId) {
       setRegister(null)
       setLines([])
@@ -175,7 +182,7 @@ const AccountRegisterContent: FC = function () {
       .finally(() => {
         if (seq === loadSeq.current) setIsLoading(false)
       })
-  }, [graphId, accountId, query])
+  }, [graphId, accountId, query, isResolved])
 
   const loadMore = () => {
     if (!graphId || !nextCursor) return
@@ -436,6 +443,7 @@ const AccountRegisterContent: FC = function () {
           eventId={openEventId}
           agentById={{}}
           readOnly
+          booksEntityId={entityId}
           onClose={() => setOpenEventId(null)}
           onApproved={() => undefined}
           onRejected={() => undefined}
