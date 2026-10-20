@@ -807,8 +807,10 @@ const EventBlockDetailModal: FC<Props> = function ({
               </div>
             )}
 
-            {/* Entries */}
-            {entries && entries.length > 0 ? (
+            {/* Entries: what the event says it will post. Once it has
+                posted, "What posted" below reads the books instead. */}
+            {event.triggeredEntries.length > 0 ? null : entries &&
+              entries.length > 0 ? (
               <div className="space-y-3">
                 <h4 className="font-heading text-sm font-bold text-gray-900 dark:text-white">
                   Journal entries ({entries.length})

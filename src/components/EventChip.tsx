@@ -12,7 +12,7 @@ interface EventChipProps {
 const EventChip: FC<EventChipProps> = ({ eventType, onOpen }) => (
   <button
     type="button"
-    className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+    className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs whitespace-nowrap text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
     title="Open the event this entry came from"
     onClick={(e) => {
       e.stopPropagation()
