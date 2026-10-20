@@ -122,13 +122,17 @@ const flowRows = [
   },
 ]
 
-const staples = (classification: Record<string, unknown> | null) => ({
+const staples = (
+  classification: Record<string, unknown> | null,
+  classifications: Record<string, unknown>[] = []
+) => ({
   agt_staples: {
     id: 'agt_staples',
     agentType: 'vendor',
     name: 'Staples',
     isActive: true,
     classification,
+    classifications,
   } as any,
 })
 
@@ -701,6 +705,49 @@ describe('EventBlockDetailModal — a subsidiary in scope', () => {
 
   afterEach(() => {
     mockScope.mockReturnValue({ entityId: null })
+  })
+
+  it("does not take the parent's default for the subsidiary's", async () => {
+    mockGetEventBlock.mockResolvedValue(bankEvent({ agentId: 'agt_staples' }))
+    renderModal(
+      vi.fn(),
+      staples({ elementId: 'elem_expenses', accountName: 'Expenses' })
+    )
+    const select = await screen.findByLabelText('Post to account')
+    await waitFor(() =>
+      expect((select as HTMLSelectElement).value).toBe('elem_office')
+    )
+    // The subsidiary has no default of its own, so this line teaches one.
+    const remember = screen.getByLabelText(
+      /Remember for Staples/
+    ) as HTMLInputElement
+    expect(remember.checked).toBe(true)
+    expect(
+      screen.getByText(/Suggest Office supplies & equipment on Staples/)
+    ).toBeInTheDocument()
+  })
+
+  it("reads the subsidiary's own default", async () => {
+    mockGetEventBlock.mockResolvedValue(bankEvent({ agentId: 'agt_staples' }))
+    renderModal(
+      vi.fn(),
+      staples({ elementId: 'elem_office', accountName: 'Office' }, [
+        {
+          entityId: 'ent_sub',
+          elementId: 'elem_expenses',
+          accountName: 'Expenses',
+        },
+      ])
+    )
+    const select = await screen.findByLabelText('Post to account')
+    await waitFor(() =>
+      expect((select as HTMLSelectElement).value).toBe('elem_office')
+    )
+    expect(
+      screen.getByText(
+        /Make Office supplies & equipment the default instead of Expenses/
+      )
+    ).toBeInTheDocument()
   })
 
   it("offers the subsidiary's chart, so the line's suggestion survives", async () => {

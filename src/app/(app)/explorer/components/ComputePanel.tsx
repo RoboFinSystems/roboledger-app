@@ -11,6 +11,8 @@ import { formatCurrencyDollars } from '../../ledger/close/utils'
 interface ComputePanelProps {
   graphId: string
   structureId: string
+  /** The entity whose metric set is computed; null for the group parent. */
+  entityId: string | null
   /** Refetch the envelope so the new standing period appears. */
   onComputed: () => Promise<void> | void
 }
@@ -26,6 +28,7 @@ interface ComputePanelProps {
 const ComputePanel: FC<ComputePanelProps> = ({
   graphId,
   structureId,
+  entityId,
   onComputed,
 }) => {
   const [periodEnd, setPeriodEnd] = useState('')
@@ -42,6 +45,7 @@ const ComputePanel: FC<ComputePanelProps> = ({
       const response = await clients.ledger.computeMetrics(graphId, {
         structure_id: structureId,
         period_end: periodEnd,
+        entity_id: entityId,
       })
       setResult(response)
       await onComputed()
@@ -51,7 +55,7 @@ const ComputePanel: FC<ComputePanelProps> = ({
     } finally {
       setIsComputing(false)
     }
-  }, [graphId, structureId, periodEnd, onComputed])
+  }, [graphId, structureId, entityId, periodEnd, onComputed])
 
   return (
     <div className="mb-4 border-b border-gray-200 pb-3 dark:border-gray-700">

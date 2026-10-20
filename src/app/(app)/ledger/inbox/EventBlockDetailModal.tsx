@@ -197,6 +197,13 @@ const EventBlockDetailModal: FC<Props> = function ({
   const priorFlowQname = stringOf(eventMetadata.classified_flow_qname)
 
   const agent = event?.agentId ? agentById[event.agentId] : null
+  // The counterparty's default for the entity in scope: a subsidiary learns
+  // its own, and the parent's is not one it has.
+  const entityDefault = agent
+    ? ((entityId
+        ? agent.classifications.find((c) => c.entityId === entityId)
+        : agent.classification) ?? null)
+    : null
   // The counterparty's default as this line saw it. A learned suggestion is
   // the default itself, re-suggested the moment one is set or moved, so it
   // outranks the agent list, which the inbox loaded earlier.
@@ -206,10 +213,10 @@ const EventBlockDetailModal: FC<Props> = function ({
           elementId: suggestedElementId,
           accountName: suggestedAccountName || null,
         }
-      : agent?.classification
+      : entityDefault
         ? {
-            elementId: agent.classification.elementId,
-            accountName: agent.classification.accountName ?? null,
+            elementId: entityDefault.elementId,
+            accountName: entityDefault.accountName ?? null,
           }
         : null
 

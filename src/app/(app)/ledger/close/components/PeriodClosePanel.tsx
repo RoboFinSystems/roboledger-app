@@ -455,7 +455,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
         try {
           const list = await clients.ledger.listInformationBlockSummaries(
             graphId,
-            { limit: 200 }
+            { limit: 200, entityId }
           )
           const ready = list.some(
             (b) => isStatementBlockType(b.blockType) && b.factCount > 0

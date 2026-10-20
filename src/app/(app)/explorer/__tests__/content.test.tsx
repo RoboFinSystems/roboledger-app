@@ -13,6 +13,9 @@ let searchParams = new URLSearchParams()
 // The console drawer's write callback, captured so a test can fire it.
 let onGraphWrites: (() => void) | undefined
 
+const mockScope = vi.fn(() => ({ entityId: null as string | null }))
+vi.mock('@/lib/entity-scope', () => ({ useEntityScope: () => mockScope() }))
+
 vi.mock('@robosystems/core', () => ({
   useGraphWrites: (_graphId: string, cb: () => void) => {
     onGraphWrites = cb
@@ -209,6 +212,7 @@ const statementEnvelope = {
 describe('BlockExplorerContent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockScope.mockReturnValue({ entityId: null })
     searchParams = new URLSearchParams()
     mockUseGraphContext.mockReturnValue({
       state: { graphs: [GRAPH], currentGraphId: 'kg1', isLoading: false },
@@ -227,12 +231,28 @@ describe('BlockExplorerContent', () => {
       expect(mockGetInformationBlock).toHaveBeenCalledWith(
         'kg1',
         'struct_metrics',
-        undefined
+        { entityId: null }
       )
     )
     expect(
       await screen.findByText('struct_metrics:rendered')
     ).toBeInTheDocument()
+  })
+
+  it('reads the entity in focus, not the group parent', async () => {
+    mockScope.mockReturnValue({ entityId: 'ent_sub' })
+    searchParams = new URLSearchParams('block=struct_bs')
+    render(<BlockExplorerContent />)
+    await waitFor(() =>
+      expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_bs', {
+        series: true,
+        entityId: 'ent_sub',
+      })
+    )
+    expect(mockListInformationBlocks).toHaveBeenCalledWith('kg1', {
+      limit: 200,
+      entityId: 'ent_sub',
+    })
   })
 
   it('excludes fact-less blocks (library structure variants) from the picker', async () => {
@@ -258,12 +278,13 @@ describe('BlockExplorerContent', () => {
     await waitFor(() =>
       expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_bs', {
         series: true,
+        entityId: null,
       })
     )
     expect(mockGetInformationBlock).not.toHaveBeenCalledWith(
       'kg1',
       'struct_metrics',
-      undefined
+      expect.anything()
     )
   })
 
@@ -274,6 +295,7 @@ describe('BlockExplorerContent', () => {
       expect(mockGetInformationBlock).toHaveBeenCalledWith('kg1', 'struct_bs', {
         scenarioId: 'struct_budget',
         series: true,
+        entityId: null,
       })
     )
   })
@@ -287,7 +309,7 @@ describe('BlockExplorerContent', () => {
       expect(mockGetInformationBlock).toHaveBeenCalledWith(
         'kg1',
         'struct_metrics',
-        { scenarioId: 'struct_budget' }
+        { scenarioId: 'struct_budget', entityId: null }
       )
     )
   })
@@ -382,7 +404,7 @@ describe('BlockExplorerContent', () => {
       expect(mockGetInformationBlock).toHaveBeenCalledWith(
         'kg1',
         'struct_metrics',
-        undefined
+        { entityId: null }
       )
     )
     expect(screen.getByTestId('block-view')).toBeInTheDocument()

@@ -3,6 +3,7 @@
 import DocsLink from '@/components/DocsLink'
 import ExportMenu, { type ExportMenuGroup } from '@/components/ExportMenu'
 import RefreshControl from '@/components/RefreshControl'
+import { useEntityScope } from '@/lib/entity-scope'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import { useRefetchOnFocus } from '@/lib/useRefetchOnFocus'
 import type { InformationBlockSummaryList } from '@robosystems/client/clients'
@@ -100,6 +101,11 @@ const PlanContent: FC = function () {
   const [scaleChoice, setScaleChoice] = useState<PlanScale | null>(null)
 
   const { graph: currentGraph } = useLedgerGraph()
+  const { entityId } = useEntityScope()
+  // The entity the loaded block list belongs to; the grid waits until it is
+  // the one in scope, so a switch never reads one entity's blocks for another.
+  const scopeKey = currentGraph ? `${currentGraph.graphId}:${entityId}` : null
+  const [blocksFor, setBlocksFor] = useState<string | null>(null)
 
   const reloadPlan = useCallback(() => {
     if (!currentGraph) return
@@ -130,17 +136,22 @@ const PlanContent: FC = function () {
         } else {
           setIsListLoading(true)
           setFetchedAt(null)
+          setEnvelopes([])
         }
         setError(null)
         const [list, entity] = await Promise.all([
           clients.ledger.listInformationBlockSummaries(currentGraph.graphId, {
             limit: 200,
+            entityId,
           }),
-          clients.ledger.getEntity(currentGraph.graphId).catch(() => null),
+          clients.ledger
+            .getEntity(currentGraph.graphId, { entityId })
+            .catch(() => null),
         ])
         if (cancelled) return
         const withFacts = list.filter((b) => b.factCount > 0)
         setBlocks(withFacts)
+        setBlocksFor(`${currentGraph.graphId}:${entityId}`)
         setEntityName(entity?.name ?? null)
         // Scenario-centric default: the first forecast block — unless the
         // URL resolved the selection already (a scenario id or 'actuals').
@@ -184,7 +195,7 @@ const PlanContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [currentGraph, router, reloadKey])
+  }, [currentGraph, entityId, router, reloadKey])
 
   // Instance name FIRST: `displayName` is the block-TYPE label
   // ("Forecast"), so displayName-first would render every scenario in
@@ -211,6 +222,7 @@ const PlanContent: FC = function () {
   const loadPlanEnvelopes = useCallback(
     async (window?: { history?: number; forecast?: number }) => {
       if (!currentGraph || scenarioId === undefined) return null
+      if (blocksFor !== `${currentGraph.graphId}:${entityId}`) return null
       const statementIds: { title: string; id: string }[] = []
       for (const { blockType, title } of STATEMENT_ORDER) {
         const block = blocks.find((b) => b.blockType === blockType)
@@ -233,11 +245,10 @@ const PlanContent: FC = function () {
         ...(scenarioId
           ? [
               clients.ledger
-                .getInformationBlock(
-                  currentGraph.graphId,
-                  scenarioId,
-                  assumptionOptions
-                )
+                .getInformationBlock(currentGraph.graphId, scenarioId, {
+                  ...assumptionOptions,
+                  entityId,
+                })
                 .then((envelope) => ({
                   title: 'Assumptions',
                   envelope,
@@ -251,9 +262,11 @@ const PlanContent: FC = function () {
             series: boolean
             seriesHistory?: number
             seriesForecast?: number
+            entityId: string | null
           } = {
             ...(scenarioId ? { scenarioId } : {}),
             series: true,
+            entityId,
           }
           if (window?.history !== undefined)
             options.seriesHistory = window.history
@@ -265,7 +278,7 @@ const PlanContent: FC = function () {
         }),
       ])
     },
-    [currentGraph, blocks, scenarioId]
+    [currentGraph, entityId, blocks, blocksFor, scenarioId]
   )
 
   // The grid's envelopes: each statement family in series mode, plus
@@ -275,6 +288,7 @@ const PlanContent: FC = function () {
   // overlay, not a page reload.
   useEffect(() => {
     if (!currentGraph || isListLoading || scenarioId === undefined) return
+    if (blocksFor !== scopeKey) return
     const seq = ++loadSeq.current
     void (async () => {
       try {
@@ -304,6 +318,8 @@ const PlanContent: FC = function () {
   }, [
     currentGraph,
     isListLoading,
+    blocksFor,
+    scopeKey,
     scenarioId,
     historyWindow,
     forecastWindow,

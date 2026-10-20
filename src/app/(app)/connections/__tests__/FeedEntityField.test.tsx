@@ -17,6 +17,7 @@ vi.mock('flowbite-react', () => ({
 }))
 
 import FeedEntityField, {
+  feedEntities,
   feedEntityAllowed,
   feedEntityDefault,
   feedEntityScope,
@@ -121,5 +122,31 @@ describe('feed entity helpers', () => {
     expect(feedEntityAllowed([PARENT, SUB], 'ent_parent', true)).toBe(false)
     expect(feedEntityAllowed([PARENT, SUB], 'ent_sub', true)).toBe(true)
     expect(feedEntityAllowed([PARENT, SUB], 'ent_missing', false)).toBe(false)
+  })
+})
+
+describe('feed entities and the focused default', () => {
+  const CONSOLIDATION = {
+    id: 'ent_cons',
+    name: 'Consolidation Adjustments',
+    isParent: false,
+    parentEntityId: 'ent_parent',
+    entityRole: 'consolidation',
+  } as any
+
+  it('never books a feed to the consolidation entity', () => {
+    const all = [PARENT, CONSOLIDATION, SUB]
+    expect(feedEntities(all).map((e) => e.id)).toEqual([
+      'ent_parent',
+      'ent_sub',
+    ])
+    expect(feedEntityAllowed(all, 'ent_cons', false)).toBe(false)
+    // QuickBooks keeps the parent: the default skips the eliminations too.
+    expect(feedEntityDefault(all, true)).toBe('ent_sub')
+  })
+
+  it('defaults to the entity in focus when it can take a feed', () => {
+    expect(feedEntityDefault([PARENT, SUB], false, 'ent_sub')).toBe('ent_sub')
+    expect(feedEntityDefault([PARENT, SUB], true, 'ent_parent')).toBe('ent_sub')
   })
 })

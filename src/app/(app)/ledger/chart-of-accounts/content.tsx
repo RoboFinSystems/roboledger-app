@@ -425,6 +425,14 @@ const ChartOfAccountsContent: FC = function () {
   // The entity whose mapping this chart writes to: unnamed, the list holds
   // every entity's, and a subsidiary's account would land in the parent's.
   const mappingEntityId = entityId ?? parent?.id ?? null
+  // The mapping a refresh may write back: an auto-map or a save started on
+  // one entity's mapping must not land on the next entity's page.
+  const selectedMappingRef = useRef<string | null>(null)
+  useEffect(() => {
+    selectedMappingRef.current = selectedMappingId
+  }, [selectedMappingId])
+  // The graph and entity the page last loaded, to tell a switch from a reload.
+  const loadedScopeRef = useRef<string | null>(null)
 
   // Load accounts and mappings
   useEffect(() => {
@@ -443,6 +451,17 @@ const ChartOfAccountsContent: FC = function () {
     // graph must not be reused — mapping a concept from it would write a
     // foreign to_element_id.
     setRsGaapElements([])
+    // A switch drops the previous entity's mapping at once, so nothing acts on
+    // it while this entity's list loads; a reload keeps it on screen.
+    const scopeKey = `${currentGraph.graphId}:${entityId}`
+    if (loadedScopeRef.current !== scopeKey) {
+      loadedScopeRef.current = scopeKey
+      setSelectedMappingId(null)
+      setMappingDetail(null)
+      setMappingCoverage(null)
+      setEditingState(null)
+      setIsAutoMapping(false)
+    }
 
     const loadData = async () => {
       try {
@@ -541,7 +560,9 @@ const ChartOfAccountsContent: FC = function () {
                   ] as const
                 ).map((cls) =>
                   clients.ledger
-                    .getMappingCandidates(currentGraph.graphId, cls)
+                    .getMappingCandidates(currentGraph.graphId, cls, {
+                      entityId,
+                    })
                     .catch(() => [])
                 )
               ).then((lists) => ({ elements: lists.flat() }))
@@ -579,7 +600,7 @@ const ChartOfAccountsContent: FC = function () {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rsGaapElements intentionally excluded to avoid re-fetching
-  }, [currentGraph, selectedMappingId])
+  }, [currentGraph, entityId, selectedMappingId])
 
   // Build GAAP lookup from mapping associations, keyed by from_element_id.
   // Mapping is CoA → rs-gaap only. Legacy fac:* associations are skipped so
@@ -616,6 +637,7 @@ const ChartOfAccountsContent: FC = function () {
           .getMappingCoverage(currentGraph.graphId, selectedMappingId)
           .catch(() => null),
       ])
+      if (selectedMappingRef.current !== selectedMappingId) return
       setMappingDetail(detail)
       setMappingCoverage(coverage)
     } catch {

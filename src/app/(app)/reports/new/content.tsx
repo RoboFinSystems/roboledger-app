@@ -92,7 +92,10 @@ const PRESETS: PresetOption[] = [
 ]
 
 const ReportBuilderContent: FC = function () {
-  const { entityId, parent } = useEntityScope()
+  const { entityId, entity, parent } = useEntityScope()
+  // A report is one entity's books. The consolidation entity's are the
+  // group's eliminations alone, not its consolidated statements.
+  const isConsolidationEntity = entity?.entityRole === 'consolidation'
   // Unnamed, every entity's mappings come back under one name; the parent's
   // page offers the parent's.
   const mappingEntityId = entityId ?? parent?.id ?? null
@@ -152,7 +155,12 @@ const ReportBuilderContent: FC = function () {
     let cancelled = false
     const loadMappings = async () => {
       try {
+        // The previous entity's mapping must not stay selectable while this
+        // one's list loads: Generate would build that entity's report.
         setIsLoadingMappings(true)
+        setMappings([])
+        setSelectedMappingId(null)
+        setError(null)
         const result = await clients.ledger.listMappings(currentGraph.graphId, {
           entityId: mappingEntityId,
         })
@@ -181,24 +189,26 @@ const ReportBuilderContent: FC = function () {
 
   // Load coverage when mapping selected
   useEffect(() => {
+    let cancelled = false
     const loadCoverage = async () => {
-      if (!currentGraph || !selectedMappingId) {
-        setCoverage(null)
-        return
-      }
+      setCoverage(null)
+      if (!currentGraph || !selectedMappingId) return
 
       try {
         const result = await clients.ledger.getMappingCoverage(
           currentGraph.graphId,
           selectedMappingId
         )
-        setCoverage(result)
+        if (!cancelled) setCoverage(result)
       } catch (err) {
         console.error('Error loading coverage:', err)
       }
     }
 
     loadCoverage()
+    return () => {
+      cancelled = true
+    }
   }, [currentGraph, selectedMappingId])
 
   // Auto-map handler
@@ -244,6 +254,8 @@ const ReportBuilderContent: FC = function () {
       const report = await clients.reports.createReport(currentGraph.graphId, {
         name: reportName || `Report ${periodStart} to ${periodEnd}`,
         mappingId: selectedMappingId,
+        // Named, the server refuses a mapping that is not this entity's.
+        entityId: mappingEntityId,
         periodStart,
         periodEnd,
         // Unset, the SDK labels every report quarterly.
@@ -264,6 +276,7 @@ const ReportBuilderContent: FC = function () {
   }, [
     currentGraph,
     selectedMappingId,
+    mappingEntityId,
     periodStart,
     periodEnd,
     reportName,
@@ -274,7 +287,12 @@ const ReportBuilderContent: FC = function () {
   ])
 
   const isValid =
-    selectedMappingId && periodStart && periodEnd && periodEnd >= periodStart
+    !isLoadingMappings &&
+    !isConsolidationEntity &&
+    selectedMappingId &&
+    periodStart &&
+    periodEnd &&
+    periodEnd >= periodStart
 
   const isMultiPeriod = periods && periods.length > 0
 
@@ -283,7 +301,11 @@ const ReportBuilderContent: FC = function () {
       <PageHeader
         icon={TbReportAnalytics}
         title="Create Report"
-        subtitle="Generate financial statements from your mapped trial balance"
+        subtitle={
+          entity
+            ? `Generate ${entity.name}'s financial statements from its mapped trial balance`
+            : 'Generate financial statements from your mapped trial balance'
+        }
         actions={
           <Button color="light" onClick={() => router.push('/reports')}>
             <HiChevronLeft className="mr-2 h-5 w-5" />
@@ -296,6 +318,18 @@ const ReportBuilderContent: FC = function () {
         <Alert color="failure">
           <HiExclamationCircle className="h-4 w-4" />
           <span className="font-medium">Error:</span> {error}
+        </Alert>
+      )}
+
+      {isConsolidationEntity && (
+        <Alert color="info">
+          <HiExclamationCircle className="h-4 w-4" />
+          <span>
+            {entity?.name} holds the group&apos;s consolidating entries, so a
+            report built from its books would show the eliminations alone. A
+            report of the consolidated group cannot be generated yet; the group
+            parent&apos;s Live Statements show it under Consolidated.
+          </span>
         </Alert>
       )}
 

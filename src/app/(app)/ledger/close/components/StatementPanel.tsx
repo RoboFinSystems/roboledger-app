@@ -4,7 +4,7 @@ import type { PeriodSpecInput } from '@robosystems/client/clients'
 import { clients, LoadingState } from '@robosystems/core'
 import { Button, Spinner } from 'flowbite-react'
 import type { FC } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
 import BlockView from './blockview/BlockView'
 import type { EnvelopeBlock } from './blockview/types'
@@ -148,6 +148,8 @@ function buildPeriods(preset: PresetKey): {
 
 interface StatementPanelProps {
   graphId: string
+  /** The entity whose books the statement reads; null for the group parent. */
+  entityId: string | null
   structureId: string
   viewMode: ViewMode
   entityName: string | null
@@ -171,6 +173,7 @@ interface StatementPanelProps {
  */
 const StatementPanel: FC<StatementPanelProps> = ({
   graphId,
+  entityId,
   structureId,
   viewMode,
   entityName,
@@ -182,22 +185,28 @@ const StatementPanel: FC<StatementPanelProps> = ({
   const [error, setError] = useState<string | null>(null)
   const [selectedPreset, setSelectedPreset] = useState<PresetKey | null>(null)
 
+  const loadSeq = useRef(0)
+
   const loadEnvelope = useCallback(async () => {
+    const seq = ++loadSeq.current
     try {
       setIsLoading(true)
       setError(null)
       const block = await clients.ledger.getInformationBlock(
         graphId,
-        structureId
+        structureId,
+        { entityId }
       )
+      if (seq !== loadSeq.current) return
       setEnvelope(block ?? null)
     } catch (err) {
+      if (seq !== loadSeq.current) return
       console.error('Error loading statement envelope:', err)
       setError('Failed to load statement.')
     } finally {
-      setIsLoading(false)
+      if (seq === loadSeq.current) setIsLoading(false)
     }
-  }, [graphId, structureId])
+  }, [graphId, entityId, structureId])
 
   useEffect(() => {
     loadEnvelope()
@@ -219,6 +228,7 @@ const StatementPanel: FC<StatementPanelProps> = ({
         await clients.reports.createReport(graphId, {
           name: `${reportName} — ${preset.replace(/_/g, ' ')}`,
           mappingId,
+          entityId,
           periodStart,
           periodEnd,
           comparative,
@@ -235,7 +245,7 @@ const StatementPanel: FC<StatementPanelProps> = ({
         setIsRegenerating(false)
       }
     },
-    [graphId, mappingId, envelope, loadEnvelope]
+    [graphId, entityId, mappingId, envelope, loadEnvelope]
   )
 
   if (isLoading && !isRegenerating) {

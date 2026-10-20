@@ -28,15 +28,28 @@ export const feedEntityScope = (
   return entity && !entity.isParent ? entity.id : null
 }
 
-/** The entity a feed lands on by default: the parent, unless QuickBooks keeps
- *  its books, then the first subsidiary; '' when nothing can take a feed. */
+/** The entities a bank feed can book to. The consolidation entity holds the
+ *  group's eliminations, which only the consolidated statements read. */
+export const feedEntities = (
+  entities: readonly LedgerEntitySummary[]
+): LedgerEntitySummary[] =>
+  entities.filter((e) => e.entityRole !== 'consolidation')
+
+/** The entity a feed lands on by default: the one in focus when it can take
+ *  a feed, else the parent, unless QuickBooks keeps its books, then the first
+ *  subsidiary; '' when nothing can take a feed. */
 export const feedEntityDefault = (
   entities: readonly LedgerEntitySummary[],
-  parentKept: boolean
+  parentKept: boolean,
+  focusedId?: string | null
 ): string => {
-  const parent = entities.find((e) => e.isParent) ?? entities[0]
+  if (focusedId && feedEntityAllowed(entities, focusedId, parentKept)) {
+    return focusedId
+  }
+  const candidates = feedEntities(entities)
+  const parent = candidates.find((e) => e.isParent) ?? candidates[0]
   if (!parentKept) return parent?.id ?? ''
-  return entities.find((e) => !e.isParent)?.id ?? ''
+  return candidates.find((e) => !e.isParent)?.id ?? ''
 }
 
 /** Whether a pick is one the server would accept for a feed. */
@@ -46,7 +59,7 @@ export const feedEntityAllowed = (
   parentKept: boolean
 ): boolean => {
   const entity = entities.find((e) => e.id === entityId)
-  if (!entity) return false
+  if (!entity || entity.entityRole === 'consolidation') return false
   return !(parentKept && entity.isParent)
 }
 
