@@ -9,7 +9,12 @@ import {
 } from '@/lib/ledger/accounts'
 import type { FriendlyError } from '@/lib/ledger/errors'
 import { friendlyError } from '@/lib/ledger/errors'
-import { formatDateTime } from '@/lib/ledger/formatters'
+import {
+  formatDate,
+  formatDateTime,
+  formatDollars,
+} from '@/lib/ledger/formatters'
+import { registerHref } from '@/lib/ledger/register'
 import {
   suggestionSourceColor,
   suggestionSourceLabel,
@@ -115,6 +120,9 @@ interface Props {
   onRejected: (eventId: string) => void
   /** The event moved `captured → classified` without posting. */
   onClassified?: (eventId: string) => void
+  /** Opened from a posting (the journal, a register): the event is read, not
+   *  triaged, so the inbox's actions are hidden. */
+  readOnly?: boolean
 }
 
 // Local alias kept so existing call sites read naturally; the shared
@@ -143,6 +151,7 @@ const EventBlockDetailModal: FC<Props> = function ({
   onApproved,
   onRejected,
   onClassified,
+  readOnly = false,
 }) {
   // The Inbox lists one entity's lines; its chart is the one they post to.
   const { entityId } = useEntityScope()
@@ -888,6 +897,69 @@ const EventBlockDetailModal: FC<Props> = function ({
               </div>
             )}
 
+            {/* What did post, where the preview is what would */}
+            {event.triggeredEntries.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="font-heading text-sm font-bold text-gray-900 dark:text-white">
+                  What posted ({event.triggeredEntries.length})
+                </h4>
+                {event.triggeredEntries.map((posted) => (
+                  <div
+                    key={posted.id}
+                    className="rounded-lg border border-gray-200 p-3 dark:border-gray-700"
+                  >
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <span className="text-gray-500 dark:text-gray-400">
+                        {formatDate(posted.postingDate)}
+                        {posted.number ? ` · #${posted.number}` : ''}
+                      </span>
+                      <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                        {posted.memo || '—'}
+                        <Badge color="gray" size="xs">
+                          {posted.status}
+                        </Badge>
+                      </span>
+                    </div>
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {posted.lineItems.map((li) => (
+                          <tr
+                            key={li.id}
+                            className="border-b border-gray-100 last:border-b-0 dark:border-gray-700"
+                          >
+                            <td className="py-1 font-medium text-gray-900 dark:text-white">
+                              <Link
+                                href={registerHref({
+                                  accountId: li.accountId,
+                                  entityId,
+                                  start: posted.postingDate,
+                                  end: posted.postingDate,
+                                })}
+                                className="hover:underline"
+                              >
+                                {li.accountCode ? `${li.accountCode} ` : ''}
+                                {li.accountName ?? li.accountId}
+                              </Link>
+                            </td>
+                            <td className="py-1 text-right font-mono">
+                              {li.debitAmount
+                                ? formatDollars(li.debitAmount, event.currency)
+                                : '—'}
+                            </td>
+                            <td className="py-1 text-right font-mono">
+                              {li.creditAmount
+                                ? formatDollars(li.creditAmount, event.currency)
+                                : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Preview output */}
             {preview && (
               <div className="border-primary-200 bg-primary-50 dark:border-primary-900 dark:bg-primary-950 rounded-lg border p-3 text-sm">
@@ -1016,7 +1088,7 @@ const EventBlockDetailModal: FC<Props> = function ({
       </ModalBody>
 
       <ModalFooter>
-        {event && !isTerminal && (
+        {event && !isTerminal && !readOnly && (
           <div className="flex flex-1 flex-wrap justify-end gap-2">
             <Button
               color="light"

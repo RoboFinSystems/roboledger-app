@@ -19,6 +19,7 @@ import { useMemo, useState } from 'react'
 import {
   buildStatementModel,
   rowChange,
+  type StatementColumn,
   type StatementRow,
 } from '../statementModel'
 
@@ -43,9 +44,18 @@ const rowKey = (row: StatementRow): string => row.key
 
 interface LiveStatementTableProps {
   statement: LiveFinancialStatementResponse
+  /** A figure summed from accounts opens on them. */
+  onOpenSources?: (
+    row: StatementRow,
+    column: StatementColumn,
+    columnIndex: number
+  ) => void
 }
 
-const LiveStatementTable: FC<LiveStatementTableProps> = ({ statement }) => {
+const LiveStatementTable: FC<LiveStatementTableProps> = ({
+  statement,
+  onOpenSources,
+}) => {
   const model = useMemo(() => buildStatementModel(statement), [statement])
   const { columns, rows } = model
 
@@ -119,14 +129,30 @@ const LiveStatementTable: FC<LiveStatementTableProps> = ({ statement }) => {
                     ownedCount={fold.ownedCount(index)}
                   />
                 </TableCell>
-                {row.values.map((value, vi) => (
-                  <TableCell
-                    key={`${columns[vi].end}-${vi}`}
-                    className={NUMERIC_CELL}
-                  >
-                    {value === null ? '—' : formatCurrency(value)}
-                  </TableCell>
-                ))}
+                {row.values.map((value, vi) => {
+                  const text = value === null ? '—' : formatCurrency(value)
+                  const drillable =
+                    onOpenSources && (row.sources?.[vi]?.length ?? 0) > 0
+                  return (
+                    <TableCell
+                      key={`${columns[vi].end}-${vi}`}
+                      className={NUMERIC_CELL}
+                    >
+                      {drillable ? (
+                        <button
+                          type="button"
+                          className="font-mono hover:underline"
+                          title="The accounts behind this figure"
+                          onClick={() => onOpenSources(row, columns[vi], vi)}
+                        >
+                          {text}
+                        </button>
+                      ) : (
+                        text
+                      )}
+                    </TableCell>
+                  )
+                })}
                 {withChange && (
                   <>
                     <TableCell className={NUMERIC_CELL}>

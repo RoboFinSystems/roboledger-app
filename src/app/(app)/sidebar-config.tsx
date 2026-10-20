@@ -53,6 +53,7 @@ export const getNavigationItems = (
             { href: '/ledger/inbox', label: 'Inbox' },
             { href: '/ledger/journal', label: 'Journal' },
             { href: '/ledger/trial-balance', label: 'Trial Balance' },
+            { href: '/ledger/account-register', label: 'Account Register' },
             {
               href: '/ledger/receivables-payables',
               label: 'Receivables & Payables',

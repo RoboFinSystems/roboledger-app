@@ -175,3 +175,45 @@ describe('LiveStatementTable', () => {
     expect(screen.queryByLabelText('Show change')).not.toBeInTheDocument()
   })
 })
+
+describe('a figure summed from accounts', () => {
+  it('opens on them, and a computed one does not', () => {
+    const opened: [string, string, number][] = []
+    render(
+      <LiveStatementTable
+        statement={{
+          ...BALANCE_SHEET,
+          facts: [
+            {
+              qname: 'us-gaap:Cash',
+              name: 'Cash',
+              values: [100, 50],
+              origin: 'accounts',
+              sources: [
+                [
+                  {
+                    entity_id: 'ent_sub',
+                    account_id: 'acct_cash',
+                    code: '1000',
+                    name: 'Cash',
+                    value: 100,
+                  },
+                ],
+                [],
+              ],
+            },
+          ],
+        }}
+        onOpenSources={(row, column, index) =>
+          opened.push([row.qname, column.end, index])
+        }
+      />
+    )
+
+    // Oldest first: the prior column (no accounts) then the current one.
+    const buttons = screen.getAllByTitle('The accounts behind this figure')
+    expect(buttons).toHaveLength(1)
+    fireEvent.click(buttons[0])
+    expect(opened).toEqual([['us-gaap:Cash', '2026-09-18', 1]])
+  })
+})

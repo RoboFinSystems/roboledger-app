@@ -1,5 +1,8 @@
 import { formatDate } from '@/lib/ledger/formatters'
-import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
+import type {
+  LiveFinancialStatementResponse,
+  StatementRowSource,
+} from '@robosystems/client/types'
 
 /**
  * The Live Statements table as data — the response reshaped for reading.
@@ -19,6 +22,8 @@ import type { LiveFinancialStatementResponse } from '@robosystems/client/types'
 type LivePeriod = LiveFinancialStatementResponse['periods'][number]
 
 export interface StatementColumn {
+  /** ISO period-start date. */
+  start: string
   /** ISO period-end date. */
   end: string
   /** Server label ("Current" / "Prior"). */
@@ -36,6 +41,9 @@ export interface StatementRow {
   depth: number
   /** Aligned to the model's (chronological) columns. */
   values: (number | null)[]
+  /** Asked for with `include_sources`: per column, the accounts the figure
+   *  was summed from. Empty where it was computed rather than summed. */
+  sources: StatementRowSource[][] | null
 }
 
 export interface StatementModel {
@@ -77,6 +85,7 @@ export function buildStatementModel(
     )
 
   const columns = order.map((i) => ({
+    start: statement.periods[i].start,
     end: statement.periods[i].end,
     label: statement.periods[i].label,
     caption: periodCaption(statement.periods[i], statement.statement_type),
@@ -89,6 +98,7 @@ export function buildStatementModel(
     isSubtotal: fact.is_subtotal ?? false,
     depth: fact.depth ?? 0,
     values: order.map((i) => fact.values[i] ?? null),
+    sources: fact.sources ? order.map((i) => fact.sources?.[i] ?? []) : null,
   }))
 
   return { columns, rows }

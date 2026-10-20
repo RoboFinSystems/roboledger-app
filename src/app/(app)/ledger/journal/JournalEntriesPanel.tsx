@@ -1,10 +1,12 @@
 'use client'
 
+import EventChip from '@/components/EventChip'
 import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
 import { FlowRowSelect } from '@/components/FlowRowSelect'
 import { friendlyError } from '@/lib/ledger/errors'
 import { flowDisplayName, useFlowCandidates } from '@/lib/ledger/flows'
 import { formatDate, formatDollars } from '@/lib/ledger/formatters'
+import { registerHref } from '@/lib/ledger/register'
 import { clients, EmptyState, LoadingState } from '@robosystems/core'
 import {
   Alert,
@@ -18,6 +20,7 @@ import {
   TableHeadCell,
   TableRow,
 } from 'flowbite-react'
+import Link from 'next/link'
 import { type FC, Fragment, useCallback, useEffect, useState } from 'react'
 import {
   HiChevronDown,
@@ -26,6 +29,7 @@ import {
   HiSearch,
 } from 'react-icons/hi'
 import { TbBook2 } from 'react-icons/tb'
+import EventBlockDetailModal from '../inbox/EventBlockDetailModal'
 import { DeleteDraftModal } from './DeleteDraftModal'
 import { entryActions, type QuickBooksMode } from './entryActions'
 import { NewJournalEntryModal } from './NewJournalEntryModal'
@@ -75,6 +79,7 @@ interface JournalEntryRow {
   memo: string | null
   provenance: string | null
   triggeredByEventId: string | null
+  triggeredByEventType: string | null
   sourceStructureName: string | null
   totalDebit: number
   totalCredit: number
@@ -143,6 +148,8 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
   const [typeFilter, setTypeFilter] = useState('')
   const [provenanceFilter, setProvenanceFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('posted')
+  // The event an entry came from, opened read-only.
+  const [openEventId, setOpenEventId] = useState<string | null>(null)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [editing, setEditing] = useState<JournalEntryRow | null>(null)
   const [deleting, setDeleting] = useState<JournalEntryRow | null>(null)
@@ -216,6 +223,7 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
             memo: row.memo,
             provenance: row.provenance,
             triggeredByEventId: row.triggeredByEventId,
+            triggeredByEventType: row.triggeredByEventType ?? null,
             sourceStructureName: row.sourceStructureName,
             totalDebit: row.totalDebit,
             totalCredit: row.totalCredit,
@@ -435,6 +443,14 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                                 unbalanced
                               </Badge>
                             )}
+                            {entry.triggeredByEventId && (
+                              <EventChip
+                                eventType={entry.triggeredByEventType}
+                                onOpen={() =>
+                                  setOpenEventId(entry.triggeredByEventId)
+                                }
+                              />
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -534,7 +550,18 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
                                     >
                                       <td className="py-2 font-medium text-gray-900 dark:text-white">
                                         <div className="flex flex-col">
-                                          <span>{li.accountName || '-'}</span>
+                                          <Link
+                                            href={registerHref({
+                                              accountId: li.accountId,
+                                              entityId,
+                                              start: entry.postingDate,
+                                              end: entry.postingDate,
+                                            })}
+                                            className="hover:underline"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            {li.accountName || '-'}
+                                          </Link>
                                           {li.accountCode && (
                                             <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
                                               {li.accountCode}
@@ -649,6 +676,17 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
         onClose={() => setReversing(null)}
         onReversed={onChanged}
       />
+      {openEventId && (
+        <EventBlockDetailModal
+          graphId={graphId}
+          eventId={openEventId}
+          agentById={{}}
+          readOnly
+          onClose={() => setOpenEventId(null)}
+          onApproved={() => undefined}
+          onRejected={() => undefined}
+        />
+      )}
     </>
   )
 }
