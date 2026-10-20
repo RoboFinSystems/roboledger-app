@@ -50,6 +50,9 @@ vi.mock('flowbite-react', () => ({
   ),
 }))
 
+const mockScope = vi.fn((): any => ({ entities: [] }))
+vi.mock('@/lib/entity-scope', () => ({ useEntityScope: () => mockScope() }))
+
 vi.mock('react-icons/hi', () => ({
   HiPlus: () => <span />,
   HiTrash: () => <span />,
@@ -123,6 +126,7 @@ describe('NewJournalEntryModal', () => {
     mockListAccounts.mockResolvedValue(ACCOUNTS)
     mockCreateJournalEntry.mockResolvedValue({ id: 'txn_1' })
     mockGetFlowCandidates.mockResolvedValue(FLOWS)
+    mockScope.mockReturnValue({ entities: [] })
   })
 
   describe('cash flow row', () => {
@@ -208,6 +212,81 @@ describe('NewJournalEntryModal', () => {
 
     await waitFor(() => expect(mockCreateJournalEntry).toHaveBeenCalled())
     expect(mockCreateJournalEntry.mock.calls[0][1].entityId).toBe('ent_sub')
+  })
+
+  describe('in the consolidation entity', () => {
+    const renderGroup = () => {
+      mockScope.mockReturnValue({
+        entities: [
+          { id: 'ent_p', name: 'Harbor Holdings', isParent: true },
+          { id: 'ent_sub', name: 'Maple Court', isParent: false },
+          {
+            id: 'ent_cons',
+            name: 'Consolidation Adjustments',
+            entityRole: 'consolidation',
+          },
+        ],
+      })
+      render(
+        <NewJournalEntryModal
+          graphId="kg_test"
+          entityId="ent_cons"
+          open
+          onClose={vi.fn()}
+          onCreated={vi.fn()}
+        />
+      )
+    }
+
+    it('tags the entry with its kind and the entity it adjusts', async () => {
+      renderGroup()
+      await fillBalancedEntry()
+      fireEvent.change(document.getElementById('je-adjustment-kind')!, {
+        target: { value: 'elimination_intercompany' },
+      })
+      // Every kind but the manual one names the entity it adjusts.
+      expect(submitButton()).toBeDisabled()
+      fireEvent.change(document.getElementById('je-adjusts-entity')!, {
+        target: { value: 'ent_sub' },
+      })
+
+      fireEvent.click(submitButton())
+
+      await waitFor(() => expect(mockCreateJournalEntry).toHaveBeenCalled())
+      const options = mockCreateJournalEntry.mock.calls[0][1]
+      expect(options.entityId).toBe('ent_cons')
+      expect(options.adjustmentKind).toBe('elimination_intercompany')
+      expect(options.adjustsEntityId).toBe('ent_sub')
+    })
+
+    it("never offers the outside owners' share, the engine's own", async () => {
+      renderGroup()
+      await screen.findByLabelText('Consolidating entry')
+      const kinds = Array.from(
+        (document.getElementById('je-adjustment-kind') as HTMLSelectElement)
+          .options
+      ).map((o) => o.value)
+      expect(kinds).toContain('manual')
+      expect(kinds).not.toContain('nci_allocation')
+      const adjusts = Array.from(
+        (document.getElementById('je-adjusts-entity') as HTMLSelectElement)
+          .options
+      ).map((o) => o.value)
+      expect(adjusts).not.toContain('ent_cons')
+    })
+
+    it("an operating entity's entry carries no tags", async () => {
+      renderModal()
+      await fillBalancedEntry()
+      expect(document.getElementById('je-adjustment-kind')).toBeNull()
+
+      fireEvent.click(submitButton())
+
+      await waitFor(() => expect(mockCreateJournalEntry).toHaveBeenCalled())
+      expect(mockCreateJournalEntry.mock.calls[0][1]).not.toHaveProperty(
+        'adjustmentKind'
+      )
+    })
   })
 
   describe('amount handling', () => {

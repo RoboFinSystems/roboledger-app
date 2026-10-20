@@ -1,5 +1,6 @@
 'use client'
 
+import SegmentedControl from '@/components/SegmentedControl'
 import { useEntityScope } from '@/lib/entity-scope'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type {
@@ -92,13 +93,27 @@ const PRESETS: PresetOption[] = [
 ]
 
 const ReportBuilderContent: FC = function () {
-  const { entityId, entity, parent } = useEntityScope()
-  // A report is one entity's books. The consolidation entity's are the
-  // group's eliminations alone, not its consolidated statements.
+  const { entityId, entity, entities, parent } = useEntityScope()
+  // A report is one entity's books; the consolidation entity's report is the
+  // group's consolidated statements. The parent reports the group, so its
+  // page offers that report beside its own.
+  const consolidationEntity =
+    entities.find((e) => e.entityRole === 'consolidation') ?? null
   const isConsolidationEntity = entity?.entityRole === 'consolidation'
+  const [reportScope, setReportScope] = useState<'entity' | 'consolidated'>(
+    'entity'
+  )
+  useEffect(() => {
+    setReportScope('entity')
+  }, [entityId])
+  const offersGroup = !!entity?.isParent && consolidationEntity !== null
+  const consolidated =
+    isConsolidationEntity || (offersGroup && reportScope === 'consolidated')
   // Unnamed, every entity's mappings come back under one name; the parent's
   // page offers the parent's.
-  const mappingEntityId = entityId ?? parent?.id ?? null
+  const mappingEntityId = consolidated
+    ? (consolidationEntity?.id ?? null)
+    : (entityId ?? parent?.id ?? null)
   const router = useRouter()
 
   // Form state
@@ -288,7 +303,6 @@ const ReportBuilderContent: FC = function () {
 
   const isValid =
     !isLoadingMappings &&
-    !isConsolidationEntity &&
     selectedMappingId &&
     periodStart &&
     periodEnd &&
@@ -302,9 +316,11 @@ const ReportBuilderContent: FC = function () {
         icon={TbReportAnalytics}
         title="Create Report"
         subtitle={
-          entity
-            ? `Generate ${entity.name}'s financial statements from its mapped trial balance`
-            : 'Generate financial statements from your mapped trial balance'
+          consolidated
+            ? `Generate the consolidated statements of ${parent?.name ?? 'the group'}: every member and the consolidating entries`
+            : entity
+              ? `Generate ${entity.name}'s financial statements from its mapped trial balance`
+              : 'Generate financial statements from your mapped trial balance'
         }
         actions={
           <Button color="light" onClick={() => router.push('/reports')}>
@@ -321,14 +337,27 @@ const ReportBuilderContent: FC = function () {
         </Alert>
       )}
 
-      {isConsolidationEntity && (
+      {offersGroup && (
+        <SegmentedControl
+          ariaLabel="Report for"
+          value={reportScope}
+          onChange={setReportScope}
+          options={[
+            { value: 'entity', label: `${entity?.name} alone` },
+            { value: 'consolidated', label: 'Consolidated group' },
+          ]}
+        />
+      )}
+
+      {consolidated && (
         <Alert color="info">
           <HiExclamationCircle className="h-4 w-4" />
           <span>
-            {entity?.name} holds the group&apos;s consolidating entries, so a
-            report built from its books would show the eliminations alone. A
-            report of the consolidated group cannot be generated yet; the group
-            parent&apos;s Live Statements show it under Consolidated.
+            The consolidated report sums every member consolidated in full with
+            the consolidating entries in {consolidationEntity?.name}, under{' '}
+            {parent?.name}&apos;s reporting style, as the closed group&apos;s
+            statements are. Each column must fall wholly before or after a
+            member joins or leaves the group.
           </span>
         </Alert>
       )}

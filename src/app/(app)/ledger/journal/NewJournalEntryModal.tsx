@@ -1,9 +1,11 @@
 'use client'
 
 import { FlowRowSelect } from '@/components/FlowRowSelect'
+import { useEntityScope } from '@/lib/entity-scope'
 import { friendlyError } from '@/lib/ledger/errors'
 import { useFlowCandidates } from '@/lib/ledger/flows'
 import { formatDollars } from '@/lib/ledger/formatters'
+import type { AdjustmentKind } from '@robosystems/client/clients'
 import { clients } from '@robosystems/core'
 import {
   Alert,
@@ -117,6 +119,25 @@ const linesKey = (
     ])
   )
 
+// What a consolidating entry adjusts. The outside owners' share of a
+// member's result is not here: the engine computes it, and an override is
+// set with set-allocation-override, never entered by hand.
+const ADJUSTMENT_KINDS: { value: AdjustmentKind; label: string }[] = [
+  { value: 'manual', label: 'Other adjustment' },
+  { value: 'elimination_investment', label: 'Investment elimination' },
+  { value: 'elimination_intercompany', label: 'Intercompany elimination' },
+  {
+    value: 'elimination_unrealized_profit',
+    label: 'Unrealized profit elimination',
+  },
+  { value: 'nci_distribution', label: 'Distribution to outside owners' },
+  { value: 'equity_method_pickup', label: 'Equity-method share of result' },
+  { value: 'equity_method_distribution', label: 'Equity-method distribution' },
+  { value: 'acquisition', label: 'Acquisition' },
+  { value: 'deconsolidation', label: 'Deconsolidation' },
+  { value: 'translation', label: 'Currency translation' },
+]
+
 const RETRACTED_EVENT = new Set(['voided', 'superseded'])
 
 // Local-timezone YYYY-MM-DD. `toISOString().slice(0, 10)` returns UTC,
@@ -138,6 +159,16 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
   draft = null,
 }) => {
   const editing = draft !== null
+  // An entry in the consolidation entity is a consolidating entry: it names
+  // what it adjusts, so the engine counts it toward what the group holds.
+  const { entities } = useEntityScope()
+  const isConsolidation =
+    !!entityId &&
+    entities.find((e) => e.id === entityId)?.entityRole === 'consolidation'
+  const adjustable = entities.filter((e) => e.entityRole !== 'consolidation')
+  const tagsEntry = isConsolidation && !editing
+  const [adjustmentKind, setAdjustmentKind] = useState<AdjustmentKind>('manual')
+  const [adjustsEntityId, setAdjustsEntityId] = useState('')
   const [postingDate, setPostingDate] = useState<string>(() => todayLocal())
   const [memo, setMemo] = useState('')
   const [entryType, setEntryType] = useState<EntryType>('standard')
@@ -226,6 +257,8 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
     if (!open) return
     setSubmitError(null)
     setStatus('draft')
+    setAdjustmentKind('manual')
+    setAdjustsEntityId('')
     if (draft) {
       setMemo(draft.memo ?? '')
       setEntryType(
@@ -299,7 +332,8 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
     !!postingDate &&
     memo.trim().length > 0 &&
     linesValid &&
-    diff === 0
+    diff === 0 &&
+    (!tagsEntry || adjustmentKind === 'manual' || !!adjustsEntityId)
 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit) return
@@ -356,6 +390,12 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
           description: l.description.trim() || undefined,
           flowQname: l.flowQname || undefined,
         })),
+        ...(tagsEntry
+          ? {
+              adjustmentKind,
+              adjustsEntityId: adjustsEntityId || null,
+            }
+          : {}),
       })
       onCreated?.()
       onClose()
@@ -381,6 +421,9 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
     entryType,
     status,
     lineItems,
+    tagsEntry,
+    adjustmentKind,
+    adjustsEntityId,
     onClose,
     onCreated,
   ])
@@ -432,6 +475,54 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
               </div>
             )}
           </div>
+
+          {tagsEntry && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="je-adjustment-kind">Consolidating entry</Label>
+                <Select
+                  id="je-adjustment-kind"
+                  value={adjustmentKind}
+                  onChange={(e) =>
+                    setAdjustmentKind(e.target.value as AdjustmentKind)
+                  }
+                  disabled={submitting}
+                >
+                  {ADJUSTMENT_KINDS.map((kind) => (
+                    <option key={kind.value} value={kind.value}>
+                      {kind.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="je-adjusts-entity">Adjusts</Label>
+                <Select
+                  id="je-adjusts-entity"
+                  value={adjustsEntityId}
+                  onChange={(e) => setAdjustsEntityId(e.target.value)}
+                  disabled={submitting}
+                >
+                  <option value="">
+                    {adjustmentKind === 'manual'
+                      ? 'No one entity'
+                      : 'Pick the entity it adjusts'}
+                  </option>
+                  {adjustable.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <p className="text-xs text-gray-500 sm:col-span-2 dark:text-gray-400">
+                An entry of a kind the consolidation engine proposes counts
+                toward what the group already holds, so it is not proposed
+                again. The outside owners&apos; share of a member&apos;s result
+                is the engine&apos;s; change it with an allocation override.
+              </p>
+            </div>
+          )}
 
           <div>
             <Label htmlFor="je-memo">Memo</Label>
