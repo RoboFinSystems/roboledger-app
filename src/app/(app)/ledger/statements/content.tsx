@@ -64,6 +64,14 @@ const SCOPE_OPTIONS: readonly SegmentedOption<StatementScope>[] = [
   { value: 'worksheet', label: 'Worksheet' },
 ]
 
+// `period` is the statement's own columns; any other value is a management
+// dimension axis (department, class, location, project) read one column per
+// member, then Unallocated, then Total.
+const BY_PERIOD = 'period'
+
+const axisLabel = (axis: string): string =>
+  axis.charAt(0).toUpperCase() + axis.slice(1).replace(/_/g, ' ')
+
 const PRESETS: { key: PresetKey; label: string }[] = [
   { key: 'this_month', label: 'This month' },
   { key: 'this_quarter', label: 'This quarter' },
@@ -134,8 +142,34 @@ const LiveStatementsContent: FC = function () {
   const grouped = requestScope !== 'entity'
   const asWorksheet = requestScope === 'worksheet'
 
+  // The axes this graph's lines are tagged on; none, and the picker is hidden.
+  const [axes, setAxes] = useState<string[]>([])
+  const [columnsBy, setColumnsBy] = useState<string>(BY_PERIOD)
+  useEffect(() => {
+    let cancelled = false
+    setAxes([])
+    setColumnsBy(BY_PERIOD)
+    if (!graphId) return
+    Promise.resolve()
+      .then(() => clients.ledger.getDimensions(graphId))
+      .then((found) => {
+        if (!cancelled) setAxes(found?.types ?? [])
+      })
+      .catch((err) => {
+        console.error('Error loading dimensions:', err)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [graphId])
+
   const [statementType, setStatementType] =
     useState<StatementType>('balance_sheet')
+  // Only an income statement reads by member: the cash and equity lines the
+  // other statements sum carry no department.
+  const canSlice =
+    statementType === 'income_statement' && !asWorksheet && axes.length > 0
+  const sliceBy = canSlice && columnsBy !== BY_PERIOD ? columnsBy : null
   const [preset, setPreset] = useState<PresetKey>('ytd')
   const [customStart, setCustomStart] = useState('')
   const [customEnd, setCustomEnd] = useState('')
@@ -199,6 +233,7 @@ const LiveStatementsContent: FC = function () {
           period_start: range.start,
           period_end: range.end,
           scope: requestScope,
+          ...(sliceBy ? { dimension: { type: sliceBy } } : {}),
         }
       )
       if (seq !== loadSeq.current) return // superseded by a newer load
@@ -230,6 +265,7 @@ const LiveStatementsContent: FC = function () {
     entityId,
     requestScope,
     statementType,
+    sliceBy,
     preset,
     customStart,
     customEnd,
@@ -286,6 +322,22 @@ const LiveStatementsContent: FC = function () {
               ariaLabel="Scope"
             />
           </FilterField>
+        )}
+        {canSlice && (
+          <FilterSelect
+            id="columns-by"
+            label="Columns by"
+            value={columnsBy}
+            onChange={setColumnsBy}
+            className="sm:w-44"
+          >
+            <option value={BY_PERIOD}>Period</option>
+            {axes.map((axis) => (
+              <option key={axis} value={axis}>
+                {axisLabel(axis)}
+              </option>
+            ))}
+          </FilterSelect>
         )}
         <FilterSelect
           id="period-preset"
@@ -453,6 +505,13 @@ const LiveStatementsContent: FC = function () {
                 } not included`}
               {statement.truncated &&
                 ' • results truncated — narrow the period'}
+              {statement.dimension &&
+                statement.dimension.columns.length > 0 &&
+                (statement.dimension.ties_out
+                  ? ` • by ${statement.dimension.type}: every row's members plus Unallocated equal its Total`
+                  : ` • by ${statement.dimension.type}: ${statement.dimension.differences.length} row${
+                      statement.dimension.differences.length === 1 ? '' : 's'
+                    } do not tie to the Total`)}
               {grouped &&
                 statement.combined_entity_ids &&
                 ` • ${requestScope} across ${statement.combined_entity_ids.length} ${

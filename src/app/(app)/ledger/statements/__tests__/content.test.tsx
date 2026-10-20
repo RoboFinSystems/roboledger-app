@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockLiveFinancialStatement = vi.fn()
 const mockConsolidationWorksheet = vi.fn()
+const mockGetDimensions = vi.fn()
 const mockScope = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
@@ -12,6 +13,7 @@ vi.mock('@robosystems/core', () => ({
         mockLiveFinancialStatement(...args),
       consolidationWorksheet: (...args: any[]) =>
         mockConsolidationWorksheet(...args),
+      getDimensions: (...args: any[]) => mockGetDimensions(...args),
     },
   },
   PageLayout: ({ children }: any) => <div>{children}</div>,
@@ -118,6 +120,7 @@ describe('LiveStatementsContent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockLiveFinancialStatement.mockResolvedValue(statement())
+    mockGetDimensions.mockResolvedValue({ types: [], dimensions: [] })
   })
 
   it('names a column left out because it reaches back before the books begin', async () => {
@@ -271,5 +274,79 @@ describe('LiveStatementsContent', () => {
       screen.getByText(/shown beside the sum, not in it/)
     ).toBeInTheDocument()
     expect(screen.queryByTestId('statement-table')).not.toBeInTheDocument()
+  })
+
+  it('reads the income statement by department, and says whether it ties out', async () => {
+    scope()
+    mockGetDimensions.mockResolvedValue({
+      types: ['department'],
+      dimensions: [],
+    })
+    mockLiveFinancialStatement.mockImplementation(
+      (_graphId: string, body: { dimension?: { type: string } }) =>
+        Promise.resolve(
+          statement(
+            body.dimension
+              ? {
+                  dimension: {
+                    type: 'department',
+                    member_id: null,
+                    columns: [
+                      { member_id: 'dim_s', name: 'Sales' },
+                      { member_id: 'unallocated', name: 'Unallocated' },
+                      { member_id: null, name: 'Total' },
+                    ],
+                    ties_out: true,
+                    differences: [],
+                  },
+                }
+              : {}
+          )
+        )
+    )
+    render(<LiveStatementsContent />)
+    await waitFor(() => expect(mockLiveFinancialStatement).toHaveBeenCalled())
+    expect(screen.queryByLabelText('Columns by')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Income Statement' }))
+    fireEvent.change(await screen.findByLabelText('Columns by'), {
+      target: { value: 'department' },
+    })
+
+    await waitFor(() =>
+      expect(lastBody()).toEqual(
+        expect.objectContaining({
+          statement_type: 'income_statement',
+          dimension: { type: 'department' },
+        })
+      )
+    )
+    expect(
+      await screen.findByText(
+        /by department: every row's members plus Unallocated equal its Total/
+      )
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Balance Sheet' }))
+
+    await waitFor(() =>
+      expect(lastBody()).toEqual(
+        expect.objectContaining({ statement_type: 'balance_sheet' })
+      )
+    )
+    expect(lastBody().dimension).toBeUndefined()
+    expect(screen.queryByLabelText('Columns by')).not.toBeInTheDocument()
+  })
+
+  it('offers no columns-by picker on a graph with no dimensions', async () => {
+    scope()
+    render(<LiveStatementsContent />)
+    fireEvent.click(screen.getByRole('button', { name: 'Income Statement' }))
+    await waitFor(() =>
+      expect(lastBody()).toEqual(
+        expect.objectContaining({ statement_type: 'income_statement' })
+      )
+    )
+    expect(screen.queryByLabelText('Columns by')).not.toBeInTheDocument()
   })
 })
