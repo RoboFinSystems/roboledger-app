@@ -7,7 +7,17 @@ const mockDeleteConnection = vi.fn()
 const mockSetWritePolicy = vi.fn()
 const mockShowError = vi.fn()
 const mockShowSuccess = vi.fn()
+const mockListBankAccounts = vi.fn()
 let writePolicyResult: Promise<unknown> | null = null
+
+vi.mock('@/lib/entity-scope', () => ({
+  useEntityScope: () => ({
+    entities: [
+      { id: 'ent_p', name: 'Harbor Holdings', isParent: true },
+      { id: 'ent_sub', name: 'Cadence Studio', isParent: false },
+    ],
+  }),
+}))
 
 vi.mock('@/lib/useLedgerGraph', () => ({
   useLedgerGraph: () => ({
@@ -30,6 +40,11 @@ vi.mock('@robosystems/core', async () => {
       initOAuth: vi.fn(),
     },
     unwrapSdk: errors.unwrapSdk,
+    clients: {
+      ledger: {
+        listBankAccounts: (...a: any[]) => mockListBankAccounts(...a),
+      },
+    },
     useToast: () => ({
       showError: mockShowError,
       showSuccess: mockShowSuccess,
@@ -68,9 +83,21 @@ vi.mock('@/components/DocsLink', () => ({ default: () => null }))
 
 // Children reduced to the buttons that drive the handlers under test.
 vi.mock('../components/ConnectionCard', () => ({
-  default: ({ connection, onSync, onDelete, onSetWritePolicy }: any) => (
+  default: ({
+    connection,
+    onSync,
+    onDelete,
+    onSetWritePolicy,
+    feedEntities,
+  }: any) => (
     <div>
       <span>{connection.connection_id}</span>
+      <span>
+        {connection.connection_id} books to{' '}
+        {feedEntities
+          .map((e: any) => `${e.entityId ?? 'parent'}:${e.name}`)
+          .join('|')}
+      </span>
       <button onClick={onSync}>open sync</button>
       <button onClick={onDelete}>open delete</button>
       <button
@@ -136,6 +163,34 @@ describe('Connections error handling', () => {
       data: [CONNECTION],
       response: { status: 200 },
     })
+    mockListBankAccounts.mockResolvedValue({ total: 0, accounts: [] })
+  })
+
+  it("names each feed's entities from where its accounts book", async () => {
+    mockListConnections.mockResolvedValue({
+      data: [
+        CONNECTION,
+        { ...CONNECTION, connection_id: 'conn_feed', provider: 'plaid' },
+      ],
+      response: { status: 200 },
+    })
+    mockListBankAccounts.mockResolvedValue({
+      total: 3,
+      accounts: [
+        { connectionId: 'conn_feed', entityId: 'ent_sub' },
+        { connectionId: 'conn_feed', entityId: 'ent_p' },
+        { connectionId: 'conn_feed', entityId: 'ent_sub' },
+      ],
+    })
+    render(<ConnectionsContent />)
+
+    expect(
+      await screen.findByText(
+        'conn_feed books to parent:Harbor Holdings|ent_sub:Cadence Studio'
+      )
+    ).toBeTruthy()
+    expect(screen.getByText('conn_1 books to')).toBeTruthy()
+    expect(mockListBankAccounts).toHaveBeenCalledWith('kg_test')
   })
 
   it('a refused sever reports the refusal, never the severed toast', async () => {
