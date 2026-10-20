@@ -32,8 +32,10 @@ import type { FC } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'
 import { TbReportMoney } from 'react-icons/tb'
+import FigureSourcesModal from './components/FigureSourcesModal'
 import LiveStatementTable from './components/LiveStatementTable'
 import WorksheetTable from './components/WorksheetTable'
+import type { StatementColumn, StatementRow } from './statementModel'
 
 // The SDK types this directly now — liveFinancialStatement returns
 // LiveFinancialStatementResponse rather than Record<string, unknown>, so the
@@ -174,6 +176,12 @@ const LiveStatementsContent: FC = function () {
   const [customStart, setCustomStart] = useState('')
   const [customEnd, setCustomEnd] = useState('')
   const [statement, setStatement] = useState<LiveStatement | null>(null)
+  // The figure whose accounts are open.
+  const [drill, setDrill] = useState<{
+    row: StatementRow
+    column: StatementColumn
+    index: number
+  } | null>(null)
   const [worksheet, setWorksheet] =
     useState<ConsolidationWorksheetResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -233,7 +241,11 @@ const LiveStatementsContent: FC = function () {
           period_start: range.start,
           period_end: range.end,
           scope: requestScope,
-          ...(sliceBy ? { dimension: { type: sliceBy } } : {}),
+          // A statement read by column has members for columns, not periods,
+          // so its figures do not open on accounts.
+          ...(sliceBy
+            ? { dimension: { type: sliceBy } }
+            : { include_sources: true }),
         }
       )
       if (seq !== loadSeq.current) return // superseded by a newer load
@@ -482,7 +494,12 @@ const LiveStatementsContent: FC = function () {
                 }
               />
             ) : (
-              <LiveStatementTable statement={statement} />
+              <LiveStatementTable
+                statement={statement}
+                onOpenSources={(row, column, index) =>
+                  setDrill({ row, column, index })
+                }
+              />
             )}
           </div>
 
@@ -526,6 +543,16 @@ const LiveStatementsContent: FC = function () {
             </div>
           )}
         </Card>
+      )}
+      {drill && (
+        <FigureSourcesModal
+          row={drill.row}
+          column={drill.column}
+          columnIndex={drill.index}
+          entityName={(id) => entities.find((e) => e.id === id)?.name ?? id}
+          showEntity={grouped}
+          onClose={() => setDrill(null)}
+        />
       )}
     </PageLayout>
   )

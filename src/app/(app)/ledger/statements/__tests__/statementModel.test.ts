@@ -119,3 +119,44 @@ describe('rowChange', () => {
     expect(rowChange([null, 19112.3])).toBeNull()
   })
 })
+
+describe('figure sources', () => {
+  const source = (account: string, value: number) => ({
+    entity_id: 'ent_sub',
+    account_id: account,
+    code: null,
+    name: account,
+    value,
+  })
+
+  it('reorders each row’s sources with its values, and carries the start', () => {
+    const model = buildStatementModel({
+      ...BALANCE_SHEET,
+      facts: [
+        {
+          qname: 'us-gaap:Cash',
+          name: 'Cash',
+          values: [19112.3, 2043.95],
+          origin: 'accounts',
+          sources: [
+            [source('acct_now', 19112.3)],
+            [source('acct_then', 2043.95)],
+          ],
+        },
+      ],
+    })
+
+    expect(model.columns.map((c) => c.start)).toEqual([
+      '2025-01-01',
+      '2026-01-01',
+    ])
+    expect(model.rows[0].sources?.map((cell) => cell[0].account_id)).toEqual([
+      'acct_then',
+      'acct_now',
+    ])
+  })
+
+  it('is null when the statement was read without sources', () => {
+    expect(buildStatementModel(BALANCE_SHEET).rows[0].sources).toBeNull()
+  })
+})

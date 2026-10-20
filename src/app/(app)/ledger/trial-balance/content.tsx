@@ -8,6 +8,7 @@ import SortableHeadCell from '@/components/SortableHeadCell'
 import { useEntityScope } from '@/lib/entity-scope'
 import type { ElementClassification } from '@/lib/ledger'
 import { formatDollars } from '@/lib/ledger/formatters'
+import { registerHref } from '@/lib/ledger/register'
 import { type SortColumn, useTableSort } from '@/lib/useTableSort'
 import {
   clients,
@@ -28,6 +29,7 @@ import {
   TableHead,
   TableRow,
 } from 'flowbite-react'
+import Link from 'next/link'
 import type { FC } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -524,7 +526,21 @@ const TrialBalanceContent: FC = function () {
                           {row.accountCode}
                         </span>
                       )}
-                      {row.accountName}
+                      {/* A CoA row is an account, and opens its register; a
+                          US-GAAP row is a reporting concept over several. */}
+                      {viewMode === 'coa' ? (
+                        <Link
+                          href={registerHref({
+                            accountId: row.accountId,
+                            entityId,
+                          })}
+                          className="hover:underline"
+                        >
+                          {row.accountName}
+                        </Link>
+                      ) : (
+                        row.accountName
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge

@@ -107,6 +107,7 @@ const bankEvent = (overrides: Record<string, unknown> = {}) => ({
     suggested_account_name: 'Office supplies & equipment',
     suggestion_source: 'tier0',
   },
+  triggeredEntries: [],
   ...overrides,
 })
 
@@ -883,5 +884,63 @@ describe('EventBlockDetailModal — the document behind an event', () => {
     renderModal()
     await screen.findByText('Staples (card)')
     expect(screen.queryByLabelText('Attach a document')).not.toBeInTheDocument()
+  })
+})
+
+describe('EventBlockDetailModal — opened from a posting', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetAccountTree.mockResolvedValue(tree)
+    mockGetFlowCandidates.mockResolvedValue(flowRows)
+    mockGetDischargeCandidates.mockResolvedValue(null)
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({
+        status: 'committed',
+        triggeredEntries: [
+          {
+            id: 'je_1',
+            number: '42',
+            type: 'standard',
+            status: 'posted',
+            postingDate: '2026-03-14',
+            memo: 'Staples (card)',
+            provenance: 'event_handler',
+            totalDebit: 42.5,
+            totalCredit: 42.5,
+            lineItems: [
+              {
+                id: 'li_1',
+                accountId: 'elem_office',
+                accountName: 'Office supplies',
+                accountCode: '6100',
+                debitAmount: 42.5,
+                creditAmount: 0,
+                description: null,
+                lineOrder: 0,
+              },
+            ],
+          },
+        ],
+      })
+    )
+  })
+
+  it('shows what posted and offers no inbox actions', async () => {
+    render(
+      <EventBlockDetailModal
+        graphId="kg_test"
+        eventId="evt_bank"
+        agentById={{}}
+        readOnly
+        onClose={vi.fn()}
+        onApproved={vi.fn()}
+        onRejected={vi.fn()}
+      />
+    )
+
+    expect(await screen.findByText('What posted (1)')).toBeInTheDocument()
+    expect(screen.getByText('6100 Office supplies')).toBeInTheDocument()
+    expect(screen.queryByText('Reject')).not.toBeInTheDocument()
+    expect(screen.queryByText('Preview')).not.toBeInTheDocument()
   })
 })

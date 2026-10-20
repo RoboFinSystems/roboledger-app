@@ -1,5 +1,6 @@
 'use client'
 
+import { registerHref } from '@/lib/ledger/register'
 import type { LedgerAccountRollups } from '@robosystems/client/clients'
 import { clients, LoadingState } from '@robosystems/core'
 import {
@@ -11,6 +12,7 @@ import {
   TableHeadCell,
   TableRow,
 } from 'flowbite-react'
+import Link from 'next/link'
 import {
   Fragment,
   useCallback,
@@ -165,7 +167,15 @@ const AccountRollupsPanel: FC<AccountRollupsPanelProps> = ({
                           {account.accountCode}
                         </span>
                       )}
-                      {account.accountName}
+                      <Link
+                        href={registerHref({
+                          accountId: account.elementId,
+                          entityId,
+                        })}
+                        className="hover:underline"
+                      >
+                        {account.accountName}
+                      </Link>
                     </TableCell>
                     <TableCell
                       className={`text-right font-mono text-gray-700 dark:text-gray-300 ${

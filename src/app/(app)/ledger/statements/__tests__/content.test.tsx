@@ -184,7 +184,11 @@ describe('LiveStatementsContent', () => {
     await waitFor(() => expect(mockLiveFinancialStatement).toHaveBeenCalled())
     expect(mockLiveFinancialStatement).toHaveBeenCalledWith(
       'kg_a',
-      expect.objectContaining({ entity_id: null, scope: 'entity' })
+      expect.objectContaining({
+        entity_id: null,
+        scope: 'entity',
+        include_sources: true,
+      })
     )
     expect(
       screen.queryByRole('group', { name: 'Scope' })
@@ -321,6 +325,8 @@ describe('LiveStatementsContent', () => {
         })
       )
     )
+    // Columns are members, not periods: the figures do not open on accounts.
+    expect(lastBody().include_sources).toBeUndefined()
     expect(
       await screen.findByText(
         /by department: every row's members plus Unallocated equal its Total/
