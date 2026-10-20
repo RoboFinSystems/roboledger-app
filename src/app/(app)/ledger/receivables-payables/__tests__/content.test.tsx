@@ -53,7 +53,11 @@ vi.mock('flowbite-react', () => ({
   ),
 }))
 
-import ReceivablesPayablesContent, { agingCsv, monthEnd } from '../content'
+import ReceivablesPayablesContent, {
+  agingCsv,
+  monthEnd,
+  textCell,
+} from '../content'
 
 const buckets = (over: Record<string, number> = {}) => ({
   currentCents: 0,
@@ -214,7 +218,81 @@ describe('ReceivablesPayablesContent', () => {
   })
 })
 
+describe('review follow-ups', () => {
+  it('drops documents that answer after the table was reloaded', async () => {
+    let answer: (items: any[]) => void = () => {}
+    mockGetOpenItemsForAgent.mockReturnValue(
+      new Promise((resolve) => {
+        answer = resolve
+      })
+    )
+    render(<ReceivablesPayablesContent />)
+    fireEvent.click(await screen.findByText(/Acme, Inc\./))
+    await waitFor(() => expect(mockGetOpenItemsForAgent).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Payables' }))
+    await waitFor(() =>
+      expect(mockGetAgedBalances).toHaveBeenLastCalledWith(
+        'kg1',
+        'payables',
+        expect.anything()
+      )
+    )
+    answer([
+      {
+        eventId: 'evt_stale',
+        entityId: 'ent_parent',
+        agentId: 'agt_acme',
+        occurredOn: '2026-08-15',
+        documentNumber: 'INV-STALE',
+        description: null,
+        originalCents: 1,
+        settledCents: 0,
+        openCents: 1,
+        currency: 'USD',
+        dueDate: '2026-08-15',
+        dueDateBasis: 'stated',
+        daysPastDue: 0,
+        bucket: 'current',
+      },
+    ])
+    await screen.findByText(/Acme, Inc\./)
+
+    expect(screen.queryByText('INV-STALE')).toBeNull()
+  })
+
+  it('opens a row from its button, which says whether it is open', async () => {
+    mockGetOpenItemsForAgent.mockResolvedValue([])
+    render(<ReceivablesPayablesContent />)
+    const button = await screen.findByRole('button', {
+      name: 'Show Acme, Inc. documents',
+    })
+    expect(button.getAttribute('aria-expanded')).toBe('false')
+
+    fireEvent.click(button)
+
+    expect(
+      (
+        await screen.findByRole('button', { name: 'Hide Acme, Inc. documents' })
+      ).getAttribute('aria-expanded')
+    ).toBe('true')
+    expect(mockGetOpenItemsForAgent).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('helpers', () => {
+  it('keeps a name that starts like a formula as text', () => {
+    expect(textCell('=HYPERLINK("x")')).toBe(`'=HYPERLINK("x")`)
+    expect(textCell('+1 Supplies')).toBe("'+1 Supplies")
+    expect(textCell('Acme')).toBe('Acme')
+    const csv = agingCsv(
+      aged({
+        agents: [{ ...aged().agents[0], agentName: '=cmd' }],
+      }) as any
+    )
+    expect(csv.split('\n')[1].startsWith("'=cmd,")).toBe(true)
+  })
+
   it('finds the last day of a month', () => {
     expect(monthEnd('2026-02')).toBe('2026-02-28')
     expect(monthEnd('2026-09')).toBe('2026-09-30')

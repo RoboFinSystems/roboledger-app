@@ -89,6 +89,11 @@ const csvCell = (value: string | number | null): string => {
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
 }
 
+/** A synced name opened in a spreadsheet must stay text: one that starts like
+ *  a formula is prefixed so it never runs as one. */
+export const textCell = (text: string): string =>
+  /^[=+\-@\t\r]/.test(text) ? `'${text}` : text
+
 /** The counterparty table as CSV: one row per counterparty, amounts in the
  *  currency's units. */
 export function agingCsv(aged: LedgerAgedBalances): string {
@@ -101,7 +106,7 @@ export function agingCsv(aged: LedgerAgedBalances): string {
     'Oldest due date',
   ]
   const rows = aged.agents.map((row) => [
-    row.agentName ?? 'No counterparty',
+    textCell(row.agentName ?? 'No counterparty'),
     ...BUCKETS.map((b) => row.buckets[b.key] / 100),
     row.buckets.unappliedCreditCents / 100,
     row.buckets.totalCents / 100,
@@ -149,6 +154,9 @@ const ReceivablesPayablesContent: FC = function () {
   useEffect(() => {
     setScope('entity')
     setAsOfChosen(false)
+    // Cleared so nothing is read at the last entity's date while this one's
+    // default resolves.
+    setAsOf('')
   }, [graphId, entityId])
 
   useEffect(() => {
@@ -207,10 +215,19 @@ const ReceivablesPayablesContent: FC = function () {
       return
     }
     setDrills((d) => ({ ...d, [agentId]: 'loading' }))
+    // A reload of the aging clears the drills; a drill that answers after one
+    // belongs to the table it replaced.
+    const seq = loadSeq.current
     clients.ledger
       .getOpenItemsForAgent(graphId, agentId, kind, { asOf, entityId })
-      .then((items) => setDrills((d) => ({ ...d, [agentId]: items })))
-      .catch(() => setDrills((d) => ({ ...d, [agentId]: 'error' })))
+      .then((items) => {
+        if (seq === loadSeq.current)
+          setDrills((d) => ({ ...d, [agentId]: items }))
+      })
+      .catch(() => {
+        if (seq === loadSeq.current)
+          setDrills((d) => ({ ...d, [agentId]: 'error' }))
+      })
   }
 
   const noun = kind === 'receivables' ? 'customer' : 'vendor'
@@ -412,12 +429,25 @@ const ReceivablesPayablesContent: FC = function () {
                           >
                             <TableCell className="font-medium text-gray-900 dark:text-white">
                               <span className="flex items-center gap-1">
-                                {canDrill &&
-                                  (drill ? (
-                                    <HiChevronDown className="h-4 w-4" />
-                                  ) : (
-                                    <HiChevronRight className="h-4 w-4" />
-                                  ))}
+                                {canDrill && (
+                                  <button
+                                    type="button"
+                                    aria-expanded={!!drill}
+                                    aria-label={`${drill ? 'Hide' : 'Show'} ${
+                                      row.agentName ?? 'counterparty'
+                                    } documents`}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      toggle(row)
+                                    }}
+                                  >
+                                    {drill ? (
+                                      <HiChevronDown className="h-4 w-4" />
+                                    ) : (
+                                      <HiChevronRight className="h-4 w-4" />
+                                    )}
+                                  </button>
+                                )}
                                 {row.agentName ?? 'No counterparty'}
                                 <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
                                   ({row.openItemCount})
