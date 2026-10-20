@@ -6,6 +6,7 @@ const mockGetAccountTree = vi.fn()
 const mockGetFlowCandidates = vi.fn()
 const mockUpdateEventBlock = vi.fn()
 const mockPreviewEventBlock = vi.fn()
+const mockGetDischargeCandidates = vi.fn()
 const mockUploadDocumentFile = vi.fn()
 const mockDocumentFileUrl = vi.fn()
 
@@ -25,6 +26,8 @@ vi.mock('@robosystems/core', () => ({
       getFlowCandidates: (...args: any[]) => mockGetFlowCandidates(...args),
       updateEventBlock: (...args: any[]) => mockUpdateEventBlock(...args),
       previewEventBlock: (...args: any[]) => mockPreviewEventBlock(...args),
+      getDischargeCandidates: (...args: any[]) =>
+        mockGetDischargeCandidates(...args),
     },
   },
   LoadingState: () => <div>loading</div>,
@@ -202,6 +205,49 @@ describe('EventBlockDetailModal — bank-feed classification', () => {
     mockGetAccountTree.mockResolvedValue(tree)
     mockGetFlowCandidates.mockResolvedValue(flowRows)
     mockUpdateEventBlock.mockResolvedValue({})
+    mockGetDischargeCandidates.mockResolvedValue(null)
+  })
+
+  it('approve carries the bill a person picked for the line to settle', async () => {
+    mockGetDischargeCandidates.mockResolvedValue({
+      eventId: 'evt_bank',
+      kind: 'payables',
+      amountCents: 4250,
+      classifiedToControl: true,
+      candidates: [
+        {
+          eventId: 'evt_bill',
+          entityId: 'ent_parent',
+          agentId: 'agt_staples',
+          occurredOn: '2026-03-01',
+          documentNumber: 'B-7',
+          description: null,
+          originalCents: 4250,
+          settledCents: 0,
+          openCents: 4250,
+          currency: 'USD',
+          dueDate: '2026-03-31',
+          dueDateBasis: 'stated',
+          daysPastDue: 0,
+          bucket: 'current',
+        },
+      ],
+    })
+    renderModal()
+    const select = await screen.findByLabelText('Post to account')
+    await waitFor(() =>
+      expect((select as HTMLSelectElement).value).toBe('elem_office')
+    )
+    fireEvent.click(await screen.findByLabelText(/B-7/))
+    fireEvent.click(screen.getByText('Approve'))
+
+    await waitFor(() => expect(mockUpdateEventBlock).toHaveBeenCalled())
+    expect(mockUpdateEventBlock.mock.calls[0][1]).toMatchObject({
+      transition_to: 'committed',
+      discharge_allocations: [
+        { obligation_event_id: 'evt_bill', amount: 4250 },
+      ],
+    })
   })
 
   it('offers the chart, excludes the bank leg, and preselects the suggestion', async () => {

@@ -45,6 +45,7 @@ import {
   HiX,
 } from 'react-icons/hi'
 import EventDocumentSection from './EventDocumentSection'
+import SettlementPicker, { type DischargeAllocation } from './SettlementPicker'
 
 interface Entry {
   memo?: string
@@ -165,6 +166,8 @@ const EventBlockDetailModal: FC<Props> = function ({
   // Whether a commit teaches the counterparty this account. Null until the
   // reviewer touches the checkbox, which then follows the rule below.
   const [rememberChoice, setRememberChoice] = useState<boolean | null>(null)
+  // The open bills or invoices a person picked for this line to settle.
+  const [settlement, setSettlement] = useState<DischargeAllocation[]>([])
 
   const loadEvent = useCallback(async () => {
     try {
@@ -388,6 +391,7 @@ const EventBlockDetailModal: FC<Props> = function ({
         event_id: event.id,
         transition_to: 'committed',
         ...(classificationPatch ? { metadata_patch: classificationPatch } : {}),
+        ...(settlement.length > 0 ? { discharge_allocations: settlement } : {}),
       })
       onApproved(event.id)
     } catch (err) {
@@ -397,7 +401,14 @@ const EventBlockDetailModal: FC<Props> = function ({
     } finally {
       setActionInFlight(null)
     }
-  }, [event, graphId, onApproved, classificationPatch, needsClassification])
+  }, [
+    event,
+    graphId,
+    onApproved,
+    classificationPatch,
+    needsClassification,
+    settlement,
+  ])
 
   // Record the account choice without posting — for a review pass that
   // batches the posting later, or a second pair of eyes before commit.
@@ -741,6 +752,16 @@ const EventBlockDetailModal: FC<Props> = function ({
                   </>
                 )}
               </div>
+            )}
+
+            {/* The bill or invoice this line pays, by a person's pick */}
+            {isClassifiable && (
+              <SettlementPicker
+                graphId={graphId}
+                eventId={event.id}
+                disabled={actionInFlight !== null}
+                onChange={setSettlement}
+              />
             )}
 
             {/* A posted bank line: the account is fixed, the flow can move */}
