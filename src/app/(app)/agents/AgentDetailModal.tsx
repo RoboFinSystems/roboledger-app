@@ -39,6 +39,7 @@ import {
 import Link from 'next/link'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { HiExclamationCircle, HiTag } from 'react-icons/hi'
+import OpenBalanceTile from './OpenBalanceTile'
 
 interface Props {
   graphId: string
@@ -317,6 +318,12 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
                 </span>
               </div>
             </div>
+
+            <OpenBalanceTile
+              graphId={graphId}
+              agentId={agentId}
+              entityId={entityId}
+            />
 
             {/* The default account its bank lines are suggested */}
             <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
