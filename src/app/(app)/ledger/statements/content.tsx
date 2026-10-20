@@ -26,16 +26,25 @@ import {
   PageHeader,
   PageLayout,
 } from '@robosystems/core'
-import { Alert, Card } from 'flowbite-react'
+import { Alert, Button, Card } from 'flowbite-react'
 import Link from 'next/link'
 import type { FC } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { HiExclamationCircle } from 'react-icons/hi'
+import { HiDownload, HiExclamationCircle } from 'react-icons/hi'
 import { TbReportMoney } from 'react-icons/tb'
+import {
+  downloadCsv,
+  exportFilename,
+} from '../../explorer/components/serialize'
 import FigureSourcesModal from './components/FigureSourcesModal'
 import LiveStatementTable from './components/LiveStatementTable'
 import WorksheetTable from './components/WorksheetTable'
-import type { StatementColumn, StatementRow } from './statementModel'
+import {
+  buildStatementModel,
+  statementCsv,
+  type StatementColumn,
+  type StatementRow,
+} from './statementModel'
 
 // The SDK types this directly now — liveFinancialStatement returns
 // LiveFinancialStatementResponse rather than Record<string, unknown>, so the
@@ -124,6 +133,7 @@ function presetRange(
 const LiveStatementsContent: FC = function () {
   const { graph: currentGraph } = useLedgerGraph()
   const { entityId, entity, entities } = useEntityScope()
+  const parentName = entities.find((e) => e.isParent)?.name ?? null
   // A group statement is the group parent's Reporting Style over its members'
   // books, summed per concept: combined is the members alone, nothing
   // eliminated; consolidated adds the consolidation entity's adjustments; the
@@ -381,6 +391,30 @@ const LiveStatementsContent: FC = function () {
           </>
         )}
         <FilterActions>
+          <Button
+            size="sm"
+            color="light"
+            disabled={!statement || statement.facts.length === 0}
+            onClick={() => {
+              if (!statement) return
+              const books = grouped
+                ? `${parentName ?? ''} ${requestScope}`
+                : (entity?.name ?? parentName ?? '')
+              downloadCsv(
+                statementCsv(buildStatementModel(statement)),
+                exportFilename(
+                  `${statementType.replace(/_/g, ' ')} ${books} ${
+                    statement.periods[0]?.end ?? ''
+                  }`,
+                  'csv',
+                  'statement'
+                )
+              )
+            }}
+          >
+            <HiDownload className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
           <RefreshControl
             onRefresh={() => void load()}
             isRefreshing={isLoading}

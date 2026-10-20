@@ -53,11 +53,8 @@ vi.mock('flowbite-react', () => ({
   ),
 }))
 
-import ReceivablesPayablesContent, {
-  agingCsv,
-  monthEnd,
-  textCell,
-} from '../content'
+import { textCell } from '@/lib/ledger/csv'
+import ReceivablesPayablesContent, { agingCsv, monthEnd } from '../content'
 
 const buckets = (over: Record<string, number> = {}) => ({
   currentCents: 0,

@@ -4,6 +4,7 @@ import {
   buildStatementModel,
   periodCaption,
   rowChange,
+  statementCsv,
 } from '../statementModel'
 
 // Wire shape: [Current, Prior], rows post-order (children, then subtotal).
@@ -158,5 +159,17 @@ describe('figure sources', () => {
 
   it('is null when the statement was read without sources', () => {
     expect(buildStatementModel(BALANCE_SHEET).rows[0].sources).toBeNull()
+  })
+})
+
+describe('statementCsv', () => {
+  it('writes each line at its depth with a column per period, oldest first', () => {
+    const csv = statementCsv(buildStatementModel(BALANCE_SHEET)).split('\n')
+
+    // A caption holds a comma, so its header cell is quoted.
+    expect(csv[0]).toBe(
+      'Line,Concept,"Prior (As of Sep 18, 2025)","Current (As of Sep 18, 2026)"'
+    )
+    expect(csv[1]).toBe('    Cash,us-gaap:Cash,2043.95,19112.30')
   })
 })

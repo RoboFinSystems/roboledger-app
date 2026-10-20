@@ -1,3 +1,4 @@
+import { dollars, toCsv } from '@/lib/ledger/csv'
 import { formatDate } from '@/lib/ledger/formatters'
 import type {
   LiveFinancialStatementResponse,
@@ -121,4 +122,24 @@ export function rowChange(values: (number | null)[]): RowChange | null {
     amount,
     percent: earlier === 0 ? null : amount / Math.abs(earlier),
   }
+}
+
+/** The statement as CSV, as the table shows it: each line indented to its
+ *  depth, its concept, then a column per period (or per member, read by
+ *  dimension). */
+export function statementCsv(model: StatementModel): string {
+  return toCsv([
+    [
+      'Line',
+      'Concept',
+      ...model.columns.map((column) =>
+        column.caption ? `${column.label} (${column.caption})` : column.label
+      ),
+    ],
+    ...model.rows.map((row) => [
+      `${'  '.repeat(row.depth)}${row.label}`,
+      row.qname,
+      ...row.values.map(dollars),
+    ]),
+  ])
 }

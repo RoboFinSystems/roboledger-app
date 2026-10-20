@@ -45,6 +45,13 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/ledger/account-register',
 }))
 
+const mockDownloadCsv = vi.fn()
+vi.mock('../../../explorer/components/serialize', () => ({
+  downloadCsv: (...args: any[]) => mockDownloadCsv(...args),
+  exportFilename: (name: string, ext: string) =>
+    `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.${ext}`,
+}))
+
 vi.mock('../../inbox/EventBlockDetailModal', () => ({
   default: (props: any) => {
     modalProps = props
@@ -84,7 +91,7 @@ vi.mock('flowbite-react', () => ({
   ),
 }))
 
-import AccountRegisterContent from '../content'
+import AccountRegisterContent, { registerCsv } from '../content'
 
 function line(overrides: Record<string, unknown> = {}) {
   return {
@@ -265,6 +272,52 @@ describe('AccountRegisterContent', () => {
     })
     rerender(<AccountRegisterContent />)
     expect(mockReplace).toHaveBeenCalledWith('/ledger/account-register?')
+  })
+
+  it('exports the whole window, not the page on screen', async () => {
+    search = new URLSearchParams(
+      'accountId=elem_cash&start=2026-09-01&end=2026-09-30'
+    )
+    mockGetAccountRegister
+      .mockResolvedValueOnce(register({ nextCursor: 'cur_2', lineCount: 2 }))
+      .mockResolvedValueOnce(register({ nextCursor: 'cur_2' }))
+      .mockResolvedValueOnce(
+        register({
+          lines: [line({ lineId: 'li_2', memo: 'Second sale', balance: 135 })],
+          nextCursor: null,
+          closingBalance: 135,
+        })
+      )
+    render(<AccountRegisterContent />)
+
+    fireEvent.click(await screen.findByText('Export CSV'))
+
+    await waitFor(() => expect(mockDownloadCsv).toHaveBeenCalled())
+    const [, first, second] = mockGetAccountRegister.mock.calls
+    expect(first[2]).toMatchObject({
+      after: null,
+      limit: 1000,
+      includeDrafts: false,
+    })
+    expect(second[2]).toMatchObject({ after: 'cur_2', limit: 1000 })
+    const [csv, filename] = mockDownloadCsv.mock.calls[0]
+    expect(csv).toContain('Consulting fees')
+    expect(csv).toContain('Second sale')
+    expect(csv.split('\n').at(-1)).toContain('Closing balance')
+    expect(filename).toBe('register-1000-cash-2026-09-01-to-2026-09-30.csv')
+  })
+
+  it('says where an export stopped short, in the file', () => {
+    const csv = registerCsv(register() as any, [line() as any], true).split(
+      '\n'
+    )
+    expect(csv[1]).toBe('2026-09-01,Opening balance,,,,,,,,100.00')
+    expect(csv[2]).toBe(
+      '2026-09-03,,Consulting fees,42,posted,Acme,invoice_issued,25.00,0.00,125.00'
+    )
+    expect(csv.at(-1)).toBe(
+      ',Stopped at 1 lines: narrow the window to export the rest'
+    )
   })
 
   it('changing the account rewrites the URL', async () => {
