@@ -52,8 +52,10 @@ const LiveStatementTable: FC<LiveStatementTableProps> = ({ statement }) => {
   const fold = useRowFold(rows, rowKey)
   const [showChange, setShowChange] = useState(false)
 
-  // Change needs two columns to compare — the cash flow renders one.
-  const canCompare = columns.length >= 2
+  // Change needs two periods to compare — the cash flow renders one, and a
+  // statement read by department or class has one window spread across them.
+  const byMember = (statement.dimension?.columns?.length ?? 0) > 0
+  const canCompare = columns.length >= 2 && !byMember
   const withChange = canCompare && showChange
 
   return (
@@ -76,8 +78,8 @@ const LiveStatementTable: FC<LiveStatementTableProps> = ({ statement }) => {
               doesn't tint the header. */}
           <tr>
             <TableHeadCell>Concept</TableHeadCell>
-            {columns.map((column) => (
-              <TableHeadCell key={column.end} className="text-right">
+            {columns.map((column, ci) => (
+              <TableHeadCell key={`${column.end}-${ci}`} className="text-right">
                 {column.label}
                 <span className="block text-[11px] font-normal tracking-normal whitespace-nowrap text-gray-500 normal-case dark:text-gray-400">
                   {column.caption}
@@ -118,7 +120,10 @@ const LiveStatementTable: FC<LiveStatementTableProps> = ({ statement }) => {
                   />
                 </TableCell>
                 {row.values.map((value, vi) => (
-                  <TableCell key={columns[vi].end} className={NUMERIC_CELL}>
+                  <TableCell
+                    key={`${columns[vi].end}-${vi}`}
+                    className={NUMERIC_CELL}
+                  >
                     {value === null ? '—' : formatCurrency(value)}
                   </TableCell>
                 ))}

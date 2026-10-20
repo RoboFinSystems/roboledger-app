@@ -134,4 +134,44 @@ describe('LiveStatementTable', () => {
     expect(screen.queryByRole('switch')).not.toBeInTheDocument()
     expect(headerTexts()).toEqual(['Concept', 'CurrentJan 1 – Sep 18, 2026'])
   })
+
+  it('lays a statement read by member out in the order the server sent, with no change column', () => {
+    const window = { start: '2026-01-01', end: '2026-09-18' }
+    const byDepartment = {
+      ...BALANCE_SHEET,
+      statement_type: 'income_statement',
+      periods: [
+        { ...window, label: 'Sales' },
+        { ...window, label: 'Unallocated' },
+        { ...window, label: 'Total' },
+      ],
+      facts: [
+        {
+          qname: 'rs-gaap:Revenues',
+          name: 'Revenues',
+          values: [500, 100, 600],
+          depth: 0,
+        },
+      ],
+      dimension: {
+        type: 'department',
+        columns: [
+          { member_id: 'dim_s', name: 'Sales' },
+          { member_id: 'unallocated', name: 'Unallocated' },
+          { member_id: null, name: 'Total' },
+        ],
+        ties_out: true,
+        differences: [],
+      },
+    } as LiveFinancialStatementResponse
+    render(<LiveStatementTable statement={byDepartment} />)
+
+    expect(headerTexts().map((t) => t?.split('Jan')[0])).toEqual([
+      'Concept',
+      'Sales',
+      'Unallocated',
+      'Total',
+    ])
+    expect(screen.queryByLabelText('Show change')).not.toBeInTheDocument()
+  })
 })
