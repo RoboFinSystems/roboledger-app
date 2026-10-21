@@ -74,6 +74,8 @@ const BLOCKER_MESSAGES: Record<string, string> = {
     'Transactions edited in QuickBooks after they were synced are still awaiting a decision. Review each one and choose how to treat it — restate the original months, book a catch-up entry, or record that you already handled it — then close.',
   unposted_source_events:
     'Events dated in this period were captured but never posted, and once the period closes they can no longer post into it. In the Inbox, check both Captured and Classified, approve or reject each one, then close.',
+  held_bank_lines:
+    'Bank lines arrived after an earlier month closed and were held out of it. Reopen the month they are dated in to bring them back to the Inbox, or close over them knowingly.',
   unreconciled_accounts:
     'A reconciliation this close waits on does not tie for the period, or has not been run for it. Open Reconciliations to see what is different, clear it, and run them again.',
   entity_open:
@@ -148,6 +150,21 @@ function obligationDetailFor(
         {items.map((item) => (
           <li key={item}>{item}</li>
         ))}
+      </ul>
+    )
+  }
+
+  // Each entry already reads "<date>: <description> <amount> [<event id>]".
+  if (code === 'held_bank_lines') {
+    if (calendar.heldBankLineCount === 0) return null
+    return (
+      <ul className="mt-1 list-disc pl-5 text-xs text-yellow-700 dark:text-yellow-300">
+        {calendar.heldBankLineSample.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+        {calendar.heldBankLineCount > calendar.heldBankLineSample.length && (
+          <li>and others</li>
+        )}
       </ul>
     )
   }
@@ -240,6 +257,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     useState(false)
   const [allowUnexplainedResiduals, setAllowUnexplainedResiduals] =
     useState(false)
+  const [allowHeldBankLines, setAllowHeldBankLines] = useState(false)
 
   // Reopen modal
   const [reopenTarget, setReopenTarget] = useState<string | null>(null)
@@ -376,6 +394,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
       setAllowStrandedObligations(false)
       setAllowUnreconciledAccounts(false)
       setAllowUnexplainedResiduals(false)
+      setAllowHeldBankLines(false)
       loadCloseStatus()
       loadDrafts()
     } else {
@@ -434,6 +453,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
         allowStrandedObligations,
         allowUnreconciledAccounts,
         allowUnexplainedResiduals,
+        allowHeldBankLines,
       })
       setCalendar(result.fiscalCalendar)
       // Show what the close did — the close is the act that stamps the
@@ -493,6 +513,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
     allowStrandedObligations,
     allowUnreconciledAccounts,
     allowUnexplainedResiduals,
+    allowHeldBankLines,
     onEntryCreated,
     refreshCalendar,
   ])
@@ -771,6 +792,8 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
           onToggleUnreconciledAccounts={setAllowUnreconciledAccounts}
           allowUnexplainedResiduals={allowUnexplainedResiduals}
           onToggleUnexplainedResiduals={setAllowUnexplainedResiduals}
+          allowHeldBankLines={allowHeldBankLines}
+          onToggleHeldBankLines={setAllowHeldBankLines}
           onClose={handleClosePeriod}
         />
       )}
@@ -1155,6 +1178,8 @@ interface ClosePeriodActionProps {
   onToggleUnreconciledAccounts: (value: boolean) => void
   allowUnexplainedResiduals: boolean
   onToggleUnexplainedResiduals: (value: boolean) => void
+  allowHeldBankLines: boolean
+  onToggleHeldBankLines: (value: boolean) => void
   onClose: () => void
 }
 
@@ -1171,6 +1196,8 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
   onToggleUnreconciledAccounts,
   allowUnexplainedResiduals,
   onToggleUnexplainedResiduals,
+  allowHeldBankLines,
+  onToggleHeldBankLines,
   onClose,
 }) => {
   const blocked = !calendar.closeableNow
@@ -1184,11 +1211,13 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
   const strandedOnly = onlyBlocker('stranded_obligations')
   const unreconciledOnly = onlyBlocker('unreconciled_accounts')
   const residualOnly = onlyBlocker('residual_unexplained')
+  const heldOnly = onlyBlocker('held_bank_lines')
   const overridden =
     (syncStaleOnly && allowStaleSync) ||
     (strandedOnly && allowStrandedObligations) ||
     (unreconciledOnly && allowUnreconciledAccounts) ||
-    (residualOnly && allowUnexplainedResiduals)
+    (residualOnly && allowUnexplainedResiduals) ||
+    (heldOnly && allowHeldBankLines)
   const hasUnbalancedDrafts = drafts ? !drafts.allBalanced : false
 
   return (
@@ -1260,6 +1289,21 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
                 className="rounded border-amber-400"
               />
               Close with the difference unexplained
+            </label>
+          )}
+          {/* The held lines never post; the API records the decision on each
+              one, so the next close is not held by them, and names the count
+              in the close audit note. Reopening their month is the better
+              path. */}
+          {heldOnly && (
+            <label className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
+              <input
+                type="checkbox"
+                checked={allowHeldBankLines}
+                onChange={(e) => onToggleHeldBankLines(e.target.checked)}
+                className="rounded border-amber-400"
+              />
+              Close without the held bank lines
             </label>
           )}
           <Button

@@ -205,6 +205,7 @@ describe('PeriodClosePanel — close success', () => {
       allowStrandedObligations: false,
       allowUnreconciledAccounts: false,
       allowUnexplainedResiduals: false,
+      allowHeldBankLines: false,
     })
   })
 
@@ -518,6 +519,7 @@ describe('PeriodClosePanel — close overrides', () => {
         allowStrandedObligations: true,
         allowUnreconciledAccounts: false,
         allowUnexplainedResiduals: false,
+        allowHeldBankLines: false,
       })
     )
   })
@@ -552,7 +554,40 @@ describe('PeriodClosePanel — close overrides', () => {
         allowStrandedObligations: false,
         allowUnreconciledAccounts: true,
         allowUnexplainedResiduals: false,
+        allowHeldBankLines: false,
       })
+    )
+  })
+
+  it('names the held bank lines and lets the close go over them', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['held_bank_lines'],
+      heldBankLineCount: 1,
+      heldBankLineSample: ['2026-04-29: Late deposit 125.00 [evt_1]'],
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    expect(
+      await screen.findByText('2026-04-29: Late deposit 125.00 [evt_1]')
+    ).toBeInTheDocument()
+    expect(screen.queryByText('held_bank_lines')).not.toBeInTheDocument()
+
+    const button = (await screen.findByText('Close Period')).closest('button')!
+    expect(button).toBeDisabled()
+    fireEvent.click(
+      await screen.findByLabelText('Close without the held bank lines')
+    )
+    await waitFor(() => expect(button).not.toBeDisabled())
+    fireEvent.click(button)
+
+    await waitFor(() =>
+      expect(mockClosePeriod).toHaveBeenCalledWith(
+        'kg1',
+        '2026-05',
+        expect.objectContaining({ allowHeldBankLines: true })
+      )
     )
   })
 
