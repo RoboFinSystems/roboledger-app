@@ -496,6 +496,41 @@ describe('ReconciliationsPanel', () => {
     expect(screen.getByText(/does not agree/)).toBeInTheDocument()
   })
 
+  it('shows a line older than the cycle apart, as not counted', async () => {
+    const base = bankStatement()
+    mockListReconciliations.mockResolvedValue(
+      listOf(
+        bankStatement({
+          components: [
+            ...base.components,
+            {
+              name: 'Check 1043',
+              amount: -75,
+              kind: 'stale_outstanding',
+              postingDate: '2026-06-12',
+              entryId: 'je_3',
+              structureId: null,
+              eventId: null,
+              documentId: null,
+              note: null,
+            },
+          ],
+        })
+      )
+    )
+    render(<ReconciliationsPanel graphId="kg1" />)
+
+    fireEvent.click(await screen.findByText('Checking (statement)'))
+
+    expect(
+      await screen.findByText(/Older than this statement.s cycle — not counted/)
+    ).toBeInTheDocument()
+    expect(screen.getByText('Check 1043')).toBeInTheDocument()
+    expect(
+      screen.getAllByText('Not yet cleared by the bank').length
+    ).toBeGreaterThan(0)
+  })
+
   it('stays quiet when the feed agrees with the carried balance', async () => {
     mockListReconciliations.mockResolvedValue(
       listOf(
