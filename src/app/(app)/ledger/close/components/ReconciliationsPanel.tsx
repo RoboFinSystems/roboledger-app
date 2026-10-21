@@ -583,8 +583,13 @@ const ReconciliationDetail: FC<{
   busy: boolean
   onCycleChange: (rec: LedgerReconciliation, cycle: StatementCycle) => void
 }> = ({ graphId, rec, busy, onCycleChange }) => {
-  const parts = rec.components.filter((c) => c.kind !== 'outstanding')
+  const parts = rec.components.filter(
+    (c) => c.kind !== 'outstanding' && c.kind !== 'stale_outstanding'
+  )
   const outstanding = rec.components.filter((c) => c.kind === 'outstanding')
+  // Listed, never counted: the bank should have cleared them within the
+  // statement's cycle, so the difference they would explain stays open.
+  const stale = rec.components.filter((c) => c.kind === 'stale_outstanding')
   return (
     <div className="space-y-3 text-sm text-gray-700 dark:text-gray-200">
       {rec.status === 'not_started' ? (
@@ -646,6 +651,28 @@ const ReconciliationDetail: FC<{
           </p>
           <ul className="space-y-1">
             {outstanding.map((component, index) => (
+              <ComponentLine
+                key={componentKey(component, index)}
+                graphId={graphId}
+                component={component}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {stale.length > 0 && (
+        <div>
+          <p className="mb-1 text-xs font-medium text-yellow-700 dark:text-yellow-300">
+            Older than this statement&apos;s cycle — not counted
+          </p>
+          <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
+            The bank should have cleared these by now, so they do not explain
+            the difference. Each stays here until it clears, or is voided or
+            re-dated.
+          </p>
+          <ul className="space-y-1">
+            {stale.map((component, index) => (
               <ComponentLine
                 key={componentKey(component, index)}
                 graphId={graphId}
