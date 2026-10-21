@@ -11,7 +11,7 @@
 # Hub login.
 
 # --- Build Stage ---
-FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/node:24.21.0-alpine3.24 AS builder
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/node:24.22.1-alpine3.24 AS builder
 WORKDIR /app
 
 # Install git for private repository access
@@ -50,7 +50,7 @@ RUN if [ -f next-build.tar.gz ]; then \
 # Nested lockfiles shipped inside package tarballs (demo/playground dirs) are
 # never read at runtime, but container scanners parse them as installed
 # dependencies and flag phantom CVEs.
-FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/node:24.21.0-alpine3.24 AS deps
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/node:24.22.1-alpine3.24 AS deps
 ARG TARGETARCH
 WORKDIR /app
 RUN npm install -g npm@12.0.2
@@ -64,7 +64,7 @@ RUN case "$TARGETARCH" in \
   find node_modules -mindepth 2 -name package-lock.json -delete
 
 # --- Production Stage ---
-FROM public.ecr.aws/docker/library/node:24.21.0-alpine3.24 AS runner
+FROM public.ecr.aws/docker/library/node:24.22.1-alpine3.24 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
