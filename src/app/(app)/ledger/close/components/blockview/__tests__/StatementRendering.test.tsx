@@ -414,3 +414,70 @@ describe('StatementRenderingProjection', () => {
     expect(screen.getByText('M13')).toBeInTheDocument()
   })
 })
+
+describe('figure drill', () => {
+  it('a figure with something behind it is a button that opens on its row and period', () => {
+    const onOpenFigure = vi.fn()
+    render(
+      <StatementRenderingProjection
+        envelope={makeEnvelope()}
+        drillable={(row) => row.elementId === 'elem_rev'}
+        onOpenFigure={onOpenFigure}
+      />
+    )
+    const revenueCell = screen.getByText('Revenue').closest('tr')!
+    const button = within(revenueCell).getByRole('button', {
+      name: /8,500/,
+    })
+    fireEvent.click(button)
+    expect(onOpenFigure).toHaveBeenCalledWith(
+      expect.objectContaining({ elementId: 'elem_rev' }),
+      0
+    )
+    // A figure with nothing behind it stays text.
+    const cogsCell = screen.getByText('Cost of Goods Sold').closest('tr')!
+    expect(within(cogsCell).queryByRole('button')).toBeNull()
+  })
+
+  it('a windowed column reports the envelope period index, not the shown one', () => {
+    const onOpenFigure = vi.fn()
+    const periods = Array.from({ length: 6 }, (_, i) => ({
+      start: `2026-0${i + 1}-01`,
+      end: `2026-0${i + 1}-28`,
+      label: `M${i + 1}`,
+    }))
+    const env = makeEnvelope({
+      view: {
+        rendering: makeRendering({
+          periods,
+          rows: [
+            {
+              elementId: 'elem_rev',
+              elementQname: 'us-gaap:Revenues',
+              elementName: 'Revenue',
+              classification: 'revenue',
+              balanceType: 'credit',
+              values: [1, 2, 3, 4, 5, 6],
+              isSubtotal: false,
+              depth: 0,
+            },
+          ],
+        }),
+      },
+    } as any)
+    render(
+      <StatementRenderingProjection
+        envelope={env}
+        drillable={() => true}
+        onOpenFigure={onOpenFigure}
+      />
+    )
+    // The default window shows the trailing columns; the last shown is M6.
+    const buttons = screen.getAllByRole('button', { name: /^\$?6/ })
+    fireEvent.click(buttons[buttons.length - 1])
+    expect(onOpenFigure).toHaveBeenLastCalledWith(
+      expect.objectContaining({ elementId: 'elem_rev' }),
+      5
+    )
+  })
+})
