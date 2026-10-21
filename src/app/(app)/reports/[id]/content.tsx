@@ -1,7 +1,9 @@
 'use client'
 
+import { useEntityScope } from '@/lib/entity-scope'
 import { isGraphAdmin } from '@/lib/graph-role'
 import { friendlyError } from '@/lib/ledger/errors'
+import { canDrill, describeFact } from '@/lib/ledger/provenance'
 import {
   reportAnchorNote,
   reportExampleQuestions,
@@ -54,11 +56,16 @@ import {
   HiTrash,
 } from 'react-icons/hi'
 import BlockView from '../../ledger/close/components/blockview/BlockView'
+import type {
+  EnvelopeFact,
+  EnvelopeRenderingRow,
+} from '../../ledger/close/components/blockview/types'
 import type { ViewMode } from '../../ledger/close/components/ViewModeToggle'
 import ViewModeToggle from '../../ledger/close/components/ViewModeToggle'
 import BlockSenderModal from './components/BlockSenderModal'
 import HolonReportView from './components/HolonReportView'
 import ManageSharesModal from './components/ManageSharesModal'
+import ReportFigureModal from './components/ReportFigureModal'
 import ReportPackageSidebar from './components/ReportPackageSidebar'
 
 /** The download flavors the menu offers — the SDK's `ReportDownloadFormat`. */
@@ -144,6 +151,15 @@ const ReportViewerContent: FC = function () {
   // Cross-graph share controls
   const [showBlockModal, setShowBlockModal] = useState(false)
   const [showSharesModal, setShowSharesModal] = useState(false)
+  // A figure opened onto how it was made: the item it sits in, its row, the
+  // period by the envelope's own index, and the fact behind it.
+  const [drill, setDrill] = useState<{
+    factSetId: string
+    row: EnvelopeRenderingRow
+    periodIndex: number
+    fact: EnvelopeFact
+  } | null>(null)
+  const { entities } = useEntityScope()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
@@ -439,6 +455,29 @@ const ReportViewerContent: FC = function () {
       setActiveFactSetId(factSetId)
     }
   }, [])
+
+  // The envelope fact behind a figure: the row's element in the period's
+  // window. Facts sharing an element and period persist as their sum, so
+  // the first match is the one.
+  const factBehind = useCallback(
+    (
+      item: ReportPackage['items'][number],
+      row: EnvelopeRenderingRow,
+      periodIndex: number
+    ): EnvelopeFact | null => {
+      const period = item.block.view.rendering?.periods[periodIndex]
+      if (!period) return null
+      return (
+        item.block.facts.find(
+          (fact) =>
+            fact.elementId === row.elementId &&
+            fact.periodEnd === period.end &&
+            (fact.periodStart ?? null) === (period.start ?? null)
+        ) ?? null
+      )
+    },
+    []
+  )
 
   const periodLabel = useMemo(() => {
     if (!pkg) return ''
@@ -819,6 +858,24 @@ const ReportViewerContent: FC = function () {
                     envelope={item.block}
                     viewMode={viewMode}
                     entityName={pkg.entityName}
+                    drillable={(row, periodIndex) =>
+                      canDrill(
+                        describeFact(
+                          factBehind(item, row, periodIndex)?.provenance
+                        )
+                      )
+                    }
+                    onOpenFigure={(row, periodIndex) => {
+                      const fact = factBehind(item, row, periodIndex)
+                      if (fact) {
+                        setDrill({
+                          factSetId: item.factSetId,
+                          row,
+                          periodIndex,
+                          fact,
+                        })
+                      }
+                    }}
                   />
                 </Card>
               </div>
@@ -826,6 +883,24 @@ const ReportViewerContent: FC = function () {
           </div>
         </div>
       )}
+
+      {drill &&
+        pkg &&
+        (() => {
+          const item = pkg.items.find((i) => i.factSetId === drill.factSetId)
+          const period = item?.block.view.rendering?.periods[drill.periodIndex]
+          return item && period ? (
+            <ReportFigureModal
+              graphId={graphId}
+              row={drill.row}
+              period={period}
+              fact={drill.fact}
+              elements={item.block.elements}
+              entities={entities}
+              onClose={() => setDrill(null)}
+            />
+          ) : null
+        })()}
 
       {/* Share modal */}
       <Modal

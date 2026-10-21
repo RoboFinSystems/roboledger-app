@@ -39,6 +39,11 @@ import {
 interface StatementRenderingProjectionProps {
   envelope: EnvelopeBlock
   entityName?: string | null
+  /** Whether a figure (row × period, the period by its index in the
+   *  envelope's own period list) has something to open. */
+  drillable?: (row: EnvelopeRenderingRow, periodIndex: number) => boolean
+  /** Opens a drillable figure. */
+  onOpenFigure?: (row: EnvelopeRenderingRow, periodIndex: number) => void
 }
 
 /**
@@ -57,6 +62,8 @@ interface StatementRenderingProjectionProps {
 const StatementRenderingProjection: FC<StatementRenderingProjectionProps> = ({
   envelope,
   entityName,
+  drillable,
+  onOpenFigure,
 }) => {
   const rendering = envelope.view.rendering
 
@@ -82,6 +89,8 @@ const StatementRenderingProjection: FC<StatementRenderingProjectionProps> = ({
         envelope={envelope}
         rendering={rendering}
         entityName={entityName}
+        drillable={drillable}
+        onOpenFigure={onOpenFigure}
       />
       {rendering.validation && (
         <ValidationBanner validation={rendering.validation} />
@@ -102,6 +111,8 @@ interface StatementGridProps {
   envelope: EnvelopeBlock
   rendering: EnvelopeRendering
   entityName?: string | null
+  drillable?: (row: EnvelopeRenderingRow, periodIndex: number) => boolean
+  onOpenFigure?: (row: EnvelopeRenderingRow, periodIndex: number) => void
 }
 
 const rowKey = (row: EnvelopeRenderingRow): string =>
@@ -111,6 +122,8 @@ const StatementGrid: FC<StatementGridProps> = ({
   envelope,
   rendering,
   entityName,
+  drillable,
+  onOpenFigure,
 }) => {
   const totalPeriods = rendering.periods.length
   const { window, setWindow } = usePeriodWindow(
@@ -121,10 +134,9 @@ const StatementGrid: FC<StatementGridProps> = ({
   // month, plus a scenario's forward months) — the same trailing-window
   // control the metric table uses keeps the recent columns (and the
   // actuals/forecast seam) in view instead of appended off-screen.
-  const windowed = sliceRendering(
-    rendering,
-    windowStartIndex(totalPeriods, window)
-  )
+  // A windowed column's index in the envelope's own period list is offset.
+  const firstShown = windowStartIndex(totalPeriods, window)
+  const windowed = sliceRendering(rendering, firstShown)
   const { rows, periods } = windowed
 
   // Folded over the unsliced rows: the section structure doesn't depend on
@@ -230,22 +242,40 @@ const StatementGrid: FC<StatementGridProps> = ({
                       />
                     </div>
                   </td>
-                  {row.values.map((value, i) => (
-                    <td
-                      key={i}
-                      className={`${GRID_VALUE_CELL} ${
-                        isBold
-                          ? 'font-semibold text-gray-900 dark:text-white'
-                          : 'text-gray-700 dark:text-gray-300'
-                      } ${
-                        (value ?? 0) === 0 && !isBold
-                          ? 'text-gray-400 dark:text-gray-500'
-                          : ''
-                      } ${isTopLevel ? 'border-b-2 border-double border-gray-400 dark:border-gray-500' : ''} ${columnClasses(i)}`}
-                    >
-                      {value !== null ? formatCurrency(value) : '—'}
-                    </td>
-                  ))}
+                  {row.values.map((value, i) => {
+                    const text = value !== null ? formatCurrency(value) : '—'
+                    const opens =
+                      value !== null &&
+                      onOpenFigure !== undefined &&
+                      (drillable?.(row, firstShown + i) ?? false)
+                    return (
+                      <td
+                        key={i}
+                        className={`${GRID_VALUE_CELL} ${
+                          isBold
+                            ? 'font-semibold text-gray-900 dark:text-white'
+                            : 'text-gray-700 dark:text-gray-300'
+                        } ${
+                          (value ?? 0) === 0 && !isBold
+                            ? 'text-gray-400 dark:text-gray-500'
+                            : ''
+                        } ${isTopLevel ? 'border-b-2 border-double border-gray-400 dark:border-gray-500' : ''} ${columnClasses(i)}`}
+                      >
+                        {opens ? (
+                          <button
+                            type="button"
+                            className="font-mono hover:underline"
+                            title="How this figure was made"
+                            onClick={() => onOpenFigure(row, firstShown + i)}
+                          >
+                            {text}
+                          </button>
+                        ) : (
+                          text
+                        )}
+                      </td>
+                    )
+                  })}
                 </tr>
               )
             })}

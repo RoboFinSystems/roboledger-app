@@ -11,7 +11,7 @@ import ScheduleRenderingProjection from './projections/ScheduleRendering'
 import StatementRenderingProjection from './projections/StatementRendering'
 import TextBlockRenderingProjection from './projections/TextBlockRendering'
 import VerificationResultsProjection from './projections/VerificationResults'
-import type { EnvelopeBlock } from './types'
+import type { EnvelopeBlock, EnvelopeRenderingRow } from './types'
 import {
   DISCLOSURE_BLOCK_TYPE,
   isStatementBlockType,
@@ -27,6 +27,10 @@ interface BlockViewProps {
    * closing-book mode reads it from the parent panel state.
    */
   entityName?: string | null
+  /** Statement family only: whether a figure has something to open, and
+   *  what opens it. The period index is the envelope's own. */
+  drillable?: (row: EnvelopeRenderingRow, periodIndex: number) => boolean
+  onOpenFigure?: (row: EnvelopeRenderingRow, periodIndex: number) => void
 }
 
 /**
@@ -47,7 +51,13 @@ interface BlockViewProps {
  * projection, and `rendered` falls through to a block-type-specialized
  * renderer.
  */
-const BlockView: FC<BlockViewProps> = ({ envelope, viewMode, entityName }) => {
+const BlockView: FC<BlockViewProps> = ({
+  envelope,
+  viewMode,
+  entityName,
+  drillable,
+  onOpenFigure,
+}) => {
   if (viewMode === 'chart') {
     return (
       <ChartRenderingProjection envelope={envelope} entityName={entityName} />
@@ -76,6 +86,8 @@ const BlockView: FC<BlockViewProps> = ({ envelope, viewMode, entityName }) => {
       <StatementRenderingProjection
         envelope={envelope}
         entityName={entityName}
+        drillable={drillable}
+        onOpenFigure={onOpenFigure}
       />
     )
   }
@@ -119,6 +131,8 @@ const BlockView: FC<BlockViewProps> = ({ envelope, viewMode, entityName }) => {
       <StatementRenderingProjection
         envelope={envelope}
         entityName={entityName}
+        drillable={drillable}
+        onOpenFigure={onOpenFigure}
       />
     )
   }

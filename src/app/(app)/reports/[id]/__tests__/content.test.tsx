@@ -83,7 +83,34 @@ vi.mock('@/lib/reports/chat', () => ({
   reportFocus: () => '',
 }))
 vi.mock('../../../ledger/close/components/blockview/BlockView', () => ({
-  default: () => null,
+  // A figure per row and first period, so a test can open one.
+  default: ({ envelope, drillable, onOpenFigure }: any) => (
+    <div>
+      {(envelope.view?.rendering?.rows ?? []).map((row: any) =>
+        drillable?.(row, 0) ? (
+          <button
+            key={row.elementId}
+            type="button"
+            onClick={() => onOpenFigure?.(row, 0)}
+          >
+            open {row.elementName}
+          </button>
+        ) : (
+          <span key={row.elementId}>{row.elementName}</span>
+        )
+      )}
+    </div>
+  ),
+}))
+vi.mock('../components/ReportFigureModal', () => ({
+  default: ({ fact, period }: any) => (
+    <div data-testid="figure-modal">
+      {fact.id} {period.end}
+    </div>
+  ),
+}))
+vi.mock('@/lib/entity-scope', () => ({
+  useEntityScope: () => ({ entities: [{ id: 'ent_1', name: 'Harbor' }] }),
 }))
 vi.mock('../../../ledger/close/components/ViewModeToggle', () => ({
   default: () => null,
@@ -510,5 +537,78 @@ describe('Report filing actions', () => {
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
     expect(screen.getByText('Filed')).toBeInTheDocument()
+  })
+})
+
+describe('Figure drill', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    globalThis.IntersectionObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as any
+  })
+
+  const statement = (facts: unknown[]) => ({
+    factSetId: 'fs_is',
+    structureId: 'struct_is',
+    displayOrder: 2,
+    block: {
+      id: 'struct_is',
+      blockType: 'income_statement',
+      name: 'Income Statement',
+      elements: [],
+      facts,
+      view: {
+        rendering: {
+          periods: [{ start: '2026-06-01', end: '2026-06-30', label: 'June' }],
+          rows: [
+            { elementId: 'el_rev', elementName: 'Revenue', values: [1000] },
+            { elementId: 'el_ni', elementName: 'Net income', values: [250] },
+          ],
+          validation: null,
+          unmappedCount: 0,
+        },
+      },
+    },
+  })
+
+  it('a figure whose fact says how it was made opens onto it; one that does not stays text', async () => {
+    await renderWith({
+      items: [
+        statement([
+          {
+            id: 'fact_rev',
+            elementId: 'el_rev',
+            value: 1000,
+            periodStart: '2026-06-01',
+            periodEnd: '2026-06-30',
+            periodType: 'duration',
+            provenance: {
+              origin: 'pivot',
+              sources: [{ entity_id: 'ent_1', account_id: 'a', value: 1000 }],
+            },
+            frozenAt: null,
+          },
+          {
+            id: 'fact_ni',
+            elementId: 'el_ni',
+            value: 250,
+            periodStart: '2026-06-01',
+            periodEnd: '2026-06-30',
+            periodType: 'duration',
+            provenance: null,
+            frozenAt: null,
+          },
+        ]),
+      ],
+    })
+    expect(screen.queryByTestId('figure-modal')).toBeNull()
+    expect(screen.getByText('Net income')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'open Revenue' }))
+    expect(screen.getByTestId('figure-modal')).toHaveTextContent(
+      'fact_rev 2026-06-30'
+    )
   })
 })
