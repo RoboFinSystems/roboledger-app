@@ -42,6 +42,12 @@ interface HolonReportViewProps {
   reportId: string
   /** Whether the report is published (a document only exists once published). */
   published: boolean
+  /**
+   * Ask for the holon with lineage first: the report is this graph's own, so
+   * its figures can walk to the books. Off for a report shared in from
+   * another graph.
+   */
+  lineage?: boolean
 }
 
 /** A section's statement tables as one CSV, row for row with the tables on
@@ -56,11 +62,23 @@ export function sectionCsv(slice: NormalizedReport): string {
 
 /** The renderable flavors, in the order they are tried. */
 const RENDER_FORMATS = ['HOLON_JSONLD', 'TAVI'] as const
+/**
+ * For the graph's own reports the holon with its `#lineage` graph is tried
+ * first, so a figure walks to its ledger lines in the fact inspector; it is
+ * never offered for a report shared in from another graph, which carries no
+ * lineage, and any failure falls through to the plain holon as before.
+ */
+const RENDER_FORMATS_WITH_LINEAGE = [
+  'HOLON_JSONLD_LINEAGE',
+  ...RENDER_FORMATS,
+] as const
+type RenderFormat = (typeof RENDER_FORMATS_WITH_LINEAGE)[number]
 
 export default function HolonReportView({
   graphId,
   reportId,
   published,
+  lineage = false,
 }: HolonReportViewProps) {
   const [report, setReport] = useState<NormalizedReport | null>(null)
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
@@ -91,7 +109,7 @@ export default function HolonReportView({
   // browser fetch is blocked cross-origin. Returns the document text, or null
   // when the report does not exist.
   const fetchDocument = useCallback(
-    async (format: (typeof RENDER_FORMATS)[number]): Promise<string | null> => {
+    async (format: RenderFormat): Promise<string | null> => {
       if (!graphId) return null
       const resp = await clients.reports.getReportDownloadUrl(
         graphId,
@@ -133,13 +151,14 @@ export default function HolonReportView({
       // on to the Tavi, whose own failure is the one reported.
       let text: string | null = null
       let missing = false
-      for (const [index, format] of RENDER_FORMATS.entries()) {
+      const formats = lineage ? RENDER_FORMATS_WITH_LINEAGE : RENDER_FORMATS
+      for (const [index, format] of formats.entries()) {
         try {
           text = await fetchDocument(format)
           if (text === null) missing = true
           break
         } catch (err) {
-          if (index === RENDER_FORMATS.length - 1) throw err
+          if (index === formats.length - 1) throw err
         }
       }
       if (missing || text === null) {
@@ -161,7 +180,7 @@ export default function HolonReportView({
     } finally {
       setIsLoading(false)
     }
-  }, [graphId, fetchDocument])
+  }, [graphId, lineage, fetchDocument])
 
   // Load once when the tab opens (published reports only).
   const didInit = useRef(false)

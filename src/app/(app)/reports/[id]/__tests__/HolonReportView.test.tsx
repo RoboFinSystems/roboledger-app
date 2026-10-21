@@ -206,6 +206,53 @@ describe('HolonReportView', () => {
     )
   })
 
+  it('asks for the holon with lineage first for the graph’s own report', async () => {
+    mockGetReportDownloadUrl.mockResolvedValue({
+      downloadUrl: 'https://s3/lineage',
+    })
+
+    render(
+      <HolonReportView graphId="kg_1" reportId="rpt_1" published lineage />
+    )
+
+    await waitFor(() => expect(screen.getByTestId('report-view')).toBeTruthy())
+    expect(formatsRequested()).toEqual(['HOLON_JSONLD_LINEAGE'])
+    expect(mockParseReportDocument).toHaveBeenCalledWith(
+      '{"from":"https://s3/lineage"}'
+    )
+  })
+
+  it('falls back to the plain holon when the lineage file is not available', async () => {
+    mockGetReportDownloadUrl
+      .mockRejectedValueOnce(new Error('REPORT_BUNDLE_NOT_AVAILABLE'))
+      .mockResolvedValueOnce({ downloadUrl: 'https://s3/holon' })
+
+    render(
+      <HolonReportView graphId="kg_1" reportId="rpt_1" published lineage />
+    )
+
+    await waitFor(() => expect(screen.getByTestId('report-view')).toBeTruthy())
+    expect(formatsRequested()).toEqual(['HOLON_JSONLD_LINEAGE', 'HOLON_JSONLD'])
+  })
+
+  it('never asks a shared-in report for lineage', async () => {
+    mockGetReportDownloadUrl.mockResolvedValue({
+      downloadUrl: 'https://s3/holon',
+    })
+
+    render(
+      <HolonReportView
+        graphId="kg_1"
+        reportId="rpt_1"
+        published
+        lineage={false}
+      />
+    )
+
+    await waitFor(() => expect(screen.getByTestId('report-view')).toBeTruthy())
+    expect(formatsRequested()).toEqual(['HOLON_JSONLD'])
+  })
+
   it('does nothing for an unpublished report', () => {
     render(
       <HolonReportView graphId="kg_1" reportId="rpt_1" published={false} />

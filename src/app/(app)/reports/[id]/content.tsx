@@ -831,6 +831,7 @@ const ReportViewerContent: FC = function () {
             graphId={graphId}
             reportId={reportId}
             published={pkg.generationStatus === 'published'}
+            lineage={!pkg.sourceGraphId}
           />
         </Card>
       ) : pkg.items.length === 0 ? (
