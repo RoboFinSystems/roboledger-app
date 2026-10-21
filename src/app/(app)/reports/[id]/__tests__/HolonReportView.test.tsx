@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockGetReportDownloadUrl = vi.fn()
@@ -14,7 +14,10 @@ vi.mock('@robosystems/core', () => ({
   },
 }))
 
+const mockBuildPivots = vi.fn()
 vi.mock('@robosystems/report-components', () => ({
+  buildPivots: (...args: any[]) => mockBuildPivots(...args),
+  pivotToCsv: (table: any) => `Line,Concept\n${table.title} row`,
   ReportView: ({ report }: any) => (
     <div data-testid="report-view">{report.entity?.name}</div>
   ),
@@ -35,7 +38,14 @@ vi.mock('flowbite-react', () => ({
   Spinner: () => <span role="status" />,
 }))
 
-import HolonReportView from '../components/HolonReportView'
+const mockDownloadCsv = vi.fn()
+vi.mock('../../../explorer/components/serialize', () => ({
+  downloadCsv: (...args: any[]) => mockDownloadCsv(...args),
+  exportFilename: (name: string, ext: string) =>
+    `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.${ext}`,
+}))
+
+import HolonReportView, { sectionCsv } from '../components/HolonReportView'
 
 /**
  * The renderer's load path, not the parser: the Tavi is asked for first, the
@@ -61,6 +71,7 @@ describe('HolonReportView', () => {
     mockGetReportDownloadUrl.mockReset()
     mockParseReportDocument.mockReset()
     mockParseReportDocument.mockResolvedValue(PARSED)
+    mockDownloadCsv.mockReset()
     globalThis.fetch = vi.fn(async (_url: any, init: any) => {
       const { url } = JSON.parse(init.body)
       return new Response(`{"from":"${url}"}`, { status: 200 })
@@ -166,6 +177,33 @@ describe('HolonReportView', () => {
       )
     )
     expect(mockParseReportDocument).not.toHaveBeenCalled()
+  })
+
+  it("exports the selected section's statements as CSV", async () => {
+    mockGetReportDownloadUrl.mockResolvedValue({
+      downloadUrl: 'https://s3/holon',
+    })
+    mockBuildPivots.mockReturnValue([{ title: 'Balance Sheet' }])
+    render(<HolonReportView graphId="kg_1" reportId="rpt_1" published />)
+
+    fireEvent.click(await screen.findByText('Export CSV'))
+
+    await waitFor(() => expect(mockDownloadCsv).toHaveBeenCalled())
+    expect(mockDownloadCsv).toHaveBeenCalledWith(
+      'Line,Concept\nBalance Sheet row',
+      'balance-sheet.csv'
+    )
+  })
+
+  it('opens each table of a several-table section with its title', () => {
+    mockBuildPivots.mockReturnValue([
+      { title: 'Debt, Details' },
+      { title: 'Debt, Maturities' },
+    ])
+    expect(sectionCsv({} as any)).toBe(
+      '"Debt, Details"\nLine,Concept\nDebt, Details row\n\n' +
+        '"Debt, Maturities"\nLine,Concept\nDebt, Maturities row'
+    )
   })
 
   it('does nothing for an unpublished report', () => {

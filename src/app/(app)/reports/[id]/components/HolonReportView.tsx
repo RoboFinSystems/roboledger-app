@@ -1,16 +1,23 @@
 'use client'
 
+import { csvRow } from '@/lib/ledger/csv'
 import { clients, getAuthHeader } from '@robosystems/core'
 import type { NormalizedReport } from '@robosystems/report-components'
 import {
-  ReportView,
+  buildPivots,
+  pivotToCsv,
   reportSections,
+  ReportView,
   sliceReportSection,
 } from '@robosystems/report-components'
 import { parseReportDocument } from '@robosystems/report-components/adapters'
 import { Alert, Button, Spinner } from 'flowbite-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { HiExclamationCircle } from 'react-icons/hi'
+import { HiDownload, HiExclamationCircle } from 'react-icons/hi'
+import {
+  downloadCsv,
+  exportFilename,
+} from '../../../explorer/components/serialize'
 
 /**
  * Comparison renderer: this Report rendered through the shared
@@ -35,6 +42,16 @@ interface HolonReportViewProps {
   reportId: string
   /** Whether the report is published (a document only exists once published). */
   published: boolean
+}
+
+/** A section's statement tables as one CSV, row for row with the tables on
+ *  screen; a section holding several opens each with its title. */
+export function sectionCsv(slice: NormalizedReport): string {
+  const tables = buildPivots(slice)
+  if (tables.length === 1) return pivotToCsv(tables[0])
+  return tables
+    .map((table) => `${csvRow([table.title])}\n${pivotToCsv(table)}`)
+    .join('\n\n')
 }
 
 /** The renderable flavors, in the order they are tried. */
@@ -184,7 +201,33 @@ export default function HolonReportView({
           </aside>
         )}
         <div className="rs-report-scope min-w-0 flex-1">
-          {activeSlice && <ReportView report={activeSlice} />}
+          {activeSlice && (
+            <>
+              <div className="mb-2 flex justify-end">
+                <Button
+                  size="xs"
+                  color="light"
+                  onClick={() =>
+                    downloadCsv(
+                      sectionCsv(activeSlice),
+                      exportFilename(
+                        (
+                          sections.find((s) => s.id === selectedSectionId) ??
+                          sections[0]
+                        )?.title ?? 'statement',
+                        'csv',
+                        'statement'
+                      )
+                    )
+                  }
+                >
+                  <HiDownload className="mr-1 h-4 w-4" />
+                  Export CSV
+                </Button>
+              </div>
+              <ReportView report={activeSlice} />
+            </>
+          )}
         </div>
       </div>
     )
