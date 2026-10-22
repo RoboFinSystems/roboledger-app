@@ -1,6 +1,8 @@
 'use client'
 
 import { friendlyError } from '@/lib/ledger/errors'
+import { formatDate } from '@/lib/ledger/formatters'
+import type { ReportShare } from '@robosystems/client'
 import { clients, LoadingState } from '@robosystems/core'
 import {
   Alert,
@@ -11,7 +13,6 @@ import {
   ModalFooter,
   ModalHeader,
   Spinner,
-  TextInput,
 } from 'flowbite-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useState } from 'react'
@@ -23,99 +24,62 @@ interface Props {
   onClose: () => void
 }
 
-/** One candidate recipient, derived from publish-list membership. */
-interface Recipient {
-  targetGraphId: string
-  name: string | null
-  /** Lists this recipient currently belongs to, for display. */
-  viaLists: string[]
-}
-
 interface RevokeOutcome {
   ok: boolean
   message: string
 }
 
+const shareDate = (iso: string) => formatDate(iso.split('T')[0])
+
 /**
- * The sender's half of the share controls: withdraw a report from one
- * recipient graph.
+ * The sender's half of the share controls: see who holds a copy of this
+ * report, and withdraw it from one of them.
  *
- * **On the recipient list's provenance.** `revokeReportShare` is scoped to a
- * single `targetGraphId`, and the platform exposes no read that lists a
- * report's actual recipients — `ReportResponse` carries only recipient-side
- * provenance, and the `target_graph_id`s returned by `shareReport` are
- * transient. So this picker is built from *current publish-list membership*,
- * which is the sender's own record of who they distribute to, not a record of
- * who received this particular report. The two diverge whenever a list changes
- * after a share:
- *
- * - Added after the share → shown here, but revoking 404s ("never shared").
- * - Removed after the share → still holds a copy, and does **not** appear.
- *
- * The manual entry below covers that second case, which is why it exists. If a
- * `listReportShares`-style read lands, replace the derivation wholesale.
+ * The list is the report's own share record (`listReportShares`): every
+ * recipient graph the report was delivered to, with the delivery date and
+ * fact count. Revoked shares are kept as history below the live ones — a
+ * recipient shared to, revoked, and shared to again shows once in each.
  */
 const ManageSharesModal: FC<Props> = function ({ graphId, reportId, onClose }) {
-  const [recipients, setRecipients] = useState<Recipient[]>([])
+  const [shares, setShares] = useState<ReportShare[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [outcomes, setOutcomes] = useState<Record<string, RevokeOutcome>>({})
   const [inFlight, setInFlight] = useState<string | null>(null)
-  const [manualGraphId, setManualGraphId] = useState('')
 
-  // Publish lists carry only a member count; membership needs a per-list
-  // read. Fetched in parallel — a graph on two lists collapses to one row.
-  const loadRecipients = useCallback(async () => {
+  const loadShares = useCallback(async () => {
     try {
       setIsLoading(true)
       setLoadError(null)
-      const lists = await clients.reports.listPublishLists(graphId)
-      const details = await Promise.all(
-        lists.map((list) => clients.reports.getPublishList(graphId, list.id))
+      setShares(
+        await clients.ledger.listReportShares(graphId, {
+          reportId,
+          includeRevoked: true,
+        })
       )
-
-      const byGraphId = new Map<string, Recipient>()
-      for (const detail of details) {
-        if (!detail) continue
-        for (const member of detail.members) {
-          const existing = byGraphId.get(member.targetGraphId)
-          if (existing) {
-            existing.viaLists.push(detail.name)
-          } else {
-            byGraphId.set(member.targetGraphId, {
-              targetGraphId: member.targetGraphId,
-              name: member.targetGraphName ?? member.targetOrgName ?? null,
-              viaLists: [detail.name],
-            })
-          }
-        }
-      }
-      setRecipients(Array.from(byGraphId.values()))
     } catch (err) {
-      console.error('Failed to load publish list members:', err)
+      console.error('Failed to load report shares:', err)
       setLoadError('Failed to load recipients.')
     } finally {
       setIsLoading(false)
     }
-  }, [graphId])
+  }, [graphId, reportId])
 
   useEffect(() => {
-    loadRecipients()
-  }, [loadRecipients])
+    loadShares()
+  }, [loadShares])
 
   const handleRevoke = async (targetGraphId: string) => {
-    const target = targetGraphId.trim()
-    if (!target) return
     try {
-      setInFlight(target)
+      setInFlight(targetGraphId)
       const res = await clients.ledger.revokeReportShare(
         graphId,
         reportId,
-        target
+        targetGraphId
       )
       setOutcomes((prev) => ({
         ...prev,
-        [target]: {
+        [targetGraphId]: {
           ok: true,
           message: res.copy_deleted
             ? 'Revoked — the copy was deleted from their books.'
@@ -128,15 +92,15 @@ const ManageSharesModal: FC<Props> = function ({ graphId, reportId, onClose }) {
         err instanceof Error ? err.message : 'Failed to revoke this share.'
       setOutcomes((prev) => ({
         ...prev,
-        [target]: { ok: false, message: friendlyError(message).message },
+        [targetGraphId]: { ok: false, message: friendlyError(message).message },
       }))
     } finally {
       setInFlight(null)
     }
   }
 
-  const manualTarget = manualGraphId.trim()
-  const manualOutcome = manualTarget ? outcomes[manualTarget] : undefined
+  const live = shares.filter((share) => !share.revokedAt)
+  const revoked = shares.filter((share) => share.revokedAt)
 
   return (
     <Modal show onClose={onClose} size="lg">
@@ -157,43 +121,46 @@ const ManageSharesModal: FC<Props> = function ({ graphId, reportId, onClose }) {
 
           {isLoading ? (
             <LoadingState size="md" className="py-4" />
-          ) : recipients.length === 0 ? (
+          ) : live.length === 0 ? (
             <p className="rounded-lg border border-gray-200 p-4 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-              No publish list members to show.
+              {revoked.length === 0
+                ? 'This report has not been shared.'
+                : 'No recipient currently holds a copy of this report.'}
             </p>
           ) : (
             <div className="space-y-2">
               <Label className="text-xs font-semibold tracking-wide text-gray-400 uppercase">
-                Publish list recipients
+                Recipients
               </Label>
-              {recipients.map((recipient) => {
-                const outcome = outcomes[recipient.targetGraphId]
+              {live.map((share) => {
+                const outcome = outcomes[share.targetGraphId]
                 return (
                   <div
-                    key={recipient.targetGraphId}
+                    key={share.id}
                     className="rounded-lg border border-gray-200 p-3 dark:border-gray-700"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate font-medium dark:text-white">
-                          {recipient.name || recipient.targetGraphId}
+                          {share.targetGraphName || share.targetGraphId}
                         </p>
                         <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                          {recipient.name
-                            ? `${recipient.targetGraphId} · `
+                          {share.targetGraphName
+                            ? `${share.targetGraphId} · `
                             : ''}
-                          via {recipient.viaLists.join(', ')}
+                          shared {shareDate(share.sharedAt)} · {share.factCount}{' '}
+                          facts
                         </p>
                       </div>
                       <Button
                         size="xs"
                         color="failure"
                         disabled={
-                          inFlight === recipient.targetGraphId || outcome?.ok
+                          inFlight === share.targetGraphId || outcome?.ok
                         }
-                        onClick={() => handleRevoke(recipient.targetGraphId)}
+                        onClick={() => handleRevoke(share.targetGraphId)}
                       >
-                        {inFlight === recipient.targetGraphId ? (
+                        {inFlight === share.targetGraphId ? (
                           <Spinner size="sm" className="mr-2" />
                         ) : null}
                         Revoke
@@ -216,45 +183,27 @@ const ManageSharesModal: FC<Props> = function ({ graphId, reportId, onClose }) {
             </div>
           )}
 
-          <div className="space-y-2 border-t border-gray-200 pt-4 dark:border-gray-700">
-            <Label htmlFor="manual-target">Revoke by graph ID</Label>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              A recipient removed from a publish list after you shared still
-              holds their copy and won&apos;t appear above. Enter their graph ID
-              to withdraw it.
-            </p>
-            <div className="flex gap-2">
-              <TextInput
-                id="manual-target"
-                className="flex-1"
-                value={manualGraphId}
-                onChange={(e) => setManualGraphId(e.target.value)}
-                placeholder="Recipient graph ID"
-                disabled={inFlight !== null}
-              />
-              <Button
-                color="failure"
-                disabled={!manualTarget || inFlight !== null}
-                onClick={() => handleRevoke(manualTarget)}
-              >
-                {inFlight === manualTarget ? (
-                  <Spinner size="sm" className="mr-2" />
-                ) : null}
-                Revoke
-              </Button>
+          {!isLoading && revoked.length > 0 && (
+            <div className="space-y-2 border-t border-gray-200 pt-4 dark:border-gray-700">
+              <Label className="text-xs font-semibold tracking-wide text-gray-400 uppercase">
+                Revoked
+              </Label>
+              {revoked.map((share) => (
+                <div
+                  key={share.id}
+                  className="flex items-center justify-between gap-3 text-sm"
+                >
+                  <p className="min-w-0 truncate text-gray-700 dark:text-gray-300">
+                    {share.targetGraphName || share.targetGraphId}
+                  </p>
+                  <p className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
+                    shared {shareDate(share.sharedAt)} · revoked{' '}
+                    {shareDate(share.revokedAt as string)}
+                  </p>
+                </div>
+              ))}
             </div>
-            {manualOutcome && (
-              <p
-                className={`text-xs ${
-                  manualOutcome.ok
-                    ? 'text-green-600 dark:text-green-400'
-                    : 'text-red-600 dark:text-red-400'
-                }`}
-              >
-                {manualOutcome.message}
-              </p>
-            )}
-          </div>
+          )}
         </div>
       </ModalBody>
       <ModalFooter>

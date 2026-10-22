@@ -1,17 +1,13 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mockListPublishLists = vi.fn()
-const mockGetPublishList = vi.fn()
+const mockListReportShares = vi.fn()
 const mockRevokeReportShare = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
   clients: {
-    reports: {
-      listPublishLists: (...args: any[]) => mockListPublishLists(...args),
-      getPublishList: (...args: any[]) => mockGetPublishList(...args),
-    },
     ledger: {
+      listReportShares: (...args: any[]) => mockListReportShares(...args),
       revokeReportShare: (...args: any[]) => mockRevokeReportShare(...args),
     },
   },
@@ -33,10 +29,21 @@ vi.mock('flowbite-react', () => ({
   ModalFooter: ({ children }: any) => <div>{children}</div>,
   ModalHeader: ({ children }: any) => <div>{children}</div>,
   Spinner: () => <span role="status" />,
-  TextInput: (props: any) => <input type="text" {...props} />,
 }))
 
 import ManageSharesModal from '../components/ManageSharesModal'
+
+const share = (overrides: Record<string, unknown> = {}) => ({
+  id: 'share_1',
+  reportId: 'rpt_1',
+  targetGraphId: 'kg_acme',
+  targetGraphName: 'Acme',
+  sharedBy: 'usr_1',
+  sharedAt: '2026-10-01T12:00:00Z',
+  revokedAt: null,
+  factCount: 47,
+  ...overrides,
+})
 
 const renderModal = () =>
   render(
@@ -48,61 +55,61 @@ const revokeButtons = () => screen.getAllByRole('button', { name: 'Revoke' })
 describe('ManageSharesModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockListPublishLists.mockResolvedValue([])
+    mockListReportShares.mockResolvedValue([])
   })
 
-  it('collapses a recipient that sits on two lists into one row', async () => {
-    mockListPublishLists.mockResolvedValue([
-      { id: 'pl_1', name: 'Investors' },
-      { id: 'pl_2', name: 'Board' },
-    ])
-    mockGetPublishList
-      .mockResolvedValueOnce({
-        id: 'pl_1',
-        name: 'Investors',
-        members: [
-          {
-            id: 'm1',
-            targetGraphId: 'kg_acme',
-            targetGraphName: 'Acme',
-            targetOrgName: null,
-          },
-        ],
-      })
-      .mockResolvedValueOnce({
-        id: 'pl_2',
-        name: 'Board',
-        members: [
-          {
-            id: 'm2',
-            targetGraphId: 'kg_acme',
-            targetGraphName: 'Acme',
-            targetOrgName: null,
-          },
-        ],
-      })
-
+  it('reads the report’s own share record, revoked shares included', async () => {
+    mockListReportShares.mockResolvedValue([share()])
     renderModal()
 
     await waitFor(() => expect(screen.getByText('Acme')).toBeInTheDocument())
-    expect(screen.getAllByText('Acme')).toHaveLength(1)
-    expect(screen.getByText(/via Investors, Board/)).toBeInTheDocument()
+    expect(mockListReportShares).toHaveBeenCalledWith('kg_mine', {
+      reportId: 'rpt_1',
+      includeRevoked: true,
+    })
+    expect(screen.getByText(/47 facts/)).toBeInTheDocument()
+  })
+
+  it('offers Revoke only on the copies recipients still hold', async () => {
+    mockListReportShares.mockResolvedValue([
+      share({ id: 'share_2', sharedAt: '2026-10-01T12:00:00Z' }),
+      share({
+        id: 'share_1',
+        sharedAt: '2026-09-01T12:00:00Z',
+        revokedAt: '2026-09-15T12:00:00Z',
+        factCount: 40,
+      }),
+      share({
+        id: 'share_0',
+        targetGraphId: 'kg_gone',
+        targetGraphName: 'Former Investor',
+        revokedAt: '2026-08-01T12:00:00Z',
+      }),
+    ])
+    renderModal()
+
+    await waitFor(() =>
+      expect(screen.getByText('Former Investor')).toBeInTheDocument()
+    )
+    // Acme was shared to, revoked, and shared to again: once live, once revoked.
+    expect(screen.getAllByText('Acme')).toHaveLength(2)
+    expect(revokeButtons()).toHaveLength(1)
+    expect(screen.getAllByText(/revoked/i).length).toBeGreaterThan(0)
+  })
+
+  it('has no manual graph-ID entry: the record is the list', async () => {
+    renderModal()
+    await waitFor(() =>
+      expect(
+        screen.getByText('This report has not been shared.')
+      ).toBeInTheDocument()
+    )
+    expect(screen.queryByLabelText('Revoke by graph ID')).toBeNull()
+    expect(screen.queryByRole('textbox')).toBeNull()
   })
 
   it('reports a deleted copy distinctly from one the recipient already removed', async () => {
-    mockListPublishLists.mockResolvedValue([{ id: 'pl_1', name: 'Investors' }])
-    mockGetPublishList.mockResolvedValue({
-      id: 'pl_1',
-      name: 'Investors',
-      members: [
-        {
-          id: 'm1',
-          targetGraphId: 'kg_acme',
-          targetGraphName: 'Acme',
-          targetOrgName: null,
-        },
-      ],
-    })
+    mockListReportShares.mockResolvedValue([share()])
     mockRevokeReportShare.mockResolvedValue({ copy_deleted: false })
 
     renderModal()
@@ -120,19 +127,7 @@ describe('ManageSharesModal', () => {
   })
 
   it('confirms deletion when the copy was actually pulled', async () => {
-    mockListPublishLists.mockResolvedValue([{ id: 'pl_1', name: 'Investors' }])
-    mockGetPublishList.mockResolvedValue({
-      id: 'pl_1',
-      name: 'Investors',
-      members: [
-        {
-          id: 'm1',
-          targetGraphId: 'kg_acme',
-          targetGraphName: 'Acme',
-          targetOrgName: null,
-        },
-      ],
-    })
+    mockListReportShares.mockResolvedValue([share()])
     mockRevokeReportShare.mockResolvedValue({ copy_deleted: true })
 
     renderModal()
@@ -144,30 +139,16 @@ describe('ManageSharesModal', () => {
     )
   })
 
-  it('explains the 404 when a listed recipient never actually received it', async () => {
-    mockListPublishLists.mockResolvedValue([{ id: 'pl_1', name: 'Investors' }])
-    mockGetPublishList.mockResolvedValue({
-      id: 'pl_1',
-      name: 'Investors',
-      members: [
-        {
-          id: 'm1',
-          targetGraphId: 'kg_late',
-          targetGraphName: 'Added Later',
-          targetOrgName: null,
-        },
-      ],
-    })
+  it('explains a revoke that found no live share', async () => {
+    mockListReportShares.mockResolvedValue([share()])
     mockRevokeReportShare.mockRejectedValue(
       new Error(
-        'Revoke report share failed: {"detail":"No active share of report \'rpt_1\' to \'kg_late\'."}'
+        'Revoke report share failed: {"detail":"No active share of report \'rpt_1\' to \'kg_acme\'."}'
       )
     )
 
     renderModal()
-    await waitFor(() =>
-      expect(screen.getByText('Added Later')).toBeInTheDocument()
-    )
+    await waitFor(() => expect(screen.getByText('Acme')).toBeInTheDocument())
     fireEvent.click(revokeButtons()[0])
 
     await waitFor(() =>
@@ -177,25 +158,11 @@ describe('ManageSharesModal', () => {
     )
   })
 
-  it('revokes by manually entered graph ID — the removed-from-list escape hatch', async () => {
-    mockRevokeReportShare.mockResolvedValue({ copy_deleted: true })
+  it('surfaces a failed load', async () => {
+    mockListReportShares.mockRejectedValue(new Error('boom'))
     renderModal()
-
     await waitFor(() =>
-      expect(screen.getByLabelText('Revoke by graph ID')).toBeInTheDocument()
-    )
-    fireEvent.change(screen.getByLabelText('Revoke by graph ID'), {
-      target: { value: '  kg_gone  ' },
-    })
-    fireEvent.click(revokeButtons()[0])
-
-    // Trimmed before it reaches the API.
-    await waitFor(() =>
-      expect(mockRevokeReportShare).toHaveBeenCalledWith(
-        'kg_mine',
-        'rpt_1',
-        'kg_gone'
-      )
+      expect(screen.getByText('Failed to load recipients.')).toBeInTheDocument()
     )
   })
 })
