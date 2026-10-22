@@ -46,6 +46,7 @@ import { TbFileInvoice } from 'react-icons/tb'
 import { formatCurrencyDollars } from '../utils'
 import { isStatementBlockType } from './blockview/types'
 import ConsolidationEntriesPanel from './ConsolidationEntriesPanel'
+import SetCloseTargetModal from './SetCloseTargetModal'
 
 const STATUS_COLORS: Record<string, string> = {
   posted: 'success',
@@ -249,6 +250,7 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
   const [creatingEntry, setCreatingEntry] = useState<string | null>(null)
   const [isClosing, setIsClosing] = useState(false)
   const [setupOpen, setSetupOpen] = useState(false)
+  const [targetOpen, setTargetOpen] = useState(false)
   const { entity: scopedEntity } = useEntityScope()
   const [allowStaleSync, setAllowStaleSync] = useState(false)
   const [allowStrandedObligations, setAllowStrandedObligations] =
@@ -639,7 +641,21 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
         calendar={calendar}
         onRefresh={loadCalendar}
         onReviewChanges={onReviewChanges}
+        onEditTarget={() => setTargetOpen(true)}
       />
+      {targetOpen && (
+        <SetCloseTargetModal
+          graphId={graphId}
+          entityId={entityId}
+          calendar={calendar}
+          open
+          onClose={() => setTargetOpen(false)}
+          onSet={() => {
+            setTargetOpen(false)
+            void loadCalendar()
+          }}
+        />
+      )}
 
       {/* Period selector */}
       <div className="flex flex-wrap items-center gap-4 border-b border-gray-200 pb-4 dark:border-gray-700">
@@ -944,12 +960,14 @@ interface CalendarSummaryProps {
   calendar: LedgerFiscalCalendar
   onRefresh: () => void
   onReviewChanges?: () => void
+  onEditTarget?: () => void
 }
 
 const CalendarSummary: FC<CalendarSummaryProps> = ({
   calendar,
   onRefresh,
   onReviewChanges,
+  onEditTarget,
 }) => {
   return (
     <Card>
@@ -966,13 +984,24 @@ const CalendarSummary: FC<CalendarSummaryProps> = ({
             )}
           </SummaryField>
           <SummaryField label="Close target">
-            {calendar.closeTarget ? (
-              <span className="text-sm font-semibold">
-                {formatPeriod(calendar.closeTarget)}
-              </span>
-            ) : (
-              <span className="text-sm text-gray-400">not set</span>
-            )}
+            <span className="inline-flex items-center gap-2">
+              {calendar.closeTarget ? (
+                <span className="text-sm font-semibold">
+                  {formatPeriod(calendar.closeTarget)}
+                </span>
+              ) : (
+                <span className="text-sm text-gray-400">not set</span>
+              )}
+              {onEditTarget && (
+                <button
+                  type="button"
+                  className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+                  onClick={onEditTarget}
+                >
+                  {calendar.closeTarget ? 'Change' : 'Set'}
+                </button>
+              )}
+            </span>
           </SummaryField>
           <SummaryField label="Pending">
             <span className="text-sm font-semibold">
