@@ -211,4 +211,75 @@ describe('AllocationOverridePanel', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(screen.queryByText(/result of \$5,012\.00/)).toBeNull()
   })
+
+  it('hides the month it left while the next one loads', async () => {
+    const { rerender } = renderPanel('2026-09')
+    expect(await screen.findByText(/result of \$5,012\.00/)).toBeInTheDocument()
+    mockGetAllocationShare.mockImplementationOnce(() => new Promise(() => {}))
+    rerender(
+      <AllocationOverridePanel
+        graphId="kg_a"
+        entityId="ent_harbor"
+        period="2026-10"
+      />
+    )
+    expect(screen.queryByText(/result of \$5,012\.00/)).toBeNull()
+    expect(screen.queryByText('Override the share')).toBeNull()
+  })
+
+  it('a save left behind by a switch does not lock the next month', async () => {
+    const withOverride = share({
+      override: {
+        period: '2026-09',
+        amount: 100000,
+        percentage: null,
+        basis: 'x',
+        setBy: null,
+      },
+    })
+    mockGetAllocationShare.mockResolvedValue(withOverride)
+    mockSetAllocationOverride.mockImplementationOnce(
+      () => new Promise(() => {})
+    )
+    const { rerender } = renderPanel('2026-09')
+    fireEvent.click(await screen.findByText('Back to pro rata'))
+    expect(await screen.findByText('Removing…')).toBeInTheDocument()
+    rerender(
+      <AllocationOverridePanel
+        graphId="kg_a"
+        entityId="ent_harbor"
+        period="2026-10"
+      />
+    )
+    const back = (await screen.findByText(
+      'Back to pro rata'
+    )) as HTMLButtonElement
+    expect(back.disabled).toBe(false)
+  })
+
+  it('takes a percentage only as a plain number', async () => {
+    renderPanel()
+    fireEvent.click(await screen.findByText('Override the share'))
+    fireEvent.click(screen.getByText('Percentage'))
+    fireEvent.change(screen.getByLabelText('Basis'), {
+      target: { value: 'x' },
+    })
+    const input = screen.getByLabelText(
+      "The outside owners' share (% of the month's result)"
+    )
+    const save = screen.getByText('Save override') as HTMLButtonElement
+    fireEvent.change(input, { target: { value: '1e1' } })
+    expect(save.disabled).toBe(true)
+    fireEvent.change(input, { target: { value: '12.5' } })
+    expect(save.disabled).toBe(false)
+  })
+
+  it('offers a retry when the share cannot be read', async () => {
+    mockGetAllocationShare
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValueOnce(share())
+    renderPanel()
+    fireEvent.click(await screen.findByText('Retry'))
+    expect(await screen.findByText(/result of \$5,012\.00/)).toBeInTheDocument()
+  })
 })

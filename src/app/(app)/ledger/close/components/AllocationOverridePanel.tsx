@@ -112,8 +112,13 @@ const AllocationOverridePanel: FC<AllocationOverridePanelProps> = ({
     }
   }, [graphId, entityId, period, scope])
 
+  // A switch starts the new member or month clean: the last one's figures
+  // are never shown, or acted on, under the new heading.
   useEffect(() => {
+    setShare(null)
+    setHistory([])
     setEditing(false)
+    setSaving(false)
     setSaveError(null)
     void load()
   }, [load])
@@ -137,11 +142,11 @@ const AllocationOverridePanel: FC<AllocationOverridePanelProps> = ({
 
   const cents = mode === 'amount' ? parseDollars(value) : null
   const pct =
-    mode === 'percentage' && value.trim() !== '' ? Number(value) : null
+    mode === 'percentage' && /^\d+(\.\d+)?$/.test(value.trim())
+      ? Number(value.trim())
+      : null
   const valueOk =
-    mode === 'amount'
-      ? cents !== null
-      : pct !== null && Number.isFinite(pct) && pct >= 0 && pct <= 100
+    mode === 'amount' ? cents !== null : pct !== null && pct <= 100
   const canSave = valueOk && basis.trim() !== '' && !saving
 
   const write = async (
@@ -190,10 +195,19 @@ const AllocationOverridePanel: FC<AllocationOverridePanelProps> = ({
         </h3>
       </div>
 
-      {loading && !share ? (
+      {loadError ? (
+        <Alert color="failure">
+          {loadError}{' '}
+          <button
+            type="button"
+            className="font-medium underline"
+            onClick={() => void load()}
+          >
+            Retry
+          </button>
+        </Alert>
+      ) : loading && !share ? (
         <Spinner size="sm" />
-      ) : loadError ? (
-        <Alert color="failure">{loadError}</Alert>
       ) : !share ? (
         <p className="text-sm text-gray-500 dark:text-gray-400">
           The ledger is not set up for this member yet.
@@ -238,6 +252,7 @@ const AllocationOverridePanel: FC<AllocationOverridePanelProps> = ({
                 onChange={(next) => {
                   setMode(next)
                   setValue('')
+                  setSaveError(null)
                 }}
                 ariaLabel="Override by"
               />
