@@ -82,6 +82,28 @@ export const extractDetail = (raw: string): string => {
   return raw
 }
 
+const MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+]
+
+/** `2026-07` as `Jul 2026`. */
+const monthName = (period: string): string => {
+  const [year, month] = period.split('-')
+  const name = MONTHS[Number(month) - 1]
+  return name ? `${name} ${year}` : period
+}
+
 /**
  * Map a thrown SDK error message into user-facing copy.
  *
@@ -121,6 +143,53 @@ export const friendlyError = (raw: string): FriendlyError => {
       message:
         'Another process (usually a running sync) is writing this right now. Wait a moment and try again.',
       retryable: true,
+    }
+  }
+
+  // 422 `protected_facts`: a chart or mapping edit would change how a closed
+  // month reads. Checked before 'closed period', which its text also carries.
+  if (lower.includes('the ledger treats as immutable')) {
+    const span = detail.match(
+      /closed period\(s\) (\d{4}-\d{2})(?:–(\d{4}-\d{2}))?/
+    )
+    const downTo = detail.match(/down to (\d{4}-\d{2})/)
+    // What follows the last clause is the server's own reason, e.g. why a
+    // remap is a restatement rather than a reclassification.
+    const note = detail.split('immutable)').slice(1).pop()?.trim() ?? ''
+    const months = span
+      ? span[2]
+        ? `${monthName(span[1])} to ${monthName(span[2])}`
+        : monthName(span[1])
+      : null
+    if (!months && lower.includes('filed report')) {
+      return {
+        message:
+          'A filed report was built from this, and its snapshot is fixed. ' +
+          'Delete or un-file the report first.' +
+          (note ? ` ${note}` : ''),
+        link: { href: '/reports', label: 'Open reports' },
+      }
+    }
+    return {
+      message:
+        `This account has posted history in ${
+          months ? `closed months (${months})` : 'a closed month'
+        }, and the change would alter how those months read. ` +
+        (downTo
+          ? `Reopen them latest first, down to ${monthName(downTo[1])}, then make the change.`
+          : 'Reopen them latest first, then make the change.') +
+        (note ? ` ${note}` : ''),
+      link: { href: '/ledger/close', label: 'Open close page' },
+    }
+  }
+
+  // A taxonomy block's validator lists its issues as `[phase/code] message`.
+  const issues = detail.match(
+    /^\d+ taxonomy block validation issue\(s\): ([\s\S]*)$/
+  )
+  if (issues) {
+    return {
+      message: issues[1].replace(/\[[a-z_]+\/[a-z_]+\] /g, ''),
     }
   }
 

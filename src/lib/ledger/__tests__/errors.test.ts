@@ -330,3 +330,50 @@ describe('apiErrorMessage', () => {
     )
   })
 })
+
+describe('friendlyError — chart edits against closed history', () => {
+  const wrapped = (detail: string) =>
+    'Update taxonomy block failed: ' + JSON.stringify({ detail })
+
+  it('names the closed months and the reopen order, not the raw refusal', () => {
+    const result = friendlyError(
+      wrapped(
+        '1 taxonomy block validation issue(s): [validation/protected_facts] refusing to disturb facts that the ledger treats as immutable: 3 canonical statement set(s) of closed period(s) 2026-07–2026-09 were computed through the mapping arcs or element attributes this change alters (reopen latest-first down to 2026-07 — closed history is immutable)'
+      )
+    )
+    expect(result.message).toBe(
+      'This account has posted history in closed months (Jul 2026 to Sep 2026), and the change would alter how those months read. Reopen them latest first, down to Jul 2026, then make the change.'
+    )
+    expect(result.link?.href).toBe('/ledger/close')
+  })
+
+  it("keeps the server's own reason after the refusal", () => {
+    const result = friendlyError(
+      wrapped(
+        'refusing to disturb facts that the ledger treats as immutable: 1 canonical statement set(s) of closed period(s) 2026-09 were computed through the mapping arcs or element attributes this change alters (reopen latest-first down to 2026-09 — closed history is immutable) Moving coa:2110 changes net income.'
+      )
+    )
+    expect(result.message).toContain('closed months (Sep 2026)')
+    expect(result.message).toMatch(/Moving coa:2110 changes net income\.$/)
+  })
+
+  it('sends a filed-report refusal to the reports, not the close', () => {
+    const result = friendlyError(
+      wrapped(
+        'refusing to delete facts that the ledger treats as immutable: 1 statement set(s) belong to filed reports (delete or un-file the report first — its snapshot is immutable)'
+      )
+    )
+    expect(result.message).toMatch(/^A filed report was built from this/)
+    expect(result.link?.href).toBe('/reports')
+  })
+
+  it("lists a validator's issues without their phase and code tags", () => {
+    expect(
+      friendlyError(
+        wrapped(
+          "2 taxonomy block validation issue(s): [uniqueness/duplicate_element_qname] element 'coa:6100' appears twice.; [structural/cycle_detected] a cycle was found."
+        )
+      ).message
+    ).toBe("element 'coa:6100' appears twice.; a cycle was found.")
+  })
+})

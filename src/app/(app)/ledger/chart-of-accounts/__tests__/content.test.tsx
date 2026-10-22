@@ -7,6 +7,9 @@ const mockGetMapping = vi.fn()
 const mockGetMappingCandidates = vi.fn()
 const mockCreateMappingAssociation = vi.fn()
 const mockDeleteMappingAssociation = vi.fn()
+const mockListTaxonomies = vi.fn()
+const mockListElements = vi.fn()
+const mockUpdateTaxonomyBlock = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
   clients: {
@@ -22,6 +25,10 @@ vi.mock('@robosystems/core', () => ({
       deleteMappingAssociation: (...args: any[]) =>
         mockDeleteMappingAssociation(...args),
       listChartTemplates: vi.fn(async () => []),
+      listTaxonomies: (...args: any[]) => mockListTaxonomies(...args),
+      listElements: (...args: any[]) => mockListElements(...args),
+      updateTaxonomyBlock: (...args: any[]) => mockUpdateTaxonomyBlock(...args),
+      getFiscalCalendar: vi.fn(async () => ({ closedThrough: null })),
     },
   },
   PageLayout: ({ children }: any) => <div>{children}</div>,
@@ -31,6 +38,18 @@ vi.mock('@robosystems/core', () => ({
 }))
 
 vi.mock('@/components/DocsLink', () => ({ default: () => null }))
+
+vi.mock('../components/ChartTemplatePicker', () => ({
+  ChartTemplatePicker: ({ onInitialized }: any) => (
+    <button
+      onClick={() =>
+        onInitialized({ elementsCreated: 42, mappingsCreated: 40 })
+      }
+    >
+      Use template
+    </button>
+  ),
+}))
 
 const { GRAPH } = vi.hoisted(() => ({
   GRAPH: { graphId: 'kg_a', graphName: 'Group' },
@@ -49,6 +68,19 @@ describe('ChartOfAccountsContent', () => {
     vi.clearAllMocks()
     mockGetAccountTree.mockResolvedValue({ roots: [] })
     mockListMappings.mockResolvedValue([])
+    mockListTaxonomies.mockResolvedValue([])
+  })
+
+  it('says what a template created', async () => {
+    mockScope.mockReturnValue({ entityId: null, parent: { id: 'ent_parent' } })
+    render(<ChartOfAccountsContent />)
+    fireEvent.click(await screen.findByText('Use template'))
+    expect(
+      await screen.findByText(
+        'Chart created: 42 accounts, 40 mapped for reporting.'
+      )
+    ).toBeInTheDocument()
+    await waitFor(() => expect(mockGetAccountTree).toHaveBeenCalledTimes(2))
   })
 
   it.each([
@@ -90,6 +122,7 @@ describe('remapping a mapped account', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockScope.mockReturnValue({ entityId: null, parent: { id: 'ent_parent' } })
+    mockListTaxonomies.mockResolvedValue([])
     mockGetAccountTree.mockResolvedValue({ roots: [card] })
     mockListMappings.mockResolvedValue([{ id: 'map_1', name: 'Book mapping' }])
     mockGetMapping.mockResolvedValue({
@@ -228,5 +261,115 @@ describe('describeReclassification', () => {
     expect(describeReclassification('Rent', ['2026-06'])).toBe(
       'Reclassified. 1 closed month (Jun 2026) now read as Rent on live statements; the statements saved at each close keep the answer as closed.'
     )
+  })
+})
+
+describe('editing the chart', () => {
+  const node = (id: string, name: string, code: string) => ({
+    id,
+    code,
+    name,
+    trait: 'expense',
+    balanceType: 'debit',
+    depth: 0,
+    isActive: true,
+  })
+  const element = (
+    id: string,
+    name: string,
+    code: string,
+    overrides: Record<string, unknown> = {}
+  ) => ({
+    id,
+    code,
+    name,
+    qname: `coa:${code}`,
+    trait: 'expense',
+    balanceType: 'debit',
+    parentId: null,
+    isActive: true,
+    source: 'native',
+    ...overrides,
+  })
+  const page = (elements: unknown[]) => ({
+    elements,
+    pagination: {
+      total: elements.length,
+      limit: 1000,
+      offset: 0,
+      hasMore: false,
+    },
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockScope.mockReturnValue({
+      entityId: 'ent_sub',
+      parent: { id: 'ent_parent' },
+    })
+    mockListMappings.mockResolvedValue([])
+    mockGetAccountTree.mockResolvedValue({
+      roots: [node('el_rent', 'Rent', '6100')],
+    })
+    mockListTaxonomies.mockResolvedValue([
+      { id: 'tax_parent' },
+      { id: 'tax_sub' },
+    ])
+    mockListElements.mockImplementation(async (_graph, { taxonomyId }) =>
+      taxonomyId === 'tax_sub'
+        ? page([
+            element('el_rent', 'Rent', '6100'),
+            element('el_old', 'Old lease', '6190', { isActive: false }),
+          ])
+        : page([element('el_parent_rent', 'Rent', '6100')])
+    )
+    mockUpdateTaxonomyBlock.mockResolvedValue({})
+  })
+
+  it("edits the entity's own chart and reloads it after a save", async () => {
+    render(<ChartOfAccountsContent />)
+    fireEvent.click(await screen.findByLabelText('Edit Rent'))
+    expect(mockListElements).toHaveBeenCalledWith('kg_a', {
+      taxonomyId: 'tax_sub',
+      limit: 1000,
+      offset: 0,
+    })
+    fireEvent.change(await screen.findByLabelText('Name'), {
+      target: { value: 'Office rent' },
+    })
+    fireEvent.click(screen.getByText('Save'))
+    await waitFor(() =>
+      expect(mockUpdateTaxonomyBlock).toHaveBeenCalledWith('kg_a', {
+        taxonomy_id: 'tax_sub',
+        elements_to_update: [{ qname: 'coa:6100', name: 'Office rent' }],
+      })
+    )
+    expect(await screen.findByText('Saved Office rent.')).toBeInTheDocument()
+    await waitFor(() => expect(mockGetAccountTree).toHaveBeenCalledTimes(2))
+  })
+
+  it('lists retired accounts with a way back', async () => {
+    render(<ChartOfAccountsContent />)
+    expect(await screen.findByText('Retired accounts (1)')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Reactivate…'))
+    fireEvent.click(await screen.findByText('Reactivate account'))
+    await waitFor(() =>
+      expect(mockUpdateTaxonomyBlock).toHaveBeenCalledWith('kg_a', {
+        taxonomy_id: 'tax_sub',
+        elements_to_update: [{ qname: 'coa:6190', is_active: true }],
+      })
+    )
+  })
+
+  it('a QuickBooks chart is edited in QuickBooks', async () => {
+    mockListElements.mockResolvedValue(
+      page([element('el_rent', 'Rent', '6100', { source: 'quickbooks' })])
+    )
+    render(<ChartOfAccountsContent />)
+    expect(
+      await screen.findByText(/This chart is synced from QuickBooks/)
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Add account')).toBeNull()
+    expect(screen.queryByLabelText('Edit Rent')).toBeNull()
   })
 })
