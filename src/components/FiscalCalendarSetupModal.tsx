@@ -1,5 +1,6 @@
 'use client'
 
+import OpeningBalanceForm, { dayBefore } from '@/components/OpeningBalanceForm'
 import { friendlyError } from '@/lib/ledger/errors'
 import type { LedgerFiscalCalendar } from '@robosystems/client/clients'
 import { clients } from '@robosystems/core'
@@ -66,12 +67,25 @@ interface FiscalCalendarSetupModalProps {
   open: boolean
   onClose: () => void
   onInitialized: (calendar: LedgerFiscalCalendar) => void
+  /** Offer the opening balance sheet once new books are set up. Off where the
+   *  books arrive with their history (a QuickBooks import). */
+  offerOpeningBalance?: boolean
+}
+
+/** The eve of a calendar's first month: the date an opening balance is as of. */
+export function openingDate(calendar: LedgerFiscalCalendar): string | null {
+  const starts = (calendar.periods ?? [])
+    .map((p) => p.startDate)
+    .filter((d): d is string => Boolean(d))
+    .sort()
+  return starts.length ? dayBefore(starts[0]) : null
 }
 
 /**
  * One-time setup of a company's fiscal calendar. The choice that matters is
  * where its books start, and it cannot be changed afterwards, so the dialog
- * asks for it outright and shows what the first close will be.
+ * asks for it outright and shows what the first close will be. New books then
+ * get a second step: the balance sheet they start from.
  */
 const FiscalCalendarSetupModal: FC<FiscalCalendarSetupModalProps> = ({
   graphId,
@@ -80,6 +94,7 @@ const FiscalCalendarSetupModal: FC<FiscalCalendarSetupModalProps> = ({
   open,
   onClose,
   onInitialized,
+  offerOpeningBalance = true,
 }) => {
   const current = currentPeriod()
   const lastCompleted = addMonths(current, -1)
@@ -92,9 +107,12 @@ const FiscalCalendarSetupModal: FC<FiscalCalendarSetupModalProps> = ({
   const [groupFyStart, setGroupFyStart] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Set once the calendar exists and the opening balance step is showing.
+  const [created, setCreated] = useState<LedgerFiscalCalendar | null>(null)
 
   useEffect(() => {
     if (!open) return
+    setCreated(null)
     setMode('first_open')
     setFirstOpen(lastCompleted)
     setClosedThrough(addMonths(current, -2))
@@ -140,6 +158,15 @@ const FiscalCalendarSetupModal: FC<FiscalCalendarSetupModalProps> = ({
           ? { earliestDataPeriod: firstOpen }
           : { closedThrough }),
       })
+      if (
+        offerOpeningBalance &&
+        mode === 'first_open' &&
+        openingDate(result.fiscalCalendar)
+      ) {
+        setCreated(result.fiscalCalendar)
+        setSubmitting(false)
+        return
+      }
       onInitialized(result.fiscalCalendar)
     } catch (err) {
       setError(
@@ -149,6 +176,26 @@ const FiscalCalendarSetupModal: FC<FiscalCalendarSetupModalProps> = ({
       )
       setSubmitting(false)
     }
+  }
+
+  const createdOpening = created ? openingDate(created) : null
+  if (created && createdOpening) {
+    // The calendar exists now: leaving this step, by either button or the
+    // close control, finishes the setup.
+    return (
+      <Modal show={open} onClose={() => onInitialized(created)} size="lg">
+        <ModalHeader>Enter the opening balance sheet</ModalHeader>
+        <OpeningBalanceForm
+          graphId={graphId}
+          entityId={entityId}
+          entityName={entityName}
+          asOf={createdOpening}
+          cancelLabel="Skip for now"
+          onCancel={() => onInitialized(created)}
+          onRecorded={() => onInitialized(created)}
+        />
+      </Modal>
+    )
   }
 
   return (
@@ -187,8 +234,8 @@ const FiscalCalendarSetupModal: FC<FiscalCalendarSetupModalProps> = ({
                       New books, or moving over at a month-end
                     </Label>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      The first month these books close. Opening balances go in
-                      this month, so it starts open.
+                      The first month these books close. The balance sheet they
+                      start from is entered next, as of the day before it.
                     </p>
                     {mode === 'first_open' && (
                       <TextInput

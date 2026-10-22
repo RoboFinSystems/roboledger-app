@@ -14,6 +14,9 @@ interface FiscalCalendarBootstrapProps {
   entityName: string
   /** Name the entity, when a card reports more than one calendar. */
   showName?: boolean
+  /** Offer the opening balance sheet after setup; off for a QuickBooks
+   *  import, whose books arrive with their history. */
+  offerOpeningBalance?: boolean
 }
 
 // §3.0 — Calendar bootstrap fallback for a connection card when the
@@ -24,6 +27,7 @@ export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
   entityId,
   entityName,
   showName = false,
+  offerOpeningBalance = true,
 }) => {
   const [calendar, setCalendar] = useState<
     LedgerFiscalCalendar | null | undefined
@@ -105,6 +109,7 @@ export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
         entityId={entityId}
         entityName={entityName}
         open={setupOpen}
+        offerOpeningBalance={offerOpeningBalance}
         onClose={() => setSetupOpen(false)}
         onInitialized={(cal) => {
           setSetupOpen(false)
