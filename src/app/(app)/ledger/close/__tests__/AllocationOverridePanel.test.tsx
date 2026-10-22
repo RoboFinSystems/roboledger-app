@@ -282,4 +282,15 @@ describe('AllocationOverridePanel', () => {
     fireEvent.click(await screen.findByText('Retry'))
     expect(await screen.findByText(/result of \$5,012\.00/)).toBeInTheDocument()
   })
+
+  it('a month with no allocation says so, with nothing to set', async () => {
+    mockGetAllocationShare.mockResolvedValue(null)
+    renderPanel('2026-02')
+    expect(
+      await screen.findByText(
+        "No outside owners' share for February 2026: the company was not a member consolidated in full that month."
+      )
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Override the share')).toBeNull()
+  })
 })

@@ -210,7 +210,8 @@ const AllocationOverridePanel: FC<AllocationOverridePanelProps> = ({
         <Spinner size="sm" />
       ) : !share ? (
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          The ledger is not set up for this member yet.
+          No outside owners&apos; share for {month}: the company was not a
+          member consolidated in full that month.
         </p>
       ) : (
         <div className="space-y-3 text-sm">
