@@ -97,8 +97,11 @@ const AccountEditorModal: FC<AccountEditorModalProps> = ({
   const [step, setStep] = useState<Step>(account ? initialStep : 'form')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<FriendlyError | null>(null)
-  // How far the books are closed, for the reclassification confirm.
-  const [closedThrough, setClosedThrough] = useState<string | null>(null)
+  // How far the books are closed, for the reclassification confirm:
+  // undefined until the calendar answers, null when no month is closed.
+  const [closedThrough, setClosedThrough] = useState<string | null | undefined>(
+    undefined
+  )
 
   useEffect(() => {
     if (!account) return
@@ -121,6 +124,17 @@ const AccountEditorModal: FC<AccountEditorModalProps> = ({
     [chart, draft.classification, account]
   )
   const codeClash = codeTakenBy(chart, draft.code, account)
+  // A retired account's code may have been taken since; reactivating it
+  // then would put two active accounts on one code.
+  const reactivateClash =
+    account && !account.isActive
+      ? codeTakenBy(chart, account.code ?? '', account)
+      : null
+  const activeChildren = account
+    ? chart.accounts.filter(
+        (other) => other.parentId === account.id && other.isActive
+      ).length
+    : 0
   const patch = account ? updatePatch(chart, account, draft) : null
   const reclassifying = !!account && isReclassification(account, draft)
   const canSave =
@@ -208,7 +222,22 @@ const AccountEditorModal: FC<AccountEditorModalProps> = ({
                 {account.isActive
                   ? 'Its history stays and its statements still read it. It leaves the account pickers and the chart, and new postings to it are refused. You can reactivate it.'
                   : 'It returns to the chart and the account pickers, and takes postings again.'}
+                {account.isActive && activeChildren > 0 && (
+                  <>
+                    {' '}
+                    {activeChildren === 1
+                      ? 'Its 1 sub-account stays active and shows at the top level of the chart.'
+                      : `Its ${activeChildren} sub-accounts stay active and show at the top level of the chart.`}
+                  </>
+                )}
               </p>
+            )}
+
+            {step === 'retire' && reactivateClash && account && (
+              <Alert color="warning">
+                {reactivateClash.name} uses {account.code} now. Go back and give
+                this account another code before reactivating it.
+              </Alert>
             )}
 
             {step === 'reclassify' && account && (
@@ -226,9 +255,13 @@ const AccountEditorModal: FC<AccountEditorModalProps> = ({
                   way, open months and the live statements alike.
                 </p>
                 <p>
-                  {closedThrough
-                    ? `The books are closed through ${formatPeriod(closedThrough)}. If ${account.name} has posted lines in a closed month, the change is refused until those months are reopened, latest first — closed months keep the answer they closed with.`
-                    : 'No month is closed yet, so nothing stops the change.'}
+                  {closedThrough === null
+                    ? 'No month is closed yet, so nothing stops the change.'
+                    : `${
+                        closedThrough
+                          ? `The books are closed through ${formatPeriod(closedThrough)}. `
+                          : ''
+                      }If ${account.name} has posted lines in a closed month, the change is refused until those months are reopened, latest first — closed months keep the answer they closed with.`}
                 </p>
               </div>
             )}
@@ -282,12 +315,19 @@ const AccountEditorModal: FC<AccountEditorModalProps> = ({
                       onChange={(e) => {
                         const classification = e.target
                           .value as ElementClassification
+                        // Back on its own class, the account keeps what it
+                        // had; a parent of another class no longer fits.
+                        const own =
+                          account?.classification === classification
+                            ? account
+                            : null
                         setDraft((current) => ({
                           ...current,
                           classification,
-                          balanceType: normalBalanceFor(classification),
-                          // A parent of another classification no longer fits.
-                          parentId: '',
+                          balanceType:
+                            own?.balanceType ??
+                            normalBalanceFor(classification),
+                          parentId: own?.parentId ?? '',
                         }))
                       }}
                     >
@@ -357,7 +397,7 @@ const AccountEditorModal: FC<AccountEditorModalProps> = ({
           {step === 'retire' && account ? (
             <Button
               color={account.isActive ? 'failure' : 'blue'}
-              disabled={saving}
+              disabled={saving || !!reactivateClash}
               onClick={() =>
                 void run(
                   activePatch(chart, account, !account.isActive),

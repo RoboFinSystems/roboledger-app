@@ -244,4 +244,75 @@ describe('AccountEditorModal', () => {
       })
     )
   })
+
+  it('never says nothing is closed when the calendar is not known', async () => {
+    mockGetFiscalCalendar.mockRejectedValue(new Error('network'))
+    renderModal({ account: rent })
+    await waitFor(() => expect(mockGetFiscalCalendar).toHaveBeenCalled())
+    fireEvent.change(screen.getByLabelText('Normal balance'), {
+      target: { value: 'credit' },
+    })
+    fireEvent.click(screen.getByText('Review change'))
+    expect(
+      await screen.findByText(/If Rent has posted lines in a closed month/)
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/No month is closed yet/)).toBeNull()
+  })
+
+  it('says nothing is closed only when the calendar says so', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({ closedThrough: null })
+    renderModal({ account: rent })
+    await waitFor(() => expect(mockGetFiscalCalendar).toHaveBeenCalled())
+    fireEvent.change(screen.getByLabelText('Normal balance'), {
+      target: { value: 'credit' },
+    })
+    fireEvent.click(screen.getByText('Review change'))
+    expect(
+      await screen.findByText(/No month is closed yet/)
+    ).toBeInTheDocument()
+  })
+
+  it('will not reactivate into a code another account took', () => {
+    renderModal({
+      account: { ...occupancy, id: 'old', code: '6100', isActive: false },
+      initialStep: 'retire',
+    })
+    expect(screen.getByText(/Rent uses 6100 now/)).toBeInTheDocument()
+    expect(
+      (screen.getByText('Reactivate account') as HTMLButtonElement).disabled
+    ).toBe(true)
+  })
+
+  it('keeps the parent when the classification comes back', async () => {
+    const child = account('sub', {
+      name: 'Sub',
+      code: '6110',
+      parentId: 'occ',
+    })
+    renderModal({ account: child })
+    const cls = screen.getByLabelText('Classification')
+    fireEvent.change(cls, { target: { value: 'asset' } })
+    expect(
+      (screen.getByLabelText('Sub-account of') as HTMLSelectElement).value
+    ).toBe('')
+    fireEvent.change(cls, { target: { value: 'expense' } })
+    expect(
+      (screen.getByLabelText('Sub-account of') as HTMLSelectElement).value
+    ).toBe('occ')
+    expect((screen.getByText('Save') as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('says what retiring does to the sub-accounts', () => {
+    const c = {
+      ...chart,
+      accounts: [
+        ...chart.accounts,
+        account('sub', { parentId: 'occ', name: 'Sub' }),
+      ],
+    }
+    renderModal({ chart: c, account: occupancy, initialStep: 'retire' })
+    expect(
+      screen.getByText(/Its 1 sub-account stays active/)
+    ).toBeInTheDocument()
+  })
 })
