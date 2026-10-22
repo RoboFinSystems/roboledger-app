@@ -428,7 +428,7 @@ describe('ScheduleModal — loan', () => {
 
   const fillLoanFields = async () => {
     await waitForAccounts()
-    change(/^name$/i, 'CFC line of credit')
+    change(/^name$/i, 'Line of credit')
     change(/^method$/i, 'effective_interest')
     change(/first period/i, '2026-08-01')
     change(/last period/i, '2027-07-31')
@@ -745,7 +745,7 @@ describe('ScheduleModal — edit', () => {
   it('loads a loan back with its terms and settlement', async () => {
     renderModal(vi.fn(), vi.fn(), null, {
       structureId: 'struct_l',
-      name: 'CFC line of credit',
+      name: 'Line of credit',
       mechanics: {
         kind: 'closing_entry_generator',
         entry_template: {

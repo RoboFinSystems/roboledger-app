@@ -157,8 +157,8 @@ describe('ScheduleRenderingProjection — loan', () => {
   const loanElements = [
     {
       id: 'elem_note',
-      qname: 'qb:CFC Notes Payable',
-      name: 'CFC Notes Payable',
+      qname: 'qb:Notes Payable',
+      name: 'Notes Payable',
       code: null,
       elementType: 'concept',
       isAbstract: false,
@@ -212,7 +212,7 @@ describe('ScheduleRenderingProjection — loan', () => {
 
   const loanEnvelope = makeEnvelope({
     blockType: 'schedule',
-    name: 'CFC line of credit',
+    name: 'Line of credit',
     elements: loanElements,
     artifact: {
       topic: null,
@@ -254,9 +254,7 @@ describe('ScheduleRenderingProjection — loan', () => {
 
   it('reads the note as the balance and the interest as the movement', () => {
     render(<ScheduleRenderingProjection envelope={loanEnvelope} />)
-    expect(
-      screen.getByText(/CFC Notes Payable roll-forward/)
-    ).toBeInTheDocument()
+    expect(screen.getByText(/Notes Payable roll-forward/)).toBeInTheDocument()
     expect(screen.getByText(/2 periods/)).toBeInTheDocument()
     expect(screen.getByText('Interest Expense')).toBeInTheDocument()
     // The interest is the movement, not ending − beginning (which is zero
