@@ -2,7 +2,12 @@
 
 import { formatPeriod } from '@/components/FiscalCalendarSetupModal'
 import { friendlyError } from '@/lib/ledger/errors'
-import { monthEnd, terminateSchedule } from '@/lib/ledger/schedules'
+import {
+  monthEnd,
+  readScheduleMechanics,
+  scheduleFactsFallback,
+  terminateSchedule,
+} from '@/lib/ledger/schedules'
 import { clients, LoadingState } from '@robosystems/core'
 import {
   Alert,
@@ -17,9 +22,10 @@ import {
 } from 'flowbite-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { HiExclamationCircle, HiStop, HiTrash } from 'react-icons/hi'
+import { HiExclamationCircle, HiPencil, HiStop, HiTrash } from 'react-icons/hi'
 import BlockView from './blockview/BlockView'
 import type { EnvelopeBlock } from './blockview/types'
+import { ScheduleModal, type EditingSchedule } from './ScheduleModal'
 import type { ViewMode } from './ViewModeToggle'
 
 interface SchedulePanelProps {
@@ -27,6 +33,8 @@ interface SchedulePanelProps {
   structureId: string
   viewMode: ViewMode
   onDeleted?: () => void
+  /** The schedule was edited in place (its name may have changed). */
+  onChanged?: () => void
 }
 
 /** The `YYYY-MM` months a schedule's facts cover, oldest first. */
@@ -44,20 +52,23 @@ export function scheduleMonths(envelope: EnvelopeBlock): string[] {
  * dispatches to the schedule `Rendering` projection (or the uniform
  * `FactTable` projection in facts mode). Closing entries are created on
  * the period-close page (Current Period Status), not the schedule view.
- * The panel's writes are delete — the undo for a schedule that was just
- * created wrong — and end, which stops a schedule early at a month-end
- * without booking anything (a prepaid refunded, an asset transferred by an
- * entry already posted).
+ * The panel's writes are edit — the definition loaded back into the form
+ * and saved through a rebuild while nothing has posted — delete, the undo
+ * for a schedule that was just created wrong, and end, which stops a
+ * schedule early at a month-end without booking anything (a prepaid
+ * refunded, an asset transferred by an entry already posted).
  */
 const SchedulePanel: FC<SchedulePanelProps> = ({
   graphId,
   structureId,
   viewMode,
   onDeleted,
+  onChanged,
 }) => {
   const [envelope, setEnvelope] = useState<EnvelopeBlock | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -110,6 +121,24 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
       setDeleting(false)
     }
   }, [graphId, structureId, onDeleted])
+
+  // The definition the form loads back, when the envelope carries one.
+  const editing = useMemo<EditingSchedule | null>(() => {
+    if (!envelope) return null
+    const mechanics = readScheduleMechanics(envelope)
+    if (!mechanics) return null
+    return {
+      structureId,
+      name: envelope.name,
+      mechanics,
+      fallback: scheduleFactsFallback(envelope),
+    }
+  }, [envelope, structureId])
+
+  const handleSaved = useCallback(async () => {
+    await loadEnvelope()
+    onChanged?.()
+  }, [loadEnvelope, onChanged])
 
   // A schedule ends after one of its months and before its last.
   const endChoices = useMemo(
@@ -176,8 +205,19 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
   // closed months), so entry creation is funneled there.
   return (
     <div>
-      {(onDeleted || endChoices.length > 0) && (
+      {(editing || onDeleted || endChoices.length > 0) && (
         <div className="mb-2 flex justify-end gap-2">
+          {editing && (
+            <Button
+              size="xs"
+              color="light"
+              onClick={() => setEditOpen(true)}
+              title="Load the definition into the form; saved as a rebuild while nothing has posted"
+            >
+              <HiPencil className="mr-1 h-3 w-3" />
+              Edit schedule
+            </Button>
+          )}
           {endChoices.length > 0 && (
             <Button
               size="xs"
@@ -204,6 +244,17 @@ const SchedulePanel: FC<SchedulePanelProps> = ({
       )}
 
       <BlockView envelope={envelope} viewMode={viewMode} />
+
+      {editing && (
+        <ScheduleModal
+          graphId={graphId}
+          entityId={envelope.entityId ?? null}
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          onSaved={handleSaved}
+          editing={editing}
+        />
+      )}
 
       <Modal show={endOpen} onClose={() => setEndOpen(false)} size="md">
         <ModalHeader>End schedule</ModalHeader>

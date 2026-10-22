@@ -29,6 +29,16 @@ vi.mock('../components/blockview/BlockView', () => ({
   default: () => <div data-testid="block-view" />,
 }))
 
+vi.mock('../components/ScheduleModal', () => ({
+  ScheduleModal: ({ open, editing }: any) =>
+    open ? (
+      <div data-testid="schedule-modal">
+        {editing?.name} · {editing?.fallback?.periodStart} ·{' '}
+        {editing?.mechanics?.entry_template?.debit_element_id}
+      </div>
+    ) : null,
+}))
+
 vi.mock('flowbite-react', () => ({
   Alert: ({ children }: any) => <div role="alert">{children}</div>,
   Button: ({ children, onClick, disabled }: any) => (
@@ -154,5 +164,60 @@ describe('SchedulePanel — End schedule', () => {
     renderPanel()
     await screen.findByTestId('block-view')
     expect(screen.queryByRole('button', { name: /End schedule/ })).toBeNull()
+  })
+})
+
+describe('SchedulePanel — Edit schedule', () => {
+  const MECHANICS = {
+    kind: 'closing_entry_generator',
+    entry_template: {
+      debit_element_id: 'elem_exp',
+      credit_element_id: 'elem_prepaid',
+    },
+    schedule_metadata: { method: 'straight_line' },
+    posted_periods: [],
+    edit_warning: null,
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('opens the form on the definition the envelope carries', async () => {
+    mockGetInformationBlock.mockResolvedValue({
+      ...ENVELOPE,
+      entityId: 'ent_parent',
+      artifact: { mechanics: MECHANICS },
+      facts: [
+        { ...fact('2026-01-31'), periodType: 'duration', value: 100 },
+        { ...fact('2026-02-28'), periodType: 'duration', value: 100 },
+      ],
+    })
+    render(
+      <SchedulePanel
+        graphId="kg_a"
+        structureId="struct_s"
+        viewMode="rendered"
+      />
+    )
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Edit schedule/ })
+    )
+    expect(screen.getByTestId('schedule-modal')).toHaveTextContent(
+      'Prepaid Insurance · 2026-01-01 · elem_exp'
+    )
+  })
+
+  it('offers no edit when the envelope carries no definition', async () => {
+    mockGetInformationBlock.mockResolvedValue(ENVELOPE)
+    render(
+      <SchedulePanel
+        graphId="kg_a"
+        structureId="struct_s"
+        viewMode="rendered"
+      />
+    )
+    await screen.findByTestId('block-view')
+    expect(screen.queryByRole('button', { name: /Edit schedule/ })).toBeNull()
   })
 })
