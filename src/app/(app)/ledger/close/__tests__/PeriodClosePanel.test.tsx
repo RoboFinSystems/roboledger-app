@@ -95,7 +95,12 @@ vi.mock('next/link', () => ({
   default: ({ href, children }: any) => <a href={href}>{children}</a>,
 }))
 
-let mockScopedEntity: { entityRole: string } | null = null
+let mockScopedEntity: {
+  id?: string
+  entityRole: string
+  consolidationMethod?: string
+  ownershipPct?: number | null
+} | null = null
 
 vi.mock('@/lib/entity-scope', () => ({
   useEntityScope: () => ({ entity: mockScopedEntity }),
@@ -108,6 +113,14 @@ vi.mock('../components/ConsolidationEntriesPanel', () => ({
         {period}
       </div>
       <button onClick={() => onDrafted?.()}>Draft entries</button>
+    </div>
+  ),
+}))
+
+vi.mock('../components/AllocationOverridePanel', () => ({
+  default: ({ entityId, period }: any) => (
+    <div data-testid="allocation-override">
+      {entityId} {period}
     </div>
   ),
 }))
@@ -671,6 +684,34 @@ describe('PeriodClosePanel — consolidating entries', () => {
     expect(
       screen.queryByTestId('consolidation-entries')
     ).not.toBeInTheDocument()
+    mockScopedEntity = null
+  })
+
+  it("offers the outside owners' share on a member consolidated in full", async () => {
+    mockScopedEntity = {
+      id: 'ent_harbor',
+      entityRole: 'operating',
+      consolidationMethod: 'full',
+      ownershipPct: 70,
+    }
+    render(<PeriodClosePanel graphId="kg1" entityId="ent_harbor" />)
+    expect(await screen.findByTestId('allocation-override')).toHaveTextContent(
+      'ent_harbor 2026-05'
+    )
+    mockScopedEntity = null
+  })
+
+  it.each([
+    ['wholly owned', { consolidationMethod: 'full', ownershipPct: 100 }],
+    [
+      'on the equity method',
+      { consolidationMethod: 'equity', ownershipPct: 40 },
+    ],
+  ])('not on a member %s', async (_why, fields) => {
+    mockScopedEntity = { id: 'ent_m', entityRole: 'operating', ...fields }
+    render(<PeriodClosePanel graphId="kg1" entityId="ent_m" />)
+    await screen.findByText('Close Period')
+    expect(screen.queryByTestId('allocation-override')).not.toBeInTheDocument()
     mockScopedEntity = null
   })
 })

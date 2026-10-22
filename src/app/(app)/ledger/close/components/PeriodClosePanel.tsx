@@ -44,6 +44,7 @@ import {
 } from 'react-icons/hi'
 import { TbFileInvoice } from 'react-icons/tb'
 import { formatCurrencyDollars } from '../utils'
+import AllocationOverridePanel from './AllocationOverridePanel'
 import { isStatementBlockType } from './blockview/types'
 import ConsolidationEntriesPanel from './ConsolidationEntriesPanel'
 import SetCloseTargetModal from './SetCloseTargetModal'
@@ -788,6 +789,17 @@ const PeriodClosePanel: FC<PeriodClosePanelProps> = ({
           onDrafted={handleConsolidationDrafted}
         />
       )}
+
+      {/* A member with outside owners: their share of its month. */}
+      {scopedEntity?.consolidationMethod === 'full' &&
+        (scopedEntity.ownershipPct ?? 100) < 100 &&
+        selectedPeriod && (
+          <AllocationOverridePanel
+            graphId={graphId}
+            entityId={scopedEntity.id}
+            period={selectedPeriod}
+          />
+        )}
 
       {/* Draft review + close action */}
       {drafts && drafts.draftCount > 0 && (
