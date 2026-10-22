@@ -69,6 +69,8 @@ async function listAllElements(graphId: string, taxonomyId: string) {
       taxonomyId,
       limit: ELEMENTS_PAGE,
       offset,
+      // Left out by default; without them nothing can be reactivated.
+      includeInactive: true,
     })
     elements.push(...(page?.elements ?? []))
     if (!page?.pagination.hasMore) return elements
