@@ -550,5 +550,10 @@ describe('plan money scale', () => {
     expect(formatPlanMoney(-105_628.76, 'thousands', false)).toBe('(106)')
     expect(formatPlanMoney(-105_628.76, 'ones', true)).toBe('$(105,629)')
     expect(formatPlanMoney(-0.4, 'ones', false)).toBe('0')
+    // A half rounds away from zero on both sides.
+    expect(formatPlanMoney(1500, 'thousands', false)).toBe('2')
+    expect(formatPlanMoney(-1500, 'thousands', false)).toBe('(2)')
+    expect(formatPlanMoney(2.5, 'ones', false)).toBe('3')
+    expect(formatPlanMoney(-2.5, 'ones', false)).toBe('(3)')
   })
 })

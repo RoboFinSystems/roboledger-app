@@ -27,7 +27,7 @@ import {
 } from 'flowbite-react'
 import { useRouter } from 'next/navigation'
 import type { FC } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   HiChevronLeft,
   HiExclamationCircle,
@@ -141,6 +141,12 @@ const ReportBuilderContent: FC = function () {
   const [error, setError] = useState<string | null>(null)
 
   const { graph: currentGraph } = useLedgerGraph()
+  // Moves on with the graph or the mapping, so an auto-map still in flight
+  // can tell it was started somewhere else — a switch away and back included.
+  const autoMapEpochRef = useRef(0)
+  useEffect(() => {
+    autoMapEpochRef.current++
+  }, [currentGraph?.graphId, selectedMappingId])
 
   // Apply preset on mount and when preset changes
   useEffect(() => {
@@ -229,6 +235,10 @@ const ReportBuilderContent: FC = function () {
   // Auto-map handler
   const handleAutoMap = useCallback(async () => {
     if (!currentGraph || !selectedMappingId) return
+    // The scope this run belongs to; a result that lands after the graph or
+    // mapping moved on is dropped, not shown under the new one.
+    const epoch = autoMapEpochRef.current
+    const stale = () => autoMapEpochRef.current !== epoch
 
     try {
       setIsAutoMapping(true)
@@ -237,19 +247,22 @@ const ReportBuilderContent: FC = function () {
         currentGraph.graphId,
         { mapping_id: selectedMappingId }
       )
+      if (stale()) return
       if (status !== 'completed') {
         const outcome = await clients.operations.monitorOperation(operationId)
+        if (stale()) return
         if (!outcome.success) {
           setError(outcome.error || 'Auto-mapping failed. Please try again.')
         }
       }
-      setCoverage(
-        await clients.ledger.getMappingCoverage(
-          currentGraph.graphId,
-          selectedMappingId
-        )
+      const refreshed = await clients.ledger.getMappingCoverage(
+        currentGraph.graphId,
+        selectedMappingId
       )
+      if (stale()) return
+      setCoverage(refreshed)
     } catch (err) {
+      if (stale()) return
       console.error('Auto-map failed:', err)
       setError('Auto-mapping failed. Please try again.')
     } finally {
