@@ -35,10 +35,11 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
+  TextInput,
 } from 'flowbite-react'
 import Link from 'next/link'
 import { type FC, useCallback, useEffect, useState } from 'react'
-import { HiExclamationCircle, HiTag } from 'react-icons/hi'
+import { HiDocumentText, HiExclamationCircle, HiTag } from 'react-icons/hi'
 import OpenBalanceTile from './OpenBalanceTile'
 
 interface Props {
@@ -59,6 +60,12 @@ const heldOn = (confirmations: number, overrides: number): string => {
   if (seen === 0) return 'Set by hand; no committed line has tested it yet.'
   const lines = seen === 1 ? 'line' : 'lines'
   return `Held on ${confirmations} of ${seen} committed ${lines}.`
+}
+
+/** A saved tax ID shows its last four characters only. */
+export const maskTaxId = (taxId: string): string => {
+  const shown = taxId.replace(/[^0-9A-Za-z]/g, '').slice(-4)
+  return `••••${shown}`
 }
 
 /** The entity in scope's own default; each entity keeps one, on its chart. */
@@ -88,6 +95,13 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
   const [alwaysAsk, setAlwaysAsk] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  // Tax reporting: a new tax ID is typed in full and the saved one is never
+  // put back in the field; `null` is "not editing it".
+  const [taxIdDraft, setTaxIdDraft] = useState<string | null>(null)
+  const [removeTaxId, setRemoveTaxId] = useState(false)
+  const [is1099, setIs1099] = useState(false)
+  const [taxSaving, setTaxSaving] = useState(false)
+  const [taxError, setTaxError] = useState<string | null>(null)
 
   const seedDefault = useCallback(
     (detail: LedgerAgentDetail) => {
@@ -118,7 +132,12 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
             new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
         )
         setAgent(agentDetail)
-        if (agentDetail) seedDefault(agentDetail)
+        if (agentDetail) {
+          seedDefault(agentDetail)
+          setIs1099(agentDetail.is1099Recipient)
+        }
+        setTaxIdDraft(null)
+        setRemoveTaxId(false)
         setEvents(eventList)
       } catch (err) {
         if (cancelled) return
@@ -212,6 +231,66 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
     seedDefault,
   ])
 
+  // QuickBooks owns a synced counterparty's tax details; its next sync
+  // would put its own values back over an edit here.
+  const taxFromQuickBooks = agent?.source === 'quickbooks'
+  // Removing is its own act, never an empty field saved by accident.
+  const newTaxId = taxIdDraft?.trim() ?? ''
+  const taxIdChange =
+    (removeTaxId && !!agent?.taxId) ||
+    (newTaxId !== '' && newTaxId !== (agent?.taxId ?? ''))
+  const taxDirty = !!agent && (taxIdChange || is1099 !== agent.is1099Recipient)
+
+  const handleTaxSave = useCallback(async () => {
+    if (!agent || !taxDirty) return
+    setTaxSaving(true)
+    setTaxError(null)
+    const savedTaxId = taxIdChange
+      ? removeTaxId
+        ? ''
+        : newTaxId
+      : (agent.taxId ?? '')
+    try {
+      await clients.ledger.updateAgent(graphId, {
+        agent_id: agent.id,
+        // An empty string clears it.
+        ...(taxIdChange ? { tax_id: savedTaxId } : {}),
+        ...(is1099 !== agent.is1099Recipient
+          ? { is_1099_recipient: is1099 }
+          : {}),
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setTaxError(friendlyError(message).message)
+      setTaxSaving(false)
+      return
+    }
+    // Saved: show it at once, so a reload that fails cannot read as a
+    // failed save and invite sending it again.
+    setAgent({ ...agent, taxId: savedTaxId || null, is1099Recipient: is1099 })
+    setTaxIdDraft(null)
+    setRemoveTaxId(false)
+    setTaxSaving(false)
+    try {
+      const fresh = await clients.ledger.getAgent(graphId, agentId)
+      if (fresh) {
+        setAgent(fresh)
+        setIs1099(fresh.is1099Recipient)
+      }
+    } catch (err) {
+      console.error('Error reloading the agent after a save:', err)
+    }
+  }, [
+    agent,
+    agentId,
+    graphId,
+    is1099,
+    newTaxId,
+    removeTaxId,
+    taxDirty,
+    taxIdChange,
+  ])
+
   return (
     <Modal show onClose={onClose} size="3xl">
       <ModalHeader>
@@ -277,14 +356,6 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
                   {agent.phone || '—'}
                 </span>
               </div>
-              <div>
-                <span className="block text-xs text-gray-500 dark:text-gray-400">
-                  Tax id
-                </span>
-                <span className="font-mono text-gray-900 dark:text-white">
-                  {agent.taxId || '—'}
-                </span>
-              </div>
               <div className="col-span-2 sm:col-span-3">
                 <span className="block text-xs text-gray-500 dark:text-gray-400">
                   Address
@@ -309,14 +380,138 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
                   {agent.externalId || '—'}
                 </span>
               </div>
-              <div>
-                <span className="block text-xs text-gray-500 dark:text-gray-400">
-                  1099 recipient
-                </span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {agent.is1099Recipient ? 'Yes' : 'No'}
-                </span>
+            </div>
+
+            {/* What a 1099 summary reads: the tax ID and the flag */}
+            <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+              <div className="mb-2 flex items-center gap-2">
+                <HiDocumentText className="h-4 w-4 text-gray-400" />
+                <h4 className="font-heading text-sm font-bold text-gray-900 dark:text-white">
+                  Tax reporting
+                </h4>
               </div>
+              {taxFromQuickBooks ? (
+                <>
+                  <p className="text-sm text-gray-900 dark:text-white">
+                    Tax ID:{' '}
+                    <span className="font-mono">
+                      {agent.taxId ? maskTaxId(agent.taxId) : '—'}
+                    </span>
+                    {' · '}1099 recipient:{' '}
+                    {agent.is1099Recipient ? 'Yes' : 'No'}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Kept in QuickBooks: change them there, and the next sync
+                    brings them here.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Label
+                    id="agent-tax-id-label"
+                    htmlFor={taxIdDraft === null ? undefined : 'agent-tax-id'}
+                    className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
+                  >
+                    Tax ID
+                  </Label>
+                  {taxIdDraft === null ? (
+                    <div className="flex items-center gap-3">
+                      <span
+                        aria-labelledby="agent-tax-id-label"
+                        className="font-mono text-sm text-gray-900 dark:text-white"
+                      >
+                        {removeTaxId
+                          ? 'Removed on save'
+                          : agent.taxId
+                            ? maskTaxId(agent.taxId)
+                            : 'None'}
+                      </span>
+                      {!removeTaxId && (
+                        <Button
+                          size="xs"
+                          color="light"
+                          onClick={() => setTaxIdDraft('')}
+                          disabled={taxSaving}
+                        >
+                          {agent.taxId ? 'Change' : 'Add'}
+                        </Button>
+                      )}
+                      {agent.taxId && !removeTaxId && (
+                        <Button
+                          size="xs"
+                          color="light"
+                          onClick={() => setRemoveTaxId(true)}
+                          disabled={taxSaving}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <TextInput
+                        id="agent-tax-id"
+                        sizing="sm"
+                        autoComplete="off"
+                        placeholder="EIN or SSN"
+                        value={taxIdDraft}
+                        onChange={(e) => setTaxIdDraft(e.target.value)}
+                        disabled={taxSaving}
+                      />
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Shown as its last four characters once saved.
+                      </p>
+                    </>
+                  )}
+                  <div className="mt-3 flex items-start gap-2">
+                    <Checkbox
+                      id="agent-1099"
+                      checked={is1099}
+                      onChange={(e) => setIs1099(e.target.checked)}
+                      disabled={taxSaving}
+                    />
+                    <Label
+                      htmlFor="agent-1099"
+                      className="text-sm text-gray-700 dark:text-gray-300"
+                    >
+                      1099 recipient
+                      <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">
+                        A contractor or vendor paid for services, whose payments
+                        go on a 1099 at year end.
+                      </span>
+                    </Label>
+                  </div>
+                  {taxError && (
+                    <Alert color="failure" className="mt-3">
+                      <HiExclamationCircle className="h-4 w-4" />
+                      {taxError}
+                    </Alert>
+                  )}
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      size="xs"
+                      color="light"
+                      onClick={handleTaxSave}
+                      disabled={!taxDirty || taxSaving}
+                    >
+                      {taxSaving ? 'Saving…' : 'Save tax details'}
+                    </Button>
+                    {(taxIdDraft !== null || removeTaxId) && (
+                      <Button
+                        size="xs"
+                        color="gray"
+                        onClick={() => {
+                          setTaxIdDraft(null)
+                          setRemoveTaxId(false)
+                        }}
+                        disabled={taxSaving}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             <OpenBalanceTile

@@ -60,9 +60,10 @@ vi.mock('flowbite-react', () => ({
   TableHead: ({ children }: any) => <thead>{children}</thead>,
   TableHeadCell: ({ children }: any) => <th>{children}</th>,
   TableRow: ({ children }: any) => <tr>{children}</tr>,
+  TextInput: ({ sizing: _sizing, ...props }: any) => <input {...props} />,
 }))
 
-import AgentDetailModal from '../AgentDetailModal'
+import AgentDetailModal, { maskTaxId } from '../AgentDetailModal'
 
 const agent = (classification: Record<string, unknown> | null) => ({
   id: 'agt_staples',
@@ -298,5 +299,126 @@ describe('AgentDetailModal — the default account', () => {
       'not an active account'
     )
     expect((select as HTMLSelectElement).value).toBe('elem_software')
+  })
+})
+
+describe('AgentDetailModal — tax reporting', () => {
+  const withTax = (overrides: Record<string, unknown>) => ({
+    ...agent(null),
+    ...overrides,
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockScope.mockReturnValue({ entityId: null })
+    mockListEventBlocks.mockResolvedValue([])
+    mockGetAccountTree.mockResolvedValue(tree)
+    mockUpdateAgent.mockResolvedValue({})
+  })
+
+  it('masks a saved tax ID to its last four', () => {
+    expect(maskTaxId('12-3456789')).toBe('••••6789')
+    expect(maskTaxId('123-45-6789')).toBe('••••6789')
+  })
+
+  it('adds a tax ID and the 1099 flag, sending only what changed', async () => {
+    mockGetAgent
+      .mockResolvedValueOnce(agent(null))
+      .mockResolvedValueOnce(
+        withTax({ taxId: '12-3456789', is1099Recipient: true })
+      )
+    renderModal()
+    fireEvent.click(await screen.findByText('Add'))
+    fireEvent.change(screen.getByLabelText('Tax ID'), {
+      target: { value: ' 12-3456789 ' },
+    })
+    fireEvent.click(screen.getByLabelText(/1099 recipient/))
+    fireEvent.click(screen.getByText('Save tax details'))
+    await waitFor(() =>
+      expect(mockUpdateAgent).toHaveBeenCalledWith('kg_test', {
+        agent_id: 'agt_staples',
+        tax_id: '12-3456789',
+        is_1099_recipient: true,
+      })
+    )
+    expect(await screen.findByText('••••6789')).toBeInTheDocument()
+    expect(screen.queryByDisplayValue('12-3456789')).toBeNull()
+  })
+
+  it('opening the field and saving the flag alone keeps the tax ID', async () => {
+    mockGetAgent.mockResolvedValue(withTax({ taxId: '12-3456789' }))
+    renderModal()
+    fireEvent.click(await screen.findByText('Change'))
+    fireEvent.click(screen.getByLabelText(/1099 recipient/))
+    fireEvent.click(screen.getByText('Save tax details'))
+    await waitFor(() =>
+      expect(mockUpdateAgent).toHaveBeenCalledWith('kg_test', {
+        agent_id: 'agt_staples',
+        is_1099_recipient: true,
+      })
+    )
+  })
+
+  it('removes a tax ID only by asking to', async () => {
+    mockGetAgent.mockResolvedValue(withTax({ taxId: '12-3456789' }))
+    renderModal()
+    expect(await screen.findByText('••••6789')).toBeInTheDocument()
+    const save = screen.getByText('Save tax details') as HTMLButtonElement
+    expect(save.disabled).toBe(true)
+    fireEvent.click(screen.getByText('Remove'))
+    expect(screen.getByText('Removed on save')).toBeInTheDocument()
+    fireEvent.click(save)
+    await waitFor(() =>
+      expect(mockUpdateAgent).toHaveBeenCalledWith('kg_test', {
+        agent_id: 'agt_staples',
+        tax_id: '',
+      })
+    )
+  })
+
+  it('a refusal is shown and the entry kept', async () => {
+    mockGetAgent.mockResolvedValue(agent(null))
+    mockUpdateAgent.mockRejectedValue(
+      new Error('Update agent failed: {"detail":"Agent is locked"}')
+    )
+    renderModal()
+    fireEvent.click(await screen.findByText('Add'))
+    fireEvent.change(screen.getByLabelText('Tax ID'), {
+      target: { value: '12-3456789' },
+    })
+    fireEvent.click(screen.getByText('Save tax details'))
+    expect(await screen.findByText(/Agent is locked/)).toBeInTheDocument()
+    expect(screen.getByDisplayValue('12-3456789')).toBeInTheDocument()
+  })
+
+  it('a QuickBooks counterparty is read-only, kept in QuickBooks', async () => {
+    mockGetAgent.mockResolvedValue(
+      withTax({
+        source: 'quickbooks',
+        taxId: '12-3456789',
+        is1099Recipient: true,
+      })
+    )
+    renderModal()
+    expect(await screen.findByText(/Kept in QuickBooks/)).toBeInTheDocument()
+    expect(screen.getByText('••••6789')).toBeInTheDocument()
+    expect(screen.queryByText('Save tax details')).toBeNull()
+    expect(screen.queryByText('Change')).toBeNull()
+  })
+
+  it('a save that landed is not reported as failed when the reload fails', async () => {
+    mockGetAgent
+      .mockResolvedValueOnce(agent(null))
+      .mockRejectedValueOnce(new Error('network'))
+    renderModal()
+    fireEvent.click(await screen.findByText('Add'))
+    fireEvent.change(screen.getByLabelText('Tax ID'), {
+      target: { value: '12-3456789' },
+    })
+    fireEvent.click(screen.getByText('Save tax details'))
+    expect(await screen.findByText('••••6789')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.queryByDisplayValue('12-3456789')).toBeNull()
+    expect(mockUpdateAgent).toHaveBeenCalledTimes(1)
   })
 })
