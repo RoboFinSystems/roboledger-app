@@ -269,6 +269,7 @@ export default function ConnectionCard({
                     entityId={entity.entityId}
                     entityName={entity.name}
                     showName={calendarEntities.length > 1}
+                    offerOpeningBalance={provider !== 'quickbooks'}
                   />
                 </div>
               ))}

@@ -13,6 +13,21 @@ vi.mock('@robosystems/core', () => ({
   },
 }))
 
+// The opening balance step's form is its own unit; here only its placement.
+vi.mock('../OpeningBalanceForm', () => ({
+  default: ({ asOf, cancelLabel, onCancel, onRecorded }: any) => (
+    <div data-testid="opening-form" data-as-of={asOf}>
+      <button onClick={onRecorded}>record</button>
+      <button onClick={onCancel}>{cancelLabel}</button>
+    </div>
+  ),
+  dayBefore: (iso: string) => {
+    const t = new Date(`${iso}T00:00:00Z`)
+    t.setUTCDate(t.getUTCDate() - 1)
+    return t.toISOString().slice(0, 10)
+  },
+}))
+
 vi.mock('flowbite-react', () => ({
   Alert: ({ children }: any) => <div role="alert">{children}</div>,
   Button: ({ children, onClick, disabled, type }: any) => (
@@ -42,7 +57,10 @@ import FiscalCalendarSetupModal, {
 
 const calendar = { closedThrough: null, fiscalYearStartMonth: 1 }
 
-function renderModal(entityId: string | null = 'ent_sub') {
+function renderModal(
+  entityId: string | null = 'ent_sub',
+  props: Record<string, unknown> = {}
+) {
   const onInitialized = vi.fn()
   render(
     <FiscalCalendarSetupModal
@@ -52,9 +70,28 @@ function renderModal(entityId: string | null = 'ent_sub') {
       open
       onClose={vi.fn()}
       onInitialized={onInitialized}
+      {...props}
     />
   )
   return { onInitialized }
+}
+
+const withPeriods = {
+  ...calendar,
+  periods: [
+    {
+      name: '2026-10',
+      startDate: '2026-10-01',
+      endDate: '2026-10-31',
+      status: 'open',
+    },
+    {
+      name: '2026-09',
+      startDate: '2026-09-01',
+      endDate: '2026-09-30',
+      status: 'open',
+    },
+  ],
 }
 
 describe('period helpers', () => {
@@ -178,5 +215,62 @@ describe('FiscalCalendarSetupModal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Set up calendar' }))
     expect(await screen.findByRole('alert')).toBeInTheDocument()
     expect(onInitialized).not.toHaveBeenCalled()
+  })
+
+  describe('the opening balance step', () => {
+    beforeEach(() => {
+      mockInitializeLedger.mockResolvedValue({
+        fiscalCalendar: withPeriods,
+        periodsCreated: 2,
+        warnings: [],
+      })
+    })
+
+    it('follows new books, as of the eve of their first month', async () => {
+      const { onInitialized } = renderModal()
+      fireEvent.click(screen.getByRole('button', { name: 'Set up calendar' }))
+
+      const form = await screen.findByTestId('opening-form')
+      expect(form).toHaveAttribute('data-as-of', '2026-08-31')
+      expect(
+        screen.getByText('Enter the opening balance sheet')
+      ).toBeInTheDocument()
+      expect(onInitialized).not.toHaveBeenCalled()
+
+      fireEvent.click(screen.getByRole('button', { name: 'record' }))
+      expect(onInitialized).toHaveBeenCalledWith(withPeriods)
+    })
+
+    it('can be skipped, which still finishes the setup', async () => {
+      const { onInitialized } = renderModal()
+      fireEvent.click(screen.getByRole('button', { name: 'Set up calendar' }))
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Skip for now' })
+      )
+      expect(onInitialized).toHaveBeenCalledWith(withPeriods)
+    })
+
+    it('is not offered on history closed elsewhere', async () => {
+      const { onInitialized } = renderModal()
+      fireEvent.click(
+        screen.getByLabelText('History already closed in another system')
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Set up calendar' }))
+      await waitFor(() =>
+        expect(onInitialized).toHaveBeenCalledWith(withPeriods)
+      )
+      expect(screen.queryByTestId('opening-form')).toBeNull()
+    })
+
+    it('is not offered where the books arrive with their history', async () => {
+      const { onInitialized } = renderModal('ent_sub', {
+        offerOpeningBalance: false,
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Set up calendar' }))
+      await waitFor(() =>
+        expect(onInitialized).toHaveBeenCalledWith(withPeriods)
+      )
+      expect(screen.queryByTestId('opening-form')).toBeNull()
+    })
   })
 })

@@ -18,6 +18,7 @@ import {
 } from 'flowbite-react'
 import { type FC, useEffect, useRef, useState } from 'react'
 import { HiOfficeBuilding, HiPencil, HiSave, HiX } from 'react-icons/hi'
+import OpeningBalanceCard from './components/OpeningBalanceCard'
 
 const TREATMENT_LABELS: Record<string, string> = {
   full: 'consolidated in full',
@@ -595,6 +596,14 @@ const EntityInfoPageContent: FC = function () {
                 />
               </div>
             </Card>
+
+            {graphId && (
+              <OpeningBalanceCard
+                graphId={graphId}
+                entityId={entityId ?? null}
+                entity={entity}
+              />
+            )}
 
             {/* Metadata */}
             <Card>
