@@ -60,6 +60,7 @@ export const getNavigationItems = (
             },
             { href: '/ledger/statements', label: 'Statements' },
             { href: '/ledger/close', label: 'Closing Book' },
+            { href: '/ledger/posting-rules', label: 'Posting Rules' },
           ],
         },
         {
