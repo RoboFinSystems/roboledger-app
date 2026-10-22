@@ -1,6 +1,7 @@
 'use client'
 
 import FiscalCalendarSetupModal from '@/components/FiscalCalendarSetupModal'
+import { friendlyError } from '@/lib/ledger/errors'
 import type { LedgerFiscalCalendar } from '@robosystems/client/clients'
 import { clients } from '@robosystems/core'
 import { Alert, Badge, Button } from 'flowbite-react'
@@ -42,7 +43,9 @@ export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
       setCalendar(cal)
     } catch (err) {
       setLoadError(
-        err instanceof Error ? err.message : 'Failed to load fiscal calendar.'
+        err instanceof Error
+          ? friendlyError(err.message).message
+          : 'Failed to load fiscal calendar.'
       )
       setCalendar(null)
     }

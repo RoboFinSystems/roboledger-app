@@ -1,7 +1,12 @@
 'use client'
 
 import DocsLink from '@/components/DocsLink'
-import { FilterBar, FilterField, SearchField } from '@/components/FilterBar'
+import {
+  FilterActions,
+  FilterBar,
+  FilterField,
+  SearchField,
+} from '@/components/FilterBar'
 import SegmentedControl from '@/components/SegmentedControl'
 import { useEntityScope } from '@/lib/entity-scope'
 import type { ElementClassification } from '@/lib/ledger'
@@ -38,6 +43,7 @@ import {
   HiCollection,
   HiExclamationCircle,
   HiPencil,
+  HiPlus,
   HiSparkles,
   HiViewList,
   HiX,
@@ -45,7 +51,58 @@ import {
 import { MdOutlineAccountBalanceWallet } from 'react-icons/md'
 
 import { apiErrorMessage } from '@/lib/ledger/errors'
+import {
+  type ChartAccount,
+  type EditableChart,
+  pickEditableChart,
+} from './chartEditing'
+import AccountEditorModal from './components/AccountEditorModal'
 import { ChartTemplatePicker } from './components/ChartTemplatePicker'
+
+const ELEMENTS_PAGE = 1000
+
+/** Every element of one taxonomy, retired ones included. */
+async function listAllElements(graphId: string, taxonomyId: string) {
+  const elements = []
+  for (let offset = 0; ; offset += ELEMENTS_PAGE) {
+    const page = await clients.ledger.listElements(graphId, {
+      taxonomyId,
+      limit: ELEMENTS_PAGE,
+      offset,
+    })
+    elements.push(...(page?.elements ?? []))
+    if (!page?.pagination.hasMore) return elements
+  }
+}
+
+/**
+ * The chart the account tree came from, read whole so its qnames, parents
+ * and retired accounts are in hand. No read names an entity's chart, so it is
+ * the graph's chart taxonomy that holds the tree's accounts.
+ */
+async function loadEditableChart(
+  graphId: string,
+  treeAccountIds: ReadonlySet<string>
+): Promise<EditableChart | 'synced' | null> {
+  const taxonomies = await clients.ledger.listTaxonomies(graphId, {
+    taxonomyType: 'chart_of_accounts',
+  })
+  const candidates = await Promise.all(
+    taxonomies.map(async (taxonomy) => ({
+      taxonomyId: taxonomy.id,
+      elements: await listAllElements(graphId, taxonomy.id),
+    }))
+  )
+  return pickEditableChart(candidates, treeAccountIds)
+}
+
+const collectIds = (nodes: TreeNode[], into: Set<string>): Set<string> => {
+  for (const node of nodes) {
+    into.add(node.id)
+    if (node.children) collectIds(node.children, into)
+  }
+  return into
+}
 
 const CLASSIFICATION_COLORS: Record<ElementClassification, string> = {
   asset: 'success',
@@ -420,6 +477,14 @@ const ChartOfAccountsContent: FC = function () {
   } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
+  // The chart editor: the entity's own chart, 'synced' when QuickBooks owns
+  // it, null while unresolved or when there is none to edit.
+  const [chart, setChart] = useState<EditableChart | 'synced' | null>(null)
+  const [editor, setEditor] = useState<{
+    account: ChartAccount | null
+    step: 'form' | 'retire'
+  } | null>(null)
+
   const { graph: currentGraph } = useLedgerGraph()
   const { entityId, parent } = useEntityScope()
   // The entity whose mapping this chart writes to: unnamed, the list holds
@@ -462,6 +527,9 @@ const ChartOfAccountsContent: FC = function () {
     const scopeKey = `${currentGraph.graphId}:${entityId}`
     if (loadedScopeRef.current !== scopeKey) {
       loadedScopeRef.current = scopeKey
+      setNotice(null)
+      setChart(null)
+      setEditor(null)
       setSelectedMappingId(null)
       setMappingDetail(null)
       setMappingCoverage(null)
@@ -494,10 +562,25 @@ const ChartOfAccountsContent: FC = function () {
           setAccounts(
             flattenTree(roots, currentGraph.graphId, currentGraph.graphName)
           )
+          const treeIds = collectIds(roots, new Set())
+          if (treeIds.size > 0) {
+            loadEditableChart(currentGraph.graphId, treeIds)
+              .then((found) => {
+                if (!cancelled) setChart(found)
+              })
+              .catch((err: unknown) => {
+                if (cancelled) return
+                console.error('Error loading the chart for editing:', err)
+                setChart(null)
+              })
+          } else {
+            setChart(null)
+          }
         } else {
           // A graph with no ledger yet returns null; without this the previous
           // graph's accounts stayed on screen under the new selection.
           setAccounts([])
+          setChart(null)
         }
 
         // Process mappings. Always re-seed the selection from this graph's own
@@ -809,6 +892,22 @@ const ChartOfAccountsContent: FC = function () {
   )
 
   const hasMappings = mappings.length > 0
+  const editable = chart !== null && chart !== 'synced' ? chart : null
+  const chartAccountById = useMemo(
+    () => new Map((editable?.accounts ?? []).map((a) => [a.id, a])),
+    [editable]
+  )
+  const retiredAccounts = useMemo(
+    () =>
+      (editable?.accounts ?? [])
+        .filter((account) => !account.isActive)
+        .sort((a, b) =>
+          (a.code ?? a.name).localeCompare(b.code ?? b.name, undefined, {
+            numeric: true,
+          })
+        ),
+    [editable]
+  )
 
   return (
     <PageLayout>
@@ -936,7 +1035,26 @@ const ChartOfAccountsContent: FC = function () {
             ariaLabel="Classification"
           />
         </FilterField>
+        {editable && (
+          <FilterActions>
+            <Button
+              size="sm"
+              color="light"
+              onClick={() => setEditor({ account: null, step: 'form' })}
+            >
+              <HiPlus className="mr-2 h-4 w-4" />
+              Add account
+            </Button>
+          </FilterActions>
+        )}
       </FilterBar>
+
+      {chart === 'synced' && (
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          This chart is synced from QuickBooks: add, rename and retire accounts
+          there, and the next sync brings the change here.
+        </p>
+      )}
 
       {error && (
         <Card>
@@ -969,7 +1087,13 @@ const ChartOfAccountsContent: FC = function () {
                 key={`${currentGraph.graphId}:${entityId ?? ''}`}
                 graphId={currentGraph.graphId}
                 entityId={entityId}
-                onInitialized={() => setReloadKey((k) => k + 1)}
+                onInitialized={(result) => {
+                  setNotice(
+                    `Chart created: ${result.elementsCreated} accounts, ` +
+                      `${result.mappingsCreated} mapped for reporting.`
+                  )
+                  setReloadKey((k) => k + 1)
+                }}
               />
             ) : (
               <EmptyState
@@ -995,6 +1119,11 @@ const ChartOfAccountsContent: FC = function () {
                   <TableHeadCell>Normal Balance</TableHeadCell>
                   {hasMappings && showMappings && (
                     <TableHeadCell>GAAP Mapping</TableHeadCell>
+                  )}
+                  {editable && (
+                    <TableHeadCell>
+                      <span className="sr-only">Edit</span>
+                    </TableHeadCell>
                   )}
                 </tr>
               </TableHead>
@@ -1098,6 +1227,26 @@ const ChartOfAccountsContent: FC = function () {
                           )}
                         </TableCell>
                       )}
+                      {editable && (
+                        <TableCell className="text-right">
+                          {chartAccountById.has(account.id) && (
+                            <Button
+                              size="xs"
+                              color="light"
+                              aria-label={`Edit ${account.name}`}
+                              onClick={() =>
+                                setEditor({
+                                  account:
+                                    chartAccountById.get(account.id) ?? null,
+                                  step: 'form',
+                                })
+                              }
+                            >
+                              <HiPencil className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      )}
                     </TableRow>
                   )
                 })}
@@ -1105,6 +1254,38 @@ const ChartOfAccountsContent: FC = function () {
             </Table>
           )}
         </div>
+
+        {retiredAccounts.length > 0 && (
+          <details className="border-t border-gray-200 p-4 dark:border-gray-700">
+            <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+              Retired accounts ({retiredAccounts.length})
+            </summary>
+            <ul className="mt-2 divide-y divide-gray-100 dark:divide-gray-700">
+              {retiredAccounts.map((account) => (
+                <li
+                  key={account.id}
+                  className="flex items-center justify-between py-2 text-sm"
+                >
+                  <span className="text-gray-600 dark:text-gray-400">
+                    {account.code && (
+                      <span className="mr-2 font-mono text-xs">
+                        {account.code}
+                      </span>
+                    )}
+                    {account.name}
+                  </span>
+                  <Button
+                    size="xs"
+                    color="light"
+                    onClick={() => setEditor({ account, step: 'retire' })}
+                  >
+                    Reactivate…
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
 
         {/* Summary Footer */}
         {!isLoading && filteredAccounts.length > 0 && (
@@ -1115,6 +1296,22 @@ const ChartOfAccountsContent: FC = function () {
           </div>
         )}
       </Card>
+
+      {editor && editable && currentGraph && (
+        <AccountEditorModal
+          graphId={currentGraph.graphId}
+          entityId={entityId}
+          chart={editable}
+          account={editor.account}
+          initialStep={editor.step}
+          onClose={() => setEditor(null)}
+          onSaved={(message) => {
+            setEditor(null)
+            setNotice(message)
+            setReloadKey((k) => k + 1)
+          }}
+        />
+      )}
     </PageLayout>
   )
 }
