@@ -245,27 +245,40 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
     if (!agent || !taxDirty) return
     setTaxSaving(true)
     setTaxError(null)
+    const savedTaxId = taxIdChange
+      ? removeTaxId
+        ? ''
+        : newTaxId
+      : (agent.taxId ?? '')
     try {
       await clients.ledger.updateAgent(graphId, {
         agent_id: agent.id,
         // An empty string clears it.
-        ...(taxIdChange ? { tax_id: removeTaxId ? '' : newTaxId } : {}),
+        ...(taxIdChange ? { tax_id: savedTaxId } : {}),
         ...(is1099 !== agent.is1099Recipient
           ? { is_1099_recipient: is1099 }
           : {}),
       })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setTaxError(friendlyError(message).message)
+      setTaxSaving(false)
+      return
+    }
+    // Saved: show it at once, so a reload that fails cannot read as a
+    // failed save and invite sending it again.
+    setAgent({ ...agent, taxId: savedTaxId || null, is1099Recipient: is1099 })
+    setTaxIdDraft(null)
+    setRemoveTaxId(false)
+    setTaxSaving(false)
+    try {
       const fresh = await clients.ledger.getAgent(graphId, agentId)
       if (fresh) {
         setAgent(fresh)
         setIs1099(fresh.is1099Recipient)
       }
-      setTaxIdDraft(null)
-      setRemoveTaxId(false)
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      setTaxError(friendlyError(message).message)
-    } finally {
-      setTaxSaving(false)
+      console.error('Error reloading the agent after a save:', err)
     }
   }, [
     agent,
@@ -395,7 +408,8 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
               ) : (
                 <>
                   <Label
-                    htmlFor="agent-tax-id"
+                    id="agent-tax-id-label"
+                    htmlFor={taxIdDraft === null ? undefined : 'agent-tax-id'}
                     className="mb-1 block text-xs text-gray-500 dark:text-gray-400"
                   >
                     Tax ID
@@ -403,7 +417,7 @@ const AgentDetailModal: FC<Props> = function ({ graphId, agentId, onClose }) {
                   {taxIdDraft === null ? (
                     <div className="flex items-center gap-3">
                       <span
-                        id="agent-tax-id"
+                        aria-labelledby="agent-tax-id-label"
                         className="font-mono text-sm text-gray-900 dark:text-white"
                       >
                         {removeTaxId

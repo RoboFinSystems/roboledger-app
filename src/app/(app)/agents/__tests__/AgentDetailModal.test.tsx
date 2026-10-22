@@ -405,4 +405,20 @@ describe('AgentDetailModal — tax reporting', () => {
     expect(screen.queryByText('Save tax details')).toBeNull()
     expect(screen.queryByText('Change')).toBeNull()
   })
+
+  it('a save that landed is not reported as failed when the reload fails', async () => {
+    mockGetAgent
+      .mockResolvedValueOnce(agent(null))
+      .mockRejectedValueOnce(new Error('network'))
+    renderModal()
+    fireEvent.click(await screen.findByText('Add'))
+    fireEvent.change(screen.getByLabelText('Tax ID'), {
+      target: { value: '12-3456789' },
+    })
+    fireEvent.click(screen.getByText('Save tax details'))
+    expect(await screen.findByText('••••6789')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.queryByDisplayValue('12-3456789')).toBeNull()
+    expect(mockUpdateAgent).toHaveBeenCalledTimes(1)
+  })
 })
