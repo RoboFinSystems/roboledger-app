@@ -112,8 +112,8 @@ vi.mock('../components/SchedulePanel', () => ({
   ),
 }))
 
-vi.mock('../components/NewScheduleModal', () => ({
-  NewScheduleModal: ({ open }: any) =>
+vi.mock('../components/ScheduleModal', () => ({
+  ScheduleModal: ({ open }: any) =>
     open ? <div data-testid="new-schedule-modal" /> : null,
 }))
 

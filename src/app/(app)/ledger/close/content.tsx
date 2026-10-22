@@ -19,9 +19,9 @@ import { HiExclamationCircle } from 'react-icons/hi'
 import { TbBook2 } from 'react-icons/tb'
 import AccountRollupsPanel from './components/AccountRollupsPanel'
 import ChangedTransactionsPanel from './components/ChangedTransactionsPanel'
-import { NewScheduleModal } from './components/NewScheduleModal'
 import PeriodClosePanel from './components/PeriodClosePanel'
 import ReconciliationsPanel from './components/ReconciliationsPanel'
+import { ScheduleModal } from './components/ScheduleModal'
 import SchedulePanel from './components/SchedulePanel'
 import StatementPanel from './components/StatementPanel'
 import StructureSidebar, {
@@ -188,9 +188,10 @@ const CloseContent: FC = function () {
     loadSidebarData()
   }, [loadSidebarData])
 
-  // A freshly created schedule becomes the selection so its BlockView —
-  // the materialized forward FactSet — serves as the post-commit preview.
-  const handleScheduleCreated = useCallback(
+  // A freshly created or edited schedule becomes the selection so its
+  // BlockView — the materialized forward FactSet — serves as the
+  // post-commit view (and the sidebar picks up a changed name).
+  const handleScheduleSaved = useCallback(
     (structureId: string) => {
       loadSidebarData({ type: 'schedule', structureId })
     },
@@ -295,6 +296,7 @@ const CloseContent: FC = function () {
                 structureId={selectedItem.structureId}
                 viewMode={viewMode}
                 onDeleted={handleScheduleDeleted}
+                onChanged={() => handleScheduleSaved(selectedItem.structureId)}
               />
             ) : selectedItem.type === 'account_rollups' && currentGraph ? (
               <AccountRollupsPanel
@@ -339,12 +341,12 @@ const CloseContent: FC = function () {
       </div>
 
       {currentGraph && (
-        <NewScheduleModal
+        <ScheduleModal
           graphId={currentGraph.graphId}
           entityId={entityId}
           open={newScheduleOpen}
           onClose={() => setNewScheduleOpen(false)}
-          onCreated={handleScheduleCreated}
+          onSaved={handleScheduleSaved}
         />
       )}
     </PageLayout>

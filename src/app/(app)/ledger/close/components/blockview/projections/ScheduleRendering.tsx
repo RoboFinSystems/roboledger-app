@@ -1,5 +1,6 @@
 'use client'
 
+import { readScheduleMechanics } from '@/lib/ledger/schedules'
 import {
   Table,
   TableBody,
@@ -42,9 +43,13 @@ interface RollForwardRow {
  *
  * Each period reads Beginning Balance → Movement → Ending Balance, so
  * the schedule ties out arithmetically rather than presenting a flat
- * dump of facts. When the opening balance is missing (e.g. a schedule
- * viewed before the carry-in fix reaches the API), the first row's
- * Beginning degrades to "—" rather than breaking the render.
+ * dump of facts. A loan schedule reads differently: the balance is the
+ * note the definition names, and the movement is the period's interest
+ * (which a payment settles, so the note need not move), taken from the
+ * interest fact rather than from the balances. When the opening balance
+ * is missing (e.g. a schedule viewed before the carry-in fix reaches the
+ * API), the first row's Beginning degrades to "—" rather than breaking
+ * the render.
  *
  * Read-only: closing entries are created on the period-close page
  * (Current Period Status), which is sequence-aware and guards against
@@ -191,17 +196,32 @@ interface RollForwardModel {
  *
  * The signed movement is derived as `ending - beginning` so each row
  * ties by construction; its magnitude equals the period's duration fact.
+ * A loan is the exception: its definition names the note as the balance
+ * and the interest account as the movement, and the movement is the
+ * period's interest fact, since a payment settles it without moving the
+ * note.
  */
 function buildRollForward(envelope: EnvelopeBlock): RollForwardModel {
   const elementsById = new Map(envelope.elements.map((e) => [e.id, e]))
   const instants = envelope.facts.filter((f) => f.periodType === 'instant')
   const movements = envelope.facts.filter((f) => f.periodType === 'duration')
 
-  // Primary running-balance element: the instant element with the most
-  // facts (the credit/running-balance series; ties broken deterministically
-  // by element id so the choice is stable across renders).
-  const balanceElementId = pickDominantElement(instants)
-  const movementElementId = pickDominantElement(movements)
+  const mechanics = readScheduleMechanics(envelope)
+  const loanTerms =
+    mechanics?.schedule_metadata?.method === 'effective_interest'
+      ? (mechanics.schedule_metadata.loan_terms ?? null)
+      : null
+
+  // Primary running-balance element: a loan's note; otherwise the instant
+  // element with the most facts (the credit/running-balance series; ties
+  // broken deterministically by element id so the choice is stable across
+  // renders).
+  const balanceElementId = loanTerms
+    ? loanTerms.note_element_id
+    : pickDominantElement(instants)
+  const movementElementId = loanTerms
+    ? mechanics!.entry_template.debit_element_id
+    : pickDominantElement(movements)
   const balanceName = balanceElementId
     ? (elementsById.get(balanceElementId)?.name ?? null)
     : null
@@ -220,7 +240,10 @@ function buildRollForward(envelope: EnvelopeBlock): RollForwardModel {
   // Drive rows off the movement periods so every period surfaces even if
   // its opening balance is absent. Fall back to the balance instants when
   // there are no movement facts at all.
-  const periods = (movements.length > 0 ? movements : balances)
+  const movementFacts = movements.filter(
+    (f) => movementElementId === null || f.elementId === movementElementId
+  )
+  const periods = (movementFacts.length > 0 ? movementFacts : balances)
     .slice()
     .sort(byPeriodEnd)
 
@@ -229,11 +252,18 @@ function buildRollForward(envelope: EnvelopeBlock): RollForwardModel {
     const ending = balanceByEnd.get(period.periodEnd)
     if (ending === undefined) continue
     const beginning = precedingBalance(balances, period.periodEnd)
+    const movement = loanTerms
+      ? period.periodType === 'duration'
+        ? period.value
+        : null
+      : beginning !== null
+        ? round2(ending - beginning)
+        : null
     rows.push({
       periodStart: period.periodStart,
       periodEnd: period.periodEnd,
       beginning,
-      movement: beginning !== null ? round2(ending - beginning) : null,
+      movement,
       ending,
     })
   }

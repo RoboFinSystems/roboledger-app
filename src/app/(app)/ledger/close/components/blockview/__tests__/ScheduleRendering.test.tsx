@@ -152,3 +152,119 @@ describe('ScheduleRenderingProjection', () => {
     expect(screen.queryByText(/Entry$/)).toBeNull()
   })
 })
+
+describe('ScheduleRenderingProjection — loan', () => {
+  const loanElements = [
+    {
+      id: 'elem_note',
+      qname: 'qb:CFC Notes Payable',
+      name: 'CFC Notes Payable',
+      code: null,
+      elementType: 'concept',
+      isAbstract: false,
+      isMonetary: true,
+      balanceType: 'credit',
+      periodType: 'instant',
+    },
+    {
+      id: 'elem_interest',
+      qname: 'qb:Interest Expense',
+      name: 'Interest Expense',
+      code: null,
+      elementType: 'concept',
+      isAbstract: false,
+      isMonetary: true,
+      balanceType: 'debit',
+      periodType: 'duration',
+    },
+    {
+      id: 'elem_ap',
+      qname: 'qb:Accounts payable',
+      name: 'Accounts payable',
+      code: null,
+      elementType: 'concept',
+      isAbstract: false,
+      isMonetary: true,
+      balanceType: 'credit',
+      periodType: 'instant',
+    },
+  ] as any
+
+  const noteAt = (periodEnd: string, factScope = 'in_scope') =>
+    makeFact({
+      id: `note_${periodEnd}`,
+      elementId: 'elem_note',
+      value: 80000,
+      periodStart: null,
+      periodEnd,
+      periodType: 'instant',
+      factScope,
+    })
+  const interestFor = (periodStart: string, periodEnd: string, value: number) =>
+    makeFact({
+      id: `int_${periodEnd}`,
+      elementId: 'elem_interest',
+      value,
+      periodStart,
+      periodEnd,
+      periodType: 'duration',
+    })
+
+  const loanEnvelope = makeEnvelope({
+    blockType: 'schedule',
+    name: 'CFC line of credit',
+    elements: loanElements,
+    artifact: {
+      topic: null,
+      rendererNote: null,
+      template: null,
+      mechanics: {
+        kind: 'closing_entry_generator',
+        entry_template: {
+          debit_element_id: 'elem_interest',
+          credit_element_id: 'elem_ap',
+          legs: [
+            {
+              element_id: 'elem_interest',
+              side: 'debit',
+              amount_source: 'interest',
+            },
+            {
+              element_id: 'elem_ap',
+              side: 'credit',
+              amount_source: 'interest',
+            },
+          ],
+        },
+        schedule_metadata: {
+          method: 'effective_interest',
+          loan_terms: { note_element_id: 'elem_note' },
+        },
+        posted_periods: [],
+      },
+    },
+    facts: [
+      noteAt('2026-09-30', 'historical'),
+      interestFor('2026-10-01', '2026-10-31', 682),
+      noteAt('2026-10-31'),
+      interestFor('2026-11-01', '2026-11-30', 660),
+      noteAt('2026-11-30'),
+    ],
+  })
+
+  it('reads the note as the balance and the interest as the movement', () => {
+    render(<ScheduleRenderingProjection envelope={loanEnvelope} />)
+    expect(
+      screen.getByText(/CFC Notes Payable roll-forward/)
+    ).toBeInTheDocument()
+    expect(screen.getByText(/2 periods/)).toBeInTheDocument()
+    expect(screen.getByText('Interest Expense')).toBeInTheDocument()
+    // The interest is the movement, not ending − beginning (which is zero
+    // for an interest-only note).
+    expect(screen.getByText('$682.00')).toBeInTheDocument()
+    expect(screen.getByText('$660.00')).toBeInTheDocument()
+    // Opening, two beginnings, two endings, closing: the note never moves.
+    expect(screen.getAllByText('$80,000.00').length).toBe(6)
+    expect(screen.getByText('$0.00')).toBeInTheDocument()
+  })
+})
