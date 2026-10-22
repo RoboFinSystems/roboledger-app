@@ -315,13 +315,18 @@ describe('editing the chart', () => {
       { id: 'tax_parent' },
       { id: 'tax_sub' },
     ])
-    mockListElements.mockImplementation(async (_graph, { taxonomyId }) =>
-      taxonomyId === 'tax_sub'
-        ? page([
-            element('el_rent', 'Rent', '6100'),
-            element('el_old', 'Old lease', '6190', { isActive: false }),
-          ])
-        : page([element('el_parent_rent', 'Rent', '6100')])
+    // As the API answers: a retired account only when asked for.
+    mockListElements.mockImplementation(
+      async (_graph, { taxonomyId, includeInactive }) => {
+        const rows =
+          taxonomyId === 'tax_sub'
+            ? [
+                element('el_rent', 'Rent', '6100'),
+                element('el_old', 'Old lease', '6190', { isActive: false }),
+              ]
+            : [element('el_parent_rent', 'Rent', '6100')]
+        return page(includeInactive ? rows : rows.filter((row) => row.isActive))
+      }
     )
     mockUpdateTaxonomyBlock.mockResolvedValue({})
   })
@@ -333,6 +338,7 @@ describe('editing the chart', () => {
       taxonomyId: 'tax_sub',
       limit: 1000,
       offset: 0,
+      includeInactive: true,
     })
     fireEvent.change(await screen.findByLabelText('Name'), {
       target: { value: 'Office rent' },
