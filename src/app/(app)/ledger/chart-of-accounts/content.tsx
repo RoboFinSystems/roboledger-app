@@ -431,6 +431,12 @@ const ChartOfAccountsContent: FC = function () {
   useEffect(() => {
     selectedMappingRef.current = selectedMappingId
   }, [selectedMappingId])
+  // Moves on with the graph or the mapping, so an auto-map still in flight
+  // can tell it was started somewhere else — a switch away and back included.
+  const autoMapEpochRef = useRef(0)
+  useEffect(() => {
+    autoMapEpochRef.current++
+  }, [currentGraph?.graphId, selectedMappingId])
   // The graph and entity the page last loaded, to tell a switch from a reload.
   const loadedScopeRef = useRef<string | null>(null)
 
@@ -728,6 +734,10 @@ const ChartOfAccountsContent: FC = function () {
   // Auto-map handler
   const handleAutoMap = useCallback(async () => {
     if (!currentGraph || !selectedMappingId) return
+    // The scope this run belongs to; a result that lands after the graph or
+    // mapping moved on is dropped, not shown under the new one.
+    const epoch = autoMapEpochRef.current
+    const stale = () => autoMapEpochRef.current !== epoch
 
     try {
       setIsAutoMapping(true)
@@ -736,14 +746,17 @@ const ChartOfAccountsContent: FC = function () {
         currentGraph.graphId,
         { mapping_id: selectedMappingId }
       )
+      if (stale()) return
       if (status !== 'completed') {
         const outcome = await clients.operations.monitorOperation(operationId)
+        if (stale()) return
         if (!outcome.success) {
           setError(outcome.error || 'Auto-mapping failed. Please try again.')
         }
       }
       await refreshMappingData()
     } catch (err) {
+      if (stale()) return
       console.error('Auto-map failed:', err)
       setError('Auto-mapping failed. Please try again.')
     } finally {

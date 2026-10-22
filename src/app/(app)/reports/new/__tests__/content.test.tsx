@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockListMappings = vi.fn()
 const mockGetMappingCoverage = vi.fn()
+const mockAutoMapElements = vi.fn()
 const mockCreateReport = vi.fn()
 const mockPush = vi.fn()
 
@@ -11,7 +12,7 @@ vi.mock('@robosystems/core', () => ({
     ledger: {
       listMappings: (...args: any[]) => mockListMappings(...args),
       getMappingCoverage: (...args: any[]) => mockGetMappingCoverage(...args),
-      autoMapElements: vi.fn(),
+      autoMapElements: (...args: any[]) => mockAutoMapElements(...args),
     },
     reports: {
       createReport: (...args: any[]) => mockCreateReport(...args),
@@ -39,9 +40,11 @@ vi.mock('flowbite-react', () => ({
   ToggleSwitch: () => null,
 }))
 
-const { GRAPH } = vi.hoisted(() => ({ GRAPH: { graphId: 'kg1' } }))
+// The graph in scope; a test switches it by swapping the object, as the
+// provider does.
+const GRAPH = vi.hoisted(() => ({ current: { graphId: 'kg1' } }))
 vi.mock('@/lib/useLedgerGraph', () => ({
-  useLedgerGraph: () => ({ graph: GRAPH }),
+  useLedgerGraph: () => ({ graph: GRAPH.current }),
 }))
 const mockScope = vi.fn((): any => ({
   entityId: null,
@@ -75,6 +78,7 @@ const generate = async () => {
 describe('Report builder', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    GRAPH.current = { graphId: 'kg1' }
     mockScope.mockReturnValue(UNSCOPED)
     mockListMappings.mockResolvedValue([{ id: 'map_1', name: 'Default' }])
     mockGetMappingCoverage.mockResolvedValue({
@@ -84,6 +88,47 @@ describe('Report builder', () => {
       unmappedCount: 0,
     })
     mockCreateReport.mockResolvedValue({ id: 'rpt_1' })
+  })
+
+  it('drops an auto-map result that lands after the graph was switched', async () => {
+    mockGetMappingCoverage.mockResolvedValue({
+      coveragePercent: 80,
+      mappedCount: 8,
+      totalCoaElements: 10,
+      unmappedCount: 2,
+    })
+    let releaseAutoMap: (value: unknown) => void = () => {}
+    mockAutoMapElements.mockImplementation(
+      () => new Promise((resolve) => (releaseAutoMap = resolve))
+    )
+    const { rerender } = render(<ReportBuilderContent />)
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Auto-Map with AI/ })
+    )
+    await waitFor(() =>
+      expect(mockAutoMapElements).toHaveBeenCalledWith('kg1', {
+        mapping_id: 'map_1',
+      })
+    )
+    const coverageCallsBefore = mockGetMappingCoverage.mock.calls.length
+
+    GRAPH.current = { graphId: 'kg2' }
+    rerender(<ReportBuilderContent />)
+    await waitFor(() =>
+      expect(mockGetMappingCoverage).toHaveBeenCalledWith('kg2', 'map_1')
+    )
+    await act(async () => {
+      releaseAutoMap({ operationId: 'op_1', status: 'completed' })
+    })
+
+    const staleReads = mockGetMappingCoverage.mock.calls
+      .slice(coverageCallsBefore)
+      .filter((call) => call[0] === 'kg1')
+    expect(staleReads).toHaveLength(0)
+    expect(
+      screen.getByRole('button', { name: /Auto-Map with AI/ })
+    ).not.toBeDisabled()
   })
 
   it('names the parent when the parent is in scope', async () => {

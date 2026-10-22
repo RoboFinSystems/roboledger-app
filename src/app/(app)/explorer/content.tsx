@@ -213,6 +213,9 @@ const BlockExplorerContent: FC = function () {
   const loadEnvelope = useCallback(async () => {
     if (!currentGraph || !selectedId) {
       setEnvelope(null)
+      // A silent reload raised the overlay; with nothing to select, this is
+      // the only place it comes down.
+      setIsEnvelopeLoading(false)
       return
     }
     if (blocksFor !== `${currentGraph.graphId}:${entityId}`) return

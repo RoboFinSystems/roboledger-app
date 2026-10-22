@@ -322,8 +322,11 @@ export function formatPlanMoney(
   scale: PlanScale,
   withSymbol: boolean
 ): string {
-  const rounded = Math.round(scale === 'thousands' ? value / 1000 : value)
-  const abs = Math.abs(rounded).toLocaleString('en-US')
+  const scaled = scale === 'thousands' ? value / 1000 : value
+  // Round the magnitude: Math.round carries a negative half toward zero
+  // (-1.5 → -1) while a positive half goes up (1.5 → 2).
+  const magnitude = Math.round(Math.abs(scaled))
+  const abs = magnitude.toLocaleString('en-US')
   const symbol = withSymbol ? '$' : ''
-  return rounded < 0 ? `${symbol}(${abs})` : `${symbol}${abs}`
+  return scaled < 0 && magnitude > 0 ? `${symbol}(${abs})` : `${symbol}${abs}`
 }

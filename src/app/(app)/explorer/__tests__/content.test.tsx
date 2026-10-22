@@ -435,6 +435,22 @@ describe('BlockExplorerContent', () => {
     expect(screen.getByRole('button', { name: 'Refresh' })).toBeDisabled()
   })
 
+  it('clears the refresh overlay when the reload finds no fact-bearing blocks', async () => {
+    render(<BlockExplorerContent />)
+    await screen.findByTestId('block-view')
+
+    mockListInformationBlocks.mockResolvedValue([])
+    act(() => onGraphWrites?.())
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('block-view')).not.toBeInTheDocument()
+    )
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Refresh' })).not.toBeDisabled()
+    )
+    expect(screen.queryByTestId('loading-state')).not.toBeInTheDocument()
+  })
+
   it('surfaces a list-load failure', async () => {
     mockListInformationBlocks.mockRejectedValue(new Error('boom'))
     render(<BlockExplorerContent />)
