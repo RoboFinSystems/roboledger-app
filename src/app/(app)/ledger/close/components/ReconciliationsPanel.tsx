@@ -12,6 +12,7 @@ import type {
   LedgerReconciliationComponent,
   LedgerReconciliationList,
   LedgerReconciliationRollForward,
+  ReconciliationPolicyChanges,
   StatementCycle,
 } from '@robosystems/client/clients'
 import { clients, LoadingState } from '@robosystems/core'
@@ -26,6 +27,7 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
+  TextInput,
 } from 'flowbite-react'
 import type { FC } from 'react'
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
@@ -227,17 +229,19 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({
     [graphId, load]
   )
 
-  const handleCycleChange = useCallback(
-    async (rec: LedgerReconciliation, statementCycle: StatementCycle) => {
+  const handlePolicyChange = useCallback(
+    async (rec: LedgerReconciliation, changes: ReconciliationPolicyChanges) => {
       try {
         setBusyId(rec.structureId)
         setError(null)
-        await clients.ledger.setReconciliationPolicy(graphId, rec.structureId, {
-          statementCycle,
-        })
+        await clients.ledger.setReconciliationPolicy(
+          graphId,
+          rec.structureId,
+          changes
+        )
         await load()
       } catch (err) {
-        setError(describeError(err, 'The statement cycle was not changed.'))
+        setError(describeError(err, 'The policy was not changed.'))
       } finally {
         setBusyId(null)
       }
@@ -428,7 +432,7 @@ const ReconciliationsPanel: FC<ReconciliationsPanelProps> = ({
                           graphId={graphId}
                           rec={rec}
                           busy={busy}
-                          onCycleChange={handleCycleChange}
+                          onPolicyChange={handlePolicyChange}
                         />
                       </TableCell>
                     </TableRow>
@@ -576,13 +580,101 @@ const RollForward: FC<{ carried: LedgerReconciliationRollForward }> = ({
   )
 }
 
+/**
+ * How much the close cares about one reconciliation, beyond whether it holds
+ * the close at all (the table's checkbox): the difference that still counts
+ * as reconciled, and whether a sign-off — by someone other than who ran it —
+ * is also needed.
+ */
+const PolicyControls: FC<{
+  rec: LedgerReconciliation
+  busy: boolean
+  onPolicyChange: (
+    rec: LedgerReconciliation,
+    changes: ReconciliationPolicyChanges
+  ) => void
+}> = ({ rec, busy, onPolicyChange }) => {
+  const [materiality, setMateriality] = useState(String(rec.materiality ?? 0))
+  useEffect(() => {
+    setMateriality(String(rec.materiality ?? 0))
+  }, [rec.materiality])
+  const parsed = Number(materiality.replace(/[$,\s]/g, ''))
+  const materialityValid =
+    materiality.trim() !== '' && Number.isFinite(parsed) && parsed >= 0
+  const materialityChanged = materialityValid && parsed !== rec.materiality
+
+  return (
+    <div
+      className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-gray-500 dark:text-gray-400"
+      data-testid={`policy-${rec.structureId}`}
+    >
+      <label className="flex items-center gap-2">
+        Counts as reconciled within
+        <TextInput
+          sizing="sm"
+          inputMode="decimal"
+          className="w-28"
+          aria-label={`${rec.name} materiality`}
+          value={materiality}
+          color={materialityValid ? undefined : 'failure'}
+          disabled={busy}
+          onChange={(e) => setMateriality(e.target.value)}
+        />
+        {materialityChanged && (
+          <Button
+            size="xs"
+            color="light"
+            disabled={busy}
+            onClick={() => onPolicyChange(rec, { materiality: parsed })}
+          >
+            Save
+          </Button>
+        )}
+      </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          aria-label={`${rec.name} needs a sign-off`}
+          checked={rec.reviewRequired}
+          disabled={busy}
+          onChange={() =>
+            onPolicyChange(rec, {
+              reviewRequired: !rec.reviewRequired,
+              // A separate reviewer means nothing without a sign-off.
+              ...(rec.reviewRequired ? { separateReviewer: false } : {}),
+            })
+          }
+          className="rounded border-gray-300"
+        />
+        Needs a sign-off to close
+      </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          aria-label={`${rec.name} needs a separate reviewer`}
+          checked={rec.separateReviewer}
+          disabled={busy || !rec.reviewRequired}
+          onChange={() =>
+            onPolicyChange(rec, { separateReviewer: !rec.separateReviewer })
+          }
+          className="rounded border-gray-300"
+        />
+        Signed off by someone other than who ran it
+      </label>
+    </div>
+  )
+}
+
 /** What a reconciliation compared: its parts, and the accounts that differ. */
 const ReconciliationDetail: FC<{
   graphId: string
   rec: LedgerReconciliation
   busy: boolean
-  onCycleChange: (rec: LedgerReconciliation, cycle: StatementCycle) => void
-}> = ({ graphId, rec, busy, onCycleChange }) => {
+  onPolicyChange: (
+    rec: LedgerReconciliation,
+    changes: ReconciliationPolicyChanges
+  ) => void
+}> = ({ graphId, rec, busy, onPolicyChange }) => {
   const parts = rec.components.filter(
     (c) => c.kind !== 'outstanding' && c.kind !== 'stale_outstanding'
   )
@@ -592,6 +684,7 @@ const ReconciliationDetail: FC<{
   const stale = rec.components.filter((c) => c.kind === 'stale_outstanding')
   return (
     <div className="space-y-3 text-sm text-gray-700 dark:text-gray-200">
+      <PolicyControls rec={rec} busy={busy} onPolicyChange={onPolicyChange} />
       {rec.status === 'not_started' ? (
         <p>This period has not been compared yet.</p>
       ) : (
@@ -620,7 +713,9 @@ const ReconciliationDetail: FC<{
             value={rec.statementCycle ?? 'monthly'}
             disabled={busy}
             onChange={(e) =>
-              onCycleChange(rec, e.target.value as StatementCycle)
+              onPolicyChange(rec, {
+                statementCycle: e.target.value as StatementCycle,
+              })
             }
           >
             {STATEMENT_CYCLES.map((cycle) => (

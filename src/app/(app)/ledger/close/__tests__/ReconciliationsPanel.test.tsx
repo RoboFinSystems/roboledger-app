@@ -80,8 +80,15 @@ vi.mock('flowbite-react', () => ({
   TableHead: ({ children }: any) => <thead>{children}</thead>,
   TableHeadCell: ({ children }: any) => <th>{children}</th>,
   TableRow: ({ children }: any) => <tr>{children}</tr>,
-  TextInput: ({ value, onChange, id, type }: any) => (
-    <input id={id} type={type} value={value} onChange={onChange} />
+  TextInput: ({ value, onChange, id, type, disabled, ...rest }: any) => (
+    <input
+      id={id}
+      type={type}
+      value={value}
+      onChange={onChange}
+      disabled={disabled}
+      aria-label={rest['aria-label']}
+    />
   ),
 }))
 
@@ -573,6 +580,86 @@ describe('ReconciliationsPanel', () => {
         'kg1',
         'struct_checking',
         { statementCycle: 'quarterly' }
+      )
+    )
+  })
+
+  it('sets the difference that still counts as reconciled', async () => {
+    mockSetReconciliationPolicy.mockResolvedValue({})
+    render(<ReconciliationsPanel graphId="kg1" />)
+
+    fireEvent.click(await screen.findByText('Prepaid Insurance (schedules)'))
+    const input = await screen.findByLabelText(
+      'Prepaid Insurance (schedules) materiality'
+    )
+    expect(input).toHaveValue('0')
+    // Nothing to save until it changes.
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull()
+    fireEvent.change(input, { target: { value: '25.50' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(mockSetReconciliationPolicy).toHaveBeenCalledWith(
+        'kg1',
+        'struct_prepaid',
+        { materiality: 25.5 }
+      )
+    )
+  })
+
+  it('refuses a materiality that is not an amount', async () => {
+    render(<ReconciliationsPanel graphId="kg1" />)
+    fireEvent.click(await screen.findByText('Prepaid Insurance (schedules)'))
+    fireEvent.change(
+      await screen.findByLabelText('Prepaid Insurance (schedules) materiality'),
+      { target: { value: '-5' } }
+    )
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull()
+  })
+
+  it('requires a sign-off, then a separate reviewer', async () => {
+    mockSetReconciliationPolicy.mockResolvedValue({})
+    render(<ReconciliationsPanel graphId="kg1" />)
+
+    fireEvent.click(await screen.findByText('Prepaid Insurance (schedules)'))
+    const separate = await screen.findByLabelText(
+      'Prepaid Insurance (schedules) needs a separate reviewer'
+    )
+    // A separate reviewer means nothing until a sign-off is required.
+    expect(separate).toBeDisabled()
+    fireEvent.click(
+      screen.getByLabelText('Prepaid Insurance (schedules) needs a sign-off')
+    )
+    await waitFor(() =>
+      expect(mockSetReconciliationPolicy).toHaveBeenCalledWith(
+        'kg1',
+        'struct_prepaid',
+        { reviewRequired: true }
+      )
+    )
+  })
+
+  it('drops the separate reviewer with the sign-off', async () => {
+    mockListReconciliations.mockResolvedValue(
+      listOf(rec({ reviewRequired: true, separateReviewer: true }))
+    )
+    mockSetReconciliationPolicy.mockResolvedValue({})
+    render(<ReconciliationsPanel graphId="kg1" />)
+
+    fireEvent.click(await screen.findByText('Prepaid Insurance (schedules)'))
+    expect(
+      await screen.findByLabelText(
+        'Prepaid Insurance (schedules) needs a separate reviewer'
+      )
+    ).toBeChecked()
+    fireEvent.click(
+      screen.getByLabelText('Prepaid Insurance (schedules) needs a sign-off')
+    )
+    await waitFor(() =>
+      expect(mockSetReconciliationPolicy).toHaveBeenCalledWith(
+        'kg1',
+        'struct_prepaid',
+        { reviewRequired: false, separateReviewer: false }
       )
     )
   })
