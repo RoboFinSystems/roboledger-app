@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mockListMappings = vi.fn()
 const mockGetTrialBalance = vi.fn()
 const mockGetMappedTrialBalance = vi.fn()
+const mockGetDimensions = vi.fn()
 const mockUseGraphContext = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
@@ -13,6 +14,7 @@ vi.mock('@robosystems/core', () => ({
       getTrialBalance: (...args: any[]) => mockGetTrialBalance(...args),
       getMappedTrialBalance: (...args: any[]) =>
         mockGetMappedTrialBalance(...args),
+      getDimensions: (...args: any[]) => mockGetDimensions(...args),
     },
   },
   GraphFilters: {
@@ -51,6 +53,12 @@ vi.mock('flowbite-react', () => ({
     </button>
   ),
   Card: ({ children }: any) => <div>{children}</div>,
+  Label: ({ children, htmlFor }: any) => (
+    <label htmlFor={htmlFor}>{children}</label>
+  ),
+  Select: ({ children, sizing: _sizing, ...props }: any) => (
+    <select {...props}>{children}</select>
+  ),
   Table: ({ children }: any) => <table>{children}</table>,
   TableBody: ({ children }: any) => <tbody>{children}</tbody>,
   TableCell: ({ children }: any) => <td>{children}</td>,
@@ -132,6 +140,7 @@ describe('TrialBalanceContent', () => {
     mockListMappings.mockResolvedValue([{ id: 'map_a', isActive: true }])
     mockGetTrialBalance.mockResolvedValue(coaRows())
     mockGetMappedTrialBalance.mockResolvedValue(mappedRows('Cash'))
+    mockGetDimensions.mockResolvedValue({ types: [], dimensions: [] })
   })
 
   it('loads the CoA trial balance for the current graph', async () => {
@@ -363,5 +372,132 @@ describe('trialBalanceCsv', () => {
       "1100,'=Receivables,Asset,0.00,40.00,-40.00",
       ',Total,,100.50,40.00,60.50',
     ])
+  })
+})
+
+describe('TrialBalanceContent — one member', () => {
+  const department = (id: string, name: string, isActive = true) => ({
+    id,
+    dimensionType: 'department',
+    name,
+    value: name.toLowerCase(),
+    source: 'native',
+    isActive,
+    lineCount: 3,
+    createdAt: null,
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    setGraph('kg_a')
+    mockScope.mockReturnValue({ entityId: null, parent: null })
+    mockListMappings.mockResolvedValue([{ id: 'map_a', isActive: true }])
+    mockGetTrialBalance.mockResolvedValue(coaRows())
+    mockGetDimensions.mockResolvedValue({
+      types: ['department'],
+      dimensions: [
+        department('dim_sales', 'Sales'),
+        department('dim_ops', 'Operations', false),
+      ],
+    })
+  })
+
+  it('offers no member picker on a graph with no dimensions', async () => {
+    mockGetDimensions.mockResolvedValue({ types: [], dimensions: [] })
+    render(<TrialBalanceContent />)
+    expect(await screen.findByText('Cash')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Member')).not.toBeInTheDocument()
+  })
+
+  it("sums one member's lines and says it need not foot", async () => {
+    mockGetTrialBalance.mockImplementation(
+      async (_graphId: string, options: { dimension?: unknown }) => ({
+        ...coaRows(),
+        totalDebits: 100,
+        totalCredits: 0,
+        sliced: !!options.dimension,
+      })
+    )
+    render(<TrialBalanceContent />)
+    const picker = (await screen.findByLabelText('Member')) as HTMLSelectElement
+    expect(mockGetDimensions).toHaveBeenCalledWith('kg_a', {
+      includeInactive: true,
+    })
+    expect(Array.from(picker.options).map((o) => o.textContent)).toEqual([
+      'All lines',
+      'Sales',
+      'Operations (retired)',
+      'Unallocated',
+    ])
+
+    fireEvent.change(picker, { target: { value: 'department::dim_sales' } })
+    await waitFor(() =>
+      expect(mockGetTrialBalance).toHaveBeenLastCalledWith('kg_a', {
+        entityId: null,
+        dimension: { type: 'department', memberId: 'dim_sales' },
+      })
+    )
+    expect(
+      await screen.findByText(/this balance need not foot/)
+    ).toBeInTheDocument()
+    expect(screen.getByText('Department: Sales.')).toBeInTheDocument()
+    expect(screen.getByText('Cash').closest('a')?.getAttribute('href')).toBe(
+      '/ledger/account-register?accountId=acct_1&dimensionType=department&dimensionMemberId=dim_sales'
+    )
+
+    fireEvent.change(picker, { target: { value: 'department::unallocated' } })
+    await waitFor(() =>
+      expect(mockGetTrialBalance).toHaveBeenLastCalledWith('kg_a', {
+        entityId: null,
+        dimension: { type: 'department', memberId: 'unallocated' },
+      })
+    )
+    expect(
+      await screen.findByText('Department: Unallocated.')
+    ).toBeInTheDocument()
+
+    fireEvent.change(picker, { target: { value: '' } })
+    await waitFor(() =>
+      expect(mockGetTrialBalance).toHaveBeenLastCalledWith('kg_a', {
+        entityId: null,
+      })
+    )
+    expect(screen.queryByText(/need not foot/)).not.toBeInTheDocument()
+  })
+
+  it('drops the member on a graph switch', async () => {
+    const { rerender } = render(<TrialBalanceContent />)
+    fireEvent.change(await screen.findByLabelText('Member'), {
+      target: { value: 'department::dim_sales' },
+    })
+    await waitFor(() =>
+      expect(mockGetTrialBalance).toHaveBeenLastCalledWith('kg_a', {
+        entityId: null,
+        dimension: { type: 'department', memberId: 'dim_sales' },
+      })
+    )
+    setGraph('kg_b')
+    rerender(<TrialBalanceContent />)
+    await waitFor(() =>
+      expect(mockGetTrialBalance).toHaveBeenLastCalledWith('kg_b', {
+        entityId: null,
+      })
+    )
+    expect(mockGetTrialBalance).not.toHaveBeenCalledWith(
+      'kg_b',
+      expect.objectContaining({ dimension: expect.anything() })
+    )
+  })
+
+  it('the US-GAAP view reads every line', async () => {
+    render(<TrialBalanceContent />)
+    fireEvent.change(await screen.findByLabelText('Member'), {
+      target: { value: 'department::dim_sales' },
+    })
+    await screen.findByText(/need not foot/)
+    fireEvent.click(screen.getByText('US-GAAP'))
+    await waitFor(() => expect(mockGetMappedTrialBalance).toHaveBeenCalled())
+    expect(screen.queryByLabelText('Member')).not.toBeInTheDocument()
+    expect(screen.queryByText(/need not foot/)).not.toBeInTheDocument()
   })
 })

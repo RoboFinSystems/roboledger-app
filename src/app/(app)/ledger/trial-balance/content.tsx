@@ -4,6 +4,7 @@ import {
   FilterActions,
   FilterBar,
   FilterField,
+  FilterSelect,
   SearchField,
 } from '@/components/FilterBar'
 import SegmentedControl, {
@@ -16,6 +17,7 @@ import { dollars, toCsv } from '@/lib/ledger/csv'
 import { formatDollars } from '@/lib/ledger/formatters'
 import { monthToDate, registerHref } from '@/lib/ledger/register'
 import { type SortColumn, useTableSort } from '@/lib/useTableSort'
+import type { LedgerDimension } from '@robosystems/client/clients'
 import {
   clients,
   EmptyState,
@@ -157,6 +159,31 @@ const VIEW_MODES: readonly SegmentedOption<ViewMode>[] = [
   { value: 'usgaap', label: 'US-GAAP' },
 ]
 
+/** The server's member id for the lines no member of an axis tags. */
+const UNALLOCATED = 'unallocated'
+
+interface MemberSlice {
+  type: string
+  memberId: string
+}
+
+// One select carries both halves of the slice: '' is every line, otherwise
+// the axis and the member joined.
+const SLICE_SEPARATOR = '::'
+const sliceKey = (slice: MemberSlice | null): string =>
+  slice ? `${slice.type}${SLICE_SEPARATOR}${slice.memberId}` : ''
+const parseSliceKey = (key: string): MemberSlice | null => {
+  const at = key.indexOf(SLICE_SEPARATOR)
+  if (at < 0) return null
+  return {
+    type: key.slice(0, at),
+    memberId: key.slice(at + SLICE_SEPARATOR.length),
+  }
+}
+
+const axisLabel = (axis: string): string =>
+  axis.charAt(0).toUpperCase() + axis.slice(1).replace(/_/g, ' ')
+
 const TrialBalanceContent: FC = function () {
   const { state: graphState } = useGraphContext()
   const { entityId, entity, parent } = useEntityScope()
@@ -168,6 +195,21 @@ const TrialBalanceContent: FC = function () {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('coa')
+  // The graph's management dimension members, and the one whose lines the
+  // trial balance sums. Only the Chart of Accounts view slices.
+  const [members, setMembers] = useState<LedgerDimension[]>([])
+  // Tagged with its graph, like the mapping below: a member id is a row in
+  // one graph, and on a switch the loader runs before the reset lands.
+  const [slice, setSlice] = useState<
+    (MemberSlice & { graphId: string }) | null
+  >(null)
+  const [sliced, setSliced] = useState(false)
+  const appliedSlice =
+    viewMode === 'coa' && slice?.graphId === graphState.currentGraphId
+      ? slice
+      : null
+  const sliceType = appliedSlice?.type ?? null
+  const sliceMemberId = appliedSlice?.memberId ?? null
   // Tagged with the graph it was resolved in. A mapping id is a row in one
   // graph, and both effects here list `currentGraphId` in their dependencies —
   // so on a switch the loader below re-runs in the same commit as this one,
@@ -219,6 +261,42 @@ const TrialBalanceContent: FC = function () {
     loadMapping()
   }, [graphState.graphs, graphState.currentGraphId, entityId, mappingEntityId])
 
+  useEffect(() => {
+    let cancelled = false
+    setMembers([])
+    setSlice(null)
+    const graphId = graphState.currentGraphId
+    if (!graphId) return
+    Promise.resolve()
+      .then(() =>
+        // Retired members still carry the lines they tagged.
+        clients.ledger.getDimensions(graphId, { includeInactive: true })
+      )
+      .then((found) => {
+        if (!cancelled) setMembers(found?.dimensions ?? [])
+      })
+      .catch((err) => {
+        console.error('Error loading dimensions:', err)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [graphState.currentGraphId])
+
+  const axes = useMemo(
+    () => Array.from(new Set(members.map((member) => member.dimensionType))),
+    [members]
+  )
+  const sliceName = useMemo(() => {
+    if (!appliedSlice) return null
+    const member =
+      appliedSlice.memberId === UNALLOCATED
+        ? 'Unallocated'
+        : (members.find((m) => m.id === appliedSlice.memberId)?.name ??
+          appliedSlice.memberId)
+    return `${axisLabel(appliedSlice.type)}: ${member}`
+  }, [appliedSlice, members])
+
   // Load trial balance data. `viewMode` swaps the endpoint:
   //
   //   coa    → /trial-balance — raw Chart of Accounts rows (account_type
@@ -248,16 +326,23 @@ const TrialBalanceContent: FC = function () {
         }
 
         const allRows: TrialBalanceRowWithGraph[] = []
+        let resultSliced = false
 
         if (viewMode === 'coa') {
           const result = await clients.ledger.getTrialBalance(
             currentGraph.graphId,
-            { entityId }
+            sliceType && sliceMemberId
+              ? {
+                  entityId,
+                  dimension: { type: sliceType, memberId: sliceMemberId },
+                }
+              : { entityId }
           )
 
           if (seq !== loadSeq.current) return // superseded by a newer load
 
           if (result) {
+            resultSliced = result.sliced
             const rows = result.rows || []
             for (const row of rows) {
               allRows.push({
@@ -346,6 +431,7 @@ const TrialBalanceContent: FC = function () {
         }
 
         setData(allRows)
+        setSliced(resultSliced)
       } catch (err) {
         if (seq !== loadSeq.current) return
         console.error('Error loading trial balance:', err)
@@ -362,6 +448,8 @@ const TrialBalanceContent: FC = function () {
     entityId,
     viewMode,
     mapping,
+    sliceType,
+    sliceMemberId,
   ])
 
   // Filter data
@@ -449,6 +537,42 @@ const TrialBalanceContent: FC = function () {
             ariaLabel="View"
           />
         </FilterField>
+        {viewMode === 'coa' && axes.length > 0 && (
+          <FilterSelect
+            id="trial-balance-member"
+            label="Member"
+            value={sliceKey(appliedSlice)}
+            onChange={(key) => {
+              const picked = parseSliceKey(key)
+              setSlice(
+                picked && graphState.currentGraphId
+                  ? { ...picked, graphId: graphState.currentGraphId }
+                  : null
+              )
+            }}
+            className="sm:w-56"
+          >
+            <option value="">All lines</option>
+            {axes.map((axis) => (
+              <optgroup key={axis} label={axisLabel(axis)}>
+                {members
+                  .filter((member) => member.dimensionType === axis)
+                  .map((member) => (
+                    <option
+                      key={member.id}
+                      value={sliceKey({ type: axis, memberId: member.id })}
+                    >
+                      {member.name}
+                      {member.isActive ? '' : ' (retired)'}
+                    </option>
+                  ))}
+                <option value={sliceKey({ type: axis, memberId: UNALLOCATED })}>
+                  Unallocated
+                </option>
+              </optgroup>
+            ))}
+          </FilterSelect>
+        )}
         <FilterActions>
           <Button
             size="sm"
@@ -459,8 +583,8 @@ const TrialBalanceContent: FC = function () {
                 trialBalanceCsv(tableSort.sorted, viewMode),
                 exportFilename(
                   `trial balance ${entity?.name ?? parent?.name ?? ''} ${
-                    monthToDate(new Date()).end
-                  }`,
+                    sliceName ?? ''
+                  } ${monthToDate(new Date()).end}`,
                   'csv',
                   'trial-balance'
                 )
@@ -483,6 +607,14 @@ const TrialBalanceContent: FC = function () {
             Chart of Accounts
           </a>{' '}
           page.
+        </Alert>
+      )}
+
+      {sliceName && (
+        <Alert color="info">
+          <span className="font-medium">{sliceName}.</span> Only the lines this
+          member carries are summed. An entry&apos;s other side may carry
+          another member or none, so this balance need not foot.
         </Alert>
       )}
 
@@ -603,6 +735,7 @@ const TrialBalanceContent: FC = function () {
                           href={registerHref({
                             accountId: row.accountId,
                             entityId,
+                            dimension: appliedSlice,
                           })}
                           className="hover:underline"
                         >
@@ -673,7 +806,7 @@ const TrialBalanceContent: FC = function () {
                     <div className="flex items-center justify-end gap-2">
                       <span
                         className={
-                          totals.isBalanced
+                          totals.isBalanced || sliced
                             ? 'text-gray-900 dark:text-white'
                             : 'text-red-600 dark:text-red-400'
                         }
@@ -682,7 +815,7 @@ const TrialBalanceContent: FC = function () {
                           totals.totalDebits - totals.totalCredits
                         )}
                       </span>
-                      {totals.isBalanced ? (
+                      {sliced ? null : totals.isBalanced ? (
                         <HiCheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                       ) : (
                         <HiExclamationCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
@@ -701,6 +834,7 @@ const TrialBalanceContent: FC = function () {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Showing {filteredData.length} accounts | View:{' '}
               {viewMode === 'coa' ? 'Chart of Accounts' : 'US-GAAP Aggregated'}
+              {sliceName && ` | ${sliceName}`}
             </p>
           </div>
         )}
