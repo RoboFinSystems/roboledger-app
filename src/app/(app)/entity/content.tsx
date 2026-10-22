@@ -18,6 +18,7 @@ import {
 } from 'flowbite-react'
 import { type FC, useEffect, useRef, useState } from 'react'
 import { HiOfficeBuilding, HiPencil, HiSave, HiX } from 'react-icons/hi'
+import GroupLifecycleCard from './components/GroupLifecycleCard'
 import OpeningBalanceCard from './components/OpeningBalanceCard'
 
 const TREATMENT_LABELS: Record<string, string> = {
@@ -40,6 +41,8 @@ const EntityInfoPageContent: FC = function () {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
+  // Bumped when a lifecycle entry is recorded, so the entity is re-read.
+  const [reloadKey, setReloadKey] = useState(0)
 
   // Tracks the graph and entity a request was issued for, so a response that
   // arrives after the selection moved on can be discarded instead of applied
@@ -88,7 +91,7 @@ const EntityInfoPageContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [graphId, entityId])
+  }, [graphId, entityId, reloadKey])
 
   const startEditing = () => {
     if (!entity) return
@@ -381,7 +384,19 @@ const EntityInfoPageContent: FC = function () {
                           <> · member since {entity.joinedOn.slice(0, 7)}</>
                         )}
                         {entity.leftOn && (
-                          <> · left {entity.leftOn.slice(0, 7)}</>
+                          <>
+                            {' '}
+                            · {entity.isFormer ? 'left' : 'leaves after'}{' '}
+                            {entity.leftOn.slice(0, 7)}
+                          </>
+                        )}
+                        {entity.isFormer && (
+                          <>
+                            {' '}
+                            <Badge color="gray" size="sm">
+                              former member
+                            </Badge>
+                          </>
                         )}
                       </>
                     )}
@@ -602,6 +617,14 @@ const EntityInfoPageContent: FC = function () {
                 graphId={graphId}
                 entityId={entityId ?? null}
                 entity={entity}
+              />
+            )}
+
+            {graphId && (
+              <GroupLifecycleCard
+                graphId={graphId}
+                entity={entity}
+                onRecorded={() => setReloadKey((k) => k + 1)}
               />
             )}
 

@@ -245,6 +245,38 @@ describe('EntityInfoPageContent', () => {
     await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1))
   })
 
+  it('shows a member that has left as former, with its lifecycle card', async () => {
+    const gone = {
+      id: 'ent_n',
+      name: 'Northside Café',
+      isParent: false,
+      parentEntityId: 'ent_kg_a',
+      ownershipPct: 75,
+      consolidationMethod: 'full',
+      entityRole: 'operating',
+      joinedOn: '2025-10-01',
+      leftOn: '2026-05-31',
+      isFormer: true,
+    }
+    mockScope.mockReturnValue({
+      entityId: 'ent_n',
+      entities: [entityFor('kg_a'), gone],
+      entity: gone,
+      refresh: mockRefresh,
+    })
+    mockGetEntity.mockResolvedValue({
+      ...entityFor('kg_a'),
+      ...gone,
+      uri: 'https://example.test/north',
+    })
+    render(<EntityInfoPageContent />)
+
+    expect(await screen.findByText('former member')).toBeInTheDocument()
+    expect(screen.getByText(/left 2026-05/)).toBeInTheDocument()
+    expect(screen.getByText('Group lifecycle')).toBeInTheDocument()
+    expect(screen.getByText('Record the deconsolidation')).toBeInTheDocument()
+  })
+
   describe('a member of a group that has closed months', () => {
     const member = {
       id: 'ent_s',

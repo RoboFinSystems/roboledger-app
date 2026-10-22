@@ -3,7 +3,7 @@
 import { formatPeriod } from '@/components/FiscalCalendarSetupModal'
 import SegmentedControl from '@/components/SegmentedControl'
 import { friendlyError } from '@/lib/ledger/errors'
-import { formatAmount } from '@/lib/ledger/formatters'
+import { formatAmount, parseDollars } from '@/lib/ledger/formatters'
 import type {
   LedgerAllocationOverride,
   LedgerAllocationShare,
@@ -44,12 +44,7 @@ const describeOverride = (
     ? money(override.amount)
     : `${override.percentage ?? 0}% of the month's result`
 
-/** Dollars typed by a person, as cents; null when it is not a number. */
-export const parseDollars = (text: string): number | null => {
-  const cleaned = text.replace(/[$,\s]/g, '')
-  if (!/^-?\d+(\.\d{1,2})?$/.test(cleaned)) return null
-  return Math.round(Number(cleaned) * 100)
-}
+export { parseDollars }
 
 interface AllocationOverridePanelProps {
   graphId: string

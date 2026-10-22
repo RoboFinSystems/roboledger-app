@@ -80,6 +80,8 @@ const BLOCKER_MESSAGES: Record<string, string> = {
     'Bank lines arrived after an earlier month closed and were held out of it. Reopen the month they are dated in to bring them back to the Inbox, or close over them knowingly.',
   unreconciled_accounts:
     'A reconciliation this close waits on does not tie for the period, or has not been run for it. Open Reconciliations to see what is different, clear it, and run them again.',
+  unmapped_accounts:
+    'An account with postings has no mapping to a reporting concept, so its balances are in no statement. Open Chart of Accounts, map each account named below, then close. Nothing closes over this.',
   entity_open:
     "This is the group's close: every company the month consolidates closes it first.",
   adjustments_unposted:
@@ -167,6 +169,20 @@ function obligationDetailFor(
         {calendar.heldBankLineCount > calendar.heldBankLineSample.length && (
           <li>and others</li>
         )}
+      </ul>
+    )
+  }
+
+  // Each entry reads "<code> <name>"; the count is the real total.
+  if (code === 'unmapped_accounts') {
+    if (calendar.unmappedAccountCount === 0) return null
+    return (
+      <ul className="mt-1 list-disc pl-5 text-xs text-yellow-700 dark:text-yellow-300">
+        {calendar.unmappedAccountSample.map((account) => (
+          <li key={account}>{account}</li>
+        ))}
+        {calendar.unmappedAccountCount >
+          calendar.unmappedAccountSample.length && <li>and others</li>}
       </ul>
     )
   }

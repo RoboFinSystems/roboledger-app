@@ -53,6 +53,13 @@ export function formatDollars(
   }).format(amount)
 }
 
+/** Dollars typed by a person, as cents; null when it is not a number. */
+export function parseDollars(text: string): number | null {
+  const cleaned = text.replace(/[$,\s]/g, '')
+  if (!/^-?\d+(\.\d{1,2})?$/.test(cleaned)) return null
+  return Math.round(Number(cleaned) * 100)
+}
+
 export function formatAmount(
   cents: number | null | undefined,
   currency: string | null | undefined

@@ -160,6 +160,18 @@ function scope(over: Record<string, unknown> = {}) {
   })
 }
 
+const former = entity({
+  id: 'ent_f',
+  name: 'Northside Café',
+  parentEntityId: 'ent_p',
+  ownershipPct: 75,
+  entityType: 'llc',
+  ticker: 'NSC',
+  joinedOn: '2025-10-01',
+  leftOn: '2026-05-31',
+  isFormer: true,
+})
+
 describe('EntitiesListPageContent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -293,5 +305,18 @@ describe('EntitiesListPageContent', () => {
     render(<EntitiesListPageContent />)
     expect(screen.getByText('No Entities Yet')).toBeInTheDocument()
     expect(screen.getAllByText('New Entity').length).toBeGreaterThan(0)
+  })
+  it('shows a member that has left as former, with the treatment it had', async () => {
+    scope({
+      entitiesByGraph: new Map([['kg_a', [parent, sub, former]]]),
+      entities: [parent, sub, former],
+    })
+    render(<EntitiesListPageContent />)
+
+    expect(
+      await screen.findByText(
+        'Former member · Consolidated in full · left 2026-05'
+      )
+    ).toBeInTheDocument()
   })
 })
