@@ -1,5 +1,6 @@
 'use client'
 
+import { FlowRowSelect } from '@/components/FlowRowSelect'
 import { useEntityScope } from '@/lib/entity-scope'
 import {
   accountLabel,
@@ -105,11 +106,6 @@ const CLASSIFIABLE_EVENT_TYPES = new Set([
   'bank_fee',
   'external_transfer',
 ])
-
-const FLOW_SECTIONS: { activity: string; label: string }[] = [
-  { activity: 'investing', label: 'Investing' },
-  { activity: 'financing', label: 'Financing' },
-]
 
 interface Props {
   graphId: string
@@ -505,17 +501,6 @@ const EventBlockDetailModal: FC<Props> = function ({
   const chosenAccount = (accounts ?? []).find(
     (account) => account.id === classifiedElementId
   )
-  // A tag the statement no longer presents stays visible as what it is;
-  // one the rows could not be checked against is just kept.
-  const strandedFlow =
-    priorFlowQname &&
-    flows !== null &&
-    !flowsFailed &&
-    !flows.some((flow) => flow.qname === priorFlowQname)
-      ? priorFlowQname
-      : null
-  const unloadedFlow = priorFlowQname && flowsFailed ? priorFlowQname : null
-
   const flowPicker = (
     <div className="mt-3">
       <Label
@@ -524,47 +509,25 @@ const EventBlockDetailModal: FC<Props> = function ({
       >
         Cash flow row
       </Label>
-      <Select
+      <FlowRowSelect
         id="bank-classified-flow"
         value={flowQname}
-        onChange={(e) => {
-          setFlowQname(e.target.value)
+        onChange={(qname) => {
+          setFlowQname(qname)
           setPreview(null)
         }}
-        disabled={flows === null || actionInFlight !== null}
-      >
-        <option value="">
-          {flows === null
-            ? 'Loading cash flow rows…'
-            : "Account's default flow"}
-        </option>
-        {strandedFlow && (
-          <option value={strandedFlow}>
-            {strandedFlow} (not a row of this statement)
-          </option>
-        )}
-        {unloadedFlow && <option value={unloadedFlow}>{unloadedFlow}</option>}
-        {FLOW_SECTIONS.map((section) => {
-          const rows = (flows ?? []).filter(
-            (flow) => flow.activity === section.activity
-          )
-          if (rows.length === 0) return null
-          return (
-            <optgroup key={section.activity} label={section.label}>
-              {rows.map((flow) => (
-                <option key={flow.qname} value={flow.qname}>
-                  {flow.name}
-                </option>
-              ))}
-            </optgroup>
-          )
-        })}
-      </Select>
-      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-        {flowsFailed
-          ? "The statement's rows could not be loaded; the current tag is kept."
-          : "Only for a loan drawn or repaid, capital put in or taken out, or an asset bought or sold: the row the cash flow statement shows it on instead of the account's own."}
-      </p>
+        flows={flows}
+        flowsFailed={flowsFailed}
+        disabled={actionInFlight !== null}
+        priorQname={priorFlowQname}
+      />
+      {!flowsFailed && (
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Only for a loan drawn or repaid, capital put in or taken out, or an
+          asset bought or sold: the row the cash flow statement shows it on
+          instead of the account&apos;s own.
+        </p>
+      )}
     </div>
   )
 
