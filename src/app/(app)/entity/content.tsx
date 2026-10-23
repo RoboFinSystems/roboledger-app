@@ -18,6 +18,7 @@ import {
 } from 'flowbite-react'
 import { type FC, useEffect, useRef, useState } from 'react'
 import { HiOfficeBuilding, HiPencil, HiSave, HiX } from 'react-icons/hi'
+import GroupLifecycleCard from './components/GroupLifecycleCard'
 import OpeningBalanceCard from './components/OpeningBalanceCard'
 
 const TREATMENT_LABELS: Record<string, string> = {
@@ -89,6 +90,19 @@ const EntityInfoPageContent: FC = function () {
       cancelled = true
     }
   }, [graphId, entityId])
+
+  // A lifecycle entry can move the parent's share, so the entity is re-read
+  // once one is recorded — in place, with no spinner, so the figures the card
+  // has just shown stay on screen and an edit in progress is kept.
+  const refreshEntity = async () => {
+    if (!graphId) return
+    try {
+      const loaded = await clients.ledger.getEntity(graphId, { entityId })
+      if (loaded !== null) setEntity(loaded)
+    } catch (err) {
+      console.error('Error re-reading entity:', err)
+    }
+  }
 
   const startEditing = () => {
     if (!entity) return
@@ -381,7 +395,19 @@ const EntityInfoPageContent: FC = function () {
                           <> · member since {entity.joinedOn.slice(0, 7)}</>
                         )}
                         {entity.leftOn && (
-                          <> · left {entity.leftOn.slice(0, 7)}</>
+                          <>
+                            {' '}
+                            · {entity.isFormer ? 'left' : 'leaves after'}{' '}
+                            {entity.leftOn.slice(0, 7)}
+                          </>
+                        )}
+                        {entity.isFormer && (
+                          <>
+                            {' '}
+                            <Badge color="gray" size="sm">
+                              former member
+                            </Badge>
+                          </>
                         )}
                       </>
                     )}
@@ -602,6 +628,14 @@ const EntityInfoPageContent: FC = function () {
                 graphId={graphId}
                 entityId={entityId ?? null}
                 entity={entity}
+              />
+            )}
+
+            {graphId && (
+              <GroupLifecycleCard
+                graphId={graphId}
+                entity={entity}
+                onRecorded={refreshEntity}
               />
             )}
 

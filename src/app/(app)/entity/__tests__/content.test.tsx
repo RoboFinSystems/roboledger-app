@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockGetEntity = vi.fn()
 const mockUpdateEntity = vi.fn()
+const mockRecordAcquisition = vi.fn()
 const mockScope = vi.fn()
 const mockRefresh = vi.fn()
 
@@ -39,6 +40,9 @@ vi.mock('@robosystems/core', () => ({
     ledger: {
       getEntity: (...args: any[]) => mockGetEntity(...args),
       updateEntity: (...args: any[]) => mockUpdateEntity(...args),
+      recordAcquisition: (...args: any[]) => mockRecordAcquisition(...args),
+      recordOwnershipChange: vi.fn(),
+      recordDeconsolidation: vi.fn(),
     },
   },
 }))
@@ -52,7 +56,9 @@ vi.mock('flowbite-react', () => ({
     </button>
   ),
   Card: ({ children }: any) => <div>{children}</div>,
-  Label: ({ children }: any) => <label>{children}</label>,
+  Label: ({ children, htmlFor }: any) => (
+    <label htmlFor={htmlFor}>{children}</label>
+  ),
   Select: ({ children, ...props }: any) => (
     <select {...props}>{children}</select>
   ),
@@ -243,6 +249,88 @@ describe('EntityInfoPageContent', () => {
       expect.objectContaining({ name: 'Maple Court LLC', entity_id: 'ent_s' })
     )
     await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1))
+  })
+
+  it('shows a member that has left as former, with its lifecycle card', async () => {
+    const gone = {
+      id: 'ent_n',
+      name: 'Northside Café',
+      isParent: false,
+      parentEntityId: 'ent_kg_a',
+      ownershipPct: 75,
+      consolidationMethod: 'full',
+      entityRole: 'operating',
+      joinedOn: '2025-10-01',
+      leftOn: '2026-05-31',
+      isFormer: true,
+    }
+    mockScope.mockReturnValue({
+      entityId: 'ent_n',
+      entities: [entityFor('kg_a'), gone],
+      entity: gone,
+      refresh: mockRefresh,
+    })
+    mockGetEntity.mockResolvedValue({
+      ...entityFor('kg_a'),
+      ...gone,
+      uri: 'https://example.test/north',
+    })
+    render(<EntityInfoPageContent />)
+
+    expect(await screen.findByText('former member')).toBeInTheDocument()
+    expect(screen.getByText(/left 2026-05/)).toBeInTheDocument()
+    expect(screen.getByText('Group lifecycle')).toBeInTheDocument()
+    expect(screen.getByText('Record the deconsolidation')).toBeInTheDocument()
+  })
+
+  it('keeps the recorded figures on screen and re-reads the entity in place', async () => {
+    const user = userEvent.setup()
+    const bought = {
+      id: 'ent_n',
+      name: 'Northside Café',
+      isParent: false,
+      parentEntityId: 'ent_kg_a',
+      ownershipPct: 75,
+      consolidationMethod: 'full',
+      entityRole: 'operating',
+      joinedOn: '2025-10-01',
+      leftOn: null,
+      isFormer: false,
+    }
+    mockScope.mockReturnValue({
+      entityId: 'ent_n',
+      entities: [entityFor('kg_a'), bought],
+      entity: bought,
+      refresh: mockRefresh,
+    })
+    mockGetEntity.mockResolvedValue({
+      ...entityFor('kg_a'),
+      ...bought,
+      uri: 'https://example.test/north',
+    })
+    mockRecordAcquisition.mockResolvedValue({
+      joined_on: '2025-10-01',
+      consideration: 3150000,
+      parent_share: 2250000,
+      excess: 900000,
+      goodwill: 900000,
+      noncontrolling_interest: 0,
+    })
+    render(<EntityInfoPageContent />)
+
+    await user.click(await screen.findByText('Record the acquisition'))
+    await user.type(screen.getByLabelText('Price paid ($)'), '31500')
+    await user.type(screen.getByLabelText('Basis'), 'Purchase agreement')
+    await user.click(screen.getByText('Record'))
+
+    expect(
+      await screen.findByText(/Acquisition recorded as a draft/)
+    ).toBeInTheDocument()
+    expect(screen.getByText(/goodwill \$9,000\.00/)).toBeInTheDocument()
+    await waitFor(() => expect(mockGetEntity).toHaveBeenCalledTimes(2))
+    expect(screen.queryByTestId('spinner')).not.toBeInTheDocument()
+    expect(screen.getByText(/goodwill \$9,000\.00/)).toBeInTheDocument()
+    expect(screen.getByText('Edit')).toBeInTheDocument()
   })
 
   describe('a member of a group that has closed months', () => {

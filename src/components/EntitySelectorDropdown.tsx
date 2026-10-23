@@ -201,6 +201,11 @@ export function EntitySelectorDropdown() {
                               parent
                             </span>
                           )}
+                          {row.isFormer && (
+                            <span className="ml-auto shrink-0 text-xs text-gray-400 dark:text-gray-500">
+                              former
+                            </span>
+                          )}
                         </button>
                       )
                     })}

@@ -17,9 +17,8 @@ vi.mock('@robosystems/core', () => ({
   },
 }))
 
-import AllocationOverridePanel, {
-  parseDollars,
-} from '../components/AllocationOverridePanel'
+import { parseDollars } from '@/lib/ledger/formatters'
+import AllocationOverridePanel from '../components/AllocationOverridePanel'
 
 const share = (overrides: Record<string, unknown> = {}) => ({
   entityId: 'ent_harbor',

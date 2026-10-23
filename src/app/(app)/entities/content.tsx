@@ -54,12 +54,22 @@ const TREATMENT_LABELS: Record<string, string> = {
   cost: 'At cost, not summed',
 }
 
-/** How the group's consolidated statements treat a member, and whether it has left. */
+/**
+ * How the group's consolidated statements treat a member, and whether it has
+ * left. A former member — one whose last month is over — was treated that way
+ * while it was in; its own books stay readable.
+ */
 function formatTreatment(entity: LedgerEntitySummary): string {
   if (entity.isParent || entity.entityRole === 'consolidation') return '—'
   const label =
     TREATMENT_LABELS[entity.consolidationMethod] ?? entity.consolidationMethod
-  return entity.leftOn ? `${label} · left ${entity.leftOn.slice(0, 7)}` : label
+  if (entity.isFormer)
+    return entity.leftOn
+      ? `Former member · ${label} · left ${entity.leftOn.slice(0, 7)}`
+      : `Former member · ${label}`
+  return entity.leftOn
+    ? `${label} · leaves ${entity.leftOn.slice(0, 7)}`
+    : label
 }
 
 /**

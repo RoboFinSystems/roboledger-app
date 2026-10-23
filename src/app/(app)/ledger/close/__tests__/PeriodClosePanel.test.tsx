@@ -572,6 +572,29 @@ describe('PeriodClosePanel — close overrides', () => {
     )
   })
 
+  it('names the unmapped accounts and offers no way to close over them', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['unmapped_accounts'],
+      unmappedAccountCount: 7,
+      unmappedAccountSample: ['Consulti Consulting', '4600 Gain on Sale'],
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    expect(await screen.findByText('Consulti Consulting')).toBeInTheDocument()
+    expect(screen.getByText('4600 Gain on Sale')).toBeInTheDocument()
+    expect(screen.getByText('and others')).toBeInTheDocument()
+    expect(
+      screen.getByText(/no mapping to a reporting concept/)
+    ).toBeInTheDocument()
+    expect(screen.queryByText('unmapped_accounts')).not.toBeInTheDocument()
+
+    const button = (await screen.findByText('Close Period')).closest('button')!
+    expect(button).toBeDisabled()
+    expect(screen.queryByLabelText(/Close without/)).not.toBeInTheDocument()
+  })
+
   it('names the held bank lines and lets the close go over them', async () => {
     mockGetFiscalCalendar.mockResolvedValue({
       ...CALENDAR,
