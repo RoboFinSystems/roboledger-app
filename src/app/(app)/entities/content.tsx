@@ -64,7 +64,9 @@ function formatTreatment(entity: LedgerEntitySummary): string {
   const label =
     TREATMENT_LABELS[entity.consolidationMethod] ?? entity.consolidationMethod
   if (entity.isFormer)
-    return `Former member · ${label} · left ${entity.leftOn?.slice(0, 7)}`
+    return entity.leftOn
+      ? `Former member · ${label} · left ${entity.leftOn.slice(0, 7)}`
+      : `Former member · ${label}`
   return entity.leftOn
     ? `${label} · leaves ${entity.leftOn.slice(0, 7)}`
     : label

@@ -187,6 +187,24 @@ describe('GroupLifecycleCard', () => {
     ).toBeInTheDocument()
   })
 
+  it('starts another entity with an empty form', () => {
+    const { rerender } = render(
+      <GroupLifecycleCard graphId="kg_a" entity={member()} />
+    )
+    fireEvent.click(screen.getByText('Record the acquisition'))
+    type('Price paid ($)', '31500')
+    expect(screen.getByLabelText('Price paid ($)')).toHaveValue('31500')
+
+    rerender(
+      <GroupLifecycleCard
+        graphId="kg_a"
+        entity={member({ id: 'ent_other', name: 'Harbor Café LLC' })}
+      />
+    )
+    fireEvent.click(screen.getByText('Record the acquisition'))
+    expect(screen.getByLabelText('Price paid ($)')).toHaveValue('')
+  })
+
   it('shows the refusal when the API says no', async () => {
     mockRecordAcquisition.mockRejectedValue(
       new Error("Northside Café LLC's books have no opening balance.")

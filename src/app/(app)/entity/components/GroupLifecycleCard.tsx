@@ -60,13 +60,22 @@ const GroupLifecycleCard: FC<GroupLifecycleCardProps> = ({
   const [proceeds, setProceeds] = useState('')
   const [basis, setBasis] = useState('')
 
-  // Another entity starts clean: nothing recorded for the last one shows here.
+  // Another entity starts clean: nothing recorded for the last one shows
+  // here, and none of its amounts waits in a form.
   useEffect(() => {
     setMode(null)
     setError(null)
     setAcquired(null)
     setChanged(null)
     setLeft(null)
+    setPrice('')
+    setNciFairValue('')
+    setBargainConfirmed(false)
+    setPeriod(currentPeriod())
+    setSharePct('')
+    setSharePrice('')
+    setProceeds('')
+    setBasis('')
   }, [entity.id])
 
   if (entity.isParent || entity.entityRole === 'consolidation') return null
@@ -222,7 +231,7 @@ const GroupLifecycleCard: FC<GroupLifecycleCardProps> = ({
         </h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           {entity.isFormer
-            ? `A former member: left after ${entity.leftOn?.slice(0, 7)}.`
+            ? `A former member${entity.leftOn ? `: left after ${entity.leftOn.slice(0, 7)}` : ''}.`
             : entity.leftOn
               ? `Leaves the group after ${entity.leftOn.slice(0, 7)}.`
               : entity.joinedOn

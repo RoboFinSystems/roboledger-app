@@ -41,8 +41,6 @@ const EntityInfoPageContent: FC = function () {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
-  // Bumped when a lifecycle entry is recorded, so the entity is re-read.
-  const [reloadKey, setReloadKey] = useState(0)
 
   // Tracks the graph and entity a request was issued for, so a response that
   // arrives after the selection moved on can be discarded instead of applied
@@ -91,7 +89,20 @@ const EntityInfoPageContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [graphId, entityId, reloadKey])
+  }, [graphId, entityId])
+
+  // A lifecycle entry can move the parent's share, so the entity is re-read
+  // once one is recorded — in place, with no spinner, so the figures the card
+  // has just shown stay on screen and an edit in progress is kept.
+  const refreshEntity = async () => {
+    if (!graphId) return
+    try {
+      const loaded = await clients.ledger.getEntity(graphId, { entityId })
+      if (loaded !== null) setEntity(loaded)
+    } catch (err) {
+      console.error('Error re-reading entity:', err)
+    }
+  }
 
   const startEditing = () => {
     if (!entity) return
@@ -624,7 +635,7 @@ const EntityInfoPageContent: FC = function () {
               <GroupLifecycleCard
                 graphId={graphId}
                 entity={entity}
-                onRecorded={() => setReloadKey((k) => k + 1)}
+                onRecorded={refreshEntity}
               />
             )}
 

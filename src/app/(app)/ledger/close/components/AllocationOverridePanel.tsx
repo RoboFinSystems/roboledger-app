@@ -44,8 +44,6 @@ const describeOverride = (
     ? money(override.amount)
     : `${override.percentage ?? 0}% of the month's result`
 
-export { parseDollars }
-
 interface AllocationOverridePanelProps {
   graphId: string
   /** The member, consolidated in full with outside owners. */
