@@ -109,12 +109,20 @@ const PACKAGE_STATUS_BADGE: Record<
  * generated, so the viewer is the same whether the Report is currently
  * generating or filed long ago.
  */
+const GRAPH_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/
+
+/** A graph id as the API issues them, or null for anything else. */
+function safeGraphId(value: string | null): string | null {
+  return value && GRAPH_ID_PATTERN.test(value) ? value : null
+}
+
 const ReportViewerContent: FC = function () {
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
   const reportId = params.id as string
-  const graphId = searchParams.get('graph')
+  // The SDK puts this value into a request path; a link can carry anything.
+  const graphId = safeGraphId(searchParams.get('graph'))
 
   // Admin gates the destructive halves of the share controls. Client-side
   // gating is an affordance only — the API re-checks and 403s regardless.

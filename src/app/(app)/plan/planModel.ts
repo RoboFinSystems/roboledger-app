@@ -1,3 +1,4 @@
+import { csvField } from '../explorer/components/serialize'
 import type {
   EnvelopeBlock,
   EnvelopeRenderingRow,
@@ -284,10 +285,6 @@ export function buildPlanCsv(model: PlanModel): string | null {
     }
   }
   return lines.join('\n')
-}
-
-function csvField(value: string): string {
-  return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
 }
 
 /** How the grid rounds monetary cells for reading. Exports keep full values. */

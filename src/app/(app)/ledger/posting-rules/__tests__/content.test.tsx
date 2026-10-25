@@ -79,7 +79,7 @@ const handler = (overrides: Record<string, unknown> = {}) => ({
   approvedAt: null,
   awaitingApproval: true,
   createdAt: null,
-  updatedAt: null,
+  updatedAt: '2026-10-24T12:00:00.000Z',
   createdBy: 'usr_1',
   ...overrides,
 })
@@ -131,6 +131,8 @@ describe('PostingRulesContent', () => {
       expect(mockUpdateEventHandler).toHaveBeenCalledWith('kg1', {
         event_handler_id: 'hdl_ai',
         approve: true,
+        // The version the person reviewed travels with the approval.
+        expected_updated_at: '2026-10-24T12:00:00.000Z',
       })
     )
     // Read again so the queue reflects it.
@@ -168,6 +170,7 @@ describe('PostingRulesContent', () => {
         event_handler_id: 'hdl_ai',
         priority: 20,
         approve: true,
+        expected_updated_at: '2026-10-24T12:00:00.000Z',
       })
     )
   })
