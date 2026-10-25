@@ -1,3 +1,4 @@
+import { textCell } from '@/lib/ledger/csv'
 import type { EnvelopeBlock } from '../../ledger/close/components/blockview/types'
 
 /**
@@ -82,9 +83,16 @@ export function buildRenderingJson(envelope: EnvelopeBlock): string | null {
   )
 }
 
-/** Quote a CSV field when it contains a delimiter, quote, or newline. */
+/**
+ * Quote a CSV field when it contains a delimiter, quote, or newline. Text that
+ * starts like a formula is neutralised first: labels come from element names
+ * that other writers or a connected ledger set, and a spreadsheet would run
+ * them. Numeric text stays numeric.
+ */
 export function csvField(value: string): string {
-  return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
+  const guarded =
+    value !== '' && !Number.isNaN(Number(value)) ? value : textCell(value)
+  return /[",\n\r]/.test(guarded) ? `"${guarded.replace(/"/g, '""')}"` : guarded
 }
 
 /** Trigger a browser download of text content. */

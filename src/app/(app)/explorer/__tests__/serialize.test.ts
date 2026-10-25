@@ -40,6 +40,23 @@ describe('buildRenderingCsv', () => {
     )
   })
 
+  it('neutralises a label that a spreadsheet would run as a formula', () => {
+    const envelope = makeMetricEnvelope()
+    envelope.view.rendering!.rows[0].elementName = '=HYPERLINK("x","y")'
+    envelope.view.rendering!.rows[1].elementName = '-1+1|cmd'
+    const lines = buildRenderingCsv(envelope)!.split('\n')
+    expect(lines[1]).toBe(`"'=HYPERLINK(""x"",""y"")",88047.19,238543.34`)
+    expect(lines[2]).toBe("'-1+1|cmd,3.2727,5.5905")
+  })
+
+  it('leaves negative numbers alone', () => {
+    const envelope = makeMetricEnvelope()
+    envelope.view.rendering!.rows[0].values = [-88047.19, 238543.34]
+    expect(buildRenderingCsv(envelope)!.split('\n')[1]).toBe(
+      'Working Capital,-88047.19,238543.34'
+    )
+  })
+
   it('returns null when there is nothing to export', () => {
     const envelope = makeMetricEnvelope()
     envelope.view.rendering!.rows = []
