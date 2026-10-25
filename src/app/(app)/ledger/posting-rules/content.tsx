@@ -131,6 +131,11 @@ const PostingRulesContent: FC = function () {
       await clients.ledger.updateEventHandler(graphId, {
         event_handler_id: handler.id,
         ...changes,
+        // An approval covers exactly the version the person reviewed; the API
+        // refuses it if the rule changed since this row was loaded.
+        ...(changes.approve === true
+          ? { expected_updated_at: handler.updatedAt }
+          : {}),
       })
       await load()
       return true
