@@ -1,17 +1,17 @@
-// The first band under the hero: the group first (gtm/plan.md §1), then the trust line
-// that lets a stranger start with no risk, then the lineage that makes a consolidated
-// figure checkable. Each line is true at HEAD and can be shown on the Driftline demo; the
-// close is further down the page, where the story puts it.
+// The first band under the hero: the trust line that lets a stranger start with no risk,
+// then the group (gtm/plan.md §1), then the lineage that makes a figure checkable. Each
+// line is true at HEAD and can be shown on the Driftline demo; the close is further down
+// the page, where the story puts it.
 const stats = [
-  {
-    stat: 'Consolidated, not combined',
-    label:
-      "Eliminations, an outside owner's share and equity-method companies, drafted from each company's own books.",
-  },
   {
     stat: 'Nothing writes back',
     label:
       'Nothing reaches QuickBooks until you post an entry. Read, analyze and plan first.',
+  },
+  {
+    stat: 'Consolidated, not combined',
+    label:
+      "Eliminations, an outside owner's share and equity-method companies, drafted from each company's own books.",
   },
   {
     stat: 'Every figure opens',

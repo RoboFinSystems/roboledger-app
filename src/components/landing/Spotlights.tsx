@@ -15,27 +15,11 @@ interface Spotlight {
   demoLabel: string
 }
 
-// Ordered for the finance lead, not the bookkeeper: the group's statements first (the
-// homepage leads with the group), then read the numbers, question them, plan from them, ask
-// in plain English; the close and the inbox, where the team does the entries and the lead
-// approves them, come last. Every bullet can be shown on the Driftline demo account.
+// Ordered for the finance lead, not the bookkeeper: read the numbers, then the group's
+// statements built from them, question them, plan from them, ask in plain English; the
+// close and the inbox, where the team does the entries and the lead approves them, come
+// last. Every bullet can be shown on the Driftline demo account.
 const spotlights: Spotlight[] = [
-  {
-    id: 'groups',
-    label: 'Groups & consolidation',
-    title: "Consolidated statements, drafted from each company's books",
-    description:
-      "Add each company with the share the parent holds. Every month your AI drafts the consolidating entries from the books: the parent's investment against each subsidiary's capital, what the companies owe and bill each other, and an outside owner's share. A person posts them, and the group's month closes only when it all ties.",
-    bullets: [
-      'A worksheet with every company in its own column, then combined, the adjustments and consolidated',
-      'Noncontrolling interest, the equity method, and a company bought, partly sold or sold out of the group mid-year',
-      'Each company closes on its own calendar; what the books cannot explain is named for you, never plugged',
-    ],
-    caption: 'Ledger › Statements › Worksheet',
-    demo: 'group',
-    demoLabel:
-      "Driftline's August consolidation worksheet filling company by company, the drafted adjustments explained one at a time, and a person closing the group's month.",
-  },
   {
     id: 'reporting',
     label: 'Reporting & XBRL',
@@ -51,6 +35,22 @@ const spotlights: Spotlight[] = [
     demo: 'statements',
     demoLabel:
       'A balance sheet and income statement rendered live from the ledger, then a report package moving from draft to filed.',
+  },
+  {
+    id: 'groups',
+    label: 'Groups & consolidation',
+    title: "Consolidated statements, drafted from each company's books",
+    description:
+      "Add each company with the share the parent holds. Every month your AI drafts the consolidating entries from the books: the parent's investment against each subsidiary's capital, what the companies owe and bill each other, and an outside owner's share. A person posts them, and the group's month closes only when it all ties.",
+    bullets: [
+      'A worksheet with every company in its own column, then combined, the adjustments and consolidated',
+      'Noncontrolling interest, the equity method, and a company bought, partly sold or sold out of the group mid-year',
+      'Each company closes on its own calendar; what the books cannot explain is named for you, never plugged',
+    ],
+    caption: 'Ledger › Statements › Worksheet',
+    demo: 'group',
+    demoLabel:
+      "Driftline's August consolidation worksheet filling company by company, the drafted adjustments explained one at a time, and a person closing the group's month.",
   },
   {
     id: 'explorer',
@@ -144,12 +144,13 @@ export default function Spotlights() {
             Inside RoboLedger
           </div>
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-            From the group&apos;s statements to the close
+            From the first question to the close
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Seven views of the same live books. Read the whole group, open any
-            number, plan forward, and ask in plain English. When you trust it,
-            the close and the inbox are there too.
+            Seven views of the same live books. Read the statements, for one
+            company or a whole group, open any number, plan forward, and ask in
+            plain English. When you trust it, the close and the inbox are there
+            too.
           </p>
         </div>
 

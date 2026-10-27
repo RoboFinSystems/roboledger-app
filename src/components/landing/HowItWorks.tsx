@@ -1,16 +1,16 @@
 import FloatingElementsVariant from './FloatingElementsVariant'
 
-// Three steps in the order of the arc: set the group up, read the books, the close last.
-// Only the group parent's QuickBooks company connects (gtm/plan.md §5): the other companies
-// come in through a bank feed, an opening balance sheet, the API or a file. The spotlights
-// below carry the detail, so this stays short.
+// Three steps in the order of the arc: read the books first, the close last. A group is
+// optional at each step. Only the group parent's QuickBooks company connects (gtm/plan.md
+// §5): the other companies come in through a bank feed, an opening balance sheet, the API
+// or a file. The spotlights below carry the detail, so this stays short.
 const steps = [
   {
     number: '01',
-    title: 'Set up the group',
+    title: 'Connect your books',
     description:
-      "Add each company with the share the parent holds. Connect the parent's QuickBooks, give the others a bank feed and their opening balance sheet, then add one MCP address to Claude, ChatGPT, or any MCP client.",
-    tags: ['QuickBooks', 'Bank feeds', 'MCP'],
+      'Link QuickBooks with one-click OAuth, then add one MCP address to Claude, ChatGPT, or any MCP client and sign in. For a group, add each company with the share the parent holds, with a bank feed and an opening balance sheet.',
+    tags: ['QuickBooks', 'MCP', 'Bank feeds'],
     color: 'violet',
   },
   {
@@ -23,9 +23,9 @@ const steps = [
   },
   {
     number: '03',
-    title: 'Close each company, then the group',
+    title: 'Approve the close',
     description:
-      'Bank lines arrive with a suggested account, schedules draft their entries, and the close waits on the reconciliations you choose. Then your AI drafts the consolidating entries and the group close posts them. Nothing writes back to QuickBooks until you post an entry.',
+      'Bank lines arrive with a suggested account, schedules draft their entries, and the close waits on the reconciliations you choose. For a group, your AI then drafts the consolidating entries and the group close posts them. Nothing writes back to QuickBooks until you post an entry.',
     tags: ['Inbox', 'Reconciliations', 'Group close'],
     color: 'pink',
   },

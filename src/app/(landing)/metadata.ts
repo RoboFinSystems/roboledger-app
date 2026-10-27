@@ -4,17 +4,10 @@ import type { Metadata } from 'next'
 export const landingMetadata: Metadata = {
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
-  // The group terms lead since the 2026-10-27 refresh (gtm/seo/keywords.md: "multi-entity
-  // accounting" rising, "combined vs consolidated" at almost no competition), then the long
-  // tail behind the head terms Intuit owns (2026-09-02 SERP sample); the close terms left
-  // with the old hero.
+  // The long tail behind the head terms Intuit owns (2026-09-02 SERP sample), then the group
+  // terms with search volume (gtm/seo/keywords.md, 2026-10-07; the holding-company and LLC
+  // phrasings read blank); the close terms left with the old hero.
   keywords: [
-    'multi-entity accounting',
-    'consolidated financial statements software',
-    'holding company accounting software',
-    'accounting software for multiple LLCs',
-    'combined vs consolidated financial statements',
-    'intercompany eliminations',
     'AI-native accounting',
     'QuickBooks MCP server',
     'connect QuickBooks to Claude',
@@ -23,6 +16,9 @@ export const landingMetadata: Metadata = {
     'analyze QuickBooks data with AI',
     'benchmark small business against public companies',
     'QuickBooks scenario planning AI',
+    'multi entity accounting software',
+    'multi-entity accounting',
+    'combined vs consolidated financial statements',
     'financial knowledge graph',
     'XBRL reporting',
   ],

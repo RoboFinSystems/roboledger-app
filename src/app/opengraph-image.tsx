@@ -10,6 +10,6 @@ export default function Image() {
     eyebrow: 'RoboLedger',
     title: 'Connect your books. Ask your AI.',
     subtitle:
-      "Each company keeps its own books. Your AI drafts the group's consolidation.",
+      'One company or a whole group, in Claude, ChatGPT, or any MCP client.',
   })
 }
