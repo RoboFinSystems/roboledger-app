@@ -16,6 +16,12 @@ import { describe, expect, it } from 'vitest'
 // "Have it run for you" was the old CTA to that team. The two "sign off" forms cast the
 // operator as only the approver; FinLab trains the people who work in it every day, from
 // the AI chat they already use (recut 2026-09-18).
+// The last four went in the 2026-10-27 refresh. The inbox has no autopilot a visitor could
+// switch on (the only autopilot is a per-graph promotion flag with no screen). A group's
+// statements are consolidated, not combined: the parent's statements never "combine them".
+// The assistant drafts the consolidating entries and a person posts them, so the system
+// never consolidates on its own; and only the parent's QuickBooks company connects
+// (gtm/plan.md §5).
 const RETIRED = [
   'close your books with ai',
   'a new way to close the books',
@@ -38,6 +44,10 @@ const RETIRED = [
   'have it run for you',
   'whoever signs off',
   'already sign off',
+  'enable autopilot',
+  'statements combine them',
+  'the system consolidates',
+  'all your quickbooks companies',
 ]
 
 const landingDir = path.resolve(__dirname, '..')

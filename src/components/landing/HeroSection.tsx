@@ -38,11 +38,12 @@ export default function HeroSection() {
               Claude, ChatGPT, or any MCP client
             </strong>{' '}
             can reason over. Statements that tie, a plan that rolls off your
-            actuals, and your numbers beside public companies.{' '}
+            actuals, and your numbers beside public companies. One company or a
+            whole group: each keeps its own books and close, and your AI drafts
+            the consolidation.{' '}
             <span className="text-white">
               Nothing writes back until you post an entry.
-            </span>{' '}
-            When you trust it, it drafts the close.
+            </span>
           </p>
 
           {/* CTAs */}

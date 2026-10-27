@@ -1,21 +1,23 @@
 import FloatingElementsVariant from './FloatingElementsVariant'
 
-// Three steps in the order of the arc: read the books first, the close last. The
-// spotlights below carry the detail, so this stays short.
+// Three steps in the order of the arc: read the books first, the close last. A group is
+// optional at each step. Only the group parent's QuickBooks company connects (gtm/plan.md
+// §5): the other companies come in through a bank feed, an opening balance sheet, the API
+// or a file. The spotlights below carry the detail, so this stays short.
 const steps = [
   {
     number: '01',
     title: 'Connect your books',
     description:
-      'Link QuickBooks with one-click OAuth, then add one MCP address to Claude, ChatGPT, or any MCP client and sign in. Add the SEC filings connector beside it to compare against public companies.',
-    tags: ['QuickBooks', 'MCP', 'SEC filings'],
+      'Link QuickBooks with one-click OAuth, then add one MCP address to Claude, ChatGPT, or any MCP client and sign in. For a group, add each company with the share the parent holds, with a bank feed and an opening balance sheet.',
+    tags: ['QuickBooks', 'MCP', 'Bank feeds'],
     color: 'violet',
   },
   {
     number: '02',
     title: 'Ask, share, plan',
     description:
-      'Ask why a number moved and open it down to the facts behind it. Send the board a statement that ties, roll a plan forward from your actuals, and see where you stand against peers.',
+      'Ask why a number moved and open it down to the account register. Send the board a statement that ties, roll a plan forward from your actuals, and add the SEC filings beside your books to see where you stand against public companies.',
     tags: ['Live Statements', 'Explorer', 'Plan'],
     color: 'purple',
   },
@@ -23,8 +25,8 @@ const steps = [
     number: '03',
     title: 'Approve the close',
     description:
-      'When you trust it, the entries arrive drafted and the rule engine checks the period. You review and approve; nothing writes back to QuickBooks until you post an entry.',
-    tags: ['Inbox', 'Closing Book', 'Rule Engine'],
+      'Bank lines arrive with a suggested account, schedules draft their entries, and the close waits on the reconciliations you choose. For a group, your AI then drafts the consolidating entries and the group close posts them. Nothing writes back to QuickBooks until you post an entry.',
+    tags: ['Inbox', 'Reconciliations', 'Group close'],
     color: 'pink',
   },
 ]

@@ -1,6 +1,7 @@
-// The first band under the hero, in the arc's order: nothing writes back (connect and
-// analyze with no trust), the comparison (the wedge), then the statements. Each line is
-// true at HEAD; the close is further down the page, where the story puts it.
+// The first band under the hero: the trust line that lets a stranger start with no risk,
+// then the group (gtm/plan.md §1), then the lineage that makes a figure checkable. Each
+// line is true at HEAD and can be shown on the Driftline demo; the close is further down
+// the page, where the story puts it.
 const stats = [
   {
     stat: 'Nothing writes back',
@@ -8,13 +9,14 @@ const stats = [
       'Nothing reaches QuickBooks until you post an entry. Read, analyze and plan first.',
   },
   {
-    stat: 'Beside the filers',
+    stat: 'Consolidated, not combined',
     label:
-      'Add the SEC graph next to your books and ask how your margins compare to public companies in your niche.',
+      "Eliminations, an outside owner's share and equity-method companies, drafted from each company's own books.",
   },
   {
-    stat: 'Tavi + XBRL 2.1',
-    label: 'Statements export as validated reports, straight from your ledger.',
+    stat: 'Every figure opens',
+    label:
+      'Click a number on a statement or report and see the accounts it was summed from, down to the register.',
   },
 ]
 

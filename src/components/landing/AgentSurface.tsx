@@ -7,7 +7,7 @@ import FloatingElementsVariant from './FloatingElementsVariant'
  * ship as a screen.
  *
  * Every tool named here is a real, registered MCP tool on a writable
- * roboledger graph — verified against the backend's tool registry, not
+ * roboledger graph, verified against the backend's tool registry, not
  * aspirational. Write operations declared as `OperationSpec`s are
  * auto-generated into MCP tools by the registrar, which is *why* the agent
  * surface runs ahead of the UI: a new operation is callable from any MCP
@@ -16,7 +16,7 @@ import FloatingElementsVariant from './FloatingElementsVariant'
  * Keep this list honest. Before adding a row, confirm the tool is actually
  * registered (an `OperationSpec(name=...)`, or a hand-written tool in
  * `middleware/mcp/tools/`) and that the app genuinely has no UI input for
- * it — several report operations, for instance, are plain REST routes and
+ * it: several report operations, for instance, are plain REST routes and
  * are NOT MCP tools, and schedules ARE authorable in the Closing Book.
  */
 
@@ -33,10 +33,12 @@ const capabilities: { title: string; blurb: string; tools: string[] }[] = [
       'Declare a metric block and its operands once; the Block Explorer computes and charts its standing time series from then on.',
     tools: ['create-information-block', 'compute-metrics'],
   },
+  // Posting Rules (2026-10-21) reviews, edits, approves and switches rules on and off, but
+  // a new rule is still written over MCP, so the card stays and names where it lands.
   {
     title: 'Write an event-handler rule',
     blurb:
-      'Teach the ledger how a new kind of business event should post — the same DSL rows the Inbox reads when it pre-classifies a transaction.',
+      'Teach the ledger how a new kind of business event should post. The rule your AI writes waits in Posting Rules, booking nothing until a person approves it there.',
     tools: ['create-event-handler', 'update-event-handler'],
   },
   {
@@ -76,7 +78,7 @@ export default function AgentSurface() {
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
             Every write operation on the platform becomes an MCP tool the day it
-            ships. Screens follow where they earn it — so there are things your
+            ships. Screens follow where they earn it, so there are things your
             AI assistant can do today that don&apos;t have a button yet.
           </p>
         </div>
@@ -89,8 +91,9 @@ export default function AgentSurface() {
             label="One AI chat with three companies' books connected, reading each and answering which client needs attention this month."
           />
           <p className="mt-4 text-center text-sm text-gray-400">
-            One connector per set of books, side by side in the same chat. Your
-            AI reads each one and answers across all of them.
+            One connector per set of books, side by side in the same chat. A
+            group&apos;s companies share one; each client gets its own. Your AI
+            reads each one and answers across all of them.
           </p>
         </div>
 
@@ -131,11 +134,12 @@ export default function AgentSurface() {
               </div>
               <p className="text-sm leading-relaxed text-gray-400">
                 Add this address as a connector in Claude, ChatGPT, or any MCP
-                client, sign in, and choose the company. Add it again for each
-                company you look after. It can read your books and drive these
-                tools directly — with you approving each write. No install, no
-                key to paste. The same tools back the in-app AI Console, so
-                nothing is locked behind a desktop app.
+                client, sign in, and choose the books. One connector covers a
+                whole group; add it again for each client you look after. It can
+                read your books and drive these tools directly, with you
+                approving each write. No install, no key to paste. The same
+                tools back the in-app AI Console, so nothing is locked behind a
+                desktop app.
               </p>
             </div>
             <div className="w-full shrink-0 lg:w-auto">

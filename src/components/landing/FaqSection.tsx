@@ -1,12 +1,43 @@
+import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { HARBINGER_URL, QUICKBOOKS_AFFILIATE_URL } from './constants'
+import {
+  HARBINGER_URL,
+  QUICKBOOKS_AFFILIATE_URL,
+  ROBOSYSTEMS_URL,
+} from './constants'
 
+// Every answer holds to gtm/plan.md §5: only the group parent's QuickBooks company
+// connects; the assistant drafts the consolidating entries and a person posts them; what
+// isn't built (other currencies, nested groups) is said plainly. The price is the
+// Standard plan on robosystems.ai/pricing, per graph, and a group shares one graph.
 const faqs: { q: string; a: ReactNode }[] = [
+  {
+    q: 'Can it consolidate a group of companies?',
+    a: (
+      <>
+        Yes. A holding company and its LLCs, a franchise operator, a founder
+        with three companies: each company keeps its own books, chart and close,
+        and the group is built from shared reporting concepts, never from
+        account names. Every month your AI drafts the consolidating entries (the
+        parent&apos;s investment against each subsidiary&apos;s capital, what
+        the companies owe and bill each other, an outside owner&apos;s share)
+        and a person posts them. Equity-method companies, acquisitions, changes
+        in ownership and a company sold out of the group are handled too. Not
+        yet: companies in another currency, or a group inside a group.{' '}
+        <Link
+          href="/docs/consolidate-a-group"
+          className="text-primary-400 hover:text-primary-300 font-medium"
+        >
+          How consolidation works
+        </Link>
+      </>
+    ),
+  },
   {
     q: 'Do I have to leave QuickBooks?',
     a: (
       <>
-        No. RoboLedger syncs your{' '}
+        No. RoboLedger syncs the group parent&apos;s{' '}
         <a
           href={QUICKBOOKS_AFFILIATE_URL}
           target="_blank"
@@ -15,10 +46,10 @@ const faqs: { q: string; a: ReactNode }[] = [
         >
           QuickBooks
         </a>{' '}
-        chart of accounts and transactions. Reading, analysis, and planning
-        write nothing back; approved entries go back to QuickBooks only when you
-        post them. It's an AI layer on top of your books, not a replacement for
-        them.
+        chart of accounts and transactions. The other companies start from their
+        opening balance sheet and come in through a bank feed, the API or a
+        file. Reading, analysis, and planning write nothing back; approved
+        entries go back to QuickBooks only when you post them.
       </>
     ),
   },
@@ -27,7 +58,7 @@ const faqs: { q: string; a: ReactNode }[] = [
     a: (
       <>
         In your own knowledge graph on the RoboSystems platform. RoboLedger is
-        open source, so you can inspect exactly how every number is produced —
+        open source, so you can inspect exactly how every number is produced,
         and you can fork it and take it in-house whenever you want.
       </>
     ),
@@ -36,10 +67,11 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: 'Do I need to know XBRL or US-GAAP?',
     a: (
       <>
-        No. AI Auto-Map proposes the US-GAAP mapping for your chart of accounts
-        with confidence scores, and the rule engine validates every entry before
-        you lock a period. You review and adjust — the taxonomy work happens for
-        you.
+        No. AI Auto-Map proposes the US-GAAP mapping for each company&apos;s
+        chart of accounts with confidence scores, and the rule engine validates
+        every entry before you lock a period. You review and adjust, and you can
+        add, rename, move or retire accounts in the app. The taxonomy work
+        happens for you.
       </>
     ),
   },
@@ -49,10 +81,11 @@ const faqs: { q: string; a: ReactNode }[] = [
       <>
         It answers questions about your books in plain English, opens any number
         down to the facts behind it, rolls plans forward, and compares you to
-        public companies. When you&apos;re ready, it also triages each
-        transaction in the inbox and drafts the close. You stay in control at
-        every step — one-click approve/reject, dry-run previews of what would
-        post, and balanced-entry checks before anything commits.
+        public companies. When you&apos;re ready, it also sorts bank lines into
+        accounts, drafts the month&apos;s schedule entries and the group&apos;s
+        consolidating entries, and proposes posting rules. You stay in control
+        at every step: previews of what would post, balanced-entry checks, and
+        nothing posts until a person approves it.
       </>
     ),
   },
@@ -62,7 +95,7 @@ const faqs: { q: string; a: ReactNode }[] = [
       <>
         You can plan forward. Once you&apos;ve closed a month, the Plan surface
         puts your monthly statements and a scenario&apos;s assumptions in one
-        grid spanning the actuals/forecast seam — so the forecast is driven by
+        grid spanning the actuals/forecast seam, so the forecast is driven by
         the same ledger the close produced, not a spreadsheet copied out of it.
         Scenarios are authored from your AI assistant over MCP today; the in-app
         editor is on the way.
@@ -73,27 +106,25 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: 'Are there things my AI assistant can do that the app cannot?',
     a: (
       <>
-        Yes — deliberately. Every write operation on the platform becomes an MCP
+        Yes, deliberately. Every write operation on the platform becomes an MCP
         tool the day it ships, while screens follow where they earn their place.
-        Authoring a forecast scenario, defining a new metric, and writing an
-        event-handler rule all run from Claude, ChatGPT, or any MCP client today
-        without a dedicated form in the app. Anything you drive that way lands
-        in the same ledger and shows up on the same screens.
+        Authoring a forecast scenario and defining a new metric run from Claude,
+        ChatGPT, or any MCP client today without a dedicated form in the app. A
+        new posting rule is written by your AI too, and waits in Posting Rules
+        until a person approves it. Anything you drive that way lands in the
+        same ledger and shows up on the same screens.
       </>
     ),
   },
   {
-    q: 'I look after several companies. Can I see them all here?',
+    q: 'I look after several clients. Can I see them all here?',
     a: (
       <>
-        Yes. Companies that report together — a holding company and its
-        subsidiaries — share one graph as a reporting group: each keeps its own
-        chart of accounts and closes on its own calendar, and the parent&apos;s
-        statements combine them. Unrelated clients get their own isolated
-        graphs; switch between them from one account. In your AI chat, add the
-        RoboLedger connector once per graph and ask across all of them.
-        It&apos;s built for fractional CFOs, controllers, and firms who look
-        after more than one company.{' '}
+        Yes. Each client gets its own isolated graph (a client with several
+        companies keeps them together in one), and you switch between them from
+        one account. In your AI chat, add the RoboLedger connector once per
+        graph and ask across all of them. It&apos;s built for fractional CFOs,
+        controllers, and firms who look after more than one company.{' '}
         <a
           href={HARBINGER_URL}
           target="_blank"
@@ -111,11 +142,20 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: 'How do I get started, and what does it cost?',
     a: (
       <>
-        Create an account, then provision a graph on the RoboSystems platform —
-        enabling RoboLedger gives you access to this app. Plans and provisioning
-        live on the RoboSystems side; once you've enabled RoboLedger, connect
-        QuickBooks and ask your AI the first question. Nothing writes back until
-        you post an entry.
+        $99 a month per graph on the RoboSystems Standard plan, and a
+        group&apos;s companies share one graph. Comparing against public
+        companies adds the SEC subscription. Create an account, provision a
+        graph with RoboLedger enabled, connect your books and ask your AI the
+        first question. It&apos;s open source with no outside investors, so
+        nobody can reprice it or shut it down on you.{' '}
+        <a
+          href={`${ROBOSYSTEMS_URL}/pricing`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary-400 hover:text-primary-300 font-medium"
+        >
+          See plans
+        </a>
       </>
     ),
   },

@@ -34,7 +34,7 @@ export async function GET() {
     '',
     `> ${SITE_DESCRIPTION}`,
     '',
-    'RoboLedger is a finance layer on top of QuickBooks, not a replacement ledger. It syncs the books into a knowledge graph that Claude, ChatGPT, or any MCP client can query at https://api.robosystems.ai/v1/mcp/roboledger: financial statements, forecasts that roll off actuals, comparisons with public companies from their SEC filings, and a month-end close that is drafted for review. Nothing is written back to QuickBooks until a person posts it. It is built on RoboSystems (https://robosystems.ai), open source under Apache 2.0, by RFS LLC.',
+    "RoboLedger keeps the books of a company or a whole group of companies (a holding company and its LLCs, a franchise operator, a founder with several companies), each with its own chart of accounts and close, and builds the group's consolidated statements from them: the assistant drafts the consolidating entries (eliminations, intercompany balances, noncontrolling interest, equity-method results) and a person posts them. It syncs the group parent's QuickBooks and takes bank feeds for the other companies, into a knowledge graph that Claude, ChatGPT, or any MCP client can query at https://api.robosystems.ai/v1/mcp/roboledger: financial statements, forecasts that roll off actuals, comparisons with public companies from their SEC filings, and a month-end close that is drafted for review. Nothing is written back to QuickBooks until a person posts it. It costs $99 a month per graph on the RoboSystems Standard plan (https://robosystems.ai/pricing). It is built on RoboSystems (https://robosystems.ai), open source under Apache 2.0, by RFS LLC.",
     '',
     '## Product',
     ...PRODUCT_PAGES.map((page) =>
