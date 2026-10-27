@@ -4,9 +4,17 @@ import type { Metadata } from 'next'
 export const landingMetadata: Metadata = {
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
-  // The long tail behind the head terms Intuit owns (2026-09-02 SERP sample); the close
-  // terms left with the old hero.
+  // The group terms lead since the 2026-10-27 refresh (gtm/seo/keywords.md: "multi-entity
+  // accounting" rising, "combined vs consolidated" at almost no competition), then the long
+  // tail behind the head terms Intuit owns (2026-09-02 SERP sample); the close terms left
+  // with the old hero.
   keywords: [
+    'multi-entity accounting',
+    'consolidated financial statements software',
+    'holding company accounting software',
+    'accounting software for multiple LLCs',
+    'combined vs consolidated financial statements',
+    'intercompany eliminations',
     'AI-native accounting',
     'QuickBooks MCP server',
     'connect QuickBooks to Claude',

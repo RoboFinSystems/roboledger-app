@@ -4,6 +4,7 @@ import {
   HARBINGER_URL,
   LOGIN_PATH,
   REGISTER_PATH,
+  ROBOSYSTEMS_URL,
 } from './constants'
 import FloatingElementsVariant from './FloatingElementsVariant'
 
@@ -16,9 +17,22 @@ export default function FinalCTA() {
         <h2 className="font-heading mb-6 text-4xl font-bold text-white md:text-5xl">
           See it on your own books
         </h2>
-        <p className="mb-10 text-xl text-gray-300">
+        {/* The first two sentences match the blog's closing card; keep them in step. */}
+        <p className="mb-4 text-xl text-gray-300">
           Connect QuickBooks and ask your AI the first question. Nothing writes
           to QuickBooks until you post an entry.
+        </p>
+        <p className="mb-10 text-base text-gray-400">
+          $99 a month for the whole group&apos;s books. Open source, so
+          it&apos;s yours.{' '}
+          <a
+            href={`${ROBOSYSTEMS_URL}/pricing`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-400 hover:text-primary-300"
+          >
+            See plans
+          </a>
         </p>
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link

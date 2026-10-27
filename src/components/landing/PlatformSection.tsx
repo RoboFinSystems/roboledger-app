@@ -10,10 +10,10 @@ export default function PlatformSection() {
             Powered by RoboSystems
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Your numbers live in a financial knowledge graph — a unified
-            three-block model of taxonomy, events, and information — so every
-            figure is traceable to its source, queryable in plain English, and
-            validated before it's filed
+            Your numbers live in a financial knowledge graph: a unified
+            three-block model of taxonomy, events, and information. Every figure
+            is traceable to its source, queryable in plain English, and
+            validated before it's filed, for one company or a whole group.
           </p>
         </div>
 

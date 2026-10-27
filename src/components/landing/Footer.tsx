@@ -8,9 +8,10 @@ import ContactModal from './ContactModal'
 export default function Footer() {
   return (
     <LandingFooter
-      tagline="Open-source, AI-native accounting on the RoboSystems knowledge graph platform — from business events to validated, XBRL-ready statements."
+      tagline="Open-source, AI-native accounting for a company or a whole group, on the RoboSystems knowledge graph: from business events to consolidated, XBRL-ready statements."
       productLinks={[
         { label: 'How it works', href: '/#how-it-works' },
+        { label: 'Consolidation', href: '/#groups' },
         { label: 'Features', href: '/#features' },
         { label: 'Platform', href: '/#platform' },
         { label: 'Implementation', href: HARBINGER_URL },

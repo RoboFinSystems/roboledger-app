@@ -10,6 +10,6 @@ export default function Image() {
     eyebrow: 'RoboLedger',
     title: 'Connect your books. Ask your AI.',
     subtitle:
-      'Sync QuickBooks into a graph Claude, ChatGPT, or any MCP client can query.',
+      "Each company keeps its own books. Your AI drafts the group's consolidation.",
   })
 }

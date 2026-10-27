@@ -53,9 +53,22 @@ export const softwareJsonLd = {
   name: SITE_NAME,
   applicationCategory: 'FinanceApplication',
   operatingSystem: 'Web',
-  // No `offers` block: pricing/provisioning lives on the RoboSystems side and the
-  // marketing page is intentionally price-silent, so we don't advertise a price
-  // (a `price: '0'` Offer told search engines the app was free — it isn't).
+  // The homepage names the price since 2026-10-27: the RoboSystems Standard plan, $99 a
+  // month per graph (robosystems.ai/pricing, where billing reads it). Before that the page
+  // was price-silent and this block had no offer; a `price: '0'` Offer once told search
+  // engines the app was free, which it isn't.
+  offers: {
+    '@type': 'Offer',
+    price: '99',
+    priceCurrency: 'USD',
+    priceSpecification: {
+      '@type': 'UnitPriceSpecification',
+      price: '99',
+      priceCurrency: 'USD',
+      unitCode: 'MON',
+    },
+    url: 'https://robosystems.ai/pricing',
+  },
   description: SITE_DESCRIPTION,
   url: SITE_URL,
   image: `${SITE_URL}/images/logos/roboledger-icon.png`,

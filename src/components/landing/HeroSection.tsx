@@ -20,29 +20,30 @@ export default function HeroSection() {
         <div className="text-center">
           <div className="border-primary-500/30 bg-primary-950/40 text-primary-300 mx-auto mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium sm:text-sm">
             <span className="bg-primary-400 h-1.5 w-1.5 rounded-full"></span>
-            Your books, in the chat you already use
+            For a holding company and its LLCs, in the chat you already use
           </div>
 
           <h1 className="font-heading mb-6 text-4xl leading-tight font-extrabold sm:text-5xl md:mb-8 md:text-7xl lg:text-8xl">
             <span className="animate-pulsate-gradient-subtle block text-transparent">
-              Connect your books.
+              Your group&apos;s books.
             </span>
             <span className="from-primary-400 via-secondary-400 to-accent-400 mt-2 block bg-linear-to-r bg-clip-text pb-2 text-transparent">
-              Ask your AI.
+              Consolidated.
             </span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-gray-300 sm:text-lg md:mt-8 md:text-2xl">
-            Sync QuickBooks into a graph{' '}
+            Each company keeps its own books, chart and close. Your AI drafts
+            the month&apos;s consolidating entries from them, a person posts
+            them, and the group closes like one company does. Ask about any
+            company, or all of them, from{' '}
             <strong className="text-primary-400">
               Claude, ChatGPT, or any MCP client
-            </strong>{' '}
-            can reason over. Statements that tie, a plan that rolls off your
-            actuals, and your numbers beside public companies.{' '}
+            </strong>
+            .{' '}
             <span className="text-white">
               Nothing writes back until you post an entry.
-            </span>{' '}
-            When you trust it, it drafts the close.
+            </span>
           </p>
 
           {/* CTAs */}

@@ -15,20 +15,37 @@ interface Spotlight {
   demoLabel: string
 }
 
-// Ordered for the finance lead, not the bookkeeper: read the numbers, question them, plan
-// from them, ask in plain English; the close and the inbox, where the team does the entries
-// and the lead approves them, come last.
+// Ordered for the finance lead, not the bookkeeper: the group's statements first (the
+// homepage leads with the group), then read the numbers, question them, plan from them, ask
+// in plain English; the close and the inbox, where the team does the entries and the lead
+// approves them, come last. Every bullet can be shown on the Driftline demo account.
 const spotlights: Spotlight[] = [
+  {
+    id: 'groups',
+    label: 'Groups & consolidation',
+    title: "Consolidated statements, drafted from each company's books",
+    description:
+      "Add each company with the share the parent holds. Every month your AI drafts the consolidating entries from the books: the parent's investment against each subsidiary's capital, what the companies owe and bill each other, and an outside owner's share. A person posts them, and the group's month closes only when it all ties.",
+    bullets: [
+      'A worksheet with every company in its own column, then combined, the adjustments and consolidated',
+      'Noncontrolling interest, the equity method, and a company bought, partly sold or sold out of the group mid-year',
+      'Each company closes on its own calendar; what the books cannot explain is named for you, never plugged',
+    ],
+    caption: 'Ledger › Statements › Worksheet',
+    demo: 'group',
+    demoLabel:
+      "Driftline's August consolidation worksheet filling company by company, the drafted adjustments explained one at a time, and a person closing the group's month.",
+  },
   {
     id: 'reporting',
     label: 'Reporting & XBRL',
-    title: 'Live statements & validated reports',
+    title: 'Live statements, and every figure opens',
     description:
-      'See the Balance Sheet and Income Statement straight from the ledger on any day of the month, no close required, with Cash Flow and Equity as your transactions are classified. When it is time to send, generate a validated report package.',
+      'See the balance sheet and income statement straight from the ledger on any day of the month, no close required, for one company or the whole group. Click a figure to see the accounts it was summed from. When it is time to send, generate a validated report package.',
     bullets: [
-      'Multi-period and comparative reports with a Draft → Under Review → Filed lifecycle',
-      'Export Tavi and XBRL 2.1 reports; verification view checks US-GAAP concept relations',
-      'Share snapshots with your board, lenders, and investors through publish lists',
+      "Drill from a statement, the trial balance or the journal into an account's register",
+      'Income statement columns by department, class, location or project, and CSV on every statement',
+      'Tavi and XBRL 2.1 report packages, shared with your board, lenders and investors through publish lists',
     ],
     caption: 'Ledger › Statements',
     demo: 'statements',
@@ -58,7 +75,7 @@ const spotlights: Spotlight[] = [
     description:
       'Your closed months and your forecast in one monthly grid. Switch to a scenario and see what it does to cash, with its levers sitting right beneath the statements they drive.',
     bullets: [
-      'Income Statement, Balance Sheet, and Cash Flow month by month — actuals and forward columns in the same row',
+      'Income Statement, Balance Sheet, and Cash Flow month by month, with actuals and forward columns in the same row',
       'Switch scenarios in place; the assumption levers driving the forecast render in the same grid',
       'Trailing-window control, CSV export, and shareable scenario links',
     ],
@@ -75,7 +92,7 @@ const spotlights: Spotlight[] = [
       'Get the answer yourself instead of waiting on a report, and hand off the routine work. Use the AI Console in the app, or connect Claude, ChatGPT, or any MCP client and use the same tools from the chat you already use.',
     bullets: [
       'Ask in plain English; answers come from your ledger, with the generated query beside the result',
-      'Start with /do to sort bank-feed lines, draft the month’s schedule entries, or build a metric, forecast, or draft report — on a stronger model than questions use, because a wrong change costs more than a wrong answer',
+      'Start with /do to sort bank-feed lines, draft the month’s schedule entries, or build a metric, forecast, or draft report, on a stronger model than questions use, because a wrong change costs more than a wrong answer',
       'Nothing posts on its own: what it sorts or drafts waits for a person to commit, close, or file',
     ],
     caption: 'Console',
@@ -88,11 +105,11 @@ const spotlights: Spotlight[] = [
     label: 'Period close',
     title: 'Close the period with guard rails',
     description:
-      'The entries get drafted; you review and approve. A guided, sequential close backed by a fiscal calendar and a rule engine, so no one locks an unbalanced or out-of-order period.',
+      'The entries get drafted; you review and approve. A sequential close backed by a fiscal calendar, reconciliations and a rule engine, so no one locks an unbalanced, unreconciled or out-of-order month.',
     bullets: [
-      'Fiscal-calendar bootstrap with human-readable blockers (period incomplete, sync stale, out of sequence)',
-      'Schedules post depreciation & prepaid entries to draft; balanced-draft gating before you lock',
-      'Optional write-back to QuickBooks on close, and reopen-with-audit-reason',
+      'Bank reconciliations against the statement: its cycle, the lines the bank has not cleared, the roll-forward, and a sign-off',
+      'Schedules for depreciation, prepaids, loans and custom curves, previewed month by month before they draft',
+      'Blockers in plain words (sync stale, out of sequence, unmapped accounts), reopen with an audit reason, optional write-back to QuickBooks',
     ],
     caption: 'Ledger › Closing Book',
     demo: 'close',
@@ -104,11 +121,11 @@ const spotlights: Spotlight[] = [
     label: 'Event-driven ledger',
     title: 'An inbox for your books',
     description:
-      'Every transaction lands as a typed business event — captured, classified, then committed. AI proposes the entry; you set the rules and nothing posts without a decision.',
+      'Every QuickBooks transaction and bank line lands as a typed business event: captured, classified, then committed. Bank lines arrive with a suggested account and where it came from; you set the rules, and nothing posts without a decision.',
     bullets: [
-      'AI pre-classifies invoices, bills, payments, and receipts',
-      'Preview exactly what would post — matched handler, planned journal entries, validation errors — before it hits the GL',
-      'Approve or reject in one click — or enable autopilot for trusted sources',
+      "Suggestions from the counterparty's learned default, the bank's category or AI, each labelled, and the learned ones approved in bulk",
+      'Posting Rules: a rule your AI proposes books nothing until a person approves it',
+      'Settle a bill from the line it paid, and see receivables and payables aged by days past due',
     ],
     caption: 'Ledger › Inbox',
     demo: 'inbox',
@@ -127,10 +144,10 @@ export default function Spotlights() {
             Inside RoboLedger
           </div>
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-            From the first question to the close
+            From the group&apos;s statements to the close
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Six views of the same live books. Read the statements, open any
+            Seven views of the same live books. Read the whole group, open any
             number, plan forward, and ask in plain English. When you trust it,
             the close and the inbox are there too.
           </p>
@@ -140,7 +157,8 @@ export default function Spotlights() {
           {spotlights.map((s, idx) => (
             <div
               key={s.id}
-              className={`grid items-center gap-8 lg:grid-cols-2 lg:gap-14 ${
+              id={s.id}
+              className={`grid scroll-mt-24 items-center gap-8 lg:grid-cols-2 lg:gap-14 ${
                 idx % 2 === 1 ? 'lg:[&>figure]:order-first' : ''
               }`}
             >
@@ -176,7 +194,7 @@ export default function Spotlights() {
                 </ul>
               </div>
 
-              <ProductShot alt={`RoboLedger — ${s.title}`} caption={s.caption}>
+              <ProductShot alt={`RoboLedger: ${s.title}`} caption={s.caption}>
                 <LiveDemo
                   name={s.demo}
                   aspect={1200 / 750}
