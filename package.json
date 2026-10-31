@@ -55,9 +55,10 @@
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3"
   },
-  "//overrides": "deepmerge-ts is forced to ^8 to clear GHSA-ggr8-5vv4-36mx. It reaches us only through flowbite-react, which pins 7.1.5 exactly; npm's only other remedy is downgrading flowbite-react. REMOVE once flowbite-react ships a release depending on deepmerge-ts 8.",
+  "//overrides": "deepmerge-ts is forced to ^8 to clear GHSA-ggr8-5vv4-36mx. It reaches us only through flowbite-react, which pins 7.1.5 exactly; npm's only other remedy is downgrading flowbite-react. REMOVE once flowbite-react ships a release depending on deepmerge-ts 8. postcss-selector-parser is forced to ^6.1.5 to clear GHSA-rj75-hqrm-r3gf; it reaches us only through @tailwindcss/typography, which pins 6.0.10 exactly (6.1.5 is the same major, and the plugin runs only at build time). REMOVE once @tailwindcss/typography depends on postcss-selector-parser >= 6.1.5.",
   "overrides": {
-    "deepmerge-ts": "^8.0.1"
+    "deepmerge-ts": "^8.0.1",
+    "postcss-selector-parser": "^6.1.5"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^16.4.2",
