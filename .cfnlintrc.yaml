@@ -10,3 +10,7 @@ ignore_checks:
   # DomainName parameter is optional and empty by default
   - W1030
   - W1031
+  # W3697: App Runner has been in AWS maintenance mode since 2026-03-31 —
+  # existing services keep running and are supported; moving off it is a
+  # separate decision, not a lint failure
+  - W3697
