@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from 'vitest'
 const mockGetTrialBalance = vi.fn()
 
 vi.mock('@robosystems/core', () => ({
-  customTheme: { table: {} },
   clients: {
     ledger: {
       getTrialBalance: (...args: any[]) => mockGetTrialBalance(...args),
