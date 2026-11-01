@@ -1,5 +1,6 @@
 import { BLOG_DESCRIPTION } from '@/components/blog/BlogJsonLd'
 import { getAllPosts } from '@/lib/blog'
+import { orBuildFallback } from '@robosystems/core/docs/catalog'
 
 // RSS 2.0 for the roboledger.ai lane: readers, aggregators and search engines pick new
 // posts up from here without waiting on a sitemap recrawl. Same catalog and cadence as
@@ -24,7 +25,7 @@ function rfc822(iso: string): string | undefined {
 }
 
 export async function GET() {
-  const posts = await getAllPosts()
+  const posts = await orBuildFallback(getAllPosts(), [])
 
   const items = posts.map((post) => {
     const url = `${BASE_URL}/blog/${post.slug}`

@@ -69,18 +69,16 @@ async function fetchCatalog(revalidate = 300): Promise<CatalogEntry[]> {
   return data.posts ?? []
 }
 
-/** This lane's posts, newest first. */
+/**
+ * This lane's posts, newest first. Throws when the catalog cannot be read, so a page
+ * regenerating during a CDN blip keeps its last good render rather than an empty list.
+ */
 export async function getAllPosts(): Promise<BlogPost[]> {
-  try {
-    const entries = await fetchCatalog()
-    return entries
-      .map(toPost)
-      .filter((p) => p.site === BLOG_SITE)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  } catch (error) {
-    console.error('Error loading blog catalog:', error)
-    return []
-  }
+  const entries = await fetchCatalog()
+  return entries
+    .map(toPost)
+    .filter((p) => p.site === BLOG_SITE)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 }
 
 export async function getPostSlugs(): Promise<string[]> {
@@ -92,23 +90,23 @@ export async function getPostSlugs(): Promise<string[]> {
  * One post with its markdown body, or null when the slug is unknown or the post belongs
  * to another site. This lane is new, so there are no legacy URLs to keep answering: a
  * robosystems.ai essay requested here is a 404, not a duplicate.
+ *
+ * A catalog or body that cannot be read throws, so a CDN blip during regeneration keeps the
+ * last good render instead of caching a 404 or an empty post.
  */
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
-  try {
-    const entries = await fetchCatalog()
-    const entry = entries.find((e) => e.slug === slug)
-    if (!entry) return null
-    const post = toPost(entry)
-    if (post.site !== BLOG_SITE) return null
-    if (entry.assets?.body) {
-      const res = await fetch(entry.assets.body, { next: { revalidate: 300 } })
-      if (res.ok) post.content = await res.text()
-    }
-    return post
-  } catch (error) {
-    console.error(`Error loading post ${slug}:`, error)
-    return null
+  const entries = await fetchCatalog()
+  const entry = entries.find((e) => e.slug === slug)
+  if (!entry) return null
+  const post = toPost(entry)
+  if (post.site !== BLOG_SITE) return null
+  if (entry.assets?.body) {
+    const res = await fetch(entry.assets.body, { next: { revalidate: 300 } })
+    if (!res.ok)
+      throw new Error(`Post body fetch failed for ${slug}: ${res.status}`)
+    post.content = await res.text()
   }
+  return post
 }
 
 /**

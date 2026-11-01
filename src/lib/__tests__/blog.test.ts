@@ -56,7 +56,6 @@ function fetchStub(url: string) {
 describe('blog catalog', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn(fetchStub))
-    vi.spyOn(console, 'error').mockImplementation(() => {})
   })
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -83,13 +82,22 @@ describe('blog catalog', () => {
     expect(await getPostBySlug('graph-essay')).toBeNull()
   })
 
-  it('degrades to an empty lane when the catalog is unreachable', async () => {
+  // An unreadable catalog must throw, not read as "no posts" or "no such post": during ISR
+  // regeneration a throw keeps the last good render, while a [] or null is cached as an
+  // empty list or a 404 for the whole revalidate window.
+  it('throws when the catalog is unreachable', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(() => Promise.reject(new Error('offline')))
     )
-    expect(await getAllPosts()).toEqual([])
-    expect(await getPostBySlug('claude-ledger')).toBeNull()
+    await expect(getAllPosts()).rejects.toThrow('offline')
+    await expect(getPostBySlug('claude-ledger')).rejects.toThrow('offline')
+  })
+
+  it('throws when a post body cannot be read', async () => {
+    await expect(getPostBySlug('export-chain')).rejects.toThrow(
+      'Post body fetch failed'
+    )
   })
 })
 

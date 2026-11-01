@@ -93,4 +93,11 @@ describe('GET /llms.txt', () => {
 
     await expect(GET()).rejects.toThrow('CDN down')
   })
+
+  it('throws at runtime when only the blog catalog fails', async () => {
+    mockGetDocsCatalog.mockResolvedValue(null)
+    mockGetAllPosts.mockRejectedValue(new Error('blog CDN down'))
+
+    await expect(GET()).rejects.toThrow('blog CDN down')
+  })
 })

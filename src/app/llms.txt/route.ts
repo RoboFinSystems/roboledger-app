@@ -28,7 +28,7 @@ function docsLinks(pages: DocsPage[]): string[] {
 export async function GET() {
   const [catalog, posts] = await Promise.all([
     orBuildFallback(getDocsCatalog(), null),
-    getAllPosts().catch(() => []),
+    orBuildFallback(getAllPosts(), []),
   ])
   const docs = catalog
     ? (getDocsNav(catalog, DOCS_SITE, 'product')?.ordered ?? [])
