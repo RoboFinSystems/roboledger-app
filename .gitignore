@@ -50,3 +50,6 @@ GEMINI.md
 
 # local dev
 local/
+
+# CI build tarball (build.yml); left behind by a local image reproduction
+next-build.tar.gz

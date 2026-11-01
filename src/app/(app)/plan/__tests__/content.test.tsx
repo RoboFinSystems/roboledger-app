@@ -20,7 +20,6 @@ vi.mock('@/lib/entity-scope', () => ({ useEntityScope: () => mockScope() }))
 
 vi.mock('@robosystems/core', () => ({
   useGraphWrites: vi.fn(),
-  customTheme: { card: {} },
   clients: {
     ledger: {
       listInformationBlockSummaries: (...args: any[]) =>

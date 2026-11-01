@@ -20,7 +20,6 @@ vi.mock('@robosystems/core', () => ({
   useGraphWrites: (_graphId: string, cb: () => void) => {
     onGraphWrites = cb
   },
-  customTheme: { card: {} },
   clients: {
     ledger: {
       listInformationBlockSummaries: (...args: any[]) =>

@@ -1,8 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@robosystems/core', () => ({ customTheme: { table: {} } }))
-
 // The grid is a raw table — only the banner's Badge comes from the UI layer.
 vi.mock('@robosystems/core/ui', () => ({
   Badge: ({ children, color }: any) => (

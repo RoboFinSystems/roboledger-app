@@ -62,7 +62,6 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:nextjs.org)",
       "WebFetch(domain:www.npmjs.com)",
-      "WebFetch(domain:flowbite-react.com)",
       "WebFetch(domain:localhost)",
       "mcp__ide__getDiagnostics"
     ],

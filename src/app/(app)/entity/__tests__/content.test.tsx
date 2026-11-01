@@ -29,7 +29,6 @@ vi.mock('@/lib/entity-scope', () => ({
 }))
 
 vi.mock('@robosystems/core', () => ({
-  customTheme: { card: {}, alert: {}, textInput: {} },
   PageLayout: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
