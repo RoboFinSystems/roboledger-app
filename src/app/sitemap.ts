@@ -1,5 +1,10 @@
 import { getAllPosts } from '@/lib/blog'
-import { DOCS_SITE, getDocsCatalog, getDocsNav } from '@/lib/docs'
+import {
+  DOCS_SITE,
+  getDocsCatalog,
+  getDocsNav,
+  orBuildFallback,
+} from '@/lib/docs'
 import { PRODUCT_PAGES, productPageUrl } from '@/lib/product-pages'
 import type { MetadataRoute } from 'next'
 
@@ -25,7 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://roboledger.ai'
 
   // This lane's posts, from the shared S3 catalog.
-  const posts = await getAllPosts().catch(() => [])
+  const posts = await orBuildFallback(getAllPosts(), [])
   const blogPosts = posts.map((post) => ({
     url: `${baseUrl}/blog/${post.slug}`,
     lastModified: new Date(post.date),
@@ -34,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   // The product docs, from the shared docs catalog; lastmod is each page's last commit.
-  const catalog = await getDocsCatalog().catch(() => null)
+  const catalog = await orBuildFallback(getDocsCatalog(), null)
   const docs = catalog && getDocsNav(catalog, DOCS_SITE, 'product')
   const docsPages: MetadataRoute.Sitemap = (docs?.ordered ?? []).map(
     (page) => ({

@@ -73,6 +73,7 @@ const docsCatalog: DocsCatalog = {
 describe('sitemap', () => {
   afterEach(() => {
     vi.clearAllMocks()
+    vi.unstubAllEnvs()
   })
 
   it("lists this site's docs pages, dated by their last commit", async () => {
@@ -102,7 +103,17 @@ describe('sitemap', () => {
     ])
   })
 
-  it('leaves the docs out, and keeps everything else, when the docs catalog is unreachable', async () => {
+  it('throws at runtime when a catalog fails, so the last good sitemap is kept', async () => {
+    mockGetAllPosts.mockRejectedValue(new Error('blog down'))
+    await expect(sitemap()).rejects.toThrow('blog down')
+
+    mockGetAllPosts.mockResolvedValue(posts)
+    mockGetDocsCatalog.mockRejectedValue(new Error('docs down'))
+    await expect(sitemap()).rejects.toThrow('docs down')
+  })
+
+  it('leaves the docs out, and keeps everything else, when a build cannot read the docs catalog', async () => {
+    vi.stubEnv('NEXT_PHASE', 'phase-production-build')
     mockGetAllPosts.mockResolvedValue(posts)
     mockGetDocsCatalog.mockRejectedValue(new Error('catalog unreachable'))
     const urls = (await sitemap()).map((e) => e.url)
@@ -113,7 +124,7 @@ describe('sitemap', () => {
 
   it('lists every product page, dated by its last edit', async () => {
     mockGetAllPosts.mockResolvedValue(posts)
-    mockGetDocsCatalog.mockRejectedValue(new Error('catalog unreachable'))
+    mockGetDocsCatalog.mockResolvedValue(null)
     const byUrl = new Map((await sitemap()).map((e) => [e.url, e]))
 
     for (const page of PRODUCT_PAGES) {
@@ -146,7 +157,8 @@ describe('sitemap', () => {
     )
   })
 
-  it('sends no lastmod for the hub when the catalog is empty or unreachable', async () => {
+  it('sends no lastmod for the hub when a build cannot read the catalog', async () => {
+    vi.stubEnv('NEXT_PHASE', 'phase-production-build')
     mockGetAllPosts.mockRejectedValue(new Error('catalog down'))
     const hub = (await sitemap()).find(
       (e) => e.url === 'https://roboledger.ai/blog'
