@@ -60,6 +60,16 @@ updates:
       - dependency-name: '@types/node'
         update-types:
           - 'version-update:semver-major'
+      # Held until the 5.1 line (#431, #435): a dot-zero major seasons first.
+      # Only 5.0.x is ignored, so the first 5.1 release still opens a PR —
+      # that is the moment to move vite, vitest and @vitest/coverage-v8
+      # together. Drop these entries once it lands.
+      - dependency-name: 'vitest'
+        versions:
+          - '5.0.x'
+      - dependency-name: '@vitest/coverage-v8'
+        versions:
+          - '5.0.x'
 
   # GitHub Actions — pinned action versions
   - package-ecosystem: 'github-actions'
