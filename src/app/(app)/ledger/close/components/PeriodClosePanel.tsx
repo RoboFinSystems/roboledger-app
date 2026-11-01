@@ -27,7 +27,7 @@ import {
   TableHeadCell,
   TableRow,
   Textarea,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import Link from 'next/link'
 import type { FC, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'

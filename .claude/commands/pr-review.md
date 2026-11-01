@@ -68,7 +68,7 @@ With the full PR diff in hand, perform your own review focusing on:
 - **API routes** (`src/app/api/`): the public-facing ones (`contact`, `support`) carry rate limiting (`src/lib/rate-limiter.ts`), Turnstile verification (`src/lib/turnstile-server.ts`), and client-IP derivation (`src/lib/client-ip.ts`). A new public endpoint that skips those is a gap; a change to IP derivation deserves close reading, since it's what rate limiting keys on. `reports/holon` validates JSON-LD for report rendering — treat its input as untrusted.
 - **Auth**: is session validation actually enforced for the surface being added, or only visually hidden?
 - **Security**: any OWASP top 10 concerns — XSS via `dangerouslySetInnerHTML`, unvalidated redirects, injection into `fetch` URLs?
-- **UI consistency**: Flowbite components and existing Tailwind idiom, dark mode on every new surface, and responsive behavior. These regress silently and no test catches them.
+- **UI consistency**: `@robosystems/core/ui` components and existing Tailwind idiom, dark mode on every new surface, and responsive behavior. These regress silently and no test catches them.
 - **Accessibility**: labels, keyboard reachability, heading order. `eslint-plugin-jsx-a11y` is configured, so a finding it can't see is the one worth writing down.
 - **Error handling**: does a failed API call surface something to the user, or fail silently?
 - **Tests**: are changes covered? Read the test, don't trust that it's green — a test that asserts the buggy behavior passes just as happily as a correct one. Check whether new `@robosystems/*` imports need mock coverage in `src/__mocks__/` (missing mocks fail as opaque module-resolution errors, not assertion failures).

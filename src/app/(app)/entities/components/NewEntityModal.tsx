@@ -18,7 +18,7 @@ import {
   ModalHeader,
   Select,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { type FC, type FormEvent, useEffect, useMemo, useState } from 'react'
 
 /** Legal forms the server maps to a Reporting Style and a chart's equity rows. */

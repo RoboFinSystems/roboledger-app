@@ -28,7 +28,7 @@ import {
   TableHeadCell,
   TableRow,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import {

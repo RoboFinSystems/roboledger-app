@@ -34,7 +34,7 @@ import {
   TableHeadCell,
   TableRow,
   ToggleSwitch,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'

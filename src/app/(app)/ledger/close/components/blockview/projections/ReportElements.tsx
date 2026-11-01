@@ -7,7 +7,7 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useMemo, useState } from 'react'
 import { HiChevronDown, HiChevronUp, HiSelector } from 'react-icons/hi'

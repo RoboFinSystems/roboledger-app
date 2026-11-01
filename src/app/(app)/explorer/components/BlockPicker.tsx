@@ -3,7 +3,7 @@
 import { withoutTaxonomy } from '@/lib/ledger/blockName'
 import type { InformationBlockSummaryList } from '@robosystems/client/clients'
 import { LoadingState } from '@robosystems/core'
-import { TextInput } from 'flowbite-react'
+import { TextInput } from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useMemo, useState } from 'react'
 import { HiSearch } from 'react-icons/hi'

@@ -5,7 +5,7 @@ vi.mock('next/image', () => ({
   default: ({ alt }: any) => <span>{alt}</span>,
 }))
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Alert: ({ children }: any) => <div role="alert">{children}</div>,
   Badge: ({ children }: any) => <span>{children}</span>,
   Button: ({ children, onClick, disabled, title }: any) => (

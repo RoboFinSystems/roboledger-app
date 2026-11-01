@@ -71,7 +71,7 @@ vi.mock('next/link', () => ({
   default: ({ href, children }: any) => <a href={href}>{children}</a>,
 }))
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Button: ({ children, onClick, disabled, ...rest }: any) => (
     <button onClick={onClick} disabled={disabled} {...rest}>
       {children}
@@ -104,7 +104,7 @@ vi.mock('../../explorer/components/serialize', async (importOriginal) => ({
   downloadJson: (...args: any[]) => mockDownloadJson(...args),
 }))
 
-// Stand-in for the Flowbite Dropdown (covered by ExportMenu's own
+// Stand-in for the core Dropdown (covered by ExportMenu's own
 // test): one flat button per format, keyed by the format id the page
 // hands back, so clicks assert the export wiring.
 vi.mock('@/components/ExportMenu', () => ({

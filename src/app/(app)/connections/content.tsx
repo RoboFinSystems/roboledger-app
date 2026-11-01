@@ -18,7 +18,6 @@ import {
   unwrapSdk,
   useToast,
 } from '@robosystems/core'
-import { LoadingState, Spinner } from '@robosystems/core/ui-components'
 import {
   Alert,
   Badge,
@@ -28,7 +27,8 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
+import { LoadingState, Spinner } from '@robosystems/core/ui-components'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiLink, HiPlus } from 'react-icons/hi'

@@ -1,6 +1,4 @@
 import tailwindcssTypography from '@tailwindcss/typography'
-import flowbiteReact from 'flowbite-react/plugin/tailwindcss'
-import flowbitePlugin from 'flowbite/plugin'
 import type { Config } from 'tailwindcss'
 
 export default {
@@ -8,9 +6,7 @@ export default {
     './src/**/*.{js,jsx,ts,tsx}',
     './app/**/*.{ts,tsx,mdx}',
     './components/**/*.{ts,tsx,mdx}',
-    'node_modules/flowbite-react/**/*.{js,jsx,ts,tsx}',
     'node_modules/@robosystems/core/**/*.js',
-    '.flowbite-react/class-list.json',
   ],
   darkMode: 'class',
   theme: {
@@ -298,5 +294,5 @@ export default {
       ],
     },
   },
-  plugins: [flowbitePlugin, flowbiteReact, tailwindcssTypography],
+  plugins: [tailwindcssTypography],
 } satisfies Config

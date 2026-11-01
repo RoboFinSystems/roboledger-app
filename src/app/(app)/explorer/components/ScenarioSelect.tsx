@@ -1,6 +1,6 @@
 'use client'
 
-import { Select } from 'flowbite-react'
+import { Select } from '@robosystems/core/ui'
 import type { FC } from 'react'
 
 export interface ScenarioOption {

@@ -39,7 +39,7 @@ import {
   ModalFooter,
   ModalHeader,
   Select,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import Link from 'next/link'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import {

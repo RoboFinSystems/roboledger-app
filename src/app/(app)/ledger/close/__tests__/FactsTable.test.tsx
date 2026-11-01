@@ -5,7 +5,7 @@ vi.mock('@robosystems/core', () => ({
   customTheme: { table: {} },
 }))
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Table: ({ children }: any) => <table>{children}</table>,
   TableBody: ({ children }: any) => <tbody>{children}</tbody>,
   TableCell: ({ children, className }: any) => (

@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from 'flowbite-react'
+import { Button } from '@robosystems/core/ui'
 import type { ErrorInfo, ReactNode } from 'react'
 import { Component } from 'react'
 import { HiExclamationCircle, HiRefresh } from 'react-icons/hi'

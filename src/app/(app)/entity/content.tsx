@@ -15,7 +15,7 @@ import {
   Select,
   Spinner,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { type FC, useEffect, useRef, useState } from 'react'
 import { HiOfficeBuilding, HiPencil, HiSave, HiX } from 'react-icons/hi'
 import GroupLifecycleCard from './components/GroupLifecycleCard'

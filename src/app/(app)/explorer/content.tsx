@@ -16,7 +16,7 @@ import {
   useGraphContext,
   useGraphWrites,
 } from '@robosystems/core'
-import { Card } from 'flowbite-react'
+import { Card } from '@robosystems/core/ui'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'

@@ -17,7 +17,7 @@ vi.mock('@robosystems/core', () => ({
   LoadingState: () => <div>Loading…</div>,
 }))
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Alert: ({ children }: any) => <div role="alert">{children}</div>,
   Badge: ({ children }: any) => <span>{children}</span>,
   Button: ({ children, onClick, 'aria-label': ariaLabel }: any) => (

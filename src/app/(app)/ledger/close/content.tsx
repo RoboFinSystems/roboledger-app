@@ -12,7 +12,7 @@ import {
   PageLayout,
   useGraphContext,
 } from '@robosystems/core'
-import { Card } from 'flowbite-react'
+import { Card } from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'

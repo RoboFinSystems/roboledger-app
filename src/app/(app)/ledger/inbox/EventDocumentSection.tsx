@@ -8,7 +8,7 @@ import {
 } from '@/lib/ledger/documents'
 import { extractDetail } from '@/lib/ledger/errors'
 import { clients } from '@robosystems/core'
-import { Button, FileInput, HelperText, Spinner } from 'flowbite-react'
+import { Button, FileInput, HelperText, Spinner } from '@robosystems/core/ui'
 import { type FC, useState } from 'react'
 import { HiDocumentText, HiPaperClip } from 'react-icons/hi'
 

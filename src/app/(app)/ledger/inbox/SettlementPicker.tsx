@@ -6,7 +6,7 @@ import type {
   LedgerOpenItem,
 } from '@robosystems/client/clients'
 import { clients } from '@robosystems/core'
-import { Checkbox, Label } from 'flowbite-react'
+import { Checkbox, Label } from '@robosystems/core/ui'
 import { type FC, useEffect, useMemo, useState } from 'react'
 import { HiChevronDown, HiChevronRight, HiLink } from 'react-icons/hi'
 

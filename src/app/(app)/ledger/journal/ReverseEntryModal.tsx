@@ -13,7 +13,7 @@ import {
   ModalFooter,
   ModalHeader,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { flipLines, type FlippableLine } from './entryActions'
 

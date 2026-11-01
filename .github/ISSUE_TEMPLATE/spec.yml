@@ -64,7 +64,7 @@ body:
         - label: Hooks (`/src/hooks/`)
         - label: Utilities (`/src/lib/`)
         - label: Middleware (`/src/middleware.ts`)
-        - label: Styles/Theming (Tailwind, Flowbite)
+        - label: Styles/Theming (Tailwind, core UI)
         - label: Tests (`/__tests__/`)
         - label: CI/CD (`.github/workflows/`)
         - label: Infrastructure (`/cloudformation/`)

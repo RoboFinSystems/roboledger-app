@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from 'flowbite-react'
+import { Button } from '@robosystems/core/ui'
 import Image from 'next/image'
 import { useEffect } from 'react'
 import { HiChevronLeft, HiRefresh } from 'react-icons/hi'

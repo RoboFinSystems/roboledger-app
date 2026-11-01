@@ -12,7 +12,7 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import type { FC } from 'react'
 
 const NUMERIC_CELL = 'text-right font-mono whitespace-nowrap'

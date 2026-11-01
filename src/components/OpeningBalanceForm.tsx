@@ -12,7 +12,7 @@ import {
   Select,
   Spinner,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { type FC, type FormEvent, useEffect, useMemo, useState } from 'react'
 
 /** One line of an opening entry already recorded, in dollars. */

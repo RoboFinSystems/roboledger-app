@@ -17,7 +17,7 @@ import {
   ModalHeader,
   Select,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { HiPlus, HiTrash } from 'react-icons/hi'
 

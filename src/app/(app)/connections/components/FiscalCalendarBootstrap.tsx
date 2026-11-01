@@ -4,7 +4,7 @@ import FiscalCalendarSetupModal from '@/components/FiscalCalendarSetupModal'
 import { friendlyError } from '@/lib/ledger/errors'
 import type { LedgerFiscalCalendar } from '@robosystems/client/clients'
 import { clients } from '@robosystems/core'
-import { Alert, Badge, Button } from 'flowbite-react'
+import { Alert, Badge, Button } from '@robosystems/core/ui'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { HiCalendar, HiExclamationCircle } from 'react-icons/hi'
 

@@ -17,7 +17,7 @@ import {
   Spinner,
   Textarea,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import {
   type FC,
   type FormEvent,

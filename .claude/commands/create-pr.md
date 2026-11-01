@@ -9,7 +9,7 @@ Create a GitHub pull request for the current branch, writing the title and descr
 
 The previous flow outsourced PR-description authoring to a GitHub Action that only saw the diff and commit messages. It could not know _why_ the changes were made, so it frequently described things that weren't true. Those inaccurate descriptions then fed `@claude` reviews, compounding the bad information. This command fixes that at the root: **you author the description here, where the full context of what was done and why is available.**
 
-This is a Next.js 16 frontend (React 19, Tailwind v4, Flowbite) that is a **client of the RoboSystems API** and consumes shared UI from the `@robosystems/core` and `@robosystems/report-components` npm packages. Ground every description in the code that actually changed in _this_ repo.
+This is a Next.js 16 frontend (React 19, Tailwind v4, `@robosystems/core/ui`) that is a **client of the RoboSystems API** and consumes shared UI from the `@robosystems/core` and `@robosystems/report-components` npm packages. Ground every description in the code that actually changed in _this_ repo.
 
 **This repository is public.** The PR title and body are world-readable the moment they're pushed — routinely _before_ the change is deployed, since deploys are manual `workflow_dispatch` runs. Treat the description as a publication, not a work note.
 

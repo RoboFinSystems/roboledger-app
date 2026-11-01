@@ -22,7 +22,7 @@ vi.mock('@robosystems/core', () => ({
   ),
 }))
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Button: ({ children, onClick, disabled }: any) => (
     <button onClick={onClick} disabled={disabled}>
       {children}

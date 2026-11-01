@@ -18,7 +18,7 @@ import {
   ModalHeader,
   Radio,
   Select,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { useEffect, useMemo, useState } from 'react'
 
 export type MoveResult = Awaited<

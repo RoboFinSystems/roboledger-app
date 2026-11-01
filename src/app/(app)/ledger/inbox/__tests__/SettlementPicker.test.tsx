@@ -12,7 +12,7 @@ vi.mock('@robosystems/core', () => ({
   },
 }))
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Checkbox: ({ id, checked, onChange, disabled }: any) => (
     <input
       id={id}

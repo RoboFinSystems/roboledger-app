@@ -2,7 +2,7 @@
 
 import { hierarchyDepth } from '@/lib/entity-scope'
 import type { LedgerEntitySummary } from '@robosystems/client/clients'
-import { Label, Select } from 'flowbite-react'
+import { Label, Select } from '@robosystems/core/ui'
 
 interface FeedEntityFieldProps {
   id: string

@@ -10,7 +10,7 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 

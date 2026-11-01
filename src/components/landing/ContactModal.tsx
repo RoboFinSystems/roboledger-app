@@ -1,6 +1,6 @@
 'use client'
 
-import { Modal } from 'flowbite-react'
+import { Modal } from '@robosystems/core/ui'
 import ContactForm from './ContactForm'
 
 interface ContactModalProps {
@@ -11,32 +11,6 @@ interface ContactModalProps {
   formType?: string
 }
 
-const customTheme = {
-  root: {
-    base: 'fixed top-0 right-0 left-0 z-50 h-modal h-screen overflow-y-auto overflow-x-hidden md:inset-0 md:h-full',
-    show: {
-      on: 'flex bg-zinc-900 bg-opacity-50',
-      off: 'hidden',
-    },
-  },
-  content: {
-    base: 'relative h-full w-full p-4 md:h-auto',
-    inner:
-      'relative rounded-lg bg-zinc-900 shadow-sm flex flex-col max-h-[90vh]',
-  },
-  body: {
-    base: 'p-6 flex-1 overflow-auto',
-  },
-  header: {
-    base: 'flex items-start justify-between rounded-t border-b border-gray-600 p-5',
-    title: 'text-xl font-medium text-gray-900',
-    close: {
-      base: 'ml-auto inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-zinc-200 hover:text-gray-900',
-      icon: 'h-5 w-5',
-    },
-  },
-}
-
 export default function ContactModal({
   isOpen,
   onClose,
@@ -45,7 +19,13 @@ export default function ContactModal({
   formType = 'general',
 }: ContactModalProps) {
   return (
-    <Modal show={isOpen} onClose={onClose} size="2xl" theme={customTheme}>
+    <Modal
+      show={isOpen}
+      onClose={onClose}
+      size="2xl"
+      // Overlay tint; the former per-call theme used the Tailwind v3 `bg-opacity-50`, which v4 ignores.
+      className="bg-zinc-900/50"
+    >
       <div className="relative rounded-lg border border-gray-700 bg-linear-to-br from-zinc-900 to-zinc-800">
         {/* Close button */}
         <button

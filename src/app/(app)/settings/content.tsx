@@ -2,8 +2,8 @@
 
 import { getLoginHomeName } from '@robosystems/core/auth-core/config'
 import { useCrossAppLink } from '@robosystems/core/hooks'
+import { Card, Spinner } from '@robosystems/core/ui'
 import { ACCOUNT_SETTINGS_PATH } from '@robosystems/core/ui-components/layout'
-import { Card, Spinner } from 'flowbite-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { HiExternalLink } from 'react-icons/hi'
 

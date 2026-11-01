@@ -29,7 +29,7 @@ import {
   TableHeadCell,
   TableRow,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import Link from 'next/link'
 import type { FC } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'

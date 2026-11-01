@@ -1,6 +1,6 @@
 'use client'
 
-import { Dropdown, DropdownItem } from 'flowbite-react'
+import { Dropdown, DropdownItem } from '@robosystems/core/ui'
 import type { FC } from 'react'
 import {
   HiBookOpen,
@@ -49,10 +49,10 @@ const MODES: readonly ModeOption[] = [
  * Verification Results / Report Elements / Business Rules) without UI
  * churn each time one lands.
  *
- * Flowbite's `Dropdown` synthesizes its own trigger button when `label`
+ * The core `Dropdown` synthesizes its own trigger button when `label`
  * is a string, so we pass a string label and let the component manage
  * focus/aria. Wrapping the label in a custom `Button as="span"` looked
- * cleaner but blocked Flowbite's pointer handler chain — item clicks
+ * cleaner but blocked the dropdown's pointer handler chain — item clicks
  * silently no-op'd. Lesson: trust the library's trigger.
  */
 const ViewModeToggle: FC<ViewModeToggleProps> = ({ viewMode, onChange }) => {

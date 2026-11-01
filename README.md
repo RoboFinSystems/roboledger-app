@@ -111,7 +111,7 @@ See the **[Bootstrap Guide](https://robosystems.ai/docs/technical/bootstrap-guid
 
 - Next.js 16 App Router
 - TypeScript 5 for type safety
-- Flowbite React with Tailwind CSS for UI components
+- Tailwind CSS with the shared UI primitives in `@robosystems/core/ui`
 - RoboSystems Client SDK for API communication
 - Statement and report rendering via [`@robosystems/report-components`](https://www.npmjs.com/package/@robosystems/report-components)
 - Intuit OAuth for QuickBooks integration

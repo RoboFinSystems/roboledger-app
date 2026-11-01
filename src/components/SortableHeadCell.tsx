@@ -1,6 +1,6 @@
 'use client'
 
-import { TableHeadCell } from 'flowbite-react'
+import { TableHeadCell } from '@robosystems/core/ui'
 import type { FC, ReactNode } from 'react'
 import { HiChevronDown, HiChevronUp, HiSelector } from 'react-icons/hi'
 

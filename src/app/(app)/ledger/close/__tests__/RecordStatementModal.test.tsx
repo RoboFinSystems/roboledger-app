@@ -25,7 +25,7 @@ vi.mock('@robosystems/core', () => ({
 
 // The real Modal renders nothing while hidden, so a reopened dialog has an
 // empty file input whatever the component still holds in state.
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Button: ({ children, onClick, disabled }: any) => (
     <button onClick={onClick} disabled={disabled}>
       {children}

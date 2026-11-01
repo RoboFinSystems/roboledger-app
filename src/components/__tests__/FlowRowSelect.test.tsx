@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Select: ({ children, id, value, onChange, disabled }: any) => (
     <select id={id} value={value} onChange={onChange} disabled={disabled}>
       {children}

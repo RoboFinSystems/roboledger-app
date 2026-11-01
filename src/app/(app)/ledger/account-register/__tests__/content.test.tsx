@@ -59,7 +59,7 @@ vi.mock('../../inbox/EventBlockDetailModal', () => ({
   },
 }))
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Alert: ({ children }: any) => <div data-testid="alert">{children}</div>,
   Badge: ({ children }: any) => <span>{children}</span>,
   Button: ({ children, onClick, disabled }: any) => (

@@ -108,9 +108,9 @@ Note the shape it defends against: the SDK facade throws `Error("<label> failed:
 
 **BlockView projections.** Statement / schedule / rules views render through `src/app/(app)/ledger/close/components/blockview/` with one file per projection under `projections/` (FactTable, StatementRendering, ScheduleRendering, BusinessRules, ReportElements, VerificationResults). New view modes land as a new projection file + a ViewModeToggle entry, not as a parallel component tree.
 
-**List pages: filter bar, segmented control, sort.** Don't hand-roll the filter row above a table — eight copies had drifted apart before they were unified. Use `src/components/FilterBar` (`FilterBar`, `SearchField`, `FilterSelect`, `FilterDate`, `FilterField`, `FilterActions`); controls are `sizing="sm"`. Never pad a search input with `className="pl-10"` and a positioned icon: flowbite puts `className` on the wrapper div, not the `<input>`, which strands the icon outside the field — `TextInput`'s `icon` prop is the working path. "Pick one of N" is `src/components/SegmentedControl`, not a Buttons row, pills, or a `ToggleSwitch` labelled on both sides. Click-to-sort is `useTableSort` + `SortableHeadCell`, and **only where the whole list is in the browser** — Journal, Inbox and Agents fetch a capped window, so sorting there would rank only what happened to load.
+**List pages: filter bar, segmented control, sort.** Don't hand-roll the filter row above a table — eight copies had drifted apart before they were unified. Use `src/components/FilterBar` (`FilterBar`, `SearchField`, `FilterSelect`, `FilterDate`, `FilterField`, `FilterActions`); controls are `sizing="sm"`. Never pad a search input with `className="pl-10"` and a positioned icon: the core UI layer puts `className` on the wrapper div, not the `<input>`, which strands the icon outside the field — `TextInput`'s `icon` prop is the working path. "Pick one of N" is `src/components/SegmentedControl`, not a Buttons row, pills, or a `ToggleSwitch` labelled on both sides. Click-to-sort is `useTableSort` + `SortableHeadCell`, and **only where the whole list is in the browser** — Journal, Inbox and Agents fetch a capped window, so sorting there would rank only what happened to load.
 
-**Tables.** flowbite-react 0.12's `TableHead` renders a bare `<thead>`: wrap header cells in a plain `<tr>` (not `TableRow`, which would take a `hoverable` table's hover tint). A table that can outgrow the page — a monthly series — is a raw table on `blockview/seriesGrid`'s shell (sticky opaque label column, per-row backgrounds, title and toolbar OUTSIDE the scroller), because flowbite's `Table` paints its body on a viewport-wide layer that a wide table scrolls past. Foldable statement sections come from `src/lib/ledger/rowFold` with `FoldControls` / `FoldLabel`; rows arrive post-order from the server (children, then their subtotal), which is what the fold rule relies on.
+**Tables.** The core `TableHead` renders a bare `<thead>`: wrap header cells in a plain `<tr>` (not `TableRow`, which would take a `hoverable` table's hover tint). A table that can outgrow the page — a monthly series — is a raw table on `blockview/seriesGrid`'s shell (sticky opaque label column, per-row backgrounds, title and toolbar OUTSIDE the scroller), because the core UI layer's `Table` paints its body on a viewport-wide layer that a wide table scrolls past. Foldable statement sections come from `src/lib/ledger/rowFold` with `FoldControls` / `FoldLabel`; rows arrive post-order from the server (children, then their subtotal), which is what the fold rule relies on.
 
 **No SWR / React Query.** Data fetching is `useEffect` + `LedgerClient` SDK methods, with `refreshKey` bumps to invalidate. There's no global cache layer and we're not adopting one — don't reach for SWR/TanStack Query when adding a new fetch. If cross-component cache coordination starts hurting, raise it before refactoring.
 
@@ -119,7 +119,7 @@ Note the shape it defends against: the SDK facade throws `Error("<label> failed:
 The following are explicitly **not** planned for the frontend. Each has been considered and the decision is "no" until concrete customer signal demands otherwise:
 
 - **Real-time event push** (WebSockets / SSE for inbox refresh) — polling on tab focus is enough.
-- **Mobile-responsive layouts** beyond what flowbite-react gives for free. Desktop-first product; mobile-read-only is sufficient for initial customers.
+- **Mobile-responsive layouts** beyond what the UI layer gives for free. Desktop-first product; mobile-read-only is sufficient for initial customers.
 - **Bulk operations** — none ship today; the Inbox approves one line at a time. Inbox bulk review (multi-select, approve selected) is owned by the bank-feed classification work, since only bank-feed lines wait in the Inbox with a suggestion.
 - **Customizable inbox views per user** (saved filters, custom column layouts).
 - **Agent edit / manual agent creation** — read-only suffices until customer signal demands more.
@@ -157,7 +157,7 @@ a long time after the route was deleted; don't reintroduce a second list.)
 
 **Component Organization:**
 
-- Flowbite React components for consistent UI
+- Shared UI primitives from `@robosystems/core/ui` for consistent UI
 - Dark mode support via Tailwind CSS
 - Responsive design with mobile-first approach
 - Component testing with React Testing Library
@@ -219,7 +219,7 @@ Shared components are consumed from the [`@robosystems/core`](https://www.npmjs.
 - **contexts/**: Graph, organization, entity, service-offerings, and sidebar contexts
 - **task-monitoring/**: SSE-based background job tracking
 - **hooks/**: Shared React hooks
-- **theme/**: Flowbite theme customization
+- **theme/**: theme customization
 
 <!-- BEGIN:nextjs-agent-rules -->
 

@@ -13,7 +13,7 @@ import type {
   OwnershipChangeResponse,
 } from '@robosystems/client/types'
 import { clients } from '@robosystems/core'
-import { Alert, Button, Card, Label, TextInput } from 'flowbite-react'
+import { Alert, Button, Card, Label, TextInput } from '@robosystems/core/ui'
 import { type FC, type FormEvent, useEffect, useState } from 'react'
 
 type Mode = 'acquisition' | 'share' | 'deconsolidation' | null

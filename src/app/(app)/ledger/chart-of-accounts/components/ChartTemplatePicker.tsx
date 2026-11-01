@@ -8,7 +8,7 @@ import type {
   LedgerChartTemplate,
 } from '@robosystems/client/clients'
 import { clients } from '@robosystems/core'
-import { Alert, Button, Label, Select } from 'flowbite-react'
+import { Alert, Button, Label, Select } from '@robosystems/core/ui'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import {
   HiCheckCircle,

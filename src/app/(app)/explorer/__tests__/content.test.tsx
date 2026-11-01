@@ -62,7 +62,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => searchParams,
 }))
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Button: ({ children, onClick, disabled, ...rest }: any) => (
     <button onClick={onClick} disabled={disabled} {...rest}>
       {children}
@@ -83,7 +83,7 @@ vi.mock('react-icons/hi', () => ({
   HiRefresh: () => <span data-testid="icon-refresh" />,
 }))
 
-// The real menu is a Flowbite Dropdown (covered by its own test); here
+// The real menu is a core Dropdown (covered by its own test); here
 // it stands in as one flat button per format so a click asserts the
 // wiring, not the popover.
 vi.mock('@/components/ExportMenu', () => ({

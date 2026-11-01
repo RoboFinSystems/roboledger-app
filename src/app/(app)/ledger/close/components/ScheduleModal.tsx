@@ -35,7 +35,7 @@ import {
   ModalHeader,
   Select,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { useCallback, useEffect, useMemo, useState, type FC } from 'react'
 
 interface AccountOption {

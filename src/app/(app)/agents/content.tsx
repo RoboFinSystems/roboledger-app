@@ -22,7 +22,7 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { useSearchParams } from 'next/navigation'
 import { type FC, useEffect, useMemo, useState } from 'react'
 import { HiExclamationCircle, HiSearch, HiUserGroup } from 'react-icons/hi'

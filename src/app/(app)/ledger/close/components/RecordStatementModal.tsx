@@ -20,7 +20,7 @@ import {
   Select,
   Spinner,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { type FC, useEffect, useState } from 'react'
 
 /** The API's own cap on a stored file. */

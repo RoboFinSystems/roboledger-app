@@ -2,7 +2,7 @@
 
 import type { ComputeMetricsResponse } from '@robosystems/client'
 import { clients } from '@robosystems/core'
-import { Button, Spinner, TextInput } from 'flowbite-react'
+import { Button, Spinner, TextInput } from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useCallback, useState } from 'react'
 import { HiCalculator, HiExclamationCircle } from 'react-icons/hi'

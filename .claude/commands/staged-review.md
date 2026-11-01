@@ -4,7 +4,7 @@ description: Review the staged diff against this app's frontend, API-route, and 
 
 Review all staged changes (`git diff --cached`) with focus on the contexts below. Read the diff first — if nothing is staged, say so rather than reviewing the working tree.
 
-This is a Next.js 16 App Router frontend (React 19, Tailwind v4, Flowbite) that is a client of the RoboSystems API. It is a **public repository**, so anything staged here becomes world-readable on push.
+This is a Next.js 16 App Router frontend (React 19, Tailwind v4, `@robosystems/core/ui`) that is a client of the RoboSystems API. It is a **public repository**, so anything staged here becomes world-readable on push.
 
 ## Before anything else: is this the right repo?
 
@@ -35,7 +35,7 @@ Shared UI comes from the `@robosystems/core` and `@robosystems/report-components
 
 **UI consistency:**
 
-- Flowbite React components used consistently with the rest of the app?
+- `@robosystems/core/ui` components used consistently with the rest of the app?
 - Tailwind classes follow existing idiom (and the brand tokens, not hardcoded hex)?
 - Dark mode handled on every new surface — this regresses silently and no test catches it.
 - Responsive behavior checked, not assumed.
