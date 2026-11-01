@@ -27,13 +27,16 @@ vi.mock('@robosystems/core', () => ({
   ),
 }))
 
-vi.mock('@/lib/useLedgerGraph', () => ({
-  useLedgerGraph: () => ({
+vi.mock('@/lib/useLedgerGraph', () => {
+  // One object, as the real hook's useMemo gives: the page reloads when the graph changes
+  // identity, so a new one per render loads without end and the footer blinks in and out.
+  const ledgerGraph = {
     graph: { graphId: 'kg_a', graphName: 'Harbinger Group' },
     ledgerGraphs: [],
     mismatch: false,
-  }),
-}))
+  }
+  return { useLedgerGraph: () => ledgerGraph }
+})
 
 vi.mock('@/lib/entity-scope', () => ({
   useEntityScope: () => mockScope(),
