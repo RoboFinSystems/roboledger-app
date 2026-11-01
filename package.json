@@ -5,7 +5,7 @@
   "private": true,
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=26.0.0"
   },
   "bin": {
     "create-feature": "./bin/create-feature.sh",
@@ -25,11 +25,11 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --silent",
+    "test": "NODE_OPTIONS=--no-experimental-webstorage vitest run --silent",
     "test:all": "npm run test && npm run format && npm run lint:fix && npm run typecheck && npm run cf-lint",
     "cf-lint": "uvx cfn-lint",
-    "test:watch": "vitest watch --silent",
-    "test:coverage": "vitest run --coverage --silent",
+    "test:watch": "NODE_OPTIONS=--no-experimental-webstorage vitest watch --silent",
+    "test:coverage": "NODE_OPTIONS=--no-experimental-webstorage vitest run --coverage --silent",
     "deploy:staging": "./bin/deploy.sh staging",
     "deploy:prod": "./bin/deploy.sh prod",
     "feature:create": "./bin/create-feature.sh",
@@ -37,11 +37,12 @@
     "setup:gha": "./bin/gha-setup.sh",
     "sync:demos": "cp node_modules/@robosystems/core/demos/runtime.js public/demos/runtime.js"
   },
+  "//scripts": "The vitest scripts turn off Node's Web Storage: Node 25+ defines `localStorage` on globalThis, undefined until a --localstorage-file is given, and vitest's jsdom environment does not replace a global the runtime already owns, so tests would read undefined. Accepted on Node 22, 24 and 26.",
   "dependencies": {
     "@aws-sdk/client-sns": "^3.1145.0",
-    "@robosystems/client": "^2.34.1",
-    "@robosystems/core": "^0.18.1",
-    "@robosystems/report-components": "^0.12.0",
+    "@robosystems/client": "^2.35.0",
+    "@robosystems/core": "^0.19.0",
+    "@robosystems/report-components": "^0.13.0",
     "github-slugger": "^2.0.0",
     "lru-cache": "^11.5.3",
     "next": "^16.4.2",
@@ -64,7 +65,7 @@
     "@testing-library/jest-dom": "^7",
     "@testing-library/react": "^16",
     "@testing-library/user-event": "^14",
-    "@types/node": "^24",
+    "@types/node": "^26",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@typescript-eslint/eslint-plugin": "^8",

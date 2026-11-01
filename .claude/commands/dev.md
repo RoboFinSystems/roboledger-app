@@ -6,7 +6,7 @@ Start the Next.js development server for this app.
 
 ## Prerequisites
 
-- **Node 24+** (`engines` in `package.json`; `.nvmrc` pins the version).
+- **Node 26+** (`engines` in `package.json`; `.nvmrc` pins the version).
 - **Dependencies installed** — `test -d node_modules || npm install`.
 - **An `.env`** — copy `.env.example` if it's missing. The one value that matters for a working app is `NEXT_PUBLIC_ROBOSYSTEMS_API_URL` (default `http://localhost:8000`).
 - **The backend API running.** This app is a client; without the API, pages render but every authenticated route fails. Start it with `/dev` in the `robosystems` repo (Docker stack, API on `:8000`). Point at a deployed API instead by setting `NEXT_PUBLIC_ROBOSYSTEMS_API_URL` — but note `NEXT_PUBLIC_*` is read at build/start, so changing it needs a server restart, not just a page reload.

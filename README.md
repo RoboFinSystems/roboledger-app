@@ -86,7 +86,7 @@ npm install @robosystems/core@latest
 
 #### System Requirements
 
-- Node.js 24+ (LTS)
+- Node.js 26+ (LTS)
 - 4GB RAM minimum
 - Modern browser (Chrome, Firefox, Safari, Edge)
 
