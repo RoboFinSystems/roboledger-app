@@ -113,7 +113,7 @@ Look for issues labeled `good first issue` or `help wanted`. These are great sta
 
 ### Prerequisites
 
-- Node.js 24.x+ (check `.nvmrc`)
+- Node.js 26.x+ (check `.nvmrc`)
 - Git configured with your GitHub account
 - VS Code (recommended) with recommended extensions
 
