@@ -87,18 +87,6 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
-    ignore:
-      # Held for fleet consistency with the robosystems backend, which pins
-      # v8.3.2 and ignores majors because v9 flipped `prune-cache` to false and
-      # would grow its uv cache. That reasoning does not apply here — this app
-      # sets `enable-cache: false` and only needs `uvx` on PATH for cfn-lint,
-      # so v9's and v10's breaking changes are both inert. The hold is about
-      # one rule across the fleet rather than a per-repo risk assessment, and
-      # about not re-triaging the same declined PR every month. Drop this entry
-      # when the backend takes a setup-uv major, and move in step with it.
-      - dependency-name: 'astral-sh/setup-uv'
-        update-types:
-          - 'version-update:semver-major'
 
   # Docker — the Node base image in the Dockerfile
   # OpenSSL is statically linked into the Node binary, so OpenSSL fixes reach
