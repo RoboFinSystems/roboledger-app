@@ -6,27 +6,28 @@ RoboLedger App is the web interface for AI-native accounting, building semantic 
 - **QuickBooks Integration**: Sync with existing [QuickBooks](https://quickbooks.intuit.com/partners/affiliates?cid=par_pim_4TcakSEFQs73) data and add AI automation without changing workflows
 - **Natural Language Queries**: Ask questions in plain English and get instant, intelligent answers about your finances
 - **AI-Powered Automation**: Connect the AI assistant you already use over MCP for financial analysis that understands business context
-- **Multi-Source Data**: QuickBooks, SEC XBRL filings, and custom datasets
+- **Multi-Source Data**: QuickBooks, bank feeds through Plaid, and custom datasets
 
 ## Core Features
 
 - **Dashboard**: Financial overview with quick actions
-- **Ledger**: Chart of accounts with taxonomy framework mapping, journal entries, and trial balance
+- **Ledger**: Chart of accounts with taxonomy framework mapping, bank accounts, journal entries, trial balance, account register, and receivables and payables
 - **Period Close**: Fiscal calendar bootstrap, close workflow with gate checks, and rule-based pre-close evaluation
 - **Live Statements**: Render balance sheet, income statement, and cash flow directly from the current ledger — no period close required
 - **Schedules**: Recurring journal entry templates with auto-evaluation on close
-- **Inbox**: Event block review for rule violations and pending obligations
+- **Inbox**: Review and approve captured events before they post to the ledger, one at a time or in a batch
+- **Posting Rules**: The event handlers that turn a matching event into journal entries
 - **Reports**: Custom report builder with fact grids, statement and text-block disclosure rendering, templates, publish lists, and multi-format export
 - **Plan**: Monthly statements and a scenario's assumptions in one grid spanning the actuals/forecast seam, with scenario switching, period windowing, and CSV export
 - **Block Explorer**: Browse Information Blocks through rendered, chart, facts, elements, validation, and rules views, with on-the-fly metric computation
 - **Mapping Workbench**: Configure taxonomy framework mappings with AI suggestions and the automapper operator
-- **Connections**: QuickBooks OAuth sync and SEC XBRL filings
+- **Connections**: QuickBooks OAuth sync and bank feeds through Plaid
 - **Entity Detail**: Per-entity details and configuration
-- **Agents**: AI agent management with conversation history and tool access
+- **Agents**: Counterparties (customers, vendors, employees) with their open balances
 - **AI Console**: Natural language and Cypher query terminal with streaming results and MCP integration
 - **Document Search**: Full-text and semantic search across uploaded documents and connected sources
 - **Library**: Browse canonical taxonomies, elements, and reference data
-- **Entities**: Multi-entity management across all graphs
+- **Entities**: The reporting group of the selected graph: the parent and its subsidiaries
 
 ## Quick Start
 
