@@ -10,7 +10,7 @@ vi.mock('@/lib/blog', () => ({
 // Only the fetch is replaced; the nav grouping is the real one.
 vi.mock('@/lib/docs', async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  getDocsCatalog: () => mockGetDocsCatalog(),
+  getDocsCatalog: async () => mockGetDocsCatalog(),
 }))
 
 import type { DocsCatalog, DocsPage } from '@/lib/docs'
@@ -104,7 +104,7 @@ describe('sitemap', () => {
 
   it('leaves the docs out, and keeps everything else, when the docs catalog is unreachable', async () => {
     mockGetAllPosts.mockResolvedValue(posts)
-    mockGetDocsCatalog.mockResolvedValue(null)
+    mockGetDocsCatalog.mockRejectedValue(new Error('catalog unreachable'))
     const urls = (await sitemap()).map((e) => e.url)
 
     expect(urls.some((u) => u.includes('/docs'))).toBe(false)
@@ -113,7 +113,7 @@ describe('sitemap', () => {
 
   it('lists every product page, dated by its last edit', async () => {
     mockGetAllPosts.mockResolvedValue(posts)
-    mockGetDocsCatalog.mockResolvedValue(null)
+    mockGetDocsCatalog.mockRejectedValue(new Error('catalog unreachable'))
     const byUrl = new Map((await sitemap()).map((e) => [e.url, e]))
 
     for (const page of PRODUCT_PAGES) {

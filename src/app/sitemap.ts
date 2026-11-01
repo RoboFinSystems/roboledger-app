@@ -34,7 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   // The product docs, from the shared docs catalog; lastmod is each page's last commit.
-  const catalog = await getDocsCatalog()
+  const catalog = await getDocsCatalog().catch(() => null)
   const docs = catalog && getDocsNav(catalog, DOCS_SITE, 'product')
   const docsPages: MetadataRoute.Sitemap = (docs?.ordered ?? []).map(
     (page) => ({

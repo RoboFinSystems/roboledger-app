@@ -12,7 +12,8 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
 export async function generateStaticParams() {
-  const slugs = await getPostSlugs()
+  // A catalog the build cannot read leaves every post to render on demand.
+  const slugs = await getPostSlugs().catch(() => [])
   return slugs.map((slug) => ({ slug }))
 }
 

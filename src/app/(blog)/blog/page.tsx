@@ -5,6 +5,7 @@ import {
 } from '@/components/blog/BlogJsonLd'
 import { REGISTER_PATH } from '@/components/landing/constants'
 import { formatPostDate, getAllPosts } from '@/lib/blog'
+import { orBuildFallback } from '@robosystems/core/docs/catalog'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
 }
 
 export default async function BlogPage() {
-  const posts = await getAllPosts()
+  const posts = await orBuildFallback(getAllPosts(), [])
 
   return (
     <div className="min-h-screen bg-black">
