@@ -10,7 +10,7 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { type FC, useCallback, useEffect, useState } from 'react'
 
 export interface DeletableDraft {

@@ -26,7 +26,7 @@ vi.mock('@/lib/useLedgerGraph', () => ({
   useLedgerGraph: () => ({ graph: { graphId: 'kg1' } }),
 }))
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Alert: ({ children }: any) => <div role="alert">{children}</div>,
   Badge: ({ children }: any) => <span data-testid="badge">{children}</span>,
   Button: ({ children, onClick, disabled, role, ...rest }: any) => (

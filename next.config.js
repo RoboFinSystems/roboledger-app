@@ -1,5 +1,3 @@
-import withFlowbiteReact from 'flowbite-react/plugin/nextjs'
-
 // When tunneling in local dev (ngrok or cloudflared), the browser hits the
 // public tunnel URL while the API runs on localhost:8000. Chrome's Private
 // Network Access blocks public→loopback fetches, so we proxy API paths
@@ -92,4 +90,4 @@ const nextConfig = {
   // optimizer accepts only this app's own files.
 }
 
-export default withFlowbiteReact(nextConfig)
+export default nextConfig

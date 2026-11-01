@@ -5,7 +5,7 @@ import {
   DropdownDivider,
   DropdownHeader,
   DropdownItem,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { Fragment, type FC, type ReactNode } from 'react'
 import { HiDownload } from 'react-icons/hi'
 

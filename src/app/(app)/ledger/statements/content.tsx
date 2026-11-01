@@ -26,7 +26,7 @@ import {
   PageHeader,
   PageLayout,
 } from '@robosystems/core'
-import { Alert, Button, Card } from 'flowbite-react'
+import { Alert, Button, Card } from '@robosystems/core/ui'
 import Link from 'next/link'
 import type { FC } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'

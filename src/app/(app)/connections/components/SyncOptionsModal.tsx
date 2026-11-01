@@ -10,7 +10,7 @@ import {
   ModalHeader,
   Radio,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { useEffect, useState } from 'react'
 
 export type SyncOptions = {

@@ -1,7 +1,7 @@
 'use client'
 
 import type { LedgerFlowCandidate } from '@robosystems/client/clients'
-import { Select } from 'flowbite-react'
+import { Select } from '@robosystems/core/ui'
 import type { FC } from 'react'
 
 const FLOW_SECTIONS: { activity: string; label: string }[] = [

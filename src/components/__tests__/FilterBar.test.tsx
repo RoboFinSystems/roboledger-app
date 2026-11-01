@@ -9,8 +9,8 @@ import {
   SearchField,
 } from '../FilterBar'
 
-// Real flowbite, deliberately: the bug these components exist to fix was
-// about where flowbite puts `className`, which a mock would paper over.
+// The real core components, deliberately: the bug these components exist to fix was
+// about where the component puts `className`, which a mock would paper over.
 
 describe('SearchField', () => {
   it('puts the magnifier inside the field, padding the input itself', () => {
@@ -26,7 +26,7 @@ describe('SearchField', () => {
     // The icon shares the input's positioned wrapper…
     expect(input.parentElement?.querySelector('svg')).not.toBeNull()
     // …and the INPUT makes room for it. Pages used to pass `pl-10` as
-    // `className`, which flowbite applies to the outer wrapper — shoving the
+    // `className`, which the component applies to the outer wrapper — shoving the
     // whole field right and leaving the icon stranded outside it.
     expect(input.className).toContain('pl-10')
     expect(input.closest('div.flex')?.className ?? '').not.toContain('pl-10')

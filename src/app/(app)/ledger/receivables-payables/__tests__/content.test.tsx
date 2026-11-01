@@ -30,7 +30,7 @@ const SUB = { id: 'ent_sub', name: 'Driftline Café', entityRole: 'operating' }
 const mockScope = vi.fn()
 vi.mock('@/lib/entity-scope', () => ({ useEntityScope: () => mockScope() }))
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Alert: ({ children }: any) => <div data-testid="alert">{children}</div>,
   Badge: ({ children }: any) => <span>{children}</span>,
   Button: ({ children, onClick, disabled }: any) => (

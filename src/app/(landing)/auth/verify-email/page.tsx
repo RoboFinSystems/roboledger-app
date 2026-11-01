@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@robosystems/core/auth-components/AuthProvider'
-import { Spinner } from 'flowbite-react'
+import { Spinner } from '@robosystems/core/ui'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { HiCheckCircle, HiExclamationCircle } from 'react-icons/hi'

@@ -2,6 +2,7 @@
 
 import { csvRow } from '@/lib/ledger/csv'
 import { clients, getAuthHeader } from '@robosystems/core'
+import { Alert, Button, Spinner } from '@robosystems/core/ui'
 import type { NormalizedReport } from '@robosystems/report-components'
 import {
   buildPivots,
@@ -11,7 +12,6 @@ import {
   sliceReportSection,
 } from '@robosystems/report-components'
 import { parseReportDocument } from '@robosystems/report-components/adapters'
-import { Alert, Button, Spinner } from 'flowbite-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiDownload, HiExclamationCircle } from 'react-icons/hi'
 import {

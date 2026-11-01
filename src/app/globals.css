@@ -109,14 +109,14 @@
 }
 
 @import 'tailwindcss';
-@import 'flowbite-react/plugin/tailwindcss';
-@source '../../.flowbite-react/class-list.json';
+@import '@robosystems/core/styles/palette.css';
+@import '@robosystems/core/styles/forms.css';
 @config '../../tailwind.config.ts';
 
 /*
-  Flowbite's plugin defines --color-primary-* (its default blue) via @theme,
-  which wins over the JS @config's `primary`. (secondary/accent aren't defined
-  by Flowbite, so those tokens apply fine.) Re-declare the brand primary here as
+  Core's palette.css defines --color-primary-* (Flowbite's default blue) via
+  @theme, which wins over the JS @config's `primary`. (secondary/accent aren't
+  defined there, so those tokens apply fine.) Re-declare the brand primary here as
   a CSS @theme override so it actually takes effect. RoboLedger = violet.
 */
 @theme {

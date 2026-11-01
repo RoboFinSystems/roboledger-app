@@ -24,7 +24,7 @@ import {
   Spinner,
   TextInput,
   ToggleSwitch,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { useRouter } from 'next/navigation'
 import type { FC } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'

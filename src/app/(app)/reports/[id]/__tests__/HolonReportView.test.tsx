@@ -30,7 +30,7 @@ vi.mock('@robosystems/report-components/adapters', () => ({
   parseReportDocument: (...args: any[]) => mockParseReportDocument(...args),
 }))
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Alert: ({ children }: any) => <div data-testid="alert">{children}</div>,
   Button: ({ children, onClick }: any) => (
     <button onClick={onClick}>{children}</button>

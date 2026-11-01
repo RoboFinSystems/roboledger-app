@@ -14,7 +14,7 @@ import {
   ModalHeader,
   Spinner,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { type FC, type FormEvent, useEffect, useState } from 'react'
 
 interface ChangeCalendarStartModalProps {

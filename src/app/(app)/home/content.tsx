@@ -6,13 +6,12 @@ import { formatDollars } from '@/lib/ledger/formatters'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import {
   clients,
-  customTheme,
   LoadingState,
   PageHeader,
   PageLayout,
   StatCard,
 } from '@robosystems/core'
-import { Badge, Button, Card } from 'flowbite-react'
+import { Badge, Button, Card } from '@robosystems/core/ui'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { FC } from 'react'
@@ -80,16 +79,7 @@ const TX_TYPE_COLORS: Record<string, string> = {
 
 // Override the default card theme's `justify-center` so content anchors
 // to the top when the card is stretched to match a taller sibling.
-const topAlignedCardTheme = {
-  ...customTheme.card,
-  root: {
-    ...customTheme.card.root,
-    children: customTheme.card.root.children.replace(
-      'justify-center',
-      'justify-start'
-    ),
-  },
-}
+const topAlignedCardTheme = { root: { children: 'justify-start' } }
 
 const formatCurrency = (amount: number): string => formatDollars(amount)
 

@@ -1,8 +1,8 @@
 import { CloudflareAnalytics } from '@/components/analytics/CloudflareAnalytics'
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from '@/lib/site'
 import { siteJsonLd } from '@/lib/structured-data'
-import { AuthProvider, customTheme } from '@robosystems/core'
-import { ThemeModeScript, ThemeProvider } from 'flowbite-react'
+import { AuthProvider } from '@robosystems/core'
+import { ThemeModeScript } from '@robosystems/core/ui'
 import type { Metadata, Viewport } from 'next'
 import { twMerge } from 'tailwind-merge'
 
@@ -67,9 +67,7 @@ export default function RootLayout({
         className={twMerge('bg-zinc-50 font-sans dark:bg-black')}
         suppressHydrationWarning
       >
-        <ThemeProvider theme={customTheme}>
-          <AuthProvider>{children}</AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>{children}</AuthProvider>
         <CloudflareAnalytics />
       </body>
     </html>

@@ -2,7 +2,7 @@
 
 import type { LedgerClosingBookStructures } from '@robosystems/client/clients'
 import { LoadingState } from '@robosystems/core'
-import { Button } from 'flowbite-react'
+import { Button } from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { HiChevronLeft, HiChevronRight, HiPlus } from 'react-icons/hi'

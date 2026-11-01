@@ -8,7 +8,7 @@ import {
   PageLayout,
   useGraphContext,
 } from '@robosystems/core'
-import { Button, Card } from 'flowbite-react'
+import { Button, Card } from '@robosystems/core/ui'
 import { usePathname } from 'next/navigation'
 import type { PropsWithChildren } from 'react'
 import { HiExclamationCircle, HiSwitchHorizontal } from 'react-icons/hi'

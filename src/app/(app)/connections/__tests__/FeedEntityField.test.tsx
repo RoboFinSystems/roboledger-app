@@ -2,10 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 // entity-scope (for hierarchyDepth) imports the core package, which needs
-// a real flowbite; nothing here calls into it.
+// a real component library; nothing here calls into it.
 vi.mock('@robosystems/core', () => ({}))
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Label: ({ children, htmlFor }: any) => (
     <label htmlFor={htmlFor}>{children}</label>
   ),

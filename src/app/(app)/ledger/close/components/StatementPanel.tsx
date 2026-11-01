@@ -2,7 +2,7 @@
 
 import type { PeriodSpecInput } from '@robosystems/client/clients'
 import { clients, LoadingState } from '@robosystems/core'
-import { Button, Spinner } from 'flowbite-react'
+import { Button, Spinner } from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'

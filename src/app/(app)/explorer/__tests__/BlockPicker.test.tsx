@@ -5,7 +5,7 @@ vi.mock('@robosystems/core', () => ({
   LoadingState: () => <div role="status">Loading</div>,
 }))
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   TextInput: ({ value, onChange, placeholder }: any) => (
     <input value={value} onChange={onChange} placeholder={placeholder} />
   ),

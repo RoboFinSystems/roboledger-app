@@ -35,7 +35,7 @@ import {
   ModalFooter,
   ModalHeader,
   Spinner,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
@@ -741,7 +741,7 @@ const ReportViewerContent: FC = function () {
       {/* Status banner — filing lifecycle + provenance.
           `relative z-[5]` lifts this card — and the inline ViewModeToggle /
           renderer-toggle dropdowns it holds — above the report cards below it.
-          Flowbite dropdowns render inline (no portal), so their menus would
+          Core dropdowns render inline (no portal), so their menus would
           otherwise be painted under the next `backdrop-blur` card (which forms
           its own stacking context). Kept under z-10 so the PageHeader kebab
           menu still paints over this card. */}

@@ -8,7 +8,7 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { formatCurrencyDollars, formatMonth } from '../../../utils'

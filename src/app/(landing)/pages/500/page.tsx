@@ -1,4 +1,4 @@
-import { Button } from 'flowbite-react'
+import { Button } from '@robosystems/core/ui'
 import Image from 'next/image'
 import { HiChevronLeft } from 'react-icons/hi'
 

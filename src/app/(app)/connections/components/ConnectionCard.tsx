@@ -1,6 +1,13 @@
 'use client'
 
-import { Alert, Badge, Button, Card, Progress, Select } from 'flowbite-react'
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Progress,
+  Select,
+} from '@robosystems/core/ui'
 import Image from 'next/image'
 import { useState } from 'react'
 import { FaTrash } from 'react-icons/fa'

@@ -10,7 +10,7 @@ import type {
   LedgerFiscalCalendar,
 } from '@robosystems/client/clients'
 import { clients } from '@robosystems/core'
-import { Button, Card, Modal, ModalHeader } from 'flowbite-react'
+import { Button, Card, Modal, ModalHeader } from '@robosystems/core/ui'
 import { type FC, useCallback, useEffect, useRef, useState } from 'react'
 import { HiLockClosed } from 'react-icons/hi'
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, Select, TextInput } from 'flowbite-react'
+import { Card, Select, TextInput } from '@robosystems/core/ui'
 import type { FC, ReactNode } from 'react'
 import { HiSearch } from 'react-icons/hi'
 
@@ -12,7 +12,7 @@ import { HiSearch } from 'react-icons/hi'
  * They also shared two bugs, fixed here once:
  *
  * - The search magnifier floated OUTSIDE the field. Pages positioned their
- *   own icon and padded the input with `className="pl-10"` — but flowbite
+ *   own icon and padded the input with `className="pl-10"` — but the component
  *   puts `className` on the wrapper div, not the `<input>`, so the padding
  *   shoved the whole field right and left the icon behind. `TextInput`'s own
  *   `icon` prop pads the input itself.

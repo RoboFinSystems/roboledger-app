@@ -13,7 +13,7 @@ import {
   ModalHeader,
   Spinner,
   Textarea,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { HiExclamationCircle } from 'react-icons/hi'

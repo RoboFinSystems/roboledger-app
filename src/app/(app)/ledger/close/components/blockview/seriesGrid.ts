@@ -6,8 +6,8 @@ import type { EnvelopeRenderingPeriod } from './types'
  * projections share so they can't drift apart.
  *
  * A series read is one column per month, so these tables are wider than the
- * page. They are raw tables rather than flowbite's `Table`, on the Plan
- * grid's pattern: flowbite paints its body on an absolutely-positioned
+ * page. They are raw tables rather than the core `Table`, on the Plan
+ * grid's pattern: the core Table paints its body on an absolutely-positioned
  * `w-full` layer, which is only as wide as the viewport while the table
  * overflows it — past the first screen the rows sat on bare background. Here
  * every row carries its own background, and the label column is sticky with

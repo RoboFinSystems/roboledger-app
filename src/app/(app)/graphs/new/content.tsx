@@ -2,7 +2,7 @@
 
 import { useCreateGraphHandoff } from '@/lib/cross-app'
 import { getLoginHomeName } from '@robosystems/core/auth-core/config'
-import { Card, Spinner } from 'flowbite-react'
+import { Card, Spinner } from '@robosystems/core/ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { HiExternalLink } from 'react-icons/hi'
 

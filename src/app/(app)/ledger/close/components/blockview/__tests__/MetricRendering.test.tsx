@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-// The grid is a raw table — only the toolbar's controls come from flowbite.
-vi.mock('flowbite-react', () => ({
+// The grid is a raw table — only the toolbar's controls come from the UI layer.
+vi.mock('@robosystems/core/ui', () => ({
   TextInput: ({ value, onChange, placeholder }: any) => (
     <input value={value} onChange={onChange} placeholder={placeholder} />
   ),

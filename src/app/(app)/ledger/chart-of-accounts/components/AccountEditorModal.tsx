@@ -14,7 +14,7 @@ import {
   ModalHeader,
   Select,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import Link from 'next/link'
 import { type FC, type FormEvent, useEffect, useMemo, useState } from 'react'
 import {

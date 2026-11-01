@@ -1,7 +1,7 @@
 'use client'
 
 import { formatFetchedLabel } from '@/lib/relative-time'
-import { Button } from 'flowbite-react'
+import { Button } from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useEffect, useState } from 'react'
 import { HiRefresh } from 'react-icons/hi'

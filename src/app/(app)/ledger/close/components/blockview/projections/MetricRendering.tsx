@@ -1,7 +1,7 @@
 'use client'
 
+import { TextInput, ToggleSwitch } from '@robosystems/core/ui'
 import { formatMetricValue } from '@robosystems/report-components'
-import { TextInput, ToggleSwitch } from 'flowbite-react'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { HiSearch } from 'react-icons/hi'

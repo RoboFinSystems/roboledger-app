@@ -24,7 +24,7 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { FC } from 'react'

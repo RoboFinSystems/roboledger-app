@@ -1,12 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-// Flowbite's real Dropdown uses Floating UI for pointer interactions
+// The real Dropdown uses Floating UI for pointer interactions
 // that don't compose well under jsdom; mock it down to a plain button
 // trigger + flat list of items so we can assert label / click behavior
 // without a full pointer-event simulation. DropdownItem renders its
 // icon prop the same way the real component does.
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Dropdown: ({ label, children, ...rest }: any) => (
     <div data-testid="dropdown" aria-label={rest['aria-label']}>
       <button data-testid="dropdown-trigger">{label}</button>

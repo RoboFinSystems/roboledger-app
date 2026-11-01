@@ -1,5 +1,5 @@
+import { Table, TableHead } from '@robosystems/core/ui'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { Table, TableHead } from 'flowbite-react'
 import { describe, expect, it, vi } from 'vitest'
 import SortableHeadCell from '../SortableHeadCell'
 
@@ -7,7 +7,7 @@ const renderCell = (
   sort: 'ascending' | 'descending' | 'none',
   onSort = vi.fn()
 ) => {
-  // Inside flowbite's Table, as on the pages — TableHeadCell reads its theme
+  // Inside the core Table, as on the pages — TableHeadCell reads its theme
   // from the table's context.
   render(
     <Table>

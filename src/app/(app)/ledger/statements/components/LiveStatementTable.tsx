@@ -13,7 +13,7 @@ import {
   TableHeadCell,
   TableRow,
   ToggleSwitch,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useMemo, useState } from 'react'
 import {
@@ -83,7 +83,7 @@ const LiveStatementTable: FC<LiveStatementTableProps> = ({
 
       <Table hoverable data-testid="live-statement-table">
         <TableHead>
-          {/* flowbite's TableHead renders a bare <thead>; without a row the
+          {/* TableHead renders a bare <thead>; without a row the
               cells are invalid HTML. A plain <tr>, not TableRow, so `hoverable`
               doesn't tint the header. */}
           <tr>

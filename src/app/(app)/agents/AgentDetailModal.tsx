@@ -36,7 +36,7 @@ import {
   TableHeadCell,
   TableRow,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import Link from 'next/link'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { HiDocumentText, HiExclamationCircle, HiTag } from 'react-icons/hi'

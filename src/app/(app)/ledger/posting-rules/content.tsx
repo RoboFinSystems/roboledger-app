@@ -30,7 +30,7 @@ import {
   TableRow,
   Textarea,
   TextInput,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { HiExclamationCircle, HiLightningBolt } from 'react-icons/hi'

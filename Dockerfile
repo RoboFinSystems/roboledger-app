@@ -90,7 +90,6 @@ COPY --from=deps /app/node_modules ./node_modules
 
 # Copy built app from builder with proper ownership
 COPY --from=builder --chown=appuser:appgroup /app/.next ./.next
-COPY --from=builder --chown=appuser:appgroup /app/.flowbite-react ./.flowbite-react
 COPY --from=builder --chown=appuser:appgroup /app/public ./public
 COPY --from=builder --chown=appuser:appgroup /app/next.config.js ./next.config.js
 COPY --from=builder /app/package.json ./package.json

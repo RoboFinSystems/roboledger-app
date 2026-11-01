@@ -7,7 +7,7 @@ vi.mock('@robosystems/core', () => ({
     ledger: { listAccounts: (...args: any[]) => mockListAccounts(...args) },
   },
 }))
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Modal: ({ children }: any) => <div role="dialog">{children}</div>,
   ModalHeader: ({ children }: any) => <h2>{children}</h2>,
   ModalBody: ({ children }: any) => <div>{children}</div>,

@@ -37,7 +37,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import Link from 'next/link'
 import type { FC } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'

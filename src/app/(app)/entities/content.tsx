@@ -24,7 +24,7 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { useSearchParams } from 'next/navigation'
 import type { FC } from 'react'
 import { useEffect, useMemo, useState } from 'react'

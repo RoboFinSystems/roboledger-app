@@ -37,7 +37,7 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import { useSearchParams } from 'next/navigation'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { HiExclamationCircle, HiInbox, HiSearch } from 'react-icons/hi'

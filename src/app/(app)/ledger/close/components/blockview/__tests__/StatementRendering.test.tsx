@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@robosystems/core', () => ({ customTheme: { table: {} } }))
 
-// The grid is a raw table — only the banner's Badge comes from flowbite.
-vi.mock('flowbite-react', () => ({
+// The grid is a raw table — only the banner's Badge comes from the UI layer.
+vi.mock('@robosystems/core/ui', () => ({
   Badge: ({ children, color }: any) => (
     <span data-testid={`badge-${color}`}>{children}</span>
   ),

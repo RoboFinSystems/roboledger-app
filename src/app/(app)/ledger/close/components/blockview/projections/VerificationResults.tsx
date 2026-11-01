@@ -1,6 +1,6 @@
 'use client'
 
-import { Badge } from 'flowbite-react'
+import { Badge } from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useMemo, useState } from 'react'
 import {

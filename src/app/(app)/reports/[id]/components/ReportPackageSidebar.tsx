@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReportPackage } from '@robosystems/client/clients'
-import { Button } from 'flowbite-react'
+import { Button } from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useState } from 'react'
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi'

@@ -19,7 +19,7 @@ import {
   ModalHeader,
   Select,
   Textarea,
-} from 'flowbite-react'
+} from '@robosystems/core/ui'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiExclamationCircle, HiPencil, HiStop, HiTrash } from 'react-icons/hi'

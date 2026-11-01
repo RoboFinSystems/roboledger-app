@@ -17,7 +17,7 @@ vi.mock('@robosystems/core', () => ({
   ),
 }))
 
-vi.mock('flowbite-react', () => ({
+vi.mock('@robosystems/core/ui', () => ({
   Badge: ({ children }: any) => <span data-testid="badge">{children}</span>,
   Spinner: () => <div data-testid="spinner" />,
   Table: ({ children }: any) => <table>{children}</table>,
