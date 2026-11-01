@@ -37,7 +37,7 @@ npm run format:check # Check code formatting
 
 **API Routes:**
 
-- `/api/utilities/health` - Health check endpoint for App Runner
+- `/api/utilities/health` - Health check endpoint
 - `/api/contact` - Contact form submission via SNS (with rate limiting and CAPTCHA)
 - `/api/support` - Support request submission via SNS
 - `/api/reports/holon` - Holon JSON-LD validation for report rendering
@@ -46,10 +46,12 @@ npm run format:check # Check code formatting
 **Route Structure:**
 
 - `(app)` route group: Authenticated pages (see Route Inventory below)
-- `(landing)` route group: Public pages (login, register, legal pages, landing page)
+- `(landing)` route group: Public pages (login, register, auth, legal pages, landing page)
+- `(blog)` and `(docs)` route groups: Blog posts and public docs
+- `(pages)` route group: Product pages (`quickbooks-mcp`)
 - API routes follow RESTful patterns with proper session validation
 
-**Route Inventory (consolidated from archived `roboledger-frontend.md` spec):**
+**Route Inventory:**
 
 | Route                                     | Backend reads                                                       | Status                                                                                                                                                                                                                                                                                                                |
 | ----------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -57,10 +59,14 @@ npm run format:check # Check code formatting
 | `/entity` `/entities`                     | getEntity, listEntities                                             | shipped                                                                                                                                                                                                                                                                                                               |
 | `/connections`                            | listConnections, syncConnection                                     | shipped                                                                                                                                                                                                                                                                                                               |
 | `/connections/qb-callback`                | oauthCallback                                                       | shipped                                                                                                                                                                                                                                                                                                               |
-| `/connections/mercury-callback`           | oauthCallback                                                       | shipped 2026-09-12 (provider gated on the API; off in prod pending Mercury's review)                                                                                                                                                                                                                                  |
+| `/connections/mercury-callback`           | oauthCallback                                                       | shipped 2026-09-12 (provider gated on the API)                                                                                                                                                                                                                                                                        |
+| `/connections/plaid-callback`             | none (Plaid Link redirect)                                          | shipped (provider gated on the API)                                                                                                                                                                                                                                                                                   |
 | `/ledger/chart-of-accounts`               | getAccountTree, autoMapElements, mapping ops                        | shipped (framework mapping config + AI suggestions + auto-map operator); chart editor 2026-10-22: add, rename, re-code, move, reclassify (behind a confirm), retire / reactivate, via update-taxonomy-block; native charts only                                                                                       |
 | `/ledger/journal`                         | listJournalEntries, listTransactions, createJournalEntry (modal)    | shipped 2026-09-05 (Entries + Source Transactions tabs; `/ledger/transactions` redirects); row actions 2026-10-05: edit / delete a manual draft, reverse a posted entry (preview first; held back on QuickBooks-synced entries while QuickBooks is connected, and on every entry while close publishes to QuickBooks) |
 | `/ledger/trial-balance`                   | getTrialBalance, getMappedTrialBalance                              | shipped                                                                                                                                                                                                                                                                                                               |
+| `/ledger/account-register`                | getAccountRegister                                                  | shipped                                                                                                                                                                                                                                                                                                               |
+| `/ledger/bank-accounts`                   | listBankAccounts, linkBankAccount                                   | shipped                                                                                                                                                                                                                                                                                                               |
+| `/ledger/posting-rules`                   | listEventHandlers, updateEventHandler                               | shipped (the event handlers that turn a matching event into journal entries)                                                                                                                                                                                                                                          |
 | `/ledger/receivables-payables`            | getAgedBalances, getOpenItemsForAgent                               | built 2026-10-20 (aging by days past due per entity or group, tie-out to the control account, drill into a counterparty's documents, CSV); the agent modal's open-balance tile and the inbox's settlement picker (getDischargeCandidates → discharge_allocations) ship with it                                        |
 | `/ledger/close`                           | getPeriodCloseStatus, closePeriod, reopenPeriod, listPeriodDrafts   | shipped (also renders schedule/statement/rules blocks via BlockView)                                                                                                                                                                                                                                                  |
 | `/ledger/statements`                      | live-financial-statement                                            | shipped (live render from OLTP ledger, no close required)                                                                                                                                                                                                                                                             |
@@ -92,27 +98,27 @@ Route-level forwards (`/settings`, `/graphs/new`) follow one shape: ref-guarded 
 
 **Optimistic mutations.** The Inbox `/ledger/inbox` uses optimistic remove via callbacks on approve/reject. The pattern generalizes to other write surfaces (manual JE creation, materialize, future backup/restore) — favor optimistic UI with rollback-on-failure over spinner-and-wait.
 
-**SDK helpers vs raw `gqlQuery`.** Inbox + Agents established the pattern: hand-written query modules + `LedgerClient` methods mirroring `transactions.ts` / `listTransactions`. Those live in the `robosystems-typescript-client` repo (`clients/graphql/queries/ledger/*.ts` — plain `.ts`, not `.gql`), not in this app. Continue this pattern for new SDK additions. **Never bump versions** in `package.json` / `pyproject.toml` — version bumps are owned by the user on publish.
+**SDK helpers vs raw `gqlQuery`.** Inbox + Agents established the pattern: hand-written query modules + `LedgerClient` methods mirroring `transactions.ts` / `listTransactions`. Those live in the `robosystems-typescript-client` repo (`clients/graphql/queries/ledger/*.ts` — plain `.ts`, not `.gql`), not in this app, which calls them as `clients.ledger.*`. Continue this pattern for new SDK additions. **Never bump versions** in `package.json` / `pyproject.toml` — version bumps are owned by the user on publish.
 
 **Error mapping.** `friendlyError` lives in `src/lib/ledger/errors.ts` (promoted out of `ledger/inbox/EventBlockDetailModal.tsx` when the share controls landed). It maps closed-period and element-resolution 422s plus the cross-graph share-control errors into actionable messages. Import it from `@/lib/ledger/errors` on any new write surface rather than re-deriving a local one, and extend it there for new error classes (materialize errors, backup conflicts, outbound-write rejects).
 
 Note the shape it defends against: the SDK facade throws `Error("<label> failed: " + JSON.stringify(error))`, so `err.message` carries a raw `{"detail":"…"}` blob. `extractDetail` unwraps it (including 422 validation lists) before matching. Never surface raw FastAPI detail — or that envelope — to users. Write surfaces predating this still pass raw `err.message` through; convert them as they're touched.
 
-**Refresh patterns.** Mutations that change list state use a `refreshKey` bump on the list component (e.g., the journal's entries list after JE submit) rather than full-page reload. SSE operation streams (materialize, long-running ops) use `useOperationMonitoring` from the shared core library.
+**Refresh patterns.** Mutations that change list state use a `refreshKey` bump on the list component (e.g., the journal's entries list after JE submit) rather than full-page reload. Long-running operations (materialize, auto-map) wait on `clients.operations.monitorOperation`.
 
 **Form validation.** Multi-line balanced-entry forms (NewJournalEntryModal) tally running TOTAL DEBIT / TOTAL CREDIT / BALANCE and disable submit unless `BALANCE === 0`. Server-side errors (unbalanced lines, closed period, missing element) surface in a failure Alert without dismissing the form.
 
-**Code colocation.** Route features live under `src/app/(app)/<route>/` with a sibling `components/` (and `__tests__/`) directory — not under a top-level `src/components/<feature>/` tree. `src/components/` holds only cross-route primitives (`PageHeader`, `EntitySelector`, landing/error pages). When adding a new feature, colocate.
+**Code colocation.** Route features live under `src/app/(app)/<route>/` with a sibling `components/` (and `__tests__/`) directory — not under a top-level `src/components/<feature>/` tree. `src/components/` holds only cross-route primitives (`FilterBar`, `EntitySelector`, landing/error pages); `PageHeader` comes from core. When adding a new feature, colocate.
 
-**`page.tsx` vs `content.tsx`.** Each route splits into a thin `page.tsx` entry that delegates to a client `content.tsx`. In practice most `page.tsx` files are themselves `'use client'` wrappers doing `useUser()` auth gating (only `search` and `graphs/new` are true server components exporting `metadata`) — so the split is about keeping route entry separate from route logic, not a server/client boundary. Keep the split — don't inline client logic into `page.tsx`.
+**`page.tsx` vs `content.tsx`.** Each route splits into a thin `page.tsx` entry that delegates to a client `content.tsx`. In practice most `page.tsx` files are themselves `'use client'` wrappers doing `useUser()` auth gating (only `search`, `graphs/new`, `settings` and the `ledger/transactions` redirect are server components) — so the split is about keeping route entry separate from route logic, not a server/client boundary. Keep the split — don't inline client logic into `page.tsx`.
 
-**BlockView projections.** Statement / schedule / rules views render through `src/app/(app)/ledger/close/components/blockview/` with one file per projection under `projections/` (FactTable, StatementRendering, ScheduleRendering, BusinessRules, ReportElements, VerificationResults). New view modes land as a new projection file + a ViewModeToggle entry, not as a parallel component tree.
+**BlockView projections.** Statement / schedule / rules views render through `src/app/(app)/ledger/close/components/blockview/` with one file per projection under `projections/` (FactTable, StatementRendering, ScheduleRendering, BusinessRules, ReportElements, VerificationResults, ChartRendering, MetricRendering, TextBlockRendering). New view modes land as a new projection file + a ViewModeToggle entry, not as a parallel component tree.
 
 **List pages: filter bar, segmented control, sort.** Don't hand-roll the filter row above a table — eight copies had drifted apart before they were unified. Use `src/components/FilterBar` (`FilterBar`, `SearchField`, `FilterSelect`, `FilterDate`, `FilterField`, `FilterActions`); controls are `sizing="sm"`. Never pad a search input with `className="pl-10"` and a positioned icon: the core UI layer puts `className` on the wrapper div, not the `<input>`, which strands the icon outside the field — `TextInput`'s `icon` prop is the working path. "Pick one of N" is `src/components/SegmentedControl`, not a Buttons row, pills, or a `ToggleSwitch` labelled on both sides. Click-to-sort is `useTableSort` + `SortableHeadCell`, and **only where the whole list is in the browser** — Journal, Inbox and Agents fetch a capped window, so sorting there would rank only what happened to load.
 
 **Tables.** The core `TableHead` renders a bare `<thead>`: wrap header cells in a plain `<tr>` (not `TableRow`, which would take a `hoverable` table's hover tint). A table that can outgrow the page — a monthly series — is a raw table on `blockview/seriesGrid`'s shell (sticky opaque label column, per-row backgrounds, title and toolbar OUTSIDE the scroller), because the core UI layer's `Table` paints its body on a viewport-wide layer that a wide table scrolls past. Foldable statement sections come from `src/lib/ledger/rowFold` with `FoldControls` / `FoldLabel`; rows arrive post-order from the server (children, then their subtotal), which is what the fold rule relies on.
 
-**No SWR / React Query.** Data fetching is `useEffect` + `LedgerClient` SDK methods, with `refreshKey` bumps to invalidate. There's no global cache layer and we're not adopting one — don't reach for SWR/TanStack Query when adding a new fetch. If cross-component cache coordination starts hurting, raise it before refactoring.
+**No SWR / React Query.** Data fetching is `useEffect` + `clients.ledger.*` SDK methods, with `refreshKey` bumps to invalidate. There's no global cache layer and we're not adopting one — don't reach for SWR/TanStack Query when adding a new fetch. If cross-component cache coordination starts hurting, raise it before refactoring.
 
 ## Out of Scope (frontend; deferred indefinitely)
 
@@ -120,38 +126,30 @@ The following are explicitly **not** planned for the frontend. Each has been con
 
 - **Real-time event push** (WebSockets / SSE for inbox refresh) — polling on tab focus is enough.
 - **Mobile-responsive layouts** beyond what the UI layer gives for free. Desktop-first product; mobile-read-only is sufficient for initial customers.
-- **Bulk operations** — none ship today; the Inbox approves one line at a time. Inbox bulk review (multi-select, approve selected) is owned by the bank-feed classification work, since only bank-feed lines wait in the Inbox with a suggestion.
+- **Bulk operations** beyond the Inbox's approve-checked (`acceptSuggestions`).
 - **Customizable inbox views per user** (saved filters, custom column layouts).
-- **Agent edit / manual agent creation** — read-only suffices until customer signal demands more.
-- **Draft-edit-then-approve workflow** for inbox events — today's flow is approve as-is or reject. The richer flow is part of `event-driven-ledger.md` §5.10 Event Approval Workflow UX (Package II.C1) and lands when that work activates.
+- **Manual agent creation** — agents are edited from their detail modal; creating one by hand can wait for customer signal.
+- **Draft-edit-then-approve workflow** for inbox events — today's flow is approve as-is or reject.
 
 ## Deferred Surfaces (small UX items; surface when needed)
 
 These are tracked here so they're not lost; each is small enough that it doesn't warrant a dedicated spec entry. Surface them when a customer asks or when the parent feature evolves:
 
-- **Backup / restore UI** — `POST /v1/graphs/{g}/operations/create-backup` and `restore-backup` exist; no UI. Settings page section showing backups list + create button + restore (with confirm). ~½ day each. Probably admin-only.
+- **Backup UI** — `POST /v1/graphs/{g}/operations/create-backup` exists; no UI. Settings page section showing the backups list + create button, ~½ day. There is no customer-facing restore: backups are a download capability.
 - **Forecast scenario authoring** — `/plan` reads scenarios but can't create them; authoring goes through the MCP tools (`create-information-block` with `block_type='forecast'`, then `compute-forecast`). The page says so inline when a graph has no forecast block. A scenario editor (name, horizon, base period, lever assertions) is the natural next surface. Same gap applies to metric-block authoring — the Explorer computes metric blocks but can't declare one.
 - **Auto-map progress UI** — the CoA auto-map operation is async with SSE; the CoA page has the trigger button but no streaming progress display. ~2 hours. Land when the next pass over the CoA page happens.
 - **`/console` MCP improvements** — Console works but is sparse. Improvements layer in as the MCP tool catalog grows; not a fixed roadmap.
-- **QB connect-modal start-date picker** — three-option picker on first connect (full history / since-date / last 60 days). Backend support exists in `SyncOptionsModal` for post-OAuth resync; deferred because the OAuth callback path hardcodes `full_rebuild=True` and threading the picked option through OAuth state is a Phase 1.5 backend concern. See `quickbooks-adapter.md` §4.1.
-
-For larger forward-work surfaces tracked in proper specs:
-
-- **Event approval workflow UX**: see `event-driven-ledger.md` §5.10.
-- **AI-suggested handler review page**: see `event-driven-ledger.md` §5.11.
-- **Verification Results panel restructure**: see `financial-viewer.md` §7.12.
-- **Drift reconciliation UX** (QB outbound write conflicts): see `quickbooks-adapter.md` §4.3.
+- **QB connect-modal start-date picker** — three-option picker on first connect (full history / since-date / last 60 days). Backend support exists in `SyncOptionsModal` for post-OAuth resync; deferred because the OAuth callback path hardcodes `full_rebuild=True` and threading the picked option through OAuth state is a backend concern.
 
 **Ledger Sub-Routes:** see the Route Inventory table above — it is the single
-source of truth for what ships. (`/ledger/account-mappings` was listed here for
-a long time after the route was deleted; don't reintroduce a second list.)
+source of truth for what ships. Don't reintroduce a second list.
 
 **Data Integrations:**
 
 - QuickBooks: OAuth 2.0 driven through the `@robosystems/core` SDK (`SDK.initOAuth` / `SDK.oauthCallback`) for accounting data sync
 - SEC XBRL: no per-graph connection — the SEC connection provider and its UI were removed (2026-08-22). Filings arrive nightly in the shared SEC repository; don't reintroduce `/connections/sec/setup` from old specs.
-- Mercury: bank feed over OAuth (`/connections/mercury-callback`), with a _Post to account_ picker on bank lines in the Inbox. The provider is gated on the API (`CONNECTION_MERCURY_ENABLED`) and off in production until Mercury's compliance review clears.
-- Plaid: **not built / not specced** — the `/plaid-connect` scaffold route and `react-plaid-link` dep were removed pre-1.0.0; only the landing page's "Coming soon" card remains. Likely medium-term. It's a distinct product surface (direct bank feeds), not just another connection on top of the QuickBooks layer, so it isn't advertised in the README and isn't a shipped integration. Don't reintroduce the route from old specs — when Plaid actually lands, it also needs Plaid domains added to the CSP in `src/proxy.ts`.
+- Mercury: bank feed over OAuth (`/connections/mercury-callback`), with a _Post to account_ picker on bank lines in the Inbox. The provider is gated on the API (`CONNECTION_MERCURY_ENABLED`).
+- Plaid: bank feed through Plaid Link (`src/lib/plaid-link.ts`, `connections/components/PlaidLinkSetup.tsx`, `/connections/plaid-callback`). The provider is gated on the API (`CONNECTION_PLAID_ENABLED`), and its domains are in the CSP in `src/proxy.ts`.
 
 ## Key Development Patterns
 
@@ -185,8 +183,8 @@ a long time after the route was deleted; don't reintroduce a second list.)
 
 ## Deployment
 
-- Deployed on AWS App Runner behind CloudFront
-- **Release notes**: `tag-release.yml` auto-generates the changelog from changes since the last tag (via the Claude API). For milestone releases, commit curated notes to `.github/release-notes/v<version>.md` _before_ dispatching `create-release.yml` — when that file exists at the tagged ref it replaces the generated changelog (and the stats section is skipped)
+- Deployed on AWS App Runner or ECS Express Mode (the `APP_COMPUTE` GitHub variable) behind CloudFront
+- **Release notes**: `tag-release.yml` (the reusable workflow in `robosystems`) auto-generates the changelog from changes since the last tag (via the Claude API). For milestone releases, commit curated notes to `.github/release-notes/v<version>.md` _before_ dispatching `create-release.yml` — when that file exists at the tagged ref it replaces the generated changelog (and the stats section is skipped)
 - Environment variables needed:
   - `NEXT_PUBLIC_ROBOSYSTEMS_API_URL` - RoboSystems API endpoint
   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` - CAPTCHA configuration
@@ -201,7 +199,7 @@ a long time after the route was deleted; don't reintroduce a second list.)
 
 ## Core Library (npm Package)
 
-Shared components are consumed from the [`@robosystems/core`](https://www.npmjs.com/package/@robosystems/core) npm package (repo: `RoboFinSystems/robosystems-core`), shared across all RoboSystems frontend apps (robosystems-app, roboledger-app, roboinvestor-app). Import from `@robosystems/core` or its subpaths (e.g. `@robosystems/core/ui-components`).
+Shared components are consumed from the [`@robosystems/core`](https://www.npmjs.com/package/@robosystems/core) npm package (repo: `RoboFinSystems/robosystems-core`), shared across all RoboSystems frontend apps (robosystems-app, roboledger-app, roboinvestor-app). Import from `@robosystems/core` or its subpaths (e.g. `@robosystems/core/ui`, `@robosystems/core/ui-components`).
 
 ### Working with Core
 
@@ -215,11 +213,13 @@ Shared components are consumed from the [`@robosystems/core`](https://www.npmjs.
 - **auth-components/**: Login, register, password reset forms
 - **auth-core/**: Session management and JWT handling
 - **components/**: Graph creation wizard and shared components
+- **ui/**: UI primitives (Button, Modal, Table, ...)
 - **ui-components/**: Layout, forms, chat, and settings components
 - **contexts/**: Graph, organization, entity, service-offerings, and sidebar contexts
 - **task-monitoring/**: SSE-based background job tracking
 - **hooks/**: Shared React hooks
-- **theme/**: theme customization
+- **styles/**: Palette and form CSS
+- **docs/**: Docs rendering
 
 <!-- BEGIN:nextjs-agent-rules -->
 
