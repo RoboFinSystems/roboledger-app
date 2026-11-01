@@ -5,9 +5,9 @@ import {
   type DocsNav,
   type DocsPage,
 } from '@/lib/docs'
+import { DocsMarkdown } from '@robosystems/core/docs/DocsMarkdown'
 import Link from 'next/link'
 import { DocsJsonLd, type Crumb } from './DocsJsonLd'
-import { DocsMarkdown } from './DocsMarkdown'
 
 // Inline code sets its own dark background: the app's typography theme gives `code` a light
 // mint one, and prose-invert only swaps colors, so on the black page it rendered as a pale box.

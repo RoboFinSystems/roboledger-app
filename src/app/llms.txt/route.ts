@@ -1,6 +1,11 @@
 import { getAllPosts } from '@/lib/blog'
 import type { DocsPage } from '@/lib/docs'
-import { DOCS_SITE, getDocsCatalog, getDocsNav } from '@/lib/docs'
+import {
+  DOCS_SITE,
+  getDocsCatalog,
+  getDocsNav,
+  orBuildFallback,
+} from '@/lib/docs'
 import { PRODUCT_PAGES, productPageUrl } from '@/lib/product-pages'
 import { SITE_DESCRIPTION, SITE_NAME } from '@/lib/site'
 
@@ -22,7 +27,7 @@ function docsLinks(pages: DocsPage[]): string[] {
 
 export async function GET() {
   const [catalog, posts] = await Promise.all([
-    getDocsCatalog(),
+    orBuildFallback(getDocsCatalog(), null),
     getAllPosts().catch(() => []),
   ])
   const docs = catalog
