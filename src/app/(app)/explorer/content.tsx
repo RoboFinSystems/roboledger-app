@@ -92,7 +92,12 @@ const BlockExplorerContent: FC = function () {
   const refreshForGraphId = useRef<string | null>(null)
 
   const { graph: currentGraph } = useLedgerGraph()
-  const { entityId } = useEntityScope()
+  const { entityId, entity: scopedEntity, parent } = useEntityScope()
+  // The consolidation entity's stamped statements are the group's, not its own.
+  const groupHeading =
+    scopedEntity?.entityRole === 'consolidation' && parent
+      ? `${parent.name} (consolidated)`
+      : null
   // The entity the loaded block list belongs to; envelopes wait until it is
   // the one in scope, so a switch never reads one entity's list for another.
   const [blocksFor, setBlocksFor] = useState<string | null>(null)
@@ -452,7 +457,7 @@ const BlockExplorerContent: FC = function () {
                 <BlockView
                   envelope={envelope}
                   viewMode={viewMode}
-                  entityName={entityName}
+                  entityName={groupHeading ?? entityName}
                 />
               </div>
             )}

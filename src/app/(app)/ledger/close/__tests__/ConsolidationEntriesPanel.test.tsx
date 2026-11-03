@@ -165,9 +165,11 @@ describe('ConsolidationEntriesPanel', () => {
     const badge = await screen.findByText('Drafted: difference open')
     expect(badge).toHaveAttribute('data-badge-color', 'warning')
     expect(screen.queryByText('Up to date: drafted')).not.toBeInTheDocument()
-    // A credit difference reads as an amount, not as "(($50.00) ...)".
+    // One money format per line: the amount is already in the description.
     expect(
-      screen.getByText(/\$50\.00 stays in the consolidated statements\.$/)
+      screen.getByText(
+        /books\. The difference stays in the consolidated statements\.$/
+      )
     ).toBeInTheDocument()
   })
 

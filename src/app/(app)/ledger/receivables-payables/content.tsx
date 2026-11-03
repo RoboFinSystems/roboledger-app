@@ -355,7 +355,7 @@ const ReceivablesPayablesContent: FC = function () {
                   tie.differenceCents === null ? (
                     <Badge color="gray">No control account mapped</Badge>
                   ) : (
-                    <span className="flex items-center gap-3 font-mono">
+                    <span className="flex items-center gap-3 font-mono text-gray-700 dark:text-gray-300">
                       <span>
                         Ledger {formatAmount(tie.controlBalanceCents, 'USD')}
                       </span>
