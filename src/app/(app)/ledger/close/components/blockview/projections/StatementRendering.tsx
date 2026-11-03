@@ -47,6 +47,26 @@ interface StatementRenderingProjectionProps {
 }
 
 /**
+ * The header's date. Two columns are a statement beside its comparative, so it
+ * names the statement's own period, not a span across the pair; a balance sheet
+ * is as of a date whatever window its columns sit in.
+ */
+function statementDateLine(
+  periods: { start?: string | null; end: string }[],
+  instant: boolean
+): string {
+  const last = periods[periods.length - 1]
+  if (periods.length === 1)
+    return `For the Period Ended ${formatDate(last.end)}`
+  if (periods.length === 2) {
+    return instant
+      ? `As of ${formatDate(last.end)}`
+      : `${formatDate(last.start)} — ${formatDate(last.end)}`
+  }
+  return `${formatDate(periods[0].start)} — ${formatDate(last.end)}`
+}
+
+/**
  * Charlie's `Rendering` View projection — statement-family variant.
  *
  * Consumes the server-computed `envelope.view.rendering` (rows +
@@ -164,9 +184,7 @@ const StatementGrid: FC<StatementGridProps> = ({
         </p>
         {periods.length > 0 && periods[0].start && (
           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-            {periods.length === 1
-              ? `For the Period Ended ${formatDate(periods[0].end)}`
-              : `${formatDate(periods[0].start)} — ${formatDate(periods[periods.length - 1].end)}`}
+            {statementDateLine(periods, instant)}
           </p>
         )}
       </div>

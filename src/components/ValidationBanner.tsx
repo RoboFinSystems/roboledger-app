@@ -23,17 +23,20 @@ export interface ValidationOutcome {
 }
 
 /**
- * Resolve the tri-state. `status` is authoritative; the `passed` fallback
- * covers a backend that predates the field.
+ * Resolve the tri-state. `status` is authoritative. Without it (the envelope's
+ * query does not select it), not passing with no failures named means nothing
+ * was checked, which must not read as a failure.
  */
 export function validationStatus(
-  validation: Pick<ValidationOutcome, 'passed' | 'status'>
+  validation: Pick<ValidationOutcome, 'passed' | 'status'> &
+    Partial<Pick<ValidationOutcome, 'failures'>>
 ): ValidationStatus {
   const { status } = validation
   if (status === 'passed' || status === 'failed' || status === 'inconclusive') {
     return status
   }
-  return validation.passed ? 'passed' : 'failed'
+  if (validation.passed) return 'passed'
+  return validation.failures?.length === 0 ? 'inconclusive' : 'failed'
 }
 
 /** One kind of finding, across every period that raised it. */

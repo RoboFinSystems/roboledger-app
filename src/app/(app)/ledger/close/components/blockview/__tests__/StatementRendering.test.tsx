@@ -50,6 +50,37 @@ describe('StatementRenderingProjection', () => {
     )
   })
 
+  it('heads a statement and its comparative with its own period', () => {
+    const periods = [
+      { start: '2024-10-01', end: '2025-09-30', label: null },
+      { start: '2025-10-01', end: '2026-09-30', label: null },
+    ]
+    const rows = [
+      {
+        elementId: 'e_cash',
+        elementName: 'Cash',
+        depth: 0,
+        isSubtotal: false,
+        values: [1, 2],
+      },
+    ]
+    const flow = makeEnvelope({
+      view: { rendering: makeRendering({ periods, rows }) },
+    })
+    const { unmount } = render(<StatementRenderingProjection envelope={flow} />)
+    expect(screen.getAllByText('Oct 1, 2025 — Sep 30, 2026')[0].tagName).toBe(
+      'P'
+    )
+    unmount()
+
+    const sheet = makeEnvelope({
+      blockType: 'balance_sheet',
+      view: { rendering: makeRendering({ periods, rows }) },
+    })
+    render(<StatementRenderingProjection envelope={sheet} />)
+    expect(screen.getAllByText('As of Sep 30, 2026')[0].tagName).toBe('P')
+  })
+
   it('marks forecast columns with the seam tint + marker in a series read', () => {
     const env = makeEnvelope({
       view: {

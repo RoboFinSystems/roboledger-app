@@ -31,6 +31,15 @@ describe('validationStatus', () => {
     expect(validationStatus({ passed: false, status: null })).toBe('failed')
     expect(validationStatus({ passed: true, status: 'weird' })).toBe('passed')
   })
+
+  it('reads not passing with no failures named as not checked', () => {
+    expect(validationStatus({ passed: false, failures: [] })).toBe(
+      'inconclusive'
+    )
+    expect(validationStatus({ passed: false, failures: ['off by 1'] })).toBe(
+      'failed'
+    )
+  })
 })
 
 // The cash flow block over a monthly series: the same findings, once a month.
