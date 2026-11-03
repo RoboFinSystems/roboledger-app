@@ -14,6 +14,7 @@ import SegmentedControl, {
 import ValidationBanner from '@/components/ValidationBanner'
 import { useEntityScope } from '@/lib/entity-scope'
 import { friendlyError, type FriendlyError } from '@/lib/ledger/errors'
+import { possessive } from '@/lib/ledger/formatters'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type {
   ConsolidationWorksheetResponse,
@@ -443,9 +444,9 @@ const LiveStatementsContent: FC = function () {
         <Alert color="info">
           <HiExclamationCircle className="h-4 w-4" />
           <span>
-            These are {entity?.name}&apos;s books: the group&apos;s
-            consolidating adjustments alone. The consolidated statement is the
-            group parent&apos;s, under Consolidated.
+            These are {possessive(entity?.name ?? 'this entity')} books: the
+            group&apos;s consolidating adjustments alone. The consolidated
+            statement is the group parent&apos;s, under Consolidated.
           </span>
         </Alert>
       )}

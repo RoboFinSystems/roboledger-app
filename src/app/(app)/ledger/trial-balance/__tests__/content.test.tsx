@@ -150,6 +150,7 @@ describe('TrialBalanceContent', () => {
       // No entity in scope: the group parent is the server's default.
       expect(mockGetTrialBalance).toHaveBeenCalledWith('kg_a', {
         entityId: null,
+        endDate: expect.any(String),
       })
     })
     expect(await screen.findByText('Cash')).toBeInTheDocument()
@@ -234,7 +235,9 @@ describe('TrialBalanceContent', () => {
     fireEvent.click(screen.getByRole('button', { name: 'US-GAAP' }))
 
     await waitFor(() => {
-      expect(mockGetMappedTrialBalance).toHaveBeenCalledWith('kg_a', 'map_a')
+      expect(mockGetMappedTrialBalance).toHaveBeenCalledWith('kg_a', 'map_a', {
+        endDate: expect.any(String),
+      })
     })
   })
 
@@ -245,7 +248,13 @@ describe('TrialBalanceContent', () => {
       await waitFor(() => expect(mockGetTrialBalance).toHaveBeenCalled())
       fireEvent.click(screen.getByRole('button', { name: 'US-GAAP' }))
       await waitFor(() => {
-        expect(mockGetMappedTrialBalance).toHaveBeenCalledWith('kg_a', 'map_a')
+        expect(mockGetMappedTrialBalance).toHaveBeenCalledWith(
+          'kg_a',
+          'map_a',
+          {
+            endDate: expect.any(String),
+          }
+        )
       })
 
       // Switch to a graph whose own mapping is a different row. Before the fix
@@ -258,7 +267,13 @@ describe('TrialBalanceContent', () => {
       rerender(<TrialBalanceContent />)
 
       await waitFor(() => {
-        expect(mockGetMappedTrialBalance).toHaveBeenCalledWith('kg_b', 'map_b')
+        expect(mockGetMappedTrialBalance).toHaveBeenCalledWith(
+          'kg_b',
+          'map_b',
+          {
+            endDate: expect.any(String),
+          }
+        )
       })
       expect(mockGetMappedTrialBalance).not.toHaveBeenCalledWith(
         'kg_b',
@@ -296,7 +311,13 @@ describe('TrialBalanceContent', () => {
       resolveMappings([{ id: 'map_b', isActive: true }])
 
       await waitFor(() => {
-        expect(mockGetMappedTrialBalance).toHaveBeenCalledWith('kg_b', 'map_b')
+        expect(mockGetMappedTrialBalance).toHaveBeenCalledWith(
+          'kg_b',
+          'map_b',
+          {
+            endDate: expect.any(String),
+          }
+        )
       })
     })
 
@@ -434,6 +455,7 @@ describe('TrialBalanceContent — one member', () => {
     await waitFor(() =>
       expect(mockGetTrialBalance).toHaveBeenLastCalledWith('kg_a', {
         entityId: null,
+        endDate: expect.any(String),
         dimension: { type: 'department', memberId: 'dim_sales' },
       })
     )
@@ -449,6 +471,7 @@ describe('TrialBalanceContent — one member', () => {
     await waitFor(() =>
       expect(mockGetTrialBalance).toHaveBeenLastCalledWith('kg_a', {
         entityId: null,
+        endDate: expect.any(String),
         dimension: { type: 'department', memberId: 'unallocated' },
       })
     )
@@ -460,6 +483,7 @@ describe('TrialBalanceContent — one member', () => {
     await waitFor(() =>
       expect(mockGetTrialBalance).toHaveBeenLastCalledWith('kg_a', {
         entityId: null,
+        endDate: expect.any(String),
       })
     )
     expect(screen.queryByText(/need not foot/)).not.toBeInTheDocument()
@@ -473,6 +497,7 @@ describe('TrialBalanceContent — one member', () => {
     await waitFor(() =>
       expect(mockGetTrialBalance).toHaveBeenLastCalledWith('kg_a', {
         entityId: null,
+        endDate: expect.any(String),
         dimension: { type: 'department', memberId: 'dim_sales' },
       })
     )
@@ -481,6 +506,7 @@ describe('TrialBalanceContent — one member', () => {
     await waitFor(() =>
       expect(mockGetTrialBalance).toHaveBeenLastCalledWith('kg_b', {
         entityId: null,
+        endDate: expect.any(String),
       })
     )
     expect(mockGetTrialBalance).not.toHaveBeenCalledWith(

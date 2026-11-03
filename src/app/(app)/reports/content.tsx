@@ -3,6 +3,7 @@
 import DocsLink from '@/components/DocsLink'
 import SegmentedControl from '@/components/SegmentedControl'
 import { useEntityScope } from '@/lib/entity-scope'
+import { possessive } from '@/lib/ledger/formatters'
 import { useConsoleReload } from '@/lib/useConsoleReload'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { ReportListItem } from '@robosystems/client/clients'
@@ -145,7 +146,7 @@ const ReportsContent: FC = function () {
         subtitle={
           <>
             {entity
-              ? `View and manage ${entity.name}'s financial reports.`
+              ? `View and manage ${possessive(entity.name)} financial reports.`
               : 'View and manage financial reports.'}{' '}
             <DocsLink href="/docs/reports-and-sharing" />
           </>

@@ -5,6 +5,11 @@
 /** Matches a date-only value (no time component), e.g. "2026-01-15". */
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
 
+/** "Driftline Coffee Roasters'" and "Driftline Café LLC's". */
+export function possessive(name: string): string {
+  return name.endsWith('s') ? `${name}'` : `${name}'s`
+}
+
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—'
   // A bare YYYY-MM-DD parses as UTC midnight, so rendering it in the viewer's

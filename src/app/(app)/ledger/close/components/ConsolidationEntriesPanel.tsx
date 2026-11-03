@@ -284,9 +284,8 @@ const ConsolidationEntriesPanel: FC<ConsolidationEntriesPanelProps> = ({
               <ul className="list-disc space-y-1 pl-6">
                 {reconciling.map((item) => (
                   <li key={`${item.entity_id}-${item.concept}`}>
-                    {item.description}{' '}
-                    {formatCurrencyDollars(Math.abs(item.amount) / 100)} stays
-                    in the consolidated statements.
+                    {item.description} The difference stays in the consolidated
+                    statements.
                   </li>
                 ))}
               </ul>

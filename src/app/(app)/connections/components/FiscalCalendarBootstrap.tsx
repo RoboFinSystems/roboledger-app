@@ -2,6 +2,7 @@
 
 import FiscalCalendarSetupModal from '@/components/FiscalCalendarSetupModal'
 import { friendlyError } from '@/lib/ledger/errors'
+import { possessive } from '@/lib/ledger/formatters'
 import type { LedgerFiscalCalendar } from '@robosystems/client/clients'
 import { clients } from '@robosystems/core'
 import { Alert, Badge, Button } from '@robosystems/core/ui'
@@ -94,7 +95,7 @@ export const FiscalCalendarBootstrap: FC<FiscalCalendarBootstrapProps> = ({
           <div>
             <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
               {showName
-                ? `${entityName}'s fiscal calendar not initialized`
+                ? `${possessive(entityName)} fiscal calendar not initialized`
                 : 'Fiscal calendar not initialized'}
             </p>
             <p className="text-xs text-amber-800 dark:text-amber-200">

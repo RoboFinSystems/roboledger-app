@@ -2,6 +2,7 @@
 
 import SegmentedControl from '@/components/SegmentedControl'
 import { useEntityScope } from '@/lib/entity-scope'
+import { possessive } from '@/lib/ledger/formatters'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type {
   LedgerMappingCoverage,
@@ -332,7 +333,7 @@ const ReportBuilderContent: FC = function () {
           consolidated
             ? `Generate the consolidated statements of ${parent?.name ?? 'the group'}: every member and the consolidating entries`
             : entity
-              ? `Generate ${entity.name}'s financial statements from its mapped trial balance`
+              ? `Generate ${possessive(entity.name)} financial statements from its mapped trial balance`
               : 'Generate financial statements from your mapped trial balance'
         }
         actions={
@@ -368,9 +369,9 @@ const ReportBuilderContent: FC = function () {
           <span>
             The consolidated report sums every member consolidated in full with
             the consolidating entries in {consolidationEntity?.name}, under{' '}
-            {parent?.name}&apos;s reporting style, as the closed group&apos;s
-            statements are. Each column must fall wholly before or after a
-            member joins or leaves the group.
+            {possessive(parent?.name ?? 'the parent')} reporting style, as the
+            closed group&apos;s statements are. Each column must fall wholly
+            before or after a member joins or leaves the group.
           </span>
         </Alert>
       )}

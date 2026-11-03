@@ -14,7 +14,7 @@ import SortableHeadCell from '@/components/SortableHeadCell'
 import { useEntityScope } from '@/lib/entity-scope'
 import type { ElementClassification } from '@/lib/ledger'
 import { dollars, toCsv } from '@/lib/ledger/csv'
-import { formatDollars } from '@/lib/ledger/formatters'
+import { formatDate, formatDollars } from '@/lib/ledger/formatters'
 import { monthToDate, registerHref } from '@/lib/ledger/register'
 import { type SortColumn, useTableSort } from '@/lib/useTableSort'
 import type { LedgerDimension } from '@robosystems/client/clients'
@@ -190,6 +190,9 @@ const TrialBalanceContent: FC = function () {
   // Mappings are listed for every entity when none is named, so the parent
   // is named too: the default-to-parent rule of the other reads.
   const mappingEntityId = entityId ?? parent?.id ?? null
+  // A balance stated without its date reads as today's, so it is today's: a
+  // posting dated ahead of it would otherwise disagree with the statements.
+  const asOf = useMemo(() => monthToDate(new Date()).end, [])
   const [data, setData] = useState<TrialBalanceRowWithGraph[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -334,9 +337,10 @@ const TrialBalanceContent: FC = function () {
             sliceType && sliceMemberId
               ? {
                   entityId,
+                  endDate: asOf,
                   dimension: { type: sliceType, memberId: sliceMemberId },
                 }
-              : { entityId }
+              : { entityId, endDate: asOf }
           )
 
           if (seq !== loadSeq.current) return // superseded by a newer load
@@ -402,7 +406,8 @@ const TrialBalanceContent: FC = function () {
           }
           const mapped = await clients.ledger.getMappedTrialBalance(
             currentGraph.graphId,
-            mapping.id
+            mapping.id,
+            { endDate: asOf }
           )
 
           if (seq !== loadSeq.current) return // superseded by a newer load
@@ -450,6 +455,7 @@ const TrialBalanceContent: FC = function () {
     mapping,
     sliceType,
     sliceMemberId,
+    asOf,
   ])
 
   // Filter data
@@ -516,7 +522,7 @@ const TrialBalanceContent: FC = function () {
       <PageHeader
         icon={HiScale}
         title="Trial Balance"
-        subtitle="View account balances with debits and credits verification"
+        subtitle={`Account balances with debits and credits, as of ${formatDate(asOf)}`}
       />
 
       {/* Filters */}

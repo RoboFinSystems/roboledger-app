@@ -2,6 +2,7 @@
 
 import { formatPeriod } from '@/components/FiscalCalendarSetupModal'
 import { friendlyError } from '@/lib/ledger/errors'
+import { possessive } from '@/lib/ledger/formatters'
 import { clients } from '@robosystems/core'
 import {
   Alert,
@@ -110,7 +111,7 @@ const ChangeCalendarStartModal: FC<ChangeCalendarStartModalProps> = ({
     <Modal show={open} onClose={onClose} size="md">
       <form onSubmit={handleSubmit}>
         <ModalHeader>
-          Change where {entityName}&apos;s calendar starts
+          Change where {possessive(entityName)} calendar starts
         </ModalHeader>
         <ModalBody>
           <div className="space-y-4">

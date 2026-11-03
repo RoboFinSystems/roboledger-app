@@ -333,7 +333,7 @@ const HomePageContent: FC = function () {
                               color={TX_TYPE_COLORS[tx.type] || 'gray'}
                               size="sm"
                             >
-                              {tx.type}
+                              {tx.type.replace(/_/g, ' ')}
                             </Badge>
                             <span className="truncate text-sm font-medium text-gray-900 dark:text-white">
                               {tx.merchantName ||
