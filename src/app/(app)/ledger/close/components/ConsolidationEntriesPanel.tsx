@@ -131,6 +131,10 @@ const ConsolidationEntriesPanel: FC<ConsolidationEntriesPanelProps> = ({
   // The month's drafts hold what it needs: they are the entries, listed
   // under Draft review, so the proposals are not shown twice.
   const drafted = Boolean(preview?.up_to_date) && draftedCount > 0
+  // The entries can be current while two companies still disagree, and the
+  // group's close waits on that, so the status must not read as all clear.
+  const disagreement = reconciling.length > 0
+  const statusColor = disagreement ? 'warning' : 'success'
   // An entry left out (with nothing withheld) is what keeps drafts from
   // being up to date, and drafting again cannot add it.
   const leftOut = Boolean(preview?.incomplete) && residuals.length === 0
@@ -186,8 +190,10 @@ const ConsolidationEntriesPanel: FC<ConsolidationEntriesPanelProps> = ({
         <div className="space-y-3">
           {drafted ? (
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              <Badge color="success" size="sm" className="mr-2 inline-flex">
-                Up to date: drafted
+              <Badge color={statusColor} size="sm" className="mr-2 inline-flex">
+                {disagreement
+                  ? 'Drafted: difference open'
+                  : 'Up to date: drafted'}
               </Badge>
               {draftedCount} draft{draftedCount === 1 ? '' : 's'} hold this
               month&apos;s entries, listed under Draft review. Closing the month
@@ -224,8 +230,12 @@ const ConsolidationEntriesPanel: FC<ConsolidationEntriesPanelProps> = ({
           ) : (
             preview.up_to_date && (
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                <Badge color="success" size="sm" className="mr-2 inline-flex">
-                  Up to date
+                <Badge
+                  color={statusColor}
+                  size="sm"
+                  className="mr-2 inline-flex"
+                >
+                  {disagreement ? 'Difference open' : 'Up to date'}
                 </Badge>
                 This entity already holds what the month needs.
               </p>
@@ -274,9 +284,9 @@ const ConsolidationEntriesPanel: FC<ConsolidationEntriesPanelProps> = ({
               <ul className="list-disc space-y-1 pl-6">
                 {reconciling.map((item) => (
                   <li key={`${item.entity_id}-${item.concept}`}>
-                    {item.description} (
-                    {formatCurrencyDollars(item.amount / 100)} left in the
-                    consolidated statements)
+                    {item.description}{' '}
+                    {formatCurrencyDollars(Math.abs(item.amount) / 100)} stays
+                    in the consolidated statements.
                   </li>
                 ))}
               </ul>

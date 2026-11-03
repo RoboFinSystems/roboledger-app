@@ -137,6 +137,40 @@ describe('ConsolidationEntriesPanel', () => {
     expect(mockPreview).toHaveBeenCalledTimes(2)
   })
 
+  it('does not read as all clear while two companies disagree', async () => {
+    mockPreview.mockResolvedValue({
+      ...PREVIEW,
+      up_to_date: true,
+      drafted_entry_ids: ['je_1'],
+      reconciling_items: [
+        {
+          entity_ids: ['ent_parent', 'ent_cafe'],
+          concept:
+            'rs-gaap:RevenueFromContractWithCustomerExcludingAssessedTax',
+          entity_id: 'ent_parent',
+          amount: -5000,
+          description:
+            "Revenue: Parent records 692.00 with Café, 50.00 of it with no counterpart on Café's books.",
+        },
+      ],
+    })
+    render(
+      <ConsolidationEntriesPanel
+        graphId="kg1"
+        period="2026-10"
+        onDrafted={vi.fn()}
+      />
+    )
+
+    const badge = await screen.findByText('Drafted: difference open')
+    expect(badge).toHaveAttribute('data-badge-color', 'warning')
+    expect(screen.queryByText('Up to date: drafted')).not.toBeInTheDocument()
+    // A credit difference reads as an amount, not as "(($50.00) ...)".
+    expect(
+      screen.getByText(/\$50\.00 stays in the consolidated statements\.$/)
+    ).toBeInTheDocument()
+  })
+
   it('offers to replace drafts that no longer match, even with nothing to propose', async () => {
     mockPreview.mockResolvedValue({
       ...PREVIEW,
