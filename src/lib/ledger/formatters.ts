@@ -2,6 +2,21 @@
 // All amount helpers expect cents (the wire format from the GraphQL API)
 // and divide by 100 internally.
 
+/**
+ * Where an entry came from. `schedule_derived` is the set a period close
+ * posts — depreciation, amortization, accruals — and is exactly the set
+ * the Transactions tab cannot show, because those entries carry no parent
+ * transaction.
+ */
+export const PROVENANCE_LABELS: Record<string, string> = {
+  source_sync: 'Synced',
+  ai_generated: 'AI generated',
+  manual_entry: 'Manual',
+  schedule_derived: 'Schedule',
+  system_computed: 'System',
+  event_handler: 'Event handler',
+}
+
 /** Matches a date-only value (no time component), e.g. "2026-01-15". */
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
 

@@ -5,7 +5,11 @@ import { FilterBar, FilterSelect, SearchField } from '@/components/FilterBar'
 import { FlowRowSelect } from '@/components/FlowRowSelect'
 import { friendlyError } from '@/lib/ledger/errors'
 import { flowDisplayName, useFlowCandidates } from '@/lib/ledger/flows'
-import { formatDate, formatDollars } from '@/lib/ledger/formatters'
+import {
+  formatDate,
+  formatDollars,
+  PROVENANCE_LABELS,
+} from '@/lib/ledger/formatters'
 import { registerHref } from '@/lib/ledger/register'
 import { clients, EmptyState, LoadingState } from '@robosystems/core'
 import {
@@ -40,21 +44,6 @@ const ENTRY_TYPE_COLORS: Record<string, string> = {
   adjusting: 'warning',
   closing: 'purple',
   reversing: 'failure',
-}
-
-/**
- * Where an entry came from. `schedule_derived` is the set a period close
- * posts — depreciation, amortization, accruals — and is exactly the set
- * the Transactions tab cannot show, because those entries carry no parent
- * transaction.
- */
-const PROVENANCE_LABELS: Record<string, string> = {
-  source_sync: 'Synced',
-  ai_generated: 'AI generated',
-  manual_entry: 'Manual',
-  schedule_derived: 'Schedule',
-  system_computed: 'System',
-  event_handler: 'Event handler',
 }
 
 interface JournalLineItem {
