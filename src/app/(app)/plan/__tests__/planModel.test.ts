@@ -51,6 +51,24 @@ const envelope = (
   }) as unknown as EnvelopeBlock
 
 describe('composePlan', () => {
+  it('keys a concept apart when it fills two rows', () => {
+    // Cash opens and closes the cash flow on one element.
+    const model = composePlan([
+      {
+        title: 'Cash Flow',
+        envelope: envelope(
+          [{ end: '2026-10-31' }],
+          [
+            { elementId: 'cash', elementName: 'Cash, beginning', values: [1] },
+            { elementId: 'cash', elementName: 'Cash, end', values: [2] },
+          ]
+        ),
+      },
+    ])
+    const keys = model.sections[0].rows.map((row) => row.key)
+    expect(new Set(keys).size).toBe(2)
+  })
+
   it('unions periods into master columns and aligns section values', () => {
     // Statements span May..Jul; the lever grid covers only Jun..Jul.
     const is = envelope(
