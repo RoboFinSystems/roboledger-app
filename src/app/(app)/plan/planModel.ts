@@ -150,7 +150,8 @@ export function composePlan(inputs: SectionInput[]): PlanModel {
           values[target] = value ?? null
         })
         return {
-          key: `${title}:${row.elementId ?? rowIndex}`,
+          // Cash opens and closes the cash flow on one element.
+          key: `${title}:${row.elementId ?? ''}:${rowIndex}`,
           label: row.elementName ?? row.elementQname ?? String(rowIndex),
           itemType: row.itemType ?? null,
           isSubtotal: row.isSubtotal === true,
