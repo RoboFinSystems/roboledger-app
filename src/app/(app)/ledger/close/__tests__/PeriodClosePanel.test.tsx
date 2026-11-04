@@ -189,6 +189,12 @@ describe('PeriodClosePanel — close success', () => {
     ])
   })
 
+  it('describes the close without naming a field', async () => {
+    render(<PeriodClosePanel graphId="kg1" />)
+    await screen.findByText('Close Period')
+    expect(document.body.textContent).not.toContain('closed_through')
+  })
+
   it('shows what the close did — entries, rules, stamped statements, Plan link', async () => {
     render(<PeriodClosePanel graphId="kg1" />)
 

@@ -1285,9 +1285,8 @@ const ClosePeriodAction: FC<ClosePeriodActionProps> = ({
             Close {formatPeriod(selectedPeriod)}
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Posts all draft entries in the period, advances{' '}
-            <code>closed_through</code>, and auto-advances the target when
-            reached.
+            Posts the month&apos;s draft entries and closes it. Closing the
+            target month moves the target to the next one.
           </p>
         </div>
         <div className="flex items-center gap-3">
