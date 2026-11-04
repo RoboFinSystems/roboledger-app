@@ -3,6 +3,7 @@
 import FiscalCalendarSetupModal from '@/components/FiscalCalendarSetupModal'
 import { useEntityScope } from '@/lib/entity-scope'
 import { friendlyError } from '@/lib/ledger/errors'
+import { PROVENANCE_LABELS } from '@/lib/ledger/formatters'
 import type {
   LedgerFiscalCalendar,
   LedgerPeriodCloseStatus,
@@ -1173,7 +1174,7 @@ const DraftReviewPanel: FC<DraftReviewPanelProps> = ({ drafts, isLoading }) => {
                 </span>
                 {d.provenance && (
                   <Badge color="gray" size="sm" className="ml-2 inline-flex">
-                    {d.provenance}
+                    {PROVENANCE_LABELS[d.provenance] ?? d.provenance}
                   </Badge>
                 )}
                 {d.willPublishToQb && (

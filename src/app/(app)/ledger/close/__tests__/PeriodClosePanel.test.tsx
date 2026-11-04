@@ -1104,6 +1104,14 @@ describe('PeriodClosePanel — where the drafts go on close', () => {
     })
   })
 
+  it('names where a draft came from in plain words', async () => {
+    mockListPeriodDrafts.mockResolvedValue(drafts({}))
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    expect(await screen.findByText('System')).toBeInTheDocument()
+    expect(screen.queryByText('system_computed')).not.toBeInTheDocument()
+  })
+
   it('says nothing about QuickBooks on books that have none', async () => {
     mockListPeriodDrafts.mockResolvedValue(drafts({}))
     render(<PeriodClosePanel graphId="kg1" />)
