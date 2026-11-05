@@ -65,8 +65,8 @@ export interface ConnectionData {
   /**
    * Write policy: 'qb_authoritative' (RoboLedger's entries publish to
    * QuickBooks on close), 'shadow' (nothing is written; the close
-   * observes), or 'native' (what disconnect and sever leave — not a
-   * choice on a live card).
+   * observes), or 'native' (what severing leaves — not a choice on a
+   * live card).
    */
   write_policy?: string | null
   metadata: Record<string, any>
@@ -80,6 +80,16 @@ export interface FeedEntity {
 
 /** What a live QuickBooks card may choose; native is what severing leaves. */
 export type WritePolicyChoice = 'qb_authoritative' | 'shadow'
+
+/** What each policy does, in the words the product docs use. */
+const WRITE_POLICY_HELP: Record<string, string> = {
+  qb_authoritative:
+    'RoboLedger-originated entries (schedules, manual JEs) publish to QuickBooks when a period is closed.',
+  shadow:
+    'QuickBooks stays the book of record. Nothing is written to it and the close posts nothing here: drafts become expectations, and what would have blocked the close is reported instead of enforced.',
+  native:
+    'No external ledger — closing posts entries locally. This is what severing leaves; it is not a choice on a live connection.',
+}
 
 interface ConnectionCardProps {
   connection: ConnectionData
@@ -323,9 +333,8 @@ export default function ConnectionCard({
                   )}
                 </Select>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {writePolicyValue === 'qb_authoritative'
-                    ? 'RoboLedger-originated entries (schedules, manual JEs) publish to QuickBooks when a period is closed.'
-                    : 'RoboLedger is the system of record — closing posts entries locally only; nothing is written back to QuickBooks.'}
+                  {WRITE_POLICY_HELP[writePolicyValue] ??
+                    WRITE_POLICY_HELP.qb_authoritative}
                 </p>
               </div>
             )}
