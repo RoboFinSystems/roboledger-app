@@ -66,6 +66,24 @@ describe('ConnectionCard', () => {
     expect(onSetWritePolicy).toHaveBeenCalledWith('shadow')
   })
 
+  it('a shadow card says QuickBooks keeps the books and nothing posts here', () => {
+    render(
+      <ConnectionCard
+        connection={connection({
+          provider: 'quickbooks',
+          write_policy: 'shadow',
+        })}
+        status={{ status: 'connected', message: 'Connected' }}
+        onSync={() => {}}
+        onDelete={() => {}}
+        onSetWritePolicy={() => {}}
+        graphId="kg_test"
+      />
+    )
+    expect(screen.getByText(/QuickBooks stays the book of record/)).toBeTruthy()
+    expect(screen.queryByText(/RoboLedger is the system of record/)).toBeNull()
+  })
+
   it('a row still on native shows it until another choice is made', () => {
     const { container } = render(
       <ConnectionCard
