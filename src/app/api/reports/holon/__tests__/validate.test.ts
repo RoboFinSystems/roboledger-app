@@ -5,9 +5,9 @@ const BUCKET = 'robosystems-000000000000-user-test'
 const KEY = 'report-bundles/kg19f333/rpt_01ABC/g1.holon.jsonld'
 const SIG = 'X-Amz-Credential=cred&X-Amz-Signature=sig&X-Amz-Expires=300'
 
-// A realistic LocalStack presigned holon URL (shape mirrors the live one).
+// A realistic development-stack presigned holon URL (shape mirrors the live one).
 const LOCAL =
-  `http://localhost:4566/${BUCKET}/${KEY}` +
+  `http://localhost:8333/${BUCKET}/${KEY}` +
   '?response-content-type=application%2Fld%2Bjson&AWSAccessKeyId=test&Signature=abc%3D&Expires=1783315210'
 
 const VIRTUAL_GLOBAL = `https://${BUCKET}.s3.amazonaws.com/${KEY}?${SIG}`
@@ -193,9 +193,9 @@ describe('allowedHolonUrl', () => {
     })
   })
 
-  describe('the LocalStack endpoint override', () => {
+  describe('the development stack endpoint override', () => {
     beforeEach(() => {
-      vi.stubEnv('NEXT_PUBLIC_S3_ENDPOINT_URL', 'http://localhost:4566')
+      vi.stubEnv('NEXT_PUBLIC_S3_ENDPOINT_URL', 'http://localhost:8333')
     })
 
     it('accepts path-style under the configured bucket', () => {
@@ -219,7 +219,7 @@ describe('allowedHolonUrl', () => {
     })
 
     it('does not extend to another port on the same host', () => {
-      expect(allowedHolonUrl(LOCAL.replace(':4566', ':8000'))).toBeNull()
+      expect(allowedHolonUrl(LOCAL.replace(':8333', ':8000'))).toBeNull()
     })
 
     it('rejects loopback when no override is configured', () => {
