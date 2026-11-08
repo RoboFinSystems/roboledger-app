@@ -37,7 +37,7 @@ function reportBundleBucket(): string | null {
 }
 
 /**
- * The S3 endpoint override used by LocalStack in local development, matched
+ * The S3 endpoint override of the development stack's S3 server, matched
  * on protocol, host and port together; null when none is configured.
  */
 function endpointOverride(): URL | null {

@@ -76,7 +76,7 @@ validate_env_vars() {
         echo "Optional variables:"
         echo "  NEXT_PUBLIC_MAINTENANCE_MODE      - Enable maintenance mode (default: false)"
         echo "  NEXT_PUBLIC_TURNSTILE_SITE_KEY    - Cloudflare Turnstile site key"
-        echo "  NEXT_PUBLIC_S3_ENDPOINT_URL       - S3 endpoint URL (for LocalStack)"
+        echo "  NEXT_PUBLIC_S3_ENDPOINT_URL       - S3 endpoint URL (the development stack's S3 server)"
         echo "  REPORT_BUNDLE_BUCKET              - Bucket holding report bundles (required to view reports on AWS S3)"
         echo ""
         echo "Example:"
