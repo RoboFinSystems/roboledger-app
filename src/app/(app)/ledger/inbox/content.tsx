@@ -93,6 +93,7 @@ const SKIP_REASON_LABEL: Record<string, string> = {
   not_open: 'already handled',
   no_suggestion: 'no suggestion to take',
   source_changed: 'changed by the feed since capture',
+  needs_review: 'unusual for this counterparty; open it and choose',
   closed_period: 'in a closed month',
   locked: 'busy, try again',
   refused: 'refused',
