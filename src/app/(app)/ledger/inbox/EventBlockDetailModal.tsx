@@ -101,6 +101,10 @@ type PreviewResult = PreviewEventBlockResponse
 
 /** Bank-feed lines that post from an account choice. An internal transfer
  *  carries both bank legs already and needs no choice. */
+const SEPARATE_WORD_NEEDED =
+  'This line matches an open item. Post it to the suggested account, or ' +
+  'tick the box to say it is a separate transaction.'
+
 const CLASSIFIABLE_EVENT_TYPES = new Set([
   'bank_transaction',
   'bank_fee',
@@ -177,6 +181,9 @@ const EventBlockDetailModal: FC<Props> = function ({
   const [rememberChoice, setRememberChoice] = useState<boolean | null>(null)
   // The open bills or invoices a person picked for this line to settle.
   const [settlement, setSettlement] = useState<DischargeAllocation[]>([])
+  // The reviewer's word that a line matching an open bill or invoice is a
+  // separate transaction; the server refuses another account without it.
+  const [separateTransaction, setSeparateTransaction] = useState(false)
 
   const loadEvent = useCallback(async () => {
     try {
@@ -237,6 +244,7 @@ const EventBlockDetailModal: FC<Props> = function ({
     const prior = stringOf(eventMetadata.classified_element_id)
     setClassifiedElementId(prior || suggestedElementId)
     setRememberChoice(null)
+    setSeparateTransaction(false)
     let cancelled = false
     clients.ledger
       .getAccountTree(graphId, { entityId })
@@ -291,6 +299,22 @@ const EventBlockDetailModal: FC<Props> = function ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphId, event?.id, offersFlow, entityId])
 
+  // An open-item suggestion names the bill or invoice this line pays. Taking
+  // its account settles that item; another account passes it over, unless
+  // the reviewer picked what the line settles themselves.
+  const matchesOpenItem =
+    isClassifiable &&
+    !hasSplit &&
+    suggestionSource === 'open_item' &&
+    !!suggestedElementId &&
+    settlement.length === 0
+  const takesOpenItem =
+    matchesOpenItem && classifiedElementId === suggestedElementId
+  const passesOverOpenItem =
+    matchesOpenItem &&
+    !!classifiedElementId &&
+    classifiedElementId !== suggestedElementId
+
   // The commit teaches the counterparty: with no default yet, the account
   // becomes it unless the reviewer says not to; overriding one moves it only
   // when the reviewer asks. So the box is on by default when there is no
@@ -300,6 +324,7 @@ const EventBlockDetailModal: FC<Props> = function ({
     !hasSplit &&
     !!agent &&
     !!classifiedElementId &&
+    !takesOpenItem &&
     agentDefault?.elementId !== classifiedElementId
   const rememberChecked = rememberChoice ?? agentDefault === null
 
@@ -316,6 +341,8 @@ const EventBlockDetailModal: FC<Props> = function ({
     if (flowQname) patch.classified_flow_qname = flowQname
     else if (priorFlowQname) patch.classified_flow_qname = null
     if (rememberOffered) patch.remember_classification = rememberChecked
+    if (takesOpenItem) patch.accept_suggestion = true
+    if (passesOverOpenItem && separateTransaction) patch.not_a_settlement = true
     return patch
   }, [
     isClassifiable,
@@ -325,7 +352,12 @@ const EventBlockDetailModal: FC<Props> = function ({
     priorFlowQname,
     rememberOffered,
     rememberChecked,
+    takesOpenItem,
+    passesOverOpenItem,
+    separateTransaction,
   ])
+
+  const needsSeparateWord = passesOverOpenItem && !separateTransaction
 
   const needsClassification =
     isClassifiable && !hasSplit && !classifiedElementId
@@ -393,6 +425,10 @@ const EventBlockDetailModal: FC<Props> = function ({
       })
       return
     }
+    if (needsSeparateWord) {
+      setError({ message: SEPARATE_WORD_NEEDED })
+      return
+    }
     setError(null)
     setActionInFlight('approve')
     try {
@@ -416,6 +452,7 @@ const EventBlockDetailModal: FC<Props> = function ({
     onApproved,
     classificationPatch,
     needsClassification,
+    needsSeparateWord,
     settlement,
   ])
 
@@ -423,6 +460,10 @@ const EventBlockDetailModal: FC<Props> = function ({
   // batches the posting later, or a second pair of eyes before commit.
   const handleClassify = useCallback(async () => {
     if (!event || !classificationPatch) return
+    if (needsSeparateWord) {
+      setError({ message: SEPARATE_WORD_NEEDED })
+      return
+    }
     setError(null)
     setActionInFlight('classify')
     try {
@@ -440,7 +481,14 @@ const EventBlockDetailModal: FC<Props> = function ({
     } finally {
       setActionInFlight(null)
     }
-  }, [event, graphId, classificationPatch, loadEvent, onClassified])
+  }, [
+    event,
+    graphId,
+    classificationPatch,
+    needsSeparateWord,
+    loadEvent,
+    onClassified,
+  ])
 
   // A posted line's flow changes in place: the server re-tags its lines,
   // closed month or not, and records the change on the event.
@@ -672,6 +720,7 @@ const EventBlockDetailModal: FC<Props> = function ({
                       onChange={(e) => {
                         setClassifiedElementId(e.target.value)
                         setRememberChoice(null)
+                        setSeparateTransaction(false)
                         setPreview(null)
                       }}
                       disabled={accounts === null || actionInFlight !== null}
@@ -702,6 +751,29 @@ const EventBlockDetailModal: FC<Props> = function ({
                       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         {suggestionBasis}
                       </p>
+                    )}
+                    {passesOverOpenItem && (
+                      <div className="mt-3 flex items-start gap-2">
+                        <Checkbox
+                          id="bank-separate-transaction"
+                          checked={separateTransaction}
+                          onChange={(e) =>
+                            setSeparateTransaction(e.target.checked)
+                          }
+                          disabled={actionInFlight !== null}
+                        />
+                        <Label
+                          htmlFor="bank-separate-transaction"
+                          className="text-sm text-gray-700 dark:text-gray-300"
+                        >
+                          A separate transaction
+                          <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">
+                            Posting to{' '}
+                            {chosenAccount?.name ?? 'another account'} leaves
+                            the matching item open.
+                          </span>
+                        </Label>
+                      </div>
                     )}
                     {rememberOffered && agent && (
                       <div className="mt-3 flex items-start gap-2">

@@ -81,6 +81,7 @@ export const SOURCE_OPTIONS = [
  */
 export const SUGGESTION_OPTIONS = [
   { value: '', label: 'Any suggestion' },
+  { value: 'open_item', label: 'Open item' },
   { value: 'agent_default', label: 'Learned' },
   { value: 'tier0', label: 'Bank category' },
   { value: 'ai', label: 'AI' },
