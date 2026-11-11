@@ -613,6 +613,71 @@ describe('EventBlockDetailModal — learned suggestions', () => {
   })
 })
 
+describe('EventBlockDetailModal — a line that pays an open item', () => {
+  const openItem = {
+    suggested_element_id: 'elem_office',
+    suggested_account_name: 'Office supplies & equipment',
+    suggestion_source: 'open_item',
+    suggestion_basis:
+      "Matches Staples's open bill of $42.50 dated 2026-03-01 (B-7). Taking the suggestion settles it.",
+    suggested_discharges_event_id: 'evt_bill',
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetEventBlock.mockResolvedValue(
+      bankEvent({ agentId: 'agt_staples', metadata: openItem })
+    )
+    mockGetAccountTree.mockResolvedValue(tree)
+    mockGetFlowCandidates.mockResolvedValue(flowRows)
+    mockUpdateEventBlock.mockResolvedValue({})
+    mockGetDischargeCandidates.mockResolvedValue(null)
+  })
+
+  it('taking the suggested account takes the suggestion, which settles the item', async () => {
+    renderModal(vi.fn(), staples(null))
+    const select = await screen.findByLabelText('Post to account')
+    await waitFor(() =>
+      expect((select as HTMLSelectElement).value).toBe('elem_office')
+    )
+    expect(screen.getByText('Open item')).toBeInTheDocument()
+    expect(screen.getByText(/open bill of \$42.50/)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Remember for/)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByText('Approve'))
+
+    await waitFor(() => expect(mockUpdateEventBlock).toHaveBeenCalled())
+    expect(mockUpdateEventBlock.mock.calls[0][1].metadata_patch).toEqual({
+      classified_element_id: 'elem_office',
+      classified_by: 'user',
+      accept_suggestion: true,
+    })
+  })
+
+  it('another account needs the reviewer to say it is a separate transaction', async () => {
+    renderModal(vi.fn(), staples(null))
+    const select = await screen.findByLabelText('Post to account')
+    await waitFor(() =>
+      expect((select as HTMLSelectElement).value).toBe('elem_office')
+    )
+    fireEvent.change(select, { target: { value: 'elem_expenses' } })
+    fireEvent.click(screen.getByText('Approve'))
+
+    expect(
+      await screen.findByText(/This line matches an open item/)
+    ).toBeInTheDocument()
+    expect(mockUpdateEventBlock).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByLabelText(/A separate transaction/))
+    fireEvent.click(screen.getByText('Approve'))
+
+    await waitFor(() => expect(mockUpdateEventBlock).toHaveBeenCalled())
+    expect(mockUpdateEventBlock.mock.calls[0][1].metadata_patch).toMatchObject({
+      classified_element_id: 'elem_expenses',
+      not_a_settlement: true,
+    })
+  })
+})
+
 describe('EventBlockDetailModal — the flow', () => {
   beforeEach(() => {
     vi.clearAllMocks()
