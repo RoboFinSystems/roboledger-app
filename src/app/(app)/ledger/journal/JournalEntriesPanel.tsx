@@ -56,6 +56,8 @@ interface JournalLineItem {
   description: string | null
   /** The cash flow row the line carries; null is the account's default. */
   flowQname: string | null
+  /** The management dimension members the line carries. */
+  dimensionIds: string[]
 }
 
 interface JournalEntryRow {
@@ -226,6 +228,7 @@ export const JournalEntriesPanel: FC<JournalEntriesPanelProps> = function ({
               creditAmount: li.creditAmount,
               description: li.description,
               flowQname: li.flowQname ?? null,
+              dimensionIds: (li.dimensions ?? []).map((d) => d.id),
             })),
           }))
         )

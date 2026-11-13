@@ -620,6 +620,34 @@ describe('NewJournalEntryModal', () => {
       expect(onClose).toHaveBeenCalled()
     })
 
+    it("sends each line's dimension members back when the lines change", async () => {
+      render(
+        <NewJournalEntryModal
+          graphId="kg_test"
+          open
+          draft={{
+            ...DRAFT,
+            lineItems: [
+              { ...DRAFT.lineItems[0], dimensionIds: ['dim_sales', 'dim_nyc'] },
+              { ...DRAFT.lineItems[1], dimensionIds: [] },
+            ],
+          }}
+          onClose={vi.fn()}
+          onCreated={vi.fn()}
+        />
+      )
+      await waitFor(() => expect(mockListAccounts).toHaveBeenCalled())
+      fillLine(0, 'acct_ar', 'debit', '1600')
+      fillLine(1, 'acct_rev', 'credit', '1600')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+      await waitFor(() => expect(mockUpdateJournalEntry).toHaveBeenCalled())
+      const [, body] = mockUpdateJournalEntry.mock.calls[0]
+      expect(body.line_items[0].dimension_ids).toEqual(['dim_sales', 'dim_nyc'])
+      expect(body.line_items[1].dimension_ids).toBeUndefined()
+    })
+
     it('shows a refusal in plain words and keeps the form open', async () => {
       mockUpdateJournalEntry.mockRejectedValue(
         new Error(
