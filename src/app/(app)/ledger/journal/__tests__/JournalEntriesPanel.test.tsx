@@ -60,7 +60,16 @@ vi.mock('@robosystems/core/ui', () => ({
 // The modals have their own tests; here only which one a verb opens.
 vi.mock('../NewJournalEntryModal', () => ({
   NewJournalEntryModal: ({ open, draft }: any) =>
-    open ? <div>Editing {draft?.id}</div> : null,
+    open ? (
+      <div
+        data-testid="editing-draft"
+        data-dimensions={JSON.stringify(
+          draft?.lineItems.map((li: any) => li.dimensionIds)
+        )}
+      >
+        Editing {draft?.id}
+      </div>
+    ) : null,
 }))
 vi.mock('../DeleteDraftModal', () => ({
   DeleteDraftModal: ({ draft }: any) =>
@@ -308,6 +317,27 @@ describe('JournalEntriesPanel', () => {
       expect(
         screen.queryByRole('button', { name: /^Reverse/ })
       ).not.toBeInTheDocument()
+    })
+
+    it("hands the editor each line's dimension members", async () => {
+      showOnly({
+        ...MANUAL_DRAFT,
+        lineItems: [
+          {
+            ...STANDALONE_ENTRY.lineItems[0],
+            dimensions: [
+              { id: 'dim_sales', dimensionType: 'department', name: 'Sales' },
+            ],
+          },
+          { ...STANDALONE_ENTRY.lineItems[0], id: 'li_2', dimensions: [] },
+        ],
+      })
+      renderPanel()
+      fireEvent.click(await screen.findByRole('button', { name: /^Edit/ }))
+      expect(screen.getByTestId('editing-draft')).toHaveAttribute(
+        'data-dimensions',
+        JSON.stringify([['dim_sales'], []])
+      )
     })
 
     it('does not toggle the lines when a verb is clicked', async () => {

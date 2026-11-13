@@ -38,6 +38,8 @@ interface LineItemDraft {
   description: string
   /** The cash flow row this line is tagged with; '' is the account's default. */
   flowQname: string
+  /** The management dimension members the line carries; the form does not edit them. */
+  dimensionIds: string[]
 }
 
 type EntryType = 'standard' | 'adjusting' | 'closing' | 'reversing'
@@ -55,6 +57,7 @@ export interface EditableDraft {
     creditAmount: number
     description: string | null
     flowQname?: string | null
+    dimensionIds?: string[]
   }[]
 }
 
@@ -82,6 +85,7 @@ const newLine = (
   credit: '',
   description: '',
   flowQname: '',
+  dimensionIds: [],
   ...fields,
 })
 
@@ -274,6 +278,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
           credit: toInput(li.creditAmount),
           description: li.description ?? '',
           flowQname: li.flowQname ?? '',
+          dimensionIds: li.dimensionIds ?? [],
         })
       )
       while (lines.length < 2) lines.push(newLine())
@@ -348,6 +353,7 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
           credit: parseMoney(l.credit),
           description: l.description,
           flowQname: l.flowQname,
+          dimensionIds: l.dimensionIds,
         }))
         const original = draft.lineItems.map((li) => ({
           elementId: li.accountId,
@@ -369,6 +375,8 @@ export const NewJournalEntryModal: FC<NewJournalEntryModalProps> = ({
               credit_amount: l.credit,
               description: l.description.trim() || null,
               flow_qname: l.flowQname || null,
+              // The whole set is replaced, so a line's members go back with it.
+              dimension_ids: l.dimensionIds.length ? l.dimensionIds : undefined,
             })),
           }),
         })
