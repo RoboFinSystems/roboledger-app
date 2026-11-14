@@ -190,7 +190,7 @@ describe('ConnectionCard', () => {
         onSync={() => {}}
         onDelete={() => {}}
         graphId="kg_test"
-        parentName="Harbor Holdings"
+        keptEntity={{ entityId: null, name: 'Harbor Holdings' }}
       />
     )
     expect(

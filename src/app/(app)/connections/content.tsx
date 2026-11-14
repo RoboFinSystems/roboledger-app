@@ -105,6 +105,18 @@ const AUTH_TYPE_LABELS: Record<string, string> = {
   none: 'No Auth',
 }
 
+/** The entity whose books a connection keeps: the one it names, else the parent. */
+function keptEntityOf(
+  connection: ConnectionData,
+  entities: { id: string; name: string; isParent?: boolean | null }[]
+): FeedEntity | null {
+  const kept =
+    entities.find((e) => e.id === connection.entity_id) ??
+    entities.find((e) => e.isParent)
+  if (!kept) return null
+  return { entityId: kept.isParent ? null : kept.id, name: kept.name }
+}
+
 export default function ModernConnectionsContent() {
   const [connections, setConnections] = useState<ConnectionData[]>([])
   const [loading, setLoading] = useState(true)
@@ -634,7 +646,7 @@ export default function ModernConnectionsContent() {
               feedEntities={
                 feedEntitiesByConnection.get(connection.connection_id) ?? []
               }
-              parentName={entities.find((e) => e.isParent)?.name ?? null}
+              keptEntity={keptEntityOf(connection, entities)}
               onContinueOAuth={() => handleContinueOAuth(connection)}
             />
           ))}

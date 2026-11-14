@@ -19,21 +19,49 @@ export type QuickBooksMode = 'none' | 'synced' | 'writeback'
 
 const WRITEBACK_POLICIES = new Set(['qb_authoritative', 'hybrid'])
 
+export interface LedgerConnection {
+  provider?: string | null
+  write_policy?: string | null
+  /** The entity whose books the connection keeps; absent means the parent. */
+  entity_id?: string | null
+  /** False once the API says another connection keeps the books instead. */
+  keeps_books?: boolean | null
+}
+
+/** The entity a page is about: `entityId` is null for the group parent. */
+export interface LedgerScope {
+  entityId: string | null
+  /** The group parent's id; null until the entity list has loaded. */
+  parentId: string | null
+}
+
+const keepsTheBooksOf = (c: LedgerConnection, scope: LedgerScope): boolean => {
+  if (c.provider?.toLowerCase() !== 'quickbooks' || c.keeps_books === false)
+    return false
+  const kept = c.entity_id ?? scope.parentId
+  // Until the parent's id is known, a page on the parent takes any
+  // QuickBooks connection as its own, which is what it always was.
+  if (scope.entityId === null)
+    return scope.parentId === null || kept === scope.parentId
+  return kept === scope.entityId
+}
+
 /**
- * The mode the graph's connections put the ledger in. Any listed QuickBooks
- * connection counts, whatever its sync status: a disconnect soft-deletes it
+ * The mode QuickBooks puts one entity's ledger in: decided by the connection
+ * that keeps that entity's books, never by another entity's. A subsidiary on
+ * its own books is `none` beside a parent QuickBooks keeps. A listed
+ * connection counts whatever its sync status: a disconnect soft-deletes it
  * out of the list, while one in error or awaiting re-auth is still the books
- * of record. The API's own provider check reads connections the same way.
+ * of record. The API reads it the same way.
  */
 export const quickBooksMode = (
-  connections: { provider?: string | null; write_policy?: string | null }[]
+  connections: LedgerConnection[],
+  scope: LedgerScope = { entityId: null, parentId: null }
 ): QuickBooksMode => {
-  const quickBooks = connections.filter(
-    (c) => c.provider?.toLowerCase() === 'quickbooks'
-  )
-  if (quickBooks.some((c) => WRITEBACK_POLICIES.has(c.write_policy ?? '')))
+  const keepers = connections.filter((c) => keepsTheBooksOf(c, scope))
+  if (keepers.some((c) => WRITEBACK_POLICIES.has(c.write_policy ?? '')))
     return 'writeback'
-  return quickBooks.length > 0 ? 'synced' : 'none'
+  return keepers.length > 0 ? 'synced' : 'none'
 }
 
 export interface ActionContext {
