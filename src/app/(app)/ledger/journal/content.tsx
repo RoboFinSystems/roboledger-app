@@ -114,7 +114,8 @@ export const initialViewFromSearch = (search: string): JournalView =>
 const JournalContent: FC = function () {
   const { state: graphState } = useGraphContext()
   const ledgerGraphId = useLedgerGraph().graph?.graphId ?? null
-  const { entityId } = useEntityScope()
+  const { entityId, parent } = useEntityScope()
+  const parentId = parent?.id ?? null
   const [transactions, setTransactions] = useState<TransactionRow[]>([])
   const [totalCount, setTotalCount] = useState<number | null>(null)
   const [lineItemsMap, setLineItemsMap] = useState<
@@ -157,7 +158,7 @@ const JournalContent: FC = function () {
   useEffect(() => {
     setQuickBooks(null)
     setVerbContextFailed(false)
-  }, [ledgerGraphId])
+  }, [ledgerGraphId, entityId, parentId])
   useEffect(() => {
     setClosedThrough(null)
     setCalendarLoaded(false)
@@ -172,7 +173,10 @@ const JournalContent: FC = function () {
         )
         if (cancelled) return
         setQuickBooks(
-          quickBooksMode(Array.isArray(connections) ? connections : [])
+          quickBooksMode(Array.isArray(connections) ? connections : [], {
+            entityId,
+            parentId,
+          })
         )
       } catch (err) {
         console.error('Error loading connections for the journal:', err)
@@ -196,7 +200,7 @@ const JournalContent: FC = function () {
     return () => {
       cancelled = true
     }
-  }, [ledgerGraphId, entityId, refreshKey])
+  }, [ledgerGraphId, entityId, parentId, refreshKey])
 
   // Load transactions from all roboledger graphs
   useEffect(() => {

@@ -58,6 +58,8 @@ export interface ConnectionData {
   connection_id: string
   provider: string
   entity_id?: string | null
+  /** Whether this connection is `entity_id`'s ledger of record. */
+  keeps_books?: boolean | null
   status: string
   created_at: string
   updated_at?: string | null
@@ -111,8 +113,11 @@ interface ConnectionCardProps {
    * themselves: each moves to its own entity. Empty before the first sync.
    */
   feedEntities?: FeedEntity[]
-  /** The group parent's name, whose books QuickBooks keeps. */
-  parentName?: string | null
+  /**
+   * The entity whose books a QuickBooks connection keeps; `entityId` is null
+   * for the group parent.
+   */
+  keptEntity?: FeedEntity | null
   /**
    * Resume an OAuth sign-in the user never finished: re-initialize the
    * flow for this connection and send them to the provider. Rendered in
@@ -168,7 +173,7 @@ export default function ConnectionCard({
   onSetWritePolicy,
   graphId,
   feedEntities = [],
-  parentName = null,
+  keptEntity = null,
   onContinueOAuth,
 }: ConnectionCardProps) {
   // Optimistic write-policy value: reflects the user's pick immediately
@@ -191,11 +196,11 @@ export default function ConnectionCard({
   // consent): the row keeps its history and resumes from a new sign-in.
   const needsReauth = connection.status === 'needs_reauth'
 
-  // Whose calendars the card reports: QuickBooks keeps the parent's books, a
+  // Whose calendars the card reports: QuickBooks keeps one entity's books, a
   // bank feed books to the entities its accounts are in.
   const calendarEntities: FeedEntity[] =
     provider === 'quickbooks'
-      ? [{ entityId: null, name: parentName ?? 'the company' }]
+      ? [keptEntity ?? { entityId: null, name: 'the company' }]
       : feedEntities
   const subtitle =
     provider === 'plaid' && connection.metadata?.institution_name

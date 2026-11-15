@@ -51,6 +51,7 @@ import QuickBooksSetupForm from './components/QuickBooksSetupForm'
 import SyncOptionsModal, {
   type SyncOptions,
 } from './components/SyncOptionsModal'
+import { keptEntityOf } from './keptEntity'
 
 // How long to keep polling for a sync to complete before giving up.
 // 5 minutes covers full_rebuild on realistic QB realms; smaller incremental
@@ -130,7 +131,7 @@ export default function ModernConnectionsContent() {
   const [setupProvider, setSetupProvider] = useState<string | null>(null)
   const { showError, showSuccess, ToastContainer } = useToast()
   const currentGraphId = useLedgerGraph().graph?.graphId ?? null
-  const { entities } = useEntityScope()
+  const { entities, parent } = useEntityScope()
   // The feed accounts across the group: each books to the entity whose chart
   // holds it, so one connection can feed several entities.
   const [feedAccounts, setFeedAccounts] = useState<LedgerBankAccount[]>([])
@@ -634,7 +635,7 @@ export default function ModernConnectionsContent() {
               feedEntities={
                 feedEntitiesByConnection.get(connection.connection_id) ?? []
               }
-              parentName={entities.find((e) => e.isParent)?.name ?? null}
+              keptEntity={keptEntityOf(connection, entities, parent)}
               onContinueOAuth={() => handleContinueOAuth(connection)}
             />
           ))}
