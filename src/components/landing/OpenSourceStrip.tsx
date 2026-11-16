@@ -88,14 +88,14 @@ export default function OpenSourceStrip() {
           </a>
           <span className="hidden text-gray-700 sm:inline">·</span>
           <span className="text-gray-500">
-            Need help implementing it, hosted or on your own stack?{' '}
+            Want it working on your own books?{' '}
             <a
               href={HARBINGER_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary-400 hover:text-primary-300 font-medium"
             >
-              Harbinger FinLab →
+              The Finance AI Pilot, by Harbinger FinLab.
             </a>
           </span>
         </div>

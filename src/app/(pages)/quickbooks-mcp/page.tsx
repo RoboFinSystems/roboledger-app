@@ -1,5 +1,5 @@
 import FinalCTA from '@/components/landing/FinalCTA'
-import { REGISTER_PATH } from '@/components/landing/constants'
+import { BOOK_PATH, REGISTER_PATH } from '@/components/landing/constants'
 import {
   getProductPage,
   productPageJsonLd,
@@ -115,11 +115,18 @@ export default function QuickBooksMcpPage() {
             </p>
             <Code wrap>{MCP_URL}</Code>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <Link
-                href={REGISTER_PATH}
+              {/* A plain <a>: /book redirects to the scheduler on another site. */}
+              <a
+                href={BOOK_PATH}
                 className="from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 rounded-lg bg-linear-to-r px-6 py-3 text-center font-medium text-white shadow-lg transition-all"
               >
-                Get Started
+                Book 20 minutes
+              </a>
+              <Link
+                href={REGISTER_PATH}
+                className="rounded-lg border border-gray-600 px-6 py-3 text-center font-medium text-white transition-all hover:border-gray-500 hover:bg-white/5"
+              >
+                Create an account
               </Link>
               <Link
                 href={page.docsPath}

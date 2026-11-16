@@ -2,19 +2,18 @@
 
 import { PRODUCT_PAGES } from '@/lib/product-pages'
 import { LandingFooter } from '@robosystems/core'
-import { HARBINGER_URL } from './constants'
 import ContactModal from './ContactModal'
 
 export default function Footer() {
   return (
     <LandingFooter
-      tagline="Open-source, AI-native accounting for a company or a whole group, on the RoboSystems knowledge graph: from business events to consolidated, XBRL-ready statements."
+      tagline="The general ledger built on RoboSystems, the open-source knowledge graph for finance."
       productLinks={[
         { label: 'How it works', href: '/#how-it-works' },
         { label: 'Consolidation', href: '/#groups' },
         { label: 'Features', href: '/#features' },
         { label: 'Platform', href: '/#platform' },
-        { label: 'Implementation', href: HARBINGER_URL },
+        { label: 'The Finance AI Pilot', href: '/#harbinger' },
         { label: 'FAQ', href: '/#faq' },
         { label: 'Docs', href: '/docs' },
         ...PRODUCT_PAGES.map((page) => ({

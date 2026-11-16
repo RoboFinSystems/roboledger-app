@@ -56,6 +56,19 @@ const RETIRED = [
   'trains them',
 ]
 
+// Retired from what a visitor reads, but fair to name in a comment that explains the
+// change, so comments are stripped before these are matched. "AI-native" leads nowhere
+// in search (vault: gtm/content/positioning.md §2) and left the footer tagline 2026-11-16.
+const RETIRED_IN_COPY = ['ai-native']
+
+// Drops block comments (JSX `{/* */}` included) and `//` line comments, leaving the
+// `//` inside a URL such as https:// alone.
+function withoutComments(source: string): string {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1')
+}
+
 const landingDir = path.resolve(__dirname, '..')
 const demosDir = path.resolve(__dirname, '../../../../public/demos')
 const files = [
@@ -96,5 +109,22 @@ describe('landing copy', () => {
       readFileSync(f, 'utf8').toLowerCase().includes(phrase)
     )
     expect(offenders.map((f) => path.relative(landingDir, f))).toEqual([])
+  })
+
+  it.each(RETIRED_IN_COPY)('no longer says "%s" in page copy', (phrase) => {
+    const offenders = files.filter((f) =>
+      withoutComments(readFileSync(f, 'utf8')).toLowerCase().includes(phrase)
+    )
+    expect(offenders.map((f) => path.relative(landingDir, f))).toEqual([])
+  })
+
+  it('reads comments out before matching page copy', () => {
+    const source = [
+      '// AI-native was the old word',
+      '/* AI-native too */',
+      "const url = 'https://roboledger.ai'",
+    ].join('\n')
+    expect(withoutComments(source).toLowerCase()).not.toContain('ai-native')
+    expect(withoutComments(source)).toContain('https://roboledger.ai')
   })
 })
