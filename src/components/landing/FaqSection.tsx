@@ -10,7 +10,7 @@ import {
 // connects; the assistant drafts the consolidating entries and a person posts them; what
 // isn't built (other currencies, nested groups, revenue recognition) is said plainly. The
 // price is the lowest managed plan on robosystems.ai/pricing, per graph, and a group shares
-// one graph. Harbinger FinLab appears only as the Finance AI Pilot; it never keeps books.
+// one graph. Harbinger FinLab appears only as the Finance AI Deployment; it never keeps books.
 const faqs: { q: string; a: ReactNode }[] = [
   {
     q: 'Can it consolidate a group of companies?',
@@ -167,9 +167,9 @@ const faqs: { q: string; a: ReactNode }[] = [
         >
           Harbinger FinLab
         </a>
-        &apos;s Finance AI Pilot sets it up in your cloud in two to three weeks,
-        at a fixed fee. Nobody from Harbinger keeps your books or posts an
-        entry.
+        &apos;s Finance AI Deployment sets it up in your cloud in two to three
+        weeks, at a fixed fee. Nobody from Harbinger keeps your books or posts
+        an entry.
       </>
     ),
   },

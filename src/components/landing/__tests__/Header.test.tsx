@@ -81,11 +81,11 @@ describe('Header', () => {
     }
   })
 
-  it('links the pilot from the nav', () => {
+  it('links the deployment from the nav', () => {
     mockUseOptionalAuth.mockReturnValue(signedOut)
     render(<Header />)
 
-    expect(hrefsOf('The pilot')).toEqual(['/#harbinger'])
+    expect(hrefsOf('The deployment')).toEqual(['/#harbinger'])
   })
 
   it('sends Login and Register in the server HTML even for a signed-in session', () => {

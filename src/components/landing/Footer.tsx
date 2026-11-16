@@ -13,7 +13,7 @@ export default function Footer() {
         { label: 'Consolidation', href: '/#groups' },
         { label: 'Features', href: '/#features' },
         { label: 'Platform', href: '/#platform' },
-        { label: 'The Finance AI Pilot', href: '/#harbinger' },
+        { label: 'The Finance AI Deployment', href: '/#harbinger' },
         { label: 'FAQ', href: '/#faq' },
         { label: 'Docs', href: '/docs' },
         ...PRODUCT_PAGES.map((page) => ({

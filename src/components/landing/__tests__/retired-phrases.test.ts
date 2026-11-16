@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest'
 // files are scanned too.
 // Then Harbinger FinLab's old offers. First a team that ran the customer's close; then
 // implementation and training, with a referral to a practice that would keep the books.
-// Since 2026-11-16 FinLab sells one thing on this page, the Finance AI Pilot, and never
+// Since 2026-11-16 FinLab sells one thing on this page, the Finance AI Deployment, and never
 // holds the pen: setup is a screenshare the customer controls (its MSA, 2.2 and 4.1), and
 // the product cannot add one person to many customers' orgs.
 // The inbox has no autopilot a visitor could switch on (the only autopilot is a per-graph
@@ -59,7 +59,9 @@ const RETIRED = [
 // Retired from what a visitor reads, but fair to name in a comment that explains the
 // change, so comments are stripped before these are matched. "AI-native" leads nowhere
 // in search (vault: gtm/content/positioning.md §2) and left the footer tagline 2026-11-16.
-const RETIRED_IN_COPY = ['ai-native']
+// The offer was renamed the same day from "Pilot", which read as both a proof of concept
+// and a copilot, to the Finance AI Deployment.
+const RETIRED_IN_COPY = ['ai-native', 'finance ai pilot']
 
 // Drops block comments (JSX `{/* */}` included) and `//` line comments, leaving the
 // `//` inside a URL such as https:// alone.

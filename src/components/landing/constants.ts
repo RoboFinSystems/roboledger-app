@@ -2,8 +2,8 @@
  * Landing-page constants.
  *
  * Single source of truth for the marketing cross-links used across the splash
- * sections, header, and footer. Harbinger FinLab runs the Finance AI Pilot:
- * RoboSystems in the customer's cloud, on their books, with three agent
+ * sections, header, and footer. Harbinger FinLab runs the Finance AI Deployment:
+ * RoboSystems on the deployment the customer chooses, on their books, with three agent
  * workflows, at a fixed fee. It never signs in to or posts on a customer's
  * books. It is deliberately NOT a RoboSystems "app" (it isn't in core's
  * APP_CONFIGS), so its URL lives here rather than in the shared footer's

@@ -2,9 +2,11 @@ import { BOOK_PATH, HARBINGER_URL } from './constants'
 import FindATime from './FindATime'
 import FloatingElementsVariant from './FloatingElementsVariant'
 
-// Harbinger FinLab runs the Finance AI Pilot: RoboSystems in the customer's cloud, on their
-// books, with three agent workflows, in two to three weeks, at a fixed fee. The customer's
-// team deploys it with Joey on a screenshare they control, and the workflows run on API
+// Harbinger FinLab runs the Finance AI Deployment (renamed from "Pilot" on 2026-11-16, which
+// read as both a proof of concept and a copilot): RoboSystems on the deployment the customer
+// chooses (the managed platform, a dedicated AWS account Harbinger runs, or their own
+// cloud), on their books, with three agent workflows, in two to three weeks, at a fixed fee.
+// The customer's team deploys it with Joey on a screenshare they control, and the workflows run on API
 // keys they issue and can revoke; nobody from Harbinger signs in to or posts on their
 // books (its MSA, 2.2 and 4.1). The wording follows the locked lines in the vault's
 // gtm/content/positioning.md. The old offers (implementation and training, referrals to a
@@ -45,19 +47,21 @@ export default function HarbingerSection() {
           <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
             <div>
               <div className="bg-secondary-500/15 text-secondary-300 mb-4 inline-block rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase">
-                The Finance AI Pilot
+                The Finance AI Deployment
               </div>
               <h2 className="font-heading mb-4 text-3xl font-bold text-white sm:text-4xl">
                 Finance AI that ties to your books, in two to three weeks
               </h2>
               <p className="mb-6 text-base leading-relaxed text-gray-300">
                 <strong className="text-white">Harbinger FinLab</strong> runs
-                the Finance AI Pilot: RoboSystems in your cloud, on your books,
-                with three working agent workflows, in two to three weeks, at a
-                fixed fee. It&apos;s for the person who owns the numbers (a CFO,
-                controller, or a fractional CFO or CPA firm for a client) and
-                the person who wires AI to them. Built by a CPA and former
-                Workiva XBRL engineer.
+                the Finance AI Deployment: RoboSystems on the deployment you
+                choose (our managed platform, a dedicated AWS account we run, or
+                your own cloud), on your books, with three working agent
+                workflows, in two to three weeks, at a fixed fee. It&apos;s for
+                the person who owns the numbers (a CFO, controller, or a
+                fractional CFO or CPA firm for a client) and the person who
+                wires AI to them. Built by a CPA and former Workiva XBRL
+                engineer.
               </p>
               {/* A plain <a>: /book redirects to the scheduler on another site. */}
               <a

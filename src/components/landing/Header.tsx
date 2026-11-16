@@ -19,7 +19,7 @@ import {
 const NAV_LINKS = [
   { href: '/#how-it-works', label: 'How it works' },
   { href: '/#agent-surface', label: 'Agent tools' },
-  { href: '/#harbinger', label: 'The pilot' },
+  { href: '/#harbinger', label: 'The deployment' },
   { href: '/docs', label: 'Docs' },
   { href: '/blog', label: 'Blog' },
 ]

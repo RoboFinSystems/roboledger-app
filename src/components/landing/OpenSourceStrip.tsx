@@ -95,7 +95,7 @@ export default function OpenSourceStrip() {
               rel="noopener noreferrer"
               className="text-primary-400 hover:text-primary-300 font-medium"
             >
-              The Finance AI Pilot, by Harbinger FinLab.
+              The Finance AI Deployment, by Harbinger FinLab.
             </a>
           </span>
         </div>
