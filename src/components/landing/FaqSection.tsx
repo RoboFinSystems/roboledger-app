@@ -167,9 +167,9 @@ const faqs: { q: string; a: ReactNode }[] = [
         >
           Harbinger FinLab
         </a>
-        &apos;s Finance AI Deployment sets it up in your cloud in two to three
-        weeks, at a fixed fee. Nobody from Harbinger keeps your books or posts
-        an entry.
+        &apos;s Finance AI Deployment sets it up on the deployment you choose in
+        two to three weeks, at a fixed fee. Nobody from Harbinger keeps your
+        books or posts an entry.
       </>
     ),
   },

@@ -17,7 +17,7 @@ const points = [
     body: 'Variance explanation, a close checklist, and your numbers beside public companies you choose, in your MCP client, every number traced to its entry.',
   },
   {
-    title: 'Your cloud, your keys',
+    title: 'Your deployment, your keys',
     body: 'Your team deploys it with Joey on a screenshare you control. The workflows are built through API keys you issue and can revoke.',
   },
   {
