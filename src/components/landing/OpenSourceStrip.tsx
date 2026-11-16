@@ -3,7 +3,7 @@ import { GITHUB_URL, HARBINGER_URL } from './constants'
 const points = [
   {
     title: 'Open source',
-    body: 'Apache-2.0. Inspect every line — see exactly how each number is produced.',
+    body: 'Apache 2.0 and MIT. Inspect every line and see exactly how each number is produced.',
     icon: (
       <path
         strokeLinecap="round"

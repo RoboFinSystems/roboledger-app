@@ -10,10 +10,11 @@ export default function PlatformSection() {
             Powered by RoboSystems
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Your numbers live in a financial knowledge graph: a unified
-            three-block model of taxonomy, events, and information. Every figure
-            is traceable to its source, queryable in plain English, and
-            validated before it's filed, for one company or a whole group.
+            Your numbers live in a knowledge graph with an accounting ontology
+            underneath: XBRL concepts and the rs-gaap taxonomy. Every figure
+            opens to the entry behind it, your AI queries it in plain English,
+            and the rule engine checks it before a period closes, for one
+            company or a whole group.
           </p>
         </div>
 
@@ -273,8 +274,8 @@ export default function PlatformSection() {
               Automated Sync
             </h3>
             <p className="text-sm text-gray-400">
-              Keep connected sources in step with your ledger — sync on demand
-              or on a schedule
+              Keep connected sources in step with your ledger: sync on demand or
+              on a schedule
             </p>
           </div>
 

@@ -9,6 +9,11 @@
 // inside Docker uses `next start` with NEXT_PUBLIC_* baked at build time, so
 // the env override below wouldn't take effect there. Follow the Connecting
 // QuickBooks Locally technical doc for the host-run setup.
+// The Zoom scheduler, kept here so the raw URL never renders. Same value as
+// harbinger-finlab-app's SCHEDULING_URL; change both together.
+const SCHEDULING_URL =
+  'https://scheduler.zoom.us/joey-french-r2dv61/intro-meeting'
+
 const tunnelDomain = process.env.PUBLIC_TUNNEL_DOMAIN?.replace(
   /^https?:\/\//,
   ''
@@ -68,9 +73,16 @@ const nextConfig = {
   },
   allowedDevOrigins,
   // The Block Explorer shipped at /analytics before it was renamed; keep
-  // old links working.
+  // old links working. /book (and its aliases) forward to the scheduler.
   async redirects() {
-    return [{ source: '/analytics', destination: '/explorer', permanent: true }]
+    return [
+      { source: '/analytics', destination: '/explorer', permanent: true },
+      ...['/book', '/meet', '/schedule'].map((source) => ({
+        source,
+        destination: SCHEDULING_URL,
+        permanent: false,
+      })),
+    ]
   },
   async rewrites() {
     if (!tunnelDomain) return []

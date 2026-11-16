@@ -6,7 +6,7 @@ const stats = [
   {
     stat: 'Nothing writes back',
     label:
-      'Nothing reaches QuickBooks until you post an entry. Read, analyze and plan first.',
+      'Nothing reaches QuickBooks until you post an entry. Read, analyze and plan without changing a thing.',
   },
   {
     stat: 'Consolidated, not combined',

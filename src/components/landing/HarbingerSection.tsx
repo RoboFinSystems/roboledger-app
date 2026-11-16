@@ -1,33 +1,34 @@
-import { HARBINGER_URL } from './constants'
+import { BOOK_PATH, HARBINGER_URL } from './constants'
+import FindATime from './FindATime'
 import FloatingElementsVariant from './FloatingElementsVariant'
 
-// Harbinger FinLab implements RoboLedger and trains the people who will operate it, human
-// in the loop from the AI chat they already use. Setup is a screenshare with them at the
-// keyboard; it never signs in to or runs a customer's books (its MSA, 2.2 and 4.1).
-// The doors and their wording follow harbinger.finance, which carries the argument
-// (vault: specs/distribution/harbinger-enablement-positioning.md).
-// The old managed-service wording is listed in __tests__/retired-phrases.test.ts, which
-// fails if it comes back.
+// Harbinger FinLab runs the Finance AI Pilot: RoboSystems in the customer's cloud, on their
+// books, with three agent workflows, in two to three weeks, at a fixed fee. The customer's
+// team deploys it with Joey on a screenshare they control, and the workflows run on API
+// keys they issue and can revoke; nobody from Harbinger signs in to or posts on their
+// books (its MSA, 2.2 and 4.1). The wording follows the locked lines in the vault's
+// gtm/content/positioning.md. The old offers (implementation and training, referrals to a
+// practice) are listed in __tests__/retired-phrases.test.ts, which fails if they come back.
 const points = [
   {
-    title: 'Practices: fractional CFOs, bookkeepers & firms',
-    body: 'Run RoboLedger across your whole client book. We walk you through the first client on a screenshare and train your staff; your clients stay yours.',
+    title: 'Three working workflows',
+    body: 'Variance explanation, a close checklist, and your numbers beside public companies you choose, in your MCP client, every number traced to its entry.',
   },
   {
-    title: 'Finance teams',
-    body: 'Your people set up RoboLedger with us on a screenshare, then we train them to run it. No controller yet? We’ll point you to a practice that runs RoboLedger.',
-  },
-  {
-    title: 'Investors',
-    body: 'Each company keeps its own books on RoboLedger, run by its own accountant, and its filed reports land in your graph as data, not PDFs. The investor side is early, and we say so.',
-  },
-  {
-    title: 'We close our own books on it',
-    body: 'Harbinger runs its own month-end close on RoboLedger, and so does RoboSystems. We train the workflow because we work in it every month.',
+    title: 'Your cloud, your keys',
+    body: 'Your team deploys it with Joey on a screenshare you control. The workflows are built through API keys you issue and can revoke.',
   },
   {
     title: 'Never the pen',
-    body: 'Nobody from Harbinger posts, approves or closes a period on your books, or signs in to them. Sign-off is yours, by name.',
+    body: 'Nobody from Harbinger posts, approves or closes a period on your books, or signs in to them. The AI drafts. Your people approve.',
+  },
+  {
+    title: 'Our own books run on it',
+    body: "Our own companies' books are kept on it, closed through September.",
+  },
+  {
+    title: 'You keep everything we build',
+    body: 'Open source (Apache 2.0 and MIT). You keep the code and the data whatever happens to any vendor, including us.',
   },
 ]
 
@@ -44,26 +45,26 @@ export default function HarbingerSection() {
           <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
             <div>
               <div className="bg-secondary-500/15 text-secondary-300 mb-4 inline-block rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase">
-                Implementation & training
+                The Finance AI Pilot
               </div>
               <h2 className="font-heading mb-4 text-3xl font-bold text-white sm:text-4xl">
-                Your people run it. Harbinger trains them.
+                Finance AI that ties to your books, in two to three weeks
               </h2>
               <p className="mb-6 text-base leading-relaxed text-gray-300">
-                <strong className="text-white">Harbinger FinLab</strong>{' '}
-                implements RoboLedger and trains the people who’ll work in it
-                every day: your own accountant, or the fractional CFO or
-                bookkeeper you work with, and their staff. They work from the AI
-                chat they already use. AI drafts, they approve, and they do
-                every step. It starts with a live demo, at no cost.
+                <strong className="text-white">Harbinger FinLab</strong> runs
+                the Finance AI Pilot: RoboSystems in your cloud, on your books,
+                with three working agent workflows, in two to three weeks, at a
+                fixed fee. It&apos;s for the person who owns the numbers (a CFO,
+                controller, or a fractional CFO or CPA firm for a client) and
+                the person who wires AI to them. Built by a CPA and former
+                Workiva XBRL engineer.
               </p>
+              {/* A plain <a>: /book redirects to the scheduler on another site. */}
               <a
-                href={HARBINGER_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={BOOK_PATH}
                 className="from-secondary-500 to-primary-500 shadow-secondary-500/25 hover:shadow-secondary-500/40 inline-flex items-center gap-2 rounded-lg bg-linear-to-r px-6 py-3 text-base font-medium text-white shadow-xl transition-all duration-300"
               >
-                Meet Harbinger FinLab
+                Book 20 minutes
                 <svg
                   className="h-4 w-4"
                   fill="none"
@@ -77,6 +78,15 @@ export default function HarbingerSection() {
                     d="M17 8l4 4m0 0l-4 4m4-4H3"
                   />
                 </svg>
+              </a>
+              <FindATime className="mt-3" />
+              <a
+                href={HARBINGER_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-400 hover:text-primary-300 mt-4 inline-block text-sm font-medium"
+              >
+                About Harbinger FinLab
               </a>
             </div>
 

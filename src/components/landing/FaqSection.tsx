@@ -8,8 +8,9 @@ import {
 
 // Every answer holds to gtm/plan.md §5: only the group parent's QuickBooks company
 // connects; the assistant drafts the consolidating entries and a person posts them; what
-// isn't built (other currencies, nested groups) is said plainly. The price is the
-// Standard plan on robosystems.ai/pricing, per graph, and a group shares one graph.
+// isn't built (other currencies, nested groups, revenue recognition) is said plainly. The
+// price is the lowest managed plan on robosystems.ai/pricing, per graph, and a group shares
+// one graph. Harbinger FinLab appears only as the Finance AI Pilot; it never keeps books.
 const faqs: { q: string; a: ReactNode }[] = [
   {
     q: 'Can it consolidate a group of companies?',
@@ -57,9 +58,11 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: 'Where does my financial data live?',
     a: (
       <>
-        In your own knowledge graph on the RoboSystems platform. RoboLedger is
-        open source, so you can inspect exactly how every number is produced,
-        and you can fork it and take it in-house whenever you want.
+        In your own isolated graph on our managed platform, or on your
+        infrastructure: RoboSystems is open source (Apache 2.0 and MIT), so you
+        can run it in your cloud or on your own server. You keep the code and
+        the data whatever happens to any vendor, including us. Your data trains
+        no one&apos;s model.
       </>
     ),
   },
@@ -124,17 +127,7 @@ const faqs: { q: string; a: ReactNode }[] = [
         companies keeps them together in one), and you switch between them from
         one account. In your AI chat, add the RoboLedger connector once per
         graph and ask across all of them. It&apos;s built for fractional CFOs,
-        controllers, and firms who look after more than one company.{' '}
-        <a
-          href={HARBINGER_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary-400 hover:text-primary-300 font-medium"
-        >
-          Harbinger FinLab
-        </a>{' '}
-        walks you through your first client on a screenshare and trains your
-        staff, so the second client is a playbook, not a project.
+        controllers, and firms who look after more than one company.
       </>
     ),
   },
@@ -142,12 +135,11 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: 'How do I get started, and what does it cost?',
     a: (
       <>
-        $99 a month per graph on the RoboSystems Standard plan, and a
-        group&apos;s companies share one graph. Comparing against public
-        companies adds the SEC subscription. Create an account, provision a
-        graph with RoboLedger enabled, connect your books and ask your AI the
-        first question. It&apos;s open source with no outside investors, so
-        nobody can reprice it or shut it down on you.{' '}
+        From $99 a month per graph on our managed platform, and a group&apos;s
+        companies share one graph. Comparing against public companies adds the
+        SEC subscription, $29 or $99 a month after a 14-day trial. Or run it
+        yourself; it&apos;s open source with no outside investors, so you keep
+        the code and the data whatever happens to us.{' '}
         <a
           href={`${ROBOSYSTEMS_URL}/pricing`}
           target="_blank"
@@ -160,12 +152,13 @@ const faqs: { q: string; a: ReactNode }[] = [
     ),
   },
   {
-    q: "What if we don't have anyone to run it?",
+    q: 'Who runs it day to day?',
     a: (
       <>
-        RoboLedger is run by your own accountant, bookkeeper or fractional CFO,
-        working from the AI chat they already use. If you don&apos;t have one
-        yet,{' '}
+        Your own finance people. The controller or CFO who owns the numbers, or
+        the fractional CFO or CPA firm you work with, approves what the AI
+        drafts, from the AI chat they already use. To put AI workflows on your
+        books with your team,{' '}
         <a
           href={HARBINGER_URL}
           target="_blank"
@@ -173,9 +166,20 @@ const faqs: { q: string; a: ReactNode }[] = [
           className="text-primary-400 hover:text-primary-300 font-medium"
         >
           Harbinger FinLab
-        </a>{' '}
-        will point you to a practice that runs RoboLedger. Harbinger implements
-        and trains; it never keeps anyone&apos;s books.
+        </a>
+        &apos;s Finance AI Pilot sets it up in your cloud in two to three weeks,
+        at a fixed fee. Nobody from Harbinger keeps your books or posts an
+        entry.
+      </>
+    ),
+  },
+  {
+    q: "What isn't built yet?",
+    a: (
+      <>
+        Revenue recognition under ASC 606, books in another currency, and the
+        entity breakdown in the XBRL export. Only the group parent&apos;s
+        QuickBooks company connects today.
       </>
     ),
   },

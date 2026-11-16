@@ -53,11 +53,11 @@ const capabilities = [
   },
   {
     title: 'Compare',
-    body: 'Add a second connection at https://api.robosystems.ai/v1/mcp and choose the SEC filings graph, then put your margins and growth next to public companies in your industry. It is a separate subscription.',
+    body: 'Add a second connection at https://api.robosystems.ai/v1/mcp and choose the SEC filings graph, then put your margins and growth next to public companies you choose, from their SEC filings. It is a separate subscription, with a 14-day trial.',
   },
   {
     title: 'Close',
-    body: 'When you trust the numbers, the month-end entries arrive drafted for review, and you see what will be written to QuickBooks before anything posts.',
+    body: 'At month-end, the entries arrive drafted for review, and you see what will be written to QuickBooks before anything posts.',
   },
 ]
 

@@ -8,8 +8,8 @@ export const alt = SITE_TITLE
 export default function Image() {
   return renderOgImage({
     eyebrow: 'RoboLedger',
-    title: 'Connect your books. Ask your AI.',
+    title: 'AI accounting software you own',
     subtitle:
-      'One company or a whole group, in Claude, ChatGPT, or any MCP client.',
+      'The general ledger built on RoboSystems. Every number opens to the entries behind it.',
   })
 }
