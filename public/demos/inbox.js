@@ -22,7 +22,7 @@ const ROWS = [
     'Aug 28',
     'Andean Green Coffee Importers',
     '−$62,000.00',
-    'Inventory — Green Coffee',
+    'Inventory: Green Coffee',
     'committed',
   ],
   [
@@ -56,7 +56,7 @@ const main = `${pageHeader('Inbox', 'Every transaction lands as an event: captur
     <div class="card pv" id="pv">
       <div class="pvh">Preview · planned entry</div>
       <div class="je"><span>DR</span><b>Operating Checking</b><em>$8,440.00</em></div>
-      <div class="je"><span>CR</span><b>Accounts Receivable — Wholesale</b><em>$8,440.00</em></div>
+      <div class="je"><span>CR</span><b>Accounts Receivable: Wholesale</b><em>$8,440.00</em></div>
       <div class="pvf"><span class="badge b-good">✓ balanced</span><span class="hand">Handler: customer payment</span></div>
       <div class="pvb"><span class="btn go" id="cm">Commit</span><span class="btn ghost">Reject</span></div>
     </div>
@@ -84,7 +84,7 @@ function setup(ctx) {
     $('acct').innerHTML =
       t < 1.3
         ? '<span class="muted">unclassified</span>'
-        : `<span class="ai">AI</span>Accounts Receivable — Wholesale`
+        : `<span class="ai">AI</span>Accounts Receivable: Wholesale`
     $('acct').style.opacity = t < 1.3 ? 1 : eo(seg(t, 1.3, 1.7))
     rise($('pv'), eo(seg(t, 2.6, 3.1)), 20)
     const committed = pointer(ctx, $('cur'), $('cm'), t, 4.4, 5.1)

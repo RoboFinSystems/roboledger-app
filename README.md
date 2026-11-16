@@ -1,11 +1,11 @@
 # RoboLedger App
 
-RoboLedger App is the web interface for AI-native accounting, building semantic knowledge graphs from financial data for intelligent automation and natural language analysis from Claude, ChatGPT, or any MCP client.
+Part of [RoboSystems](https://robosystems.ai), the open-source knowledge graph for finance. RoboLedger is the general ledger built on it, a full accounting system in its own right: close, consolidation, schedules, bank feeds, reconciliations and forecasting, every number traced to the entry. This repository is its web app, served at [roboledger.ai](https://roboledger.ai); your AI works the same books from Claude, ChatGPT or any MCP client.
 
-- **Semantic Financial Intelligence**: Every transaction connected semantically, preserving relationships and context for AI-powered insights
-- **QuickBooks Integration**: Sync with existing [QuickBooks](https://quickbooks.intuit.com/partners/affiliates?cid=par_pim_4TcakSEFQs73) data and add AI automation without changing workflows
-- **Natural Language Queries**: Ask questions in plain English and get instant, intelligent answers about your finances
-- **AI-Powered Automation**: Connect the AI assistant you already use over MCP for financial analysis that understands business context
+- **Every number traced**: Open any figure on a statement down to the accounts and entries behind it
+- **QuickBooks Integration**: Sync with existing [QuickBooks](https://quickbooks.intuit.com/partners/affiliates?cid=par_pim_4TcakSEFQs73) data; nothing writes back until you post an entry
+- **Plain-English Questions**: Ask about your books in plain English and get answers that open to the entries behind them
+- **Your AI, over MCP**: Connect the AI assistant you already use; it drafts, and your people approve
 - **Multi-Source Data**: QuickBooks, bank feeds through Plaid, and custom datasets
 
 ## Core Features
@@ -13,7 +13,7 @@ RoboLedger App is the web interface for AI-native accounting, building semantic 
 - **Dashboard**: Financial overview with quick actions
 - **Ledger**: Chart of accounts with taxonomy framework mapping, bank accounts, journal entries, trial balance, account register, and receivables and payables
 - **Period Close**: Fiscal calendar bootstrap, close workflow with gate checks, and rule-based pre-close evaluation
-- **Live Statements**: Render balance sheet, income statement, and cash flow directly from the current ledger — no period close required
+- **Live Statements**: Render balance sheet, income statement, and cash flow directly from the current ledger, no period close required
 - **Schedules**: Recurring journal entry templates with auto-evaluation on close
 - **Inbox**: Review and approve captured events before they post to the ledger, one at a time or in a batch
 - **Posting Rules**: The event handlers that turn a matching event into journal entries
@@ -100,7 +100,7 @@ npm install @robosystems/core@latest
 
 - Fork this repo (and the [robosystems](https://github.com/RoboFinSystems/robosystems) backend)
 - AWS account with IAM Identity Center (SSO)
-- Run `just bootstrap` in the backend repo — it deploys OIDC and sets this
+- Run `just bootstrap` in the backend repo: it deploys OIDC and sets this
   repository's `AWS_ROLE_ARN`, `AWS_ACCOUNT_ID` and `AWS_REGION`
 - Run `npm run setup:gha` here to configure the remaining deployment variables
 

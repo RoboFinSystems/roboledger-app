@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import {
   APP_HOME_PATH,
+  BOOK_PATH,
   GITHUB_URL,
   LOGIN_PATH,
   REGISTER_PATH,
@@ -18,7 +19,7 @@ import {
 const NAV_LINKS = [
   { href: '/#how-it-works', label: 'How it works' },
   { href: '/#agent-surface', label: 'Agent tools' },
-  { href: '/#harbinger', label: 'For practices' },
+  { href: '/#harbinger', label: 'The deployment' },
   { href: '/docs', label: 'Docs' },
   { href: '/blog', label: 'Blog' },
 ]
@@ -88,10 +89,10 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          {/* lg, not md: the full nav needs ~940px, so switching at md (768px)
-              left Login and Register clipped off the fixed header between
-              768 and 940px with the hamburger already hidden */}
-          <nav className="hidden items-center space-x-5 lg:flex lg:space-x-6">
+          {/* xl, not lg: with Book 20 minutes the full nav needs ~1,090px, so
+              at lg (1024px) the section links wrapped onto two lines; below xl
+              the hamburger menu carries everything */}
+          <nav className="hidden items-center space-x-5 xl:flex xl:space-x-6">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
@@ -129,18 +130,25 @@ export default function Header() {
                 </Link>
                 <Link
                   href={REGISTER_PATH}
-                  className="from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 rounded-lg bg-linear-to-r px-4 py-2 text-sm font-medium text-white shadow-lg transition-all"
+                  className="px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:text-white"
                 >
                   Register
                 </Link>
               </>
             )}
+            {/* A plain <a>: /book redirects to the scheduler on another site. */}
+            <a
+              href={BOOK_PATH}
+              className="from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 rounded-lg bg-linear-to-r px-4 py-2 text-sm font-medium whitespace-nowrap text-white shadow-lg transition-all"
+            >
+              Book 20 minutes
+            </a>
           </nav>
 
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="hover:text-primary-400 flex items-center justify-center p-2.5 text-gray-300 transition-colors lg:hidden"
+            className="hover:text-primary-400 flex items-center justify-center p-2.5 text-gray-300 transition-colors xl:hidden"
             aria-label="Toggle mobile menu"
           >
             {isMobileMenuOpen ? (
@@ -177,7 +185,7 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <nav className="border-t border-gray-800 py-4 lg:hidden">
+          <nav className="border-t border-gray-800 py-4 xl:hidden">
             <div className="flex flex-col space-y-2">
               {NAV_LINKS.map((link) => (
                 <Link
@@ -226,12 +234,19 @@ export default function Header() {
                     <Link
                       href={REGISTER_PATH}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="from-primary-500 to-secondary-500 shadow-primary-500/25 mx-4 mt-2 block rounded-lg bg-linear-to-r px-4 py-2 text-center text-sm font-medium text-white shadow-lg"
+                      className="block px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
                     >
                       Register
                     </Link>
                   </>
                 )}
+                <a
+                  href={BOOK_PATH}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="from-primary-500 to-secondary-500 shadow-primary-500/25 mx-4 mt-2 block rounded-lg bg-linear-to-r px-4 py-2 text-center text-sm font-medium text-white shadow-lg"
+                >
+                  Book 20 minutes
+                </a>
               </div>
             </div>
           </nav>

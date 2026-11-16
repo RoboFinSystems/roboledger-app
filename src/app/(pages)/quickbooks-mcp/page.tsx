@@ -1,5 +1,5 @@
 import FinalCTA from '@/components/landing/FinalCTA'
-import { REGISTER_PATH } from '@/components/landing/constants'
+import { BOOK_PATH, REGISTER_PATH } from '@/components/landing/constants'
 import {
   getProductPage,
   productPageJsonLd,
@@ -53,11 +53,11 @@ const capabilities = [
   },
   {
     title: 'Compare',
-    body: 'Add a second connection at https://api.robosystems.ai/v1/mcp and choose the SEC filings graph, then put your margins and growth next to public companies in your industry. It is a separate subscription.',
+    body: 'Add a second connection at https://api.robosystems.ai/v1/mcp and choose the SEC filings graph, then put your margins and growth next to public companies you choose, from their SEC filings. It is a separate subscription, with a 14-day trial.',
   },
   {
     title: 'Close',
-    body: 'When you trust the numbers, the month-end entries arrive drafted for review, and you see what will be written to QuickBooks before anything posts.',
+    body: 'At month-end, the entries arrive drafted for review, and you see what will be written to QuickBooks before anything posts.',
   },
 ]
 
@@ -115,11 +115,18 @@ export default function QuickBooksMcpPage() {
             </p>
             <Code wrap>{MCP_URL}</Code>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <Link
-                href={REGISTER_PATH}
+              {/* A plain <a>: /book redirects to the scheduler on another site. */}
+              <a
+                href={BOOK_PATH}
                 className="from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 rounded-lg bg-linear-to-r px-6 py-3 text-center font-medium text-white shadow-lg transition-all"
               >
-                Get Started
+                Book 20 minutes
+              </a>
+              <Link
+                href={REGISTER_PATH}
+                className="rounded-lg border border-gray-600 px-6 py-3 text-center font-medium text-white transition-all hover:border-gray-500 hover:bg-white/5"
+              >
+                Create an account
               </Link>
               <Link
                 href={page.docsPath}
@@ -227,6 +234,11 @@ export default function QuickBooksMcpPage() {
           <Section title="What it needs">
             <ul className="list-disc space-y-2 pl-6">
               <li>QuickBooks Online, and admin permissions in the company.</li>
+              <li>
+                Only the group parent&apos;s QuickBooks company connects; the
+                other companies come in through a bank feed, an opening balance
+                sheet or a file.
+              </li>
               <li>Books kept in US dollars.</li>
               <li>
                 Your books sync once a day on their own. For anything more

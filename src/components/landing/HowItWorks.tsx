@@ -1,7 +1,7 @@
 import FloatingElementsVariant from './FloatingElementsVariant'
 
-// Three steps in the order of the arc: read the books first, the close last. A group is
-// optional at each step. Only the group parent's QuickBooks company connects (gtm/plan.md
+// Three steps from QuickBooks to a ledger your AI can read: connect, ask, approve. A group
+// is optional at each step. Only the group parent's QuickBooks company connects (gtm/plan.md
 // §5): the other companies come in through a bank feed, an opening balance sheet, the API
 // or a file. The spotlights below carry the detail, so this stays short.
 const steps = [
@@ -68,11 +68,11 @@ export default function HowItWorks() {
             How it works
           </div>
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-            Start with the answers. The close comes last.
+            Three steps from QuickBooks to a ledger your AI can read
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Reading your books writes nothing back, so you can put RoboLedger to
-            work on questions today and hand it the close once you trust it.
+            Reading your books writes nothing back to QuickBooks. The AI drafts;
+            your people approve every entry that posts.
           </p>
         </div>
 

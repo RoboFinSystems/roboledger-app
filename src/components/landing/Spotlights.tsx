@@ -149,8 +149,7 @@ export default function Spotlights() {
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
             Seven views of the same live books. Read the statements, for one
             company or a whole group, open any number, plan forward, and ask in
-            plain English. When you trust it, the close and the inbox are there
-            too.
+            plain English. The close and the inbox run on the same books.
           </p>
         </div>
 

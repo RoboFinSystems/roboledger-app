@@ -9,6 +9,6 @@ export default function Image() {
     eyebrow: 'RoboLedger Blog',
     title: 'Accounting on a ledger your AI can query',
     subtitle:
-      'Connect QuickBooks, ask the first question, share the statement, plan, compare. The close comes last.',
+      'How we put AI on a general ledger: QuickBooks over MCP, a group of companies consolidated, and every number traced to the entry behind it.',
   })
 }

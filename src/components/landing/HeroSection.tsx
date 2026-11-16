@@ -1,9 +1,14 @@
 'use client'
 
 import { McpLogo } from '@/components/mcp/McpLogo'
-import { AnimatedLogo, LiveDemo } from '@robosystems/core/ui-components'
+import { LiveDemo } from '@robosystems/core/ui-components'
 import Link from 'next/link'
-import { GITHUB_URL, REGISTER_PATH, ROBOSYSTEMS_URL } from './constants'
+import {
+  BOOK_PATH,
+  GITHUB_URL,
+  REGISTER_PATH,
+  ROBOSYSTEMS_URL,
+} from './constants'
 import FloatingElementsVariant from './FloatingElementsVariant'
 
 export default function HeroSection() {
@@ -23,79 +28,70 @@ export default function HeroSection() {
             Your books, in the chat you already use
           </div>
 
-          <h1 className="font-heading mb-6 text-4xl leading-tight font-extrabold sm:text-5xl md:mb-8 md:text-7xl lg:text-8xl">
+          {/* One size smaller than the old H1 from md up: "AI accounting software" is wider
+              than "Connect your books." and broke onto two lines at 8xl even in the widest
+              container. */}
+          <h1 className="font-heading mb-6 text-4xl leading-tight font-extrabold sm:text-5xl md:mb-8 md:text-6xl lg:text-7xl">
             <span className="animate-pulsate-gradient-subtle block text-transparent">
-              Connect your books.
+              AI accounting software
             </span>
             <span className="from-primary-400 via-secondary-400 to-accent-400 mt-2 block bg-linear-to-r bg-clip-text pb-2 text-transparent">
-              Ask your AI.
+              you own.
             </span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-gray-300 sm:text-lg md:mt-8 md:text-2xl">
-            Sync QuickBooks into a graph{' '}
+            A general ledger{' '}
             <strong className="text-primary-400">
               Claude, ChatGPT, or any MCP client
             </strong>{' '}
-            can reason over. Statements that tie, a plan that rolls off your
-            actuals, and your numbers beside public companies. One company or a
-            whole group: each keeps its own books and close, and your AI drafts
-            the consolidation.{' '}
+            can reason over: close, consolidation, schedules, bank feeds and
+            reconciliations, with statements that tie and every number traced to
+            the entry. Start from your QuickBooks or keep the books here, for
+            one company or a whole group, with your numbers beside public
+            companies&apos;.{' '}
             <span className="text-white">
               Nothing writes back until you post an entry.
             </span>
           </p>
 
-          {/* CTAs */}
+          {/* CTAs. Booking is a plain <a>: /book redirects to the scheduler on another site. */}
           <div className="mx-auto mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Link
-              href={REGISTER_PATH}
+            <a
+              href={BOOK_PATH}
               className="group from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 relative overflow-hidden rounded-lg bg-linear-to-r px-8 py-4 text-base font-medium text-white shadow-2xl transition-all duration-300 sm:text-lg"
             >
-              <span className="relative z-10">Get Started</span>
+              <span className="relative z-10">Book 20 minutes</span>
               <div className="absolute inset-0 -translate-y-full bg-white/20 transition-transform duration-500 group-hover:translate-y-0"></div>
-            </Link>
+            </a>
             <Link
-              href="#how-it-works"
+              href={REGISTER_PATH}
               className="inline-flex items-center gap-2 rounded-lg border border-gray-600 px-8 py-4 text-base font-medium text-white transition-all duration-300 hover:border-gray-500 hover:bg-white/5 sm:text-lg"
             >
-              See how it works
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                />
-              </svg>
+              Create an account
             </Link>
           </div>
 
-          {/* Trust row */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-500 sm:gap-6 sm:text-sm">
-            <div className="flex items-center gap-2">
-              <McpLogo className="h-5 w-5 text-gray-300" />
-              <span>Works with any MCP client</span>
-            </div>
+          <p className="mx-auto mt-6 max-w-2xl text-sm text-gray-400 sm:text-base">
+            RoboLedger is the general ledger built on{' '}
             <a
               href={ROBOSYSTEMS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-primary-400 flex items-center gap-2 transition-colors"
+              className="text-primary-400 hover:text-primary-300 font-medium"
             >
-              <AnimatedLogo
-                app="robosystems"
-                brand
-                animate="loop"
-                className="h-5 w-5"
-              />
-              <span>Built on RoboSystems</span>
+              RoboSystems
             </a>
+            , the open-source knowledge graph for finance, and a full accounting
+            system in its own right, forecasting included.
+          </p>
+
+          {/* Trust row */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-500 sm:gap-6 sm:text-sm">
+            <div className="flex items-center gap-2">
+              <McpLogo className="h-5 w-5 text-gray-300" />
+              <span>Works with any MCP client</span>
+            </div>
             <a
               href={GITHUB_URL}
               target="_blank"

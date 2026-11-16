@@ -8,7 +8,7 @@ export const landingMetadata: Metadata = {
   // terms with search volume (gtm/seo/keywords.md, 2026-10-07; the holding-company and LLC
   // phrasings read blank); the close terms left with the old hero.
   keywords: [
-    'AI-native accounting',
+    'AI accounting software',
     'QuickBooks MCP server',
     'connect QuickBooks to Claude',
     'connect QuickBooks to ChatGPT',
@@ -19,7 +19,7 @@ export const landingMetadata: Metadata = {
     'multi entity accounting software',
     'multi-entity accounting',
     'combined vs consolidated financial statements',
-    'financial knowledge graph',
+    'open source accounting software',
     'XBRL reporting',
   ],
   // openGraph/twitter are intentionally inherited from the root layout so the homepage

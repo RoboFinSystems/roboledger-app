@@ -3,13 +3,14 @@
 // Until 2026-09-16 the social card, the JSON-LD and the manifest still carried the retired
 // financial-reporting positioning while the page itself said "Connect your books. Ask
 // Claude.", so a shared link and a search engine each described a different product.
-// The group joined the description on 2026-10-27 without taking the title: every search
-// impression so far is in the QuickBooks-and-MCP cluster, and the group story waits on asks
-// that convert. The description stays under 160 characters so results show it whole.
+// On 2026-11-16 the title took the search term the page is written for ("AI accounting
+// software", with ownership as the difference) and the H1 moved with it, so the tab, the
+// result and the page say the same thing. The description names RoboLedger as the general
+// ledger built on RoboSystems and stays under 160 characters so results show it whole.
 
 export const SITE_NAME = 'RoboLedger'
 
-export const SITE_TITLE = 'RoboLedger | Connect Your Books. Ask Your AI.'
+export const SITE_TITLE = 'RoboLedger: AI accounting software you own'
 
 export const SITE_DESCRIPTION =
-  'Sync QuickBooks into a graph Claude, ChatGPT, or any MCP client can query. Analyze, plan, consolidate a group. Nothing writes back until you post.'
+  'The general ledger built on RoboSystems. Sync QuickBooks, close and consolidate from Claude, ChatGPT or any MCP client. Nothing writes back until you post.'

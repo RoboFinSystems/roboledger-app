@@ -1,5 +1,5 @@
 import { BLOG_FEED, BlogJsonLd } from '@/components/blog/BlogJsonLd'
-import { LOGIN_PATH, REGISTER_PATH } from '@/components/landing/constants'
+import { BOOK_PATH, LOGIN_PATH } from '@/components/landing/constants'
 import {
   formatPostDate,
   getAllPosts,
@@ -104,12 +104,13 @@ export default async function BlogPostPage({
               Back to Blog
             </Link>
 
-            <Link
-              href={REGISTER_PATH}
+            {/* A plain <a>: /book redirects to the scheduler on another site. */}
+            <a
+              href={BOOK_PATH}
               className="from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 rounded-full bg-linear-to-r px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all"
             >
-              Get Started
-            </Link>
+              Book 20 minutes
+            </a>
           </div>
 
           <h1 className="font-heading mb-6 text-4xl font-bold text-white md:text-5xl lg:text-6xl">
@@ -190,14 +191,14 @@ export default async function BlogPostPage({
           </h3>
           <p className="mb-6 text-gray-300">
             Connect QuickBooks and ask your AI the first question. Nothing
-            writes to QuickBooks until you post an entry. We close our own books
-            this way.
+            writes to QuickBooks until you post an entry. Our own
+            companies&apos; books are kept on it, closed through September.
           </p>
-          <Link
-            href={REGISTER_PATH}
+          <a
+            href={BOOK_PATH}
             className="group from-primary-500 to-secondary-500 hover:shadow-primary-500/25 inline-flex items-center gap-2 rounded-full bg-linear-to-r px-8 py-4 text-lg font-semibold text-white transition-all hover:shadow-lg"
           >
-            <span>Get Started</span>
+            <span>Book 20 minutes</span>
             <svg
               className="h-5 w-5 transition-transform group-hover:translate-x-1"
               fill="none"
@@ -211,7 +212,7 @@ export default async function BlogPostPage({
                 d="M13 7l5 5m0 0l-5 5m5-5H6"
               />
             </svg>
-          </Link>
+          </a>
           <p className="mt-6 text-sm text-gray-400">
             Already have an account?{' '}
             <Link

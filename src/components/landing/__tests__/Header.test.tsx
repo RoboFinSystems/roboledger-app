@@ -70,6 +70,24 @@ describe('Header', () => {
     expect(hrefsOf('Open app')).toEqual([])
   })
 
+  it('offers Book 20 minutes to every visitor, desktop and mobile', () => {
+    for (const session of [signedOut, signedIn]) {
+      mockUseOptionalAuth.mockReturnValue(session)
+      const { unmount } = render(<Header />)
+      openMobileMenu()
+
+      expect(hrefsOf('Book 20 minutes')).toEqual(['/book', '/book'])
+      unmount()
+    }
+  })
+
+  it('links the deployment from the nav', () => {
+    mockUseOptionalAuth.mockReturnValue(signedOut)
+    render(<Header />)
+
+    expect(hrefsOf('The deployment')).toEqual(['/#harbinger'])
+  })
+
   it('sends Login and Register in the server HTML even for a signed-in session', () => {
     mockUseOptionalAuth.mockReturnValue(signedIn)
     const html = renderToString(<Header />)

@@ -19,7 +19,7 @@ export const BLOG_FEED = [
 ]
 
 export const BLOG_DESCRIPTION =
-  'Connect QuickBooks, ask your AI the first question, share the statement, plan the quarter, compare against public filers. The close comes last.'
+  'How we put AI on a general ledger: QuickBooks over MCP, a group of companies consolidated, and every number traced to the entry behind it.'
 
 /** One JSON-LD block. `</` is escaped so post text can never break out of the script. */
 function JsonLd({ data }: { data: Record<string, unknown> }) {
