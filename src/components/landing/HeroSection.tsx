@@ -41,14 +41,15 @@ export default function HeroSection() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-gray-300 sm:text-lg md:mt-8 md:text-2xl">
-            Sync QuickBooks into a graph{' '}
+            A general ledger{' '}
             <strong className="text-primary-400">
               Claude, ChatGPT, or any MCP client
             </strong>{' '}
-            can reason over. Statements that tie, a plan that rolls off your
-            actuals, and your numbers beside public companies. One company or a
-            whole group: each keeps its own books and close, and your AI drafts
-            the consolidation.{' '}
+            can reason over: close, consolidation, schedules, bank feeds and
+            reconciliations, with statements that tie and every number traced to
+            the entry. Start from your QuickBooks or keep the books here, for
+            one company or a whole group, with your numbers beside public
+            companies&apos;.{' '}
             <span className="text-white">
               Nothing writes back until you post an entry.
             </span>
@@ -81,10 +82,8 @@ export default function HeroSection() {
             >
               RoboSystems
             </a>
-            , the open-source knowledge graph for finance. It&apos;s a full
-            accounting system in its own right: close, consolidation, schedules,
-            bank feeds, reconciliations and forecasting, every number traced to
-            the entry.
+            , the open-source knowledge graph for finance, and a full accounting
+            system in its own right, forecasting included.
           </p>
 
           {/* Trust row */}
