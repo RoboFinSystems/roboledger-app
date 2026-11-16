@@ -9,8 +9,9 @@ import { orBuildFallback } from '@robosystems/core/docs/catalog'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
-// The hub's title says what the lane is about; "Blog | RoboLedger" told a searcher nothing.
-const TITLE = 'AI Accounting on QuickBooks, over MCP | RoboLedger Blog'
+// The hub's title says what the lane is about; "Blog | RoboLedger" told a searcher nothing,
+// and "on QuickBooks" (until 2026-11-16) read RoboLedger as a QuickBooks add-on.
+const TITLE = 'AI on the General Ledger, over MCP | RoboLedger Blog'
 const URL = 'https://roboledger.ai/blog'
 
 export const metadata: Metadata = {

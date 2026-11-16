@@ -88,7 +88,7 @@ export function productPageJsonLd(page: ProductPage) {
         name: SITE_NAME,
         applicationCategory: 'FinanceApplication',
         operatingSystem: 'Web',
-        // No `offers`: the marketing site is price-silent (see structured-data.ts).
+        // No `offers`: the homepage's structured data carries the price (structured-data.ts).
         description: page.description,
         url,
         image: `${SITE_URL}/images/logos/roboledger-icon.png`,

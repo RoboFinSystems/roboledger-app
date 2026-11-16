@@ -3,14 +3,16 @@ import FindATime from './FindATime'
 import FloatingElementsVariant from './FloatingElementsVariant'
 
 // Harbinger FinLab runs the Finance AI Deployment (renamed from "Pilot" on 2026-11-16, which
-// read as both a proof of concept and a copilot): RoboSystems on the deployment the customer
-// chooses (the managed platform, a dedicated AWS account Harbinger runs, or their own
-// cloud), on their books, with three agent workflows, in two to three weeks, at a fixed fee.
-// The customer's team deploys it with Joey on a screenshare they control, and the workflows run on API
-// keys they issue and can revoke; nobody from Harbinger signs in to or posts on their
-// books (its MSA, 2.2 and 4.1). The wording follows the locked lines in the vault's
-// gtm/content/positioning.md. The old offers (implementation and training, referrals to a
-// practice) are listed in __tests__/retired-phrases.test.ts, which fails if they come back.
+// read as both a proof of concept and a copilot): RoboSystems where the customer chooses, on
+// their books, with three agent workflows, in two to three weeks, at a fixed fee. Hosting is
+// always RoboSystems', never Harbinger's: the RoboSystems managed platform, a Dedicated
+// Deployment RoboSystems runs, or the customer's own cloud, where their team deploys it with
+// Joey on a screenshare they control. The workflows run on API keys they issue and can
+// revoke; nobody from Harbinger signs in to or posts on their books (its MSA, 2.2 and 4.1).
+// The wording follows the offer, fee and ledgers lines in the vault's
+// gtm/content/positioning.md, which keep the offer speaker-neutral. The old offers
+// (implementation and training, referrals to a practice) are listed in
+// __tests__/retired-phrases.test.ts, which fails if they come back.
 const points = [
   {
     title: 'Three working workflows',
@@ -18,7 +20,7 @@ const points = [
   },
   {
     title: 'Your deployment, your keys',
-    body: 'Your team deploys it with Joey on a screenshare you control. The workflows are built through API keys you issue and can revoke.',
+    body: 'In your cloud, your team deploys it with Joey on a screenshare you control; on the managed platform or a Dedicated Deployment, RoboSystems runs it. Either way the workflows run on API keys you issue and can revoke.',
   },
   {
     title: 'Never the pen',
@@ -52,16 +54,27 @@ export default function HarbingerSection() {
               <h2 className="font-heading mb-4 text-3xl font-bold text-white sm:text-4xl">
                 Finance AI that ties to your books, in two to three weeks
               </h2>
-              <p className="mb-6 text-base leading-relaxed text-gray-300">
+              <p className="mb-4 text-base leading-relaxed text-gray-300">
                 <strong className="text-white">Harbinger FinLab</strong> runs
-                the Finance AI Deployment: RoboSystems on the deployment you
-                choose (our managed platform, a dedicated AWS account we run, or
-                your own cloud), on your books, with three working agent
-                workflows, in two to three weeks, at a fixed fee. It&apos;s for
-                the person who owns the numbers (a CFO, controller, or a
-                fractional CFO or CPA firm for a client) and the person who
-                wires AI to them. Built by a CPA and former Workiva XBRL
-                engineer.
+                the Finance AI Deployment: RoboSystems where you choose (the
+                RoboSystems managed platform, a Dedicated Deployment RoboSystems
+                runs, or your own cloud), on your books, with three working
+                agent workflows, in two to three weeks, at a fixed fee.
+                It&apos;s for the person who owns the numbers (a CFO,
+                controller, or a fractional CFO or CPA firm for a client) and
+                the person who wires AI to them. Built by a CPA and former
+                Workiva XBRL engineer.
+              </p>
+              <p className="mb-4 text-sm leading-relaxed text-gray-400">
+                $7,500 to $10,000, fixed by scope: half up front, half at
+                handover. Hosting is separate: from $99 a month on the managed
+                platform, Dedicated quoted, or free to self-host. Peer
+                benchmarks use the SEC repository ($29 or $99 a month, 14-day
+                trial).
+              </p>
+              <p className="mb-6 text-sm leading-relaxed text-gray-400">
+                QuickBooks connects directly; any other ledger comes in through
+                the API or a file.
               </p>
               {/* A plain <a>: /book redirects to the scheduler on another site. */}
               <a

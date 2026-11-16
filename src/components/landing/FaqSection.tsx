@@ -84,11 +84,11 @@ const faqs: { q: string; a: ReactNode }[] = [
       <>
         It answers questions about your books in plain English, opens any number
         down to the facts behind it, rolls plans forward, and compares you to
-        public companies. When you&apos;re ready, it also sorts bank lines into
-        accounts, drafts the month&apos;s schedule entries and the group&apos;s
-        consolidating entries, and proposes posting rules. You stay in control
-        at every step: previews of what would post, balanced-entry checks, and
-        nothing posts until a person approves it.
+        public companies. It also sorts bank lines into accounts, drafts the
+        month&apos;s schedule entries and the group&apos;s consolidating
+        entries, and proposes posting rules. You stay in control at every step:
+        previews of what would post, balanced-entry checks, and nothing posts
+        until a person approves it.
       </>
     ),
   },

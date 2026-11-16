@@ -60,8 +60,33 @@ const RETIRED = [
 // change, so comments are stripped before these are matched. "AI-native" leads nowhere
 // in search (vault: gtm/content/positioning.md §2) and left the footer tagline 2026-11-16.
 // The offer was renamed the same day from "Pilot", which read as both a proof of concept
-// and a copilot, to the Finance AI Deployment.
-const RETIRED_IN_COPY = ['ai-native', 'finance ai pilot']
+// and a copilot, to the Finance AI Deployment; "pilot" matches as a word, so autopilot and
+// copilot still pass. The 2026-11-16 alignment review added the rest: the old ontology
+// phrasings ("XBRL-shaped", "in one model", "serialized as RDF"), RoboLedger as a
+// "reference app", licence and customer claims the positioning never makes, the private
+// scheduler links (only the public /book redirect may appear), the em dash, and "Get
+// Started" as a button label.
+const RETIRED_IN_COPY: (string | RegExp)[] = [
+  'ai-native',
+  'finance ai pilot',
+  /\bpilot\b/,
+  'xbrl-shaped',
+  'in one model',
+  'serialized as rdf',
+  'reference app',
+  'all apache',
+  'customers run',
+  'not raising',
+  'intro-meeting-scheduler',
+  'hour-meeting-scheduler',
+  '\u2014',
+  />\s*get started\s*</,
+]
+
+function says(source: string, phrase: string | RegExp): boolean {
+  const text = withoutComments(source).toLowerCase()
+  return typeof phrase === 'string' ? text.includes(phrase) : phrase.test(text)
+}
 
 // Drops block comments (JSX `{/* */}` included) and `//` line comments, leaving the
 // `//` inside a URL such as https:// alone.
@@ -95,7 +120,14 @@ const files = [
     'app/(blog)/blog/opengraph-image.tsx',
     'app/(blog)/blog/[slug]/page.tsx',
     'app/llms.txt/route.ts',
+    'app/(blog)/blog/page.tsx',
+    'app/(pages)/quickbooks-mcp/opengraph-image.tsx',
+    'lib/product-pages.ts',
   ].map((f) => path.resolve(__dirname, '../../..', f)),
+  // The redirect to the scheduler, and the repo's own front page.
+  ...['next.config.js', 'README.md'].map((f) =>
+    path.resolve(__dirname, '../../../..', f)
+  ),
 ]
 
 describe('landing copy', () => {
@@ -104,6 +136,8 @@ describe('landing copy', () => {
     expect(files.some((f) => f.endsWith('metadata.ts'))).toBe(true)
     expect(files.some((f) => f.endsWith('site.ts'))).toBe(true)
     expect(files.some((f) => f.endsWith('hero.js'))).toBe(true)
+    expect(files.some((f) => f.endsWith('next.config.js'))).toBe(true)
+    expect(files.some((f) => f.endsWith('README.md'))).toBe(true)
   })
 
   it.each(RETIRED)('no longer says "%s"', (phrase) => {
@@ -113,11 +147,18 @@ describe('landing copy', () => {
     expect(offenders.map((f) => path.relative(landingDir, f))).toEqual([])
   })
 
-  it.each(RETIRED_IN_COPY)('no longer says "%s" in page copy', (phrase) => {
-    const offenders = files.filter((f) =>
-      withoutComments(readFileSync(f, 'utf8')).toLowerCase().includes(phrase)
-    )
+  it.each(RETIRED_IN_COPY)('no longer says %s in page copy', (phrase) => {
+    const offenders = files.filter((f) => says(readFileSync(f, 'utf8'), phrase))
     expect(offenders.map((f) => path.relative(landingDir, f))).toEqual([])
+  })
+
+  it('matches pilot as a word and Get Started only as a label', () => {
+    expect(says("label: 'The pilot'", /\bpilot\b/)).toBe(true)
+    expect(says('autopilot and copilot', /\bpilot\b/)).toBe(false)
+    expect(says('<span>Get Started</span>', />\s*get started\s*</)).toBe(true)
+    expect(
+      says('Connect QuickBooks to get started', />\s*get started\s*</)
+    ).toBe(false)
   })
 
   it('reads comments out before matching page copy', () => {

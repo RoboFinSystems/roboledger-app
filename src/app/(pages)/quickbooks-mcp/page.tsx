@@ -234,6 +234,11 @@ export default function QuickBooksMcpPage() {
           <Section title="What it needs">
             <ul className="list-disc space-y-2 pl-6">
               <li>QuickBooks Online, and admin permissions in the company.</li>
+              <li>
+                Only the group parent&apos;s QuickBooks company connects; the
+                other companies come in through a bank feed, an opening balance
+                sheet or a file.
+              </li>
               <li>Books kept in US dollars.</li>
               <li>
                 Your books sync once a day on their own. For anything more

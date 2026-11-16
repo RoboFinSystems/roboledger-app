@@ -81,7 +81,10 @@ export default function HeroSection() {
             >
               RoboSystems
             </a>
-            , the open-source knowledge graph for finance.
+            , the open-source knowledge graph for finance. It&apos;s a full
+            accounting system in its own right: close, consolidation, schedules,
+            bank feeds, reconciliations and forecasting, every number traced to
+            the entry.
           </p>
 
           {/* Trust row */}

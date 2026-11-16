@@ -10,12 +10,10 @@ export default function PlatformSection() {
             Powered by RoboSystems
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Your numbers live in a knowledge graph with one ontology underneath:
-            the RoboSystems graph model, labelled in XBRL&apos;s standard terms,
-            the same ontology every public filer is read into. Every figure
-            opens to the entry behind it, your AI queries it in plain English,
-            and the rule engine checks it before a period closes, for one
-            company or a whole group.
+            Your books and the public filings, read side by side in XBRL&apos;s
+            standard terms, with every number traced to its entries. Your AI
+            queries them in plain English, and the rule engine checks the books
+            before a period closes, for one company or a whole group.
           </p>
         </div>
 
@@ -80,7 +78,7 @@ export default function PlatformSection() {
 
             <div className="relative">
               <h3 className="mb-6 text-center text-sm font-semibold tracking-wider text-gray-500 uppercase">
-                Three-Block Model
+                Inside the ledger
               </h3>
               {/* aspect-square + max-w keeps the circle round while letting it
                   shrink on viewports narrower than 337px, where a fixed 288px
@@ -91,11 +89,11 @@ export default function PlatformSection() {
                     <div className="flex h-full items-center justify-center">
                       <div className="text-center">
                         <div className="mb-1 text-sm font-semibold text-white">
-                          <div>RoboLedger Schema</div>
-                          <div>Knowledge Graph</div>
+                          <div>Your books</div>
+                          <div>One model of the group</div>
                         </div>
                         <div className="text-xs text-gray-400">
-                          Financial data + XBRL semantics
+                          Every number traced to its entries
                         </div>
                       </div>
                     </div>
@@ -107,34 +105,32 @@ export default function PlatformSection() {
                 <div className="border-secondary-500/30 bg-secondary-950/20 rounded-lg border p-3">
                   <div className="mb-1 flex items-center gap-2">
                     <span className="text-secondary-300 font-semibold">
-                      Taxonomy Block
+                      Chart and reporting concepts
                     </span>
                   </div>
                   <div className="text-xs text-gray-400">
-                    Concepts, structures, and rules
+                    Each account mapped to a standard reporting concept
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {['Element', 'Structure', 'Association'].map(
-                      (comp, cidx) => (
-                        <span
-                          key={cidx}
-                          className="bg-secondary-900/50 text-secondary-300 rounded px-2 py-0.5 text-xs"
-                        >
-                          {comp}
-                        </span>
-                      )
-                    )}
+                    {['Accounts', 'Mappings', 'Rules'].map((comp, cidx) => (
+                      <span
+                        key={cidx}
+                        className="bg-secondary-900/50 text-secondary-300 rounded px-2 py-0.5 text-xs"
+                      >
+                        {comp}
+                      </span>
+                    ))}
                   </div>
                 </div>
 
                 <div className="rounded-lg border border-green-500/30 bg-green-950/20 p-3">
                   <div className="mb-1 flex items-center gap-2">
                     <span className="font-semibold text-green-300">
-                      Event Block
+                      Business events
                     </span>
                   </div>
                   <div className="text-xs text-gray-400">
-                    Business events, agents, journal entries
+                    Business events, counterparties, journal entries
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {['Event', 'Transaction', 'Entry'].map((comp, cidx) => (
@@ -151,21 +147,23 @@ export default function PlatformSection() {
                 <div className="border-primary-500/30 bg-primary-950/20 rounded-lg border p-3">
                   <div className="mb-1 flex items-center gap-2">
                     <span className="text-primary-300 font-semibold">
-                      Information Block
+                      Statements and reports
                     </span>
                   </div>
                   <div className="text-xs text-gray-400">
-                    Facts, statements, and rendering
+                    Live statements, schedules, and report packages
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {['Fact', 'FactSet', 'Report'].map((comp, cidx) => (
-                      <span
-                        key={cidx}
-                        className="bg-primary-900/50 text-primary-300 rounded px-2 py-0.5 text-xs"
-                      >
-                        {comp}
-                      </span>
-                    ))}
+                    {['Statements', 'Schedules', 'Reports'].map(
+                      (comp, cidx) => (
+                        <span
+                          key={cidx}
+                          className="bg-primary-900/50 text-primary-300 rounded px-2 py-0.5 text-xs"
+                        >
+                          {comp}
+                        </span>
+                      )
+                    )}
                   </div>
                 </div>
               </div>
@@ -297,11 +295,11 @@ export default function PlatformSection() {
               </svg>
             </div>
             <h3 className="mb-2 text-lg font-semibold text-white">
-              Unified Data Model
+              One model of the group
             </h3>
             <p className="text-sm text-gray-400">
-              Single source of truth connecting accounting, reporting, and
-              regulatory data
+              Each company&apos;s books, the group&apos;s statements and the
+              public filings, in XBRL&apos;s standard terms
             </p>
           </div>
 
