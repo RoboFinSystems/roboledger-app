@@ -10,8 +10,9 @@ export default function PlatformSection() {
             Powered by RoboSystems
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Your numbers live in a knowledge graph with an accounting ontology
-            underneath: XBRL concepts and the rs-gaap taxonomy. Every figure
+            Your numbers live in a knowledge graph with one ontology underneath:
+            the RoboSystems graph model, labelled in XBRL&apos;s standard terms,
+            the same ontology every public filer is read into. Every figure
             opens to the entry behind it, your AI queries it in plain English,
             and the rule engine checks it before a period closes, for one
             company or a whole group.
