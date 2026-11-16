@@ -44,7 +44,7 @@
     "@robosystems/core": "^0.21.2",
     "@robosystems/report-components": "^0.13.2",
     "lru-cache": "^11.5.3",
-    "next": "^16.4.2",
+    "next": "^16.4.6",
     "react": "^19",
     "react-dom": "^19",
     "react-icons": "^5",
