@@ -62,8 +62,8 @@ export default function HarbingerSection() {
                 agent workflows, in two to three weeks, at a fixed fee.
                 It&apos;s for the person who owns the numbers (a CFO,
                 controller, or a fractional CFO or CPA firm for a client) and
-                the person who wires AI to them. Built by a CPA and former
-                Workiva XBRL engineer.
+                the person who wires AI to them. Built by an inactive CPA and
+                ex-Workiva knowledge engineer.
               </p>
               <p className="mb-4 text-sm leading-relaxed text-gray-400">
                 $7,500 to $10,000, fixed by scope: half up front, half at
