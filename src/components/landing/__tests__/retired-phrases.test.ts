@@ -63,8 +63,8 @@ const RETIRED = [
 // and a copilot, to the Finance AI Deployment; "pilot" matches as a word, so autopilot and
 // copilot still pass. The 2026-11-16 alignment review added the rest: the old ontology
 // phrasings ("XBRL-shaped", "in one model", "serialized as RDF"), RoboLedger as a
-// "reference app", licence and customer claims the positioning never makes, the private
-// scheduler links (only the public /book redirect may appear), the em dash, and "Get
+// "reference app", licence and customer claims the positioning never makes, any scheduler link
+// but the public intro-meeting page, the em dash, and "Get
 // Started" as a button label.
 const RETIRED_IN_COPY: (string | RegExp)[] = [
   'ai-native',
@@ -77,8 +77,7 @@ const RETIRED_IN_COPY: (string | RegExp)[] = [
   'all apache',
   'customers run',
   'not raising',
-  'intro-meeting-scheduler',
-  'hour-meeting-scheduler',
+  /scheduler\.zoom\.us\/[\w-]+\/(?!intro-meeting(?![\w-]))[\w-]+/,
   '\u2014',
   />\s*get started\s*</,
 ]
