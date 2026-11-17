@@ -13,11 +13,9 @@ import {
 } from 'react-icons/hi'
 
 /**
- * The six `type-of View` arms in Charlie's Seattle Method ontology.
- * Five ship today (`rendered`, `facts`,
- * `elements`, `validation`, `rules`); the remaining one
- * (`associations` / Model Structure) lands when the depth-spec design
- * decision settles.
+ * The six view modes. Five are `type-of View` arms in Charlie's Seattle
+ * Method ontology (`rendered`, `facts`, `elements`, `validation`,
+ * `rules`); `chart` draws a metric block's rendering as a chart.
  */
 export type ViewMode =
   'rendered' | 'chart' | 'facts' | 'elements' | 'validation' | 'rules'
