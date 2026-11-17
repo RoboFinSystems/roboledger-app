@@ -1,4 +1,4 @@
-// Mock implementation of @robosystems/client/extensions for Vitest tests
+// Mock implementation of @robosystems/client/clients for Vitest tests
 import { vi } from 'vitest'
 
 export const useQuery = vi.fn()

@@ -36,16 +36,17 @@ interface BlockViewProps {
 /**
  * `BlockView` — the envelope-driven content component inside
  * `FinancialViewer`. One instance per selected Information Block;
- * dispatches to one of six `type-of View` projections (Charlie's
- * ontology) by `(envelope.block_type, viewMode)`.
+ * dispatches to a projection by `(envelope.block_type, viewMode)` across
+ * the six view modes in `ViewModeToggle`.
  *
- * Today: `Rendering` is block-type-specialized (`StatementRendering`
- * for the statement family; `ScheduleRendering` for schedules).
- * `FactTable` is uniform across every block type. Other projections
- * (`ModelStructure`, `VerificationResults`, `ReportElements`,
- * `BusinessRules`) come online as their backend support lands;
- * unsupported (block_type, viewMode) combinations render an empty
- * state without breaking the dispatcher.
+ * `rendered` is block-type-specialized: `StatementRendering` for the
+ * statement family, `ScheduleRendering` for schedules,
+ * `MetricRendering` for metrics and forecasts, and `TextBlockRendering`
+ * or the statement grid for disclosures. `chart` is a metric
+ * affordance. `FactTable`, `ReportElements`, `VerificationResults` and
+ * `BusinessRules` are uniform across block types; a combination with
+ * nothing to show renders an empty state without breaking the
+ * dispatcher.
  *
  * The dispatch below is the full mapping — `viewMode` selects the
  * projection, and `rendered` falls through to a block-type-specialized
