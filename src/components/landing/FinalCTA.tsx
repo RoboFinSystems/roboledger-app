@@ -20,11 +20,12 @@ export default function FinalCTA() {
         </h2>
         {/* The first two sentences match the blog's closing card; keep them in step. */}
         <p className="mb-4 text-xl text-gray-300">
-          Connect QuickBooks and ask your AI the first question. Nothing writes
-          to QuickBooks until you post an entry.
+          Create an account, then add a graph for your books. Connect QuickBooks
+          and ask your AI the first question. Nothing writes to QuickBooks until
+          you post an entry.
         </p>
         <p className="mb-10 text-base text-gray-400">
-          Managed by us from $99 a month per graph, and a group&apos;s companies
+          A graph is from $99 a month, by card, and a group&apos;s companies
           share one. Or run it yourself: it&apos;s open source.{' '}
           <a
             href={`${ROBOSYSTEMS_URL}/pricing`}
@@ -37,19 +38,19 @@ export default function FinalCTA() {
         </p>
         {/* Booking is a plain <a>: /book redirects to the scheduler on another site. */}
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <a
-            href={BOOK_PATH}
-            className="group from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 relative overflow-hidden rounded-lg bg-linear-to-r px-8 py-4 text-lg font-medium text-white shadow-2xl transition-all duration-300"
-          >
-            <span className="relative z-10">Book 20 minutes</span>
-            <div className="absolute inset-0 -translate-y-full bg-white/20 transition-transform duration-500 group-hover:translate-y-0"></div>
-          </a>
           <Link
             href={REGISTER_PATH}
+            className="group from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 relative overflow-hidden rounded-lg bg-linear-to-r px-8 py-4 text-lg font-medium text-white shadow-2xl transition-all duration-300"
+          >
+            <span className="relative z-10">Create an account</span>
+            <div className="absolute inset-0 -translate-y-full bg-white/20 transition-transform duration-500 group-hover:translate-y-0"></div>
+          </Link>
+          <a
+            href={BOOK_PATH}
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-600 px-8 py-4 text-lg font-medium text-white transition-all duration-300 hover:border-gray-500 hover:bg-white/5"
           >
-            Create an account
-          </Link>
+            Book 20 minutes
+          </a>
         </div>
         <FindATime className="mt-4" />
         <p className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-400">

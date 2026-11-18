@@ -58,11 +58,12 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: 'Where does my financial data live?',
     a: (
       <>
-        In your own isolated graph on our managed platform, or on your
-        infrastructure: RoboSystems is open source (Apache 2.0 and MIT), so you
-        can run it in your cloud or on your own server. You keep the code and
-        the data whatever happens to any vendor, including us. Your data trains
-        no one&apos;s model.
+        In your own isolated graph on the RoboSystems managed platform, in a
+        Dedicated Deployment RoboSystems runs, or on your own infrastructure:
+        RoboSystems is open source (Apache 2.0 and MIT), so you can run it in
+        your cloud or on your own server. You keep the code and the data
+        whatever happens to any vendor, including us. Your data trains no
+        one&apos;s model.
       </>
     ),
   },
@@ -70,11 +71,11 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: 'Do I need to know XBRL or US-GAAP?',
     a: (
       <>
-        No. AI Auto-Map proposes the US-GAAP mapping for each company&apos;s
-        chart of accounts with confidence scores, and the rule engine validates
-        every entry before you lock a period. You review and adjust, and you can
-        add, rename, move or retire accounts in the app. The taxonomy work
-        happens for you.
+        No. AI Auto-Map proposes a standard reporting concept, drawn from US
+        GAAP, for each account in a company&apos;s chart, with confidence
+        scores, and the rule engine validates every entry before you lock a
+        period. You review and adjust, and you can add, rename, move or retire
+        accounts in the app. The taxonomy work happens for you.
       </>
     ),
   },
@@ -100,8 +101,7 @@ const faqs: { q: string; a: ReactNode }[] = [
         puts your monthly statements and a scenario&apos;s assumptions in one
         grid spanning the actuals/forecast seam, so the forecast is driven by
         the same ledger the close produced, not a spreadsheet copied out of it.
-        Scenarios are authored from your AI assistant over MCP today; the in-app
-        editor is on the way.
+        Scenarios are authored from your AI assistant over MCP.
       </>
     ),
   },
@@ -109,10 +109,10 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: 'Are there things my AI assistant can do that the app cannot?',
     a: (
       <>
-        Yes, deliberately. Every write operation on the platform becomes an MCP
+        Yes, deliberately. Every write operation in RoboLedger becomes an MCP
         tool the day it ships, while screens follow where they earn their place.
         Authoring a forecast scenario and defining a new metric run from Claude,
-        ChatGPT, or any MCP client today without a dedicated form in the app. A
+        ChatGPT or any MCP client today without a dedicated form in the app. A
         new posting rule is written by your AI too, and waits in Posting Rules
         until a person approves it. Anything you drive that way lands in the
         same ledger and shows up on the same screens.
@@ -135,11 +135,12 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: 'How do I get started, and what does it cost?',
     a: (
       <>
-        From $99 a month per graph on our managed platform, and a group&apos;s
-        companies share one graph. Comparing against public companies adds the
-        SEC subscription, $29 or $99 a month after a 14-day trial. Or run it
-        yourself; it&apos;s open source with no outside investors, so you keep
-        the code and the data whatever happens to us.{' '}
+        Create an account, then create a graph for your books. A graph is paid
+        by card from the first month, from $99 a month on the managed platform,
+        and a group&apos;s companies share one graph. Comparing against public
+        companies adds the SEC subscription, $29 or $99 a month after a 14-day
+        trial. Or run it yourself; it&apos;s open source with no outside
+        investors, so you keep the code and the data whatever happens to us.{' '}
         <a
           href={`${ROBOSYSTEMS_URL}/pricing`}
           target="_blank"

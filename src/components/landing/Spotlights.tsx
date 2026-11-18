@@ -34,7 +34,7 @@ const spotlights: Spotlight[] = [
     caption: 'Ledger › Statements',
     demo: 'statements',
     demoLabel:
-      'A balance sheet and income statement rendered live from the ledger, then a report package moving from draft to filed.',
+      'A balance sheet and income statement rendered live from the ledger, then a report package moving from draft to published.',
   },
   {
     id: 'groups',
@@ -57,11 +57,11 @@ const spotlights: Spotlight[] = [
     label: 'Block Explorer',
     title: 'Open up any number and see how it was built',
     description:
-      'When someone asks where a number came from, open it. Every statement, schedule, metric, and disclosure is an Information Block, and the Explorer renders any of them through the same view projections, so the rendered figure and the facts behind it are one toggle apart.',
+      'When someone asks where a number came from, open it. Every statement, schedule, metric and disclosure opens the same way: the rendered figure and the facts behind it are one toggle apart.',
     bullets: [
       'Six views per block: rendered, chart, facts, elements, validation, and business rules',
       'Compute a metric for a new period on the spot and watch its time series extend',
-      'Deep-linkable state (?block= / ?view= / ?scenario=) and CSV export on every view',
+      'A link that reopens the same view, and CSV export on every view',
     ],
     caption: 'Explorer',
     demo: 'explorer',
@@ -89,11 +89,11 @@ const spotlights: Spotlight[] = [
     label: 'AI Console',
     title: 'Ask about your books, or have it do the work',
     description:
-      'Get the answer yourself instead of waiting on a report, and hand off the routine work. Use the AI Console in the app, or connect Claude, ChatGPT, or any MCP client and use the same tools from the chat you already use.',
+      'Get the answer yourself instead of waiting on a report, and hand off the routine work. Use the AI Console in the app, or connect Claude, ChatGPT or any MCP client and use the same tools from the chat you already use.',
     bullets: [
       'Ask in plain English; answers come from your ledger, with the generated query beside the result',
       'Start with /do to sort bank-feed lines, draft the month’s schedule entries, or build a metric, forecast, or draft report, on a stronger model than questions use, because a wrong change costs more than a wrong answer',
-      'Nothing posts on its own: what it sorts or drafts waits for a person to commit, close, or file',
+      'Nothing posts on its own: what it sorts or drafts waits for a person to commit, close or publish',
     ],
     caption: 'Console',
     demo: 'console',

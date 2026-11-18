@@ -51,8 +51,8 @@ export default function ContrastSection() {
                 d="M13 10V3L4 14h7v7l9-11h-7z"
               />
             </svg>
-            Validated every step of the way, and nothing writes back until you
-            post an entry
+            Every entry checked before a period closes, and nothing writes back
+            until you post an entry
           </div>
         </div>
       </div>

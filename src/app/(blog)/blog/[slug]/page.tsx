@@ -1,5 +1,9 @@
 import { BLOG_FEED, BlogJsonLd } from '@/components/blog/BlogJsonLd'
-import { BOOK_PATH, LOGIN_PATH } from '@/components/landing/constants'
+import {
+  BOOK_PATH,
+  LOGIN_PATH,
+  REGISTER_PATH,
+} from '@/components/landing/constants'
 import {
   formatPostDate,
   getAllPosts,
@@ -104,13 +108,12 @@ export default async function BlogPostPage({
               Back to Blog
             </Link>
 
-            {/* A plain <a>: /book redirects to the scheduler on another site. */}
-            <a
-              href={BOOK_PATH}
+            <Link
+              href={REGISTER_PATH}
               className="from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 rounded-full bg-linear-to-r px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all"
             >
-              Book 20 minutes
-            </a>
+              Create an account
+            </Link>
           </div>
 
           <h1 className="font-heading mb-6 text-4xl font-bold text-white md:text-5xl lg:text-6xl">

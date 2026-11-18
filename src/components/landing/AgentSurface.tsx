@@ -77,7 +77,7 @@ export default function AgentSurface() {
             Your agent has the wider surface
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Every write operation on the platform becomes an MCP tool the day it
+            Every write operation in RoboLedger becomes an MCP tool the day it
             ships. Screens follow where they earn it, so there are things your
             AI assistant can do today that don&apos;t have a button yet.
           </p>
@@ -93,7 +93,8 @@ export default function AgentSurface() {
           <p className="mt-4 text-center text-sm text-gray-400">
             One connector per set of books, side by side in the same chat. A
             group&apos;s companies share one; each client gets its own. Your AI
-            reads each one and answers across all of them.
+            reads each one and answers across all of them. Driftline, Cadence
+            Labs and Cascade Advisory are demo companies.
           </p>
         </div>
 

@@ -3,7 +3,7 @@ import {
   BLOG_FEED,
   BlogListJsonLd,
 } from '@/components/blog/BlogJsonLd'
-import { BOOK_PATH } from '@/components/landing/constants'
+import { BOOK_PATH, REGISTER_PATH } from '@/components/landing/constants'
 import { formatPostDate, getAllPosts } from '@/lib/blog'
 import { orBuildFallback } from '@robosystems/core/docs/catalog'
 import type { Metadata } from 'next'
@@ -58,11 +58,17 @@ export default async function BlogPage() {
           <p className="mx-auto mt-4 max-w-2xl text-center text-lg text-gray-300">
             {BLOG_DESCRIPTION}
           </p>
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href={REGISTER_PATH}
+              className="from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 rounded-lg bg-linear-to-r px-6 py-3 text-sm font-medium text-white shadow-lg transition-all"
+            >
+              Create an account
+            </Link>
             {/* A plain <a>: /book redirects to the scheduler on another site. */}
             <a
               href={BOOK_PATH}
-              className="from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 rounded-lg bg-linear-to-r px-6 py-3 text-sm font-medium text-white shadow-lg transition-all"
+              className="rounded-lg border border-gray-600 px-6 py-3 text-sm font-medium text-white transition-all hover:border-gray-500 hover:bg-white/5"
             >
               Book 20 minutes
             </a>
