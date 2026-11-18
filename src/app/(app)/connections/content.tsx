@@ -35,6 +35,8 @@ import { HiLink, HiPlus } from 'react-icons/hi'
 
 import DocsLink from '@/components/DocsLink'
 import ConnectionCard, {
+  DISCONNECTING_PROVIDERS,
+  PROVIDER_LABELS,
   type ConnectionData,
   type ConnectionStatus,
   type FeedEntity,
@@ -43,6 +45,7 @@ import ConnectionCard, {
 import DeleteConnectionModal, {
   type DeleteDisposition,
 } from './components/DeleteConnectionModal'
+import { MercuryDisclosure } from './components/MercuryDisclosure'
 import MercurySetupForm, {
   MERCURY_PARTNER_URL,
 } from './components/MercurySetupForm'
@@ -97,6 +100,10 @@ interface ConnectionProviderInfo {
    *  the provider takes a pasted token in place of OAuth (Mercury on
    *  self-hosted deployments). */
   optional_config?: string[]
+  /** Setup fields the provider cannot connect without — `api_key` here
+   *  means a pasted token is the only route (Mercury on a deployment with
+   *  no Mercury OAuth client). */
+  required_config?: string[]
 }
 
 const AUTH_TYPE_LABELS: Record<string, string> = {
@@ -127,6 +134,7 @@ export default function ModernConnectionsContent() {
     ConnectionProviderInfo[]
   >([])
   const [providersLoading, setProvidersLoading] = useState(false)
+  const mercuryOption = availableProviders.find((p) => p.provider === 'mercury')
   // Which provider setup form to show (null = provider list)
   const [setupProvider, setSetupProvider] = useState<string | null>(null)
   const { showError, showSuccess, ToastContainer } = useToast()
@@ -485,10 +493,13 @@ export default function ModernConnectionsContent() {
           query: { disposition },
         })
       )
+      const provider = connectionToDelete.provider.toLowerCase()
       showSuccess(
         disposition === 'sever'
           ? 'Connection severed — this graph now keeps its books natively'
-          : 'Connection deleted successfully'
+          : DISCONNECTING_PROVIDERS.has(provider)
+            ? `${PROVIDER_LABELS[provider] ?? connectionToDelete.provider} disconnected`
+            : 'Connection deleted successfully'
       )
       void loadConnections()
     } catch (err) {
@@ -672,9 +683,10 @@ export default function ModernConnectionsContent() {
               />
             ) : setupProvider === 'mercury' ? (
               <MercurySetupForm
-                apiKeyMode={availableProviders
-                  .find((p) => p.provider === 'mercury')
-                  ?.optional_config?.includes('api_key')}
+                apiKeyMode={mercuryOption?.optional_config?.includes('api_key')}
+                tokenRequired={mercuryOption?.required_config?.includes(
+                  'api_key'
+                )}
                 onCancel={() => setSetupProvider(null)}
                 onConnected={handleSetupSuccess}
                 parentKept={parentKept}
@@ -759,18 +771,21 @@ function ProviderRow({ provider, onConnect }: ProviderRowProps) {
           </div>
         )}
         {provider.provider === 'mercury' && (
-          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            Not banking with Mercury yet?{' '}
-            <a
-              href={MERCURY_PARTNER_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary-600 dark:text-primary-400 underline"
-            >
-              Open an account through our partner page
-            </a>
-            .
-          </p>
+          <>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              Not banking* with Mercury yet?{' '}
+              <a
+                href={MERCURY_PARTNER_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-600 dark:text-primary-400 underline"
+              >
+                Open an account through our partner page
+              </a>
+              .
+            </p>
+            <MercuryDisclosure asterisk className="mt-1" />
+          </>
         )}
       </div>
       <div className="ml-4 shrink-0">

@@ -42,6 +42,10 @@ vi.mock('@robosystems/core', async () => {
   }
 })
 
+vi.mock('next/image', () => ({
+  default: ({ alt }: any) => <span>{alt}</span>,
+}))
+
 vi.mock('@robosystems/core/ui-components', () => ({
   Spinner: () => <span>spinner</span>,
 }))
@@ -112,7 +116,7 @@ describe('MercurySetupForm', () => {
     fireEvent.change(screen.getByLabelText('Backfill from'), {
       target: { value: '2026-01-01' },
     })
-    fireEvent.click(screen.getByLabelText('Include treasury accounts'))
+    fireEvent.click(screen.getByLabelText('Include Mercury Treasury accounts'))
     fireEvent.click(screen.getByText('Sign in with Mercury'))
 
     await waitFor(() => expect(mockPush).toHaveBeenCalled())
@@ -155,10 +159,49 @@ describe('MercurySetupForm', () => {
     expect(link).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
+  it("carries Mercury's disclosure and a mercury.com link beside the banking mention", () => {
+    render(<MercurySetupForm onCancel={vi.fn()} />)
+    expect(screen.getByText(/Not banking\* with Mercury yet\?/)).toBeTruthy()
+    expect(screen.getByTestId('mercury-disclosure')).toHaveTextContent(
+      '*Mercury is a fintech company, not an FDIC-insured bank. Banking services provided through Choice Financial Group and Column N.A., Members FDIC.'
+    )
+    expect(screen.getByText('Powered by')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'mercury.com' })).toHaveAttribute(
+      'href',
+      'https://mercury.com'
+    )
+  })
+
+  it('discloses Mercury Treasury where the form names it', () => {
+    render(<MercurySetupForm onCancel={vi.fn()} />)
+    expect(screen.getByText('Include Mercury Treasury accounts')).toBeTruthy()
+    expect(screen.getByTestId('mercury-treasury-disclosure')).toHaveTextContent(
+      /^Mercury Treasury is offered by Mercury Advisory, LLC/
+    )
+  })
+
+  it('requires a token, and offers no Mercury sign-in, without an OAuth client', async () => {
+    render(<MercurySetupForm onCancel={vi.fn()} tokenRequired />)
+    expect(
+      screen.getByLabelText('Mercury API token for this company (read-only)')
+    ).toBeTruthy()
+    expect(screen.queryByText('Sign in with Mercury')).toBeNull()
+    const connect = screen.getByRole('button', {
+      name: 'Connect with API token',
+    })
+    expect(connect).toBeDisabled()
+
+    fireEvent.change(
+      screen.getByLabelText('Mercury API token for this company (read-only)'),
+      { target: { value: 'secret-token:abc' } }
+    )
+    expect(connect).not.toBeDisabled()
+  })
+
   it('hides the API token field on hosted deployments', () => {
     render(<MercurySetupForm onCancel={vi.fn()} />)
     expect(
-      screen.queryByLabelText(/Personal API token/)
+      screen.queryByLabelText(/Mercury API token for this company/)
     ).not.toBeInTheDocument()
   })
 
@@ -172,9 +215,12 @@ describe('MercurySetupForm', () => {
       />
     )
 
-    fireEvent.change(screen.getByLabelText(/Personal API token/), {
-      target: { value: 'secret-token-123' },
-    })
+    fireEvent.change(
+      screen.getByLabelText(/Mercury API token for this company/),
+      {
+        target: { value: 'secret-token-123' },
+      }
+    )
     fireEvent.click(screen.getByText('Connect with API token'))
 
     await waitFor(() => expect(onConnected).toHaveBeenCalled())

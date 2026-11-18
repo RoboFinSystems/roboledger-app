@@ -83,6 +83,8 @@ vi.mock('@/components/DocsLink', () => ({ default: () => null }))
 
 // Children reduced to the buttons that drive the handlers under test.
 vi.mock('../components/ConnectionCard', () => ({
+  PROVIDER_LABELS: { quickbooks: 'QuickBooks', mercury: 'Mercury' },
+  DISCONNECTING_PROVIDERS: new Set(['quickbooks', 'mercury', 'plaid']),
   default: ({
     connection,
     onSync,

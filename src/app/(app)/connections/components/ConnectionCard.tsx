@@ -20,6 +20,7 @@ import {
 } from 'react-icons/hi'
 
 import { FiscalCalendarBootstrap } from './FiscalCalendarBootstrap'
+import { MercuryLogomark, PoweredByMercury } from './MercuryDisclosure'
 
 const PROVIDER_IMAGES: Record<
   string,
@@ -41,6 +42,14 @@ export const PROVIDER_LABELS: Record<string, string> = {
   plaid: 'Plaid',
   external: 'External',
 }
+
+/** Providers whose removal is a disconnect, not a delete: the synced ledger
+ *  (QuickBooks) and the bank feeds. */
+export const DISCONNECTING_PROVIDERS = new Set([
+  'quickbooks',
+  'mercury',
+  'plaid',
+])
 
 /** Providers whose first sync initializes the fiscal calendar, and whose
  *  card therefore surfaces the bootstrap state when that could not happen. */
@@ -213,6 +222,7 @@ export default function ConnectionCard({
     <Card>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
+          {provider === 'mercury' && <MercuryLogomark />}
           {image && (
             <Image
               src={image.src}
@@ -343,6 +353,8 @@ export default function ConnectionCard({
                 </p>
               </div>
             )}
+
+            {provider === 'mercury' && <PoweredByMercury className="mt-3" />}
           </div>
         </div>
 
@@ -373,9 +385,16 @@ export default function ConnectionCard({
             color="failure"
             onClick={onDelete}
             disabled={isSyncing(status.status)}
-            title="Delete connection"
+            title={
+              DISCONNECTING_PROVIDERS.has(provider)
+                ? `Disconnect ${label}`
+                : 'Delete connection'
+            }
           >
             <FaTrash className="h-3 w-3" />
+            {DISCONNECTING_PROVIDERS.has(provider) && (
+              <span className="ml-2">Disconnect</span>
+            )}
           </Button>
         </div>
       </div>

@@ -15,12 +15,20 @@ import FeedEntityField, {
   feedEntityDefault,
   feedEntityScope,
 } from './FeedEntityField'
+import {
+  MERCURY_TREASURY_DISCLOSURE,
+  MercuryLogomark,
+  PoweredByMercury,
+} from './MercuryDisclosure'
 
 interface MercurySetupFormProps {
   /** Whether this deployment lets a personal read-only API token connect
    *  directly (`optional_config` carries `api_key`); hosted production never
    *  does — there the only route is OAuth. */
   apiKeyMode?: boolean
+  /** The deployment has no Mercury OAuth client, so a pasted token is the
+   *  only way to connect. */
+  tokenRequired?: boolean
   onCancel: () => void
   /** Called when an API-token connection is live (no browser round-trip). */
   onConnected?: () => void
@@ -60,6 +68,7 @@ const toMessage = (err: unknown, fallback: string): string => {
 // company's chart, or one is added.
 export default function MercurySetupForm({
   apiKeyMode = false,
+  tokenRequired = false,
   onCancel,
   onConnected,
   parentKept = false,
@@ -77,7 +86,8 @@ export default function MercurySetupForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const usingApiKey = apiKeyMode && apiKey.trim().length > 0
+  const showTokenField = apiKeyMode || tokenRequired
+  const usingApiKey = showTokenField && apiKey.trim().length > 0
 
   // The entity list arrives after the first render; a pick that is no longer
   // one the server would take (or never was) falls back to the default.
@@ -88,9 +98,10 @@ export default function MercurySetupForm({
   }, [entities, entityId, parentKept, focused?.id])
 
   const canConnect =
-    entities.length === 0
+    (entities.length === 0
       ? !parentKept
-      : feedEntityAllowed(entities, entityId, parentKept)
+      : feedEntityAllowed(entities, entityId, parentKept)) &&
+    (!tokenRequired || usingApiKey)
 
   const handleConnect = async () => {
     if (!currentGraphId) {
@@ -153,16 +164,19 @@ export default function MercurySetupForm({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-          Connect Mercury
-        </h3>
+        <div className="flex items-center gap-3">
+          <MercuryLogomark size={36} />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            Connect Mercury
+          </h3>
+        </div>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Every posted bank transaction lands in your inbox with a suggested
           account, ready to classify and post. Mercury never becomes the ledger
           — your chart of accounts stays your own.
         </p>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Not banking with Mercury yet?{' '}
+          Not banking* with Mercury yet?{' '}
           <a
             href={MERCURY_PARTNER_URL}
             target="_blank"
@@ -173,6 +187,7 @@ export default function MercurySetupForm({
           </a>
           .
         </p>
+        <PoweredByMercury asterisk className="mt-3" />
       </div>
 
       {error && <Alert color="failure">{error}</Alert>}
@@ -210,10 +225,16 @@ export default function MercurySetupForm({
               disabled={loading}
             />
             <Label htmlFor="mercury-include-treasury" className="text-sm">
-              Include treasury accounts
+              Include Mercury Treasury accounts
             </Label>
           </div>
         </div>
+        <p
+          className="mt-3 text-sm text-gray-600 dark:text-gray-400"
+          data-testid="mercury-treasury-disclosure"
+        >
+          {MERCURY_TREASURY_DISCLOSURE}
+        </p>
 
         <div className="mt-4">
           <FeedEntityField
@@ -226,10 +247,12 @@ export default function MercurySetupForm({
           />
         </div>
 
-        {apiKeyMode && (
+        {showTokenField && (
           <div className="mt-4">
             <Label htmlFor="mercury-api-key">
-              Personal API token (read-only) — optional
+              {tokenRequired
+                ? 'Mercury API token for this company (read-only)'
+                : 'Mercury API token for this company (read-only) — optional'}
             </Label>
             <TextInput
               id="mercury-api-key"
@@ -238,12 +261,18 @@ export default function MercurySetupForm({
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               disabled={loading}
-              placeholder="Leave empty to sign in with Mercury"
+              placeholder={
+                tokenRequired
+                  ? 'Paste a read-only token'
+                  : 'Leave empty to sign in with Mercury'
+              }
             />
             <p className="mt-1 text-xs text-gray-500">
-              This deployment allows a personal token in place of the Mercury
-              sign-in. Create a read-only token in Mercury under Settings → API
-              tokens.
+              {tokenRequired
+                ? 'This deployment connects Mercury with a token. '
+                : 'This deployment allows a token in place of the Mercury sign-in. '}
+              Each company connects with its own: create a read-only token in
+              that company&rsquo;s Mercury account under Settings → API tokens.
             </p>
           </div>
         )}
@@ -270,7 +299,9 @@ export default function MercurySetupForm({
               onClick={handleConnect}
               disabled={!canConnect}
             >
-              {usingApiKey ? 'Connect with API token' : 'Sign in with Mercury'}
+              {usingApiKey || tokenRequired
+                ? 'Connect with API token'
+                : 'Sign in with Mercury'}
             </Button>
           )}
         </div>
