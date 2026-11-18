@@ -35,12 +35,14 @@ import { HiLink, HiPlus } from 'react-icons/hi'
 
 import DocsLink from '@/components/DocsLink'
 import ConnectionCard, {
+  PROVIDER_LABELS,
   type ConnectionData,
   type ConnectionStatus,
   type FeedEntity,
   type WritePolicyChoice,
 } from './components/ConnectionCard'
 import DeleteConnectionModal, {
+  DISCONNECTING_PROVIDERS,
   type DeleteDisposition,
 } from './components/DeleteConnectionModal'
 import { MercuryDisclosure } from './components/MercuryDisclosure'
@@ -491,10 +493,13 @@ export default function ModernConnectionsContent() {
           query: { disposition },
         })
       )
+      const provider = connectionToDelete.provider.toLowerCase()
       showSuccess(
         disposition === 'sever'
           ? 'Connection severed — this graph now keeps its books natively'
-          : 'Connection deleted successfully'
+          : DISCONNECTING_PROVIDERS.has(provider)
+            ? `${PROVIDER_LABELS[provider] ?? connectionToDelete.provider} disconnected`
+            : 'Connection deleted successfully'
       )
       void loadConnections()
     } catch (err) {

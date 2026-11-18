@@ -24,6 +24,12 @@ const SYNCED_LEDGER_PROVIDERS = new Set(['quickbooks'])
  *  captured but nothing posted (the backend's ``purge_bank_feed``). */
 const BANK_FEED_PROVIDERS = new Set(['mercury', 'plaid'])
 
+/** Providers whose removal is a disconnect, not a delete. */
+export const DISCONNECTING_PROVIDERS = new Set([
+  ...SYNCED_LEDGER_PROVIDERS,
+  ...BANK_FEED_PROVIDERS,
+])
+
 // Deleting a synced-ledger connection is a fork in the road, so the modal
 // asks which one: keep the connection revivable, or sever it and go native
 // with the chart it created. Every other provider has one disposition.
@@ -46,7 +52,7 @@ export const DeleteConnectionModal: FC<DeleteConnectionModalProps> = ({
     PROVIDER_LABELS[provider] || connection?.provider || 'connection'
   const canSever = SYNCED_LEDGER_PROVIDERS.has(provider)
   const isBankFeed = BANK_FEED_PROVIDERS.has(provider)
-  const disconnects = canSever || isBankFeed
+  const disconnects = DISCONNECTING_PROVIDERS.has(provider)
 
   return (
     <ConfirmModal
