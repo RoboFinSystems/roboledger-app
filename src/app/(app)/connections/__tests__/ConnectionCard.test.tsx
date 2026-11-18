@@ -157,6 +157,41 @@ describe('ConnectionCard', () => {
     expect(screen.queryByText('Continue sign-in')).toBeNull()
   })
 
+  it('a Mercury card says Powered by Mercury, carries the disclosure and a labelled Disconnect', () => {
+    const onDelete = vi.fn()
+    render(
+      <ConnectionCard
+        connection={connection()}
+        status={{ status: 'connected', message: 'Connected' }}
+        onSync={() => {}}
+        onDelete={onDelete}
+      />
+    )
+    expect(screen.getByText('Powered by')).toBeTruthy()
+    expect(screen.getByTestId('mercury-disclosure')).toHaveTextContent(
+      /^Mercury is a fintech company, not an FDIC-insured bank\./
+    )
+    expect(screen.getByRole('link', { name: 'mercury.com' })).toHaveAttribute(
+      'href',
+      'https://mercury.com'
+    )
+    fireEvent.click(screen.getByTitle('Disconnect Mercury'))
+    expect(onDelete).toHaveBeenCalled()
+  })
+
+  it('a QuickBooks card carries no Mercury disclosure', () => {
+    render(
+      <ConnectionCard
+        connection={connection({ provider: 'quickbooks' })}
+        status={{ status: 'connected', message: 'Connected' }}
+        onSync={() => {}}
+        onDelete={() => {}}
+      />
+    )
+    expect(screen.queryByTestId('mercury-disclosure')).toBeNull()
+    expect(screen.getByTitle('Delete connection')).toBeTruthy()
+  })
+
   it('a feed names, and checks the calendar of, each entity its accounts book to', () => {
     render(
       <ConnectionCard

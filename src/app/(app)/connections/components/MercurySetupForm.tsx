@@ -15,6 +15,11 @@ import FeedEntityField, {
   feedEntityDefault,
   feedEntityScope,
 } from './FeedEntityField'
+import {
+  MERCURY_TREASURY_DISCLOSURE,
+  MercuryLogomark,
+  PoweredByMercury,
+} from './MercuryDisclosure'
 
 interface MercurySetupFormProps {
   /** Whether this deployment lets a personal read-only API token connect
@@ -153,16 +158,19 @@ export default function MercurySetupForm({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-          Connect Mercury
-        </h3>
+        <div className="flex items-center gap-3">
+          <MercuryLogomark size={36} />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            Connect Mercury
+          </h3>
+        </div>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Every posted bank transaction lands in your inbox with a suggested
           account, ready to classify and post. Mercury never becomes the ledger
           — your chart of accounts stays your own.
         </p>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Not banking with Mercury yet?{' '}
+          Not banking* with Mercury yet?{' '}
           <a
             href={MERCURY_PARTNER_URL}
             target="_blank"
@@ -173,6 +181,7 @@ export default function MercurySetupForm({
           </a>
           .
         </p>
+        <PoweredByMercury asterisk className="mt-3" />
       </div>
 
       {error && <Alert color="failure">{error}</Alert>}
@@ -210,10 +219,16 @@ export default function MercurySetupForm({
               disabled={loading}
             />
             <Label htmlFor="mercury-include-treasury" className="text-sm">
-              Include treasury accounts
+              Include Mercury Treasury accounts
             </Label>
           </div>
         </div>
+        <p
+          className="mt-3 text-xs text-gray-600 dark:text-gray-400"
+          data-testid="mercury-treasury-disclosure"
+        >
+          {MERCURY_TREASURY_DISCLOSURE}
+        </p>
 
         <div className="mt-4">
           <FeedEntityField

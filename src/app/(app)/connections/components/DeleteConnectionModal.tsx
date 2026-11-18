@@ -4,6 +4,7 @@ import { ConfirmModal } from '@robosystems/core'
 import { type FC, useEffect, useState } from 'react'
 
 import { type ConnectionData, PROVIDER_LABELS } from './ConnectionCard'
+import { PoweredByMercury } from './MercuryDisclosure'
 
 /** What deleting a connection does to the graph's books. */
 export type DeleteDisposition = 'disconnect' | 'sever'
@@ -18,6 +19,10 @@ interface DeleteConnectionModalProps {
 /** Providers that ARE the general ledger while connected — the only ones a
  *  cutover to native books applies to. */
 const SYNCED_LEDGER_PROVIDERS = new Set(['quickbooks'])
+
+/** Bank feeds: disconnecting revokes access and purges what the feed
+ *  captured but nothing posted (the backend's ``purge_bank_feed``). */
+const BANK_FEED_PROVIDERS = new Set(['mercury', 'plaid'])
 
 // Deleting a synced-ledger connection is a fork in the road, so the modal
 // asks which one: keep the connection revivable, or sever it and go native
@@ -40,22 +45,50 @@ export const DeleteConnectionModal: FC<DeleteConnectionModalProps> = ({
   const label =
     PROVIDER_LABELS[provider] || connection?.provider || 'connection'
   const canSever = SYNCED_LEDGER_PROVIDERS.has(provider)
+  const isBankFeed = BANK_FEED_PROVIDERS.has(provider)
+  const disconnects = canSever || isBankFeed
 
   return (
     <ConfirmModal
       show={show}
       onClose={onClose}
       onConfirm={() => onConfirm(canSever ? disposition : 'disconnect')}
-      title={canSever ? `Disconnect ${label}` : 'Delete Connection'}
+      title={disconnects ? `Disconnect ${label}` : 'Delete Connection'}
       confirmLabel={
         canSever && disposition === 'sever'
           ? 'Sever and go native'
-          : canSever
+          : disconnects
             ? 'Disconnect'
             : 'Delete Connection'
       }
     >
-      {canSever ? (
+      {isBankFeed ? (
+        <div className="space-y-3 text-gray-700 dark:text-gray-300">
+          <p>
+            RoboLedger stops syncing and gives up its access to your {label}{' '}
+            account.
+          </p>
+          <ul className="list-disc space-y-1 pl-5 text-sm">
+            <li>
+              Transactions still waiting in your inbox are deleted, along with
+              the counterparties only they used.
+            </li>
+            <li>
+              Entries you already posted stay in your books, without {label}
+              &rsquo;s transaction details.
+            </li>
+            <li>
+              Your chart of accounts stays; its accounts stop being linked to{' '}
+              {label}.
+            </li>
+          </ul>
+          <p className="text-sm">
+            You can connect {label} again at any time; it starts from a fresh
+            sync.
+          </p>
+          {provider === 'mercury' && <PoweredByMercury />}
+        </div>
+      ) : canSever ? (
         <div className="space-y-3">
           <p className="text-gray-700 dark:text-gray-300">
             How should this graph keep its books after {label} is disconnected?

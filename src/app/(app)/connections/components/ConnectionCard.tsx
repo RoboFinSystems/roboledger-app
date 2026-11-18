@@ -20,6 +20,7 @@ import {
 } from 'react-icons/hi'
 
 import { FiscalCalendarBootstrap } from './FiscalCalendarBootstrap'
+import { MercuryLogomark, PoweredByMercury } from './MercuryDisclosure'
 
 const PROVIDER_IMAGES: Record<
   string,
@@ -213,6 +214,7 @@ export default function ConnectionCard({
     <Card>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
+          {provider === 'mercury' && <MercuryLogomark />}
           {image && (
             <Image
               src={image.src}
@@ -343,6 +345,8 @@ export default function ConnectionCard({
                 </p>
               </div>
             )}
+
+            {provider === 'mercury' && <PoweredByMercury className="mt-3" />}
           </div>
         </div>
 
@@ -373,9 +377,14 @@ export default function ConnectionCard({
             color="failure"
             onClick={onDelete}
             disabled={isSyncing(status.status)}
-            title="Delete connection"
+            title={
+              provider === 'mercury'
+                ? 'Disconnect Mercury'
+                : 'Delete connection'
+            }
           >
             <FaTrash className="h-3 w-3" />
+            {provider === 'mercury' && <span className="ml-2">Disconnect</span>}
           </Button>
         </div>
       </div>

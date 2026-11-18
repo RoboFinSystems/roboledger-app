@@ -6,6 +6,8 @@ import { LoadingState, SDK, unwrapSdk } from '@robosystems/core'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
+import { PoweredByMercury } from '../components/MercuryDisclosure'
+
 /** How long to wait for a graph selection before giving up on the callback. */
 const NO_GRAPH_TIMEOUT_MS = 15_000
 
@@ -101,11 +103,14 @@ export default function MercuryCallbackPage() {
 
   if (status === 'loading') {
     return (
-      <LoadingState
-        message="Connecting to Mercury..."
-        size="xl"
-        className="min-h-[60vh]"
-      />
+      <div className="mx-auto max-w-xl px-4">
+        <LoadingState
+          message="Connecting to Mercury..."
+          size="xl"
+          className="min-h-[60vh]"
+        />
+        <PoweredByMercury />
+      </div>
     )
   }
 
@@ -134,6 +139,7 @@ export default function MercuryCallbackPage() {
           <p className="mt-2 text-gray-600 dark:text-gray-300">
             Your first sync is running. Redirecting you back to connections...
           </p>
+          <PoweredByMercury className="mx-auto mt-6 max-w-xl text-left" />
         </div>
       </div>
     )
@@ -167,6 +173,7 @@ export default function MercuryCallbackPage() {
         >
           Back to Connections
         </button>
+        <PoweredByMercury className="mx-auto mt-6 max-w-xl text-left" />
       </div>
     </div>
   )

@@ -43,6 +43,7 @@ import ConnectionCard, {
 import DeleteConnectionModal, {
   type DeleteDisposition,
 } from './components/DeleteConnectionModal'
+import { MercuryDisclosure } from './components/MercuryDisclosure'
 import MercurySetupForm, {
   MERCURY_PARTNER_URL,
 } from './components/MercurySetupForm'
@@ -759,18 +760,21 @@ function ProviderRow({ provider, onConnect }: ProviderRowProps) {
           </div>
         )}
         {provider.provider === 'mercury' && (
-          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            Not banking with Mercury yet?{' '}
-            <a
-              href={MERCURY_PARTNER_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary-600 dark:text-primary-400 underline"
-            >
-              Open an account through our partner page
-            </a>
-            .
-          </p>
+          <>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              Not banking* with Mercury yet?{' '}
+              <a
+                href={MERCURY_PARTNER_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-600 dark:text-primary-400 underline"
+              >
+                Open an account through our partner page
+              </a>
+              .
+            </p>
+            <MercuryDisclosure asterisk className="mt-1" />
+          </>
         )}
       </div>
       <div className="ml-4 shrink-0">

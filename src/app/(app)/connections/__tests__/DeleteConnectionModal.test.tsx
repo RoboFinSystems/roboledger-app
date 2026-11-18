@@ -23,7 +23,16 @@ vi.mock('@robosystems/core', () => ({
 // ConnectionCard pulls in images and the whole card; only its label map is
 // needed here.
 vi.mock('../components/ConnectionCard', () => ({
-  PROVIDER_LABELS: { quickbooks: 'QuickBooks', external: 'External' },
+  PROVIDER_LABELS: {
+    quickbooks: 'QuickBooks',
+    mercury: 'Mercury',
+    plaid: 'Plaid',
+    external: 'External',
+  },
+}))
+
+vi.mock('next/image', () => ({
+  default: ({ alt }: any) => <span>{alt}</span>,
 }))
 
 import { DeleteConnectionModal } from '../components/DeleteConnectionModal'
@@ -74,6 +83,43 @@ describe('DeleteConnectionModal', () => {
     fireEvent.click(screen.getAllByRole('radio')[1])
     fireEvent.click(screen.getByRole('button', { name: 'Sever and go native' }))
     expect(onConfirm).toHaveBeenCalledWith('sever')
+  })
+
+  it('disconnects Mercury, says what is kept and deleted, and carries the disclosure', () => {
+    const onConfirm = vi.fn()
+    render(
+      <DeleteConnectionModal
+        show
+        connection={connection('mercury')}
+        onClose={vi.fn()}
+        onConfirm={onConfirm}
+      />
+    )
+
+    expect(
+      screen.getByRole('heading', { name: 'Disconnect Mercury' })
+    ).toBeInTheDocument()
+    expect(screen.queryAllByRole('radio')).toHaveLength(0)
+    expect(screen.getByText(/waiting in your inbox are deleted/)).toBeTruthy()
+    expect(screen.getByText(/already posted stay in your books/)).toBeTruthy()
+    expect(screen.getByTestId('mercury-disclosure')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }))
+    expect(onConfirm).toHaveBeenCalledWith('disconnect')
+  })
+
+  it('disconnects Plaid without the Mercury disclosure', () => {
+    render(
+      <DeleteConnectionModal
+        show
+        connection={connection('plaid')}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+      />
+    )
+    expect(
+      screen.getByRole('heading', { name: 'Disconnect Plaid' })
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId('mercury-disclosure')).toBeNull()
   })
 
   it('has a single disposition for every other provider', () => {
