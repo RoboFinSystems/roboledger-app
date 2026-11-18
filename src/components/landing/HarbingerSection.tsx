@@ -15,8 +15,12 @@ import FloatingElementsVariant from './FloatingElementsVariant'
 // __tests__/retired-phrases.test.ts, which fails if they come back.
 const points = [
   {
+    title: 'The knowledge graph we build',
+    body: 'Your ledger, mapped so every number traces to its entry, and the data around it, modelled from your own schema in workspaces beside the books where your agents add their own structure.',
+  },
+  {
     title: 'Three working workflows',
-    body: 'Variance explanation, a close checklist, and your numbers beside public companies you choose, in your MCP client, every number traced to its entry.',
+    body: 'Variance explanation, a close checklist, and your numbers beside public companies you choose (from the SEC repository, $29 or $99 a month, 14-day trial), in your MCP client.',
   },
   {
     title: 'Your deployment, your keys',
@@ -28,7 +32,7 @@ const points = [
   },
   {
     title: 'Our own books run on it',
-    body: "Our own companies' books are kept on it, closed through September.",
+    body: "Our own companies' books are kept on it.",
   },
   {
     title: 'You keep everything we build',
@@ -68,9 +72,7 @@ export default function HarbingerSection() {
               <p className="mb-4 text-sm leading-relaxed text-gray-400">
                 $7,500 to $10,000, fixed by scope: half up front, half at
                 handover. Hosting is separate: from $99 a month on the managed
-                platform, Dedicated quoted, or free to self-host. Peer
-                benchmarks use the SEC repository ($29 or $99 a month, 14-day
-                trial).
+                platform, Dedicated quoted, or free to self-host.
               </p>
               <p className="mb-6 text-sm leading-relaxed text-gray-400">
                 QuickBooks connects directly; any other ledger comes in through
