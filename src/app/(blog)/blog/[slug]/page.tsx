@@ -192,7 +192,7 @@ export default async function BlogPostPage({
           <p className="mb-6 text-gray-300">
             Connect QuickBooks and ask your AI the first question. Nothing
             writes to QuickBooks until you post an entry. Our own
-            companies&apos; books are kept on it, closed through September.
+            companies&apos; books are kept on it.
           </p>
           <a
             href={BOOK_PATH}

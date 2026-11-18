@@ -55,21 +55,22 @@ export default function HeroSection() {
             </span>
           </p>
 
-          {/* CTAs. Booking is a plain <a>: /book redirects to the scheduler on another site. */}
+          {/* CTAs: the account first, the meeting second. Booking is a plain
+              <a>: /book redirects to the scheduler on another site. */}
           <div className="mx-auto mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <a
-              href={BOOK_PATH}
-              className="group from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 relative overflow-hidden rounded-lg bg-linear-to-r px-8 py-4 text-base font-medium text-white shadow-2xl transition-all duration-300 sm:text-lg"
-            >
-              <span className="relative z-10">Book 20 minutes</span>
-              <div className="absolute inset-0 -translate-y-full bg-white/20 transition-transform duration-500 group-hover:translate-y-0"></div>
-            </a>
             <Link
               href={REGISTER_PATH}
+              className="group from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 relative overflow-hidden rounded-lg bg-linear-to-r px-8 py-4 text-base font-medium text-white shadow-2xl transition-all duration-300 sm:text-lg"
+            >
+              <span className="relative z-10">Create an account</span>
+              <div className="absolute inset-0 -translate-y-full bg-white/20 transition-transform duration-500 group-hover:translate-y-0"></div>
+            </Link>
+            <a
+              href={BOOK_PATH}
               className="inline-flex items-center gap-2 rounded-lg border border-gray-600 px-8 py-4 text-base font-medium text-white transition-all duration-300 hover:border-gray-500 hover:bg-white/5 sm:text-lg"
             >
-              Create an account
-            </Link>
+              Book 20 minutes
+            </a>
           </div>
 
           <p className="mx-auto mt-6 max-w-2xl text-sm text-gray-400 sm:text-base">
