@@ -3,7 +3,11 @@
 import { ConfirmModal } from '@robosystems/core'
 import { type FC, useEffect, useState } from 'react'
 
-import { type ConnectionData, PROVIDER_LABELS } from './ConnectionCard'
+import {
+  type ConnectionData,
+  DISCONNECTING_PROVIDERS,
+  PROVIDER_LABELS,
+} from './ConnectionCard'
 import { PoweredByMercury } from './MercuryDisclosure'
 
 /** What deleting a connection does to the graph's books. */
@@ -23,12 +27,6 @@ const SYNCED_LEDGER_PROVIDERS = new Set(['quickbooks'])
 /** Bank feeds: disconnecting revokes access and purges what the feed
  *  captured but nothing posted (the backend's ``purge_bank_feed``). */
 const BANK_FEED_PROVIDERS = new Set(['mercury', 'plaid'])
-
-/** Providers whose removal is a disconnect, not a delete. */
-export const DISCONNECTING_PROVIDERS = new Set([
-  ...SYNCED_LEDGER_PROVIDERS,
-  ...BANK_FEED_PROVIDERS,
-])
 
 // Deleting a synced-ledger connection is a fork in the road, so the modal
 // asks which one: keep the connection revivable, or sever it and go native

@@ -43,6 +43,14 @@ export const PROVIDER_LABELS: Record<string, string> = {
   external: 'External',
 }
 
+/** Providers whose removal is a disconnect, not a delete: the synced ledger
+ *  (QuickBooks) and the bank feeds. */
+export const DISCONNECTING_PROVIDERS = new Set([
+  'quickbooks',
+  'mercury',
+  'plaid',
+])
+
 /** Providers whose first sync initializes the fiscal calendar, and whose
  *  card therefore surfaces the bootstrap state when that could not happen. */
 const CALENDAR_BOOTSTRAP_PROVIDERS = new Set(['quickbooks', 'mercury', 'plaid'])
@@ -378,13 +386,15 @@ export default function ConnectionCard({
             onClick={onDelete}
             disabled={isSyncing(status.status)}
             title={
-              provider === 'mercury'
-                ? 'Disconnect Mercury'
+              DISCONNECTING_PROVIDERS.has(provider)
+                ? `Disconnect ${label}`
                 : 'Delete connection'
             }
           >
             <FaTrash className="h-3 w-3" />
-            {provider === 'mercury' && <span className="ml-2">Disconnect</span>}
+            {DISCONNECTING_PROVIDERS.has(provider) && (
+              <span className="ml-2">Disconnect</span>
+            )}
           </Button>
         </div>
       </div>

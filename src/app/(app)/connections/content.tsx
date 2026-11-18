@@ -35,6 +35,7 @@ import { HiLink, HiPlus } from 'react-icons/hi'
 
 import DocsLink from '@/components/DocsLink'
 import ConnectionCard, {
+  DISCONNECTING_PROVIDERS,
   PROVIDER_LABELS,
   type ConnectionData,
   type ConnectionStatus,
@@ -42,7 +43,6 @@ import ConnectionCard, {
   type WritePolicyChoice,
 } from './components/ConnectionCard'
 import DeleteConnectionModal, {
-  DISCONNECTING_PROVIDERS,
   type DeleteDisposition,
 } from './components/DeleteConnectionModal'
 import { MercuryDisclosure } from './components/MercuryDisclosure'

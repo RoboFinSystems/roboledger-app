@@ -179,7 +179,7 @@ describe('ConnectionCard', () => {
     expect(onDelete).toHaveBeenCalled()
   })
 
-  it('a QuickBooks card carries no Mercury disclosure', () => {
+  it('a QuickBooks card carries no Mercury disclosure and disconnects', () => {
     render(
       <ConnectionCard
         connection={connection({ provider: 'quickbooks' })}
@@ -189,7 +189,20 @@ describe('ConnectionCard', () => {
       />
     )
     expect(screen.queryByTestId('mercury-disclosure')).toBeNull()
+    expect(screen.getByTitle('Disconnect QuickBooks')).toBeTruthy()
+  })
+
+  it('an external integration is deleted, not disconnected', () => {
+    render(
+      <ConnectionCard
+        connection={connection({ provider: 'external' })}
+        status={{ status: 'connected', message: 'Connected' }}
+        onSync={() => {}}
+        onDelete={() => {}}
+      />
+    )
     expect(screen.getByTitle('Delete connection')).toBeTruthy()
+    expect(screen.queryByText('Disconnect')).toBeNull()
   })
 
   it('a feed names, and checks the calendar of, each entity its accounts book to', () => {

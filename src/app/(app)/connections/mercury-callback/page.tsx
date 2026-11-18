@@ -103,12 +103,8 @@ export default function MercuryCallbackPage() {
 
   if (status === 'loading') {
     return (
-      <div className="mx-auto max-w-xl px-4">
-        <LoadingState
-          message="Connecting to Mercury..."
-          size="xl"
-          className="min-h-[60vh]"
-        />
+      <div className="mx-auto flex min-h-[60vh] max-w-xl flex-col justify-center gap-6 px-4">
+        <LoadingState message="Connecting to Mercury..." size="xl" />
         <PoweredByMercury />
       </div>
     )

@@ -230,7 +230,7 @@ export default function MercurySetupForm({
           </div>
         </div>
         <p
-          className="mt-3 text-xs text-gray-600 dark:text-gray-400"
+          className="mt-3 text-sm text-gray-600 dark:text-gray-400"
           data-testid="mercury-treasury-disclosure"
         >
           {MERCURY_TREASURY_DISCLOSURE}

@@ -23,6 +23,7 @@ vi.mock('@robosystems/core', () => ({
 // ConnectionCard pulls in images and the whole card; only its label map is
 // needed here.
 vi.mock('../components/ConnectionCard', () => ({
+  DISCONNECTING_PROVIDERS: new Set(['quickbooks', 'mercury', 'plaid']),
   PROVIDER_LABELS: {
     quickbooks: 'QuickBooks',
     mercury: 'Mercury',
