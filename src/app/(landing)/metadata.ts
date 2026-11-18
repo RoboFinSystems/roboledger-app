@@ -14,7 +14,6 @@ export const landingMetadata: Metadata = {
     'connect QuickBooks to ChatGPT',
     'Claude QuickBooks integration',
     'analyze QuickBooks data with AI',
-    'benchmark small business against public companies',
     'QuickBooks scenario planning AI',
     'multi entity accounting software',
     'multi-entity accounting',

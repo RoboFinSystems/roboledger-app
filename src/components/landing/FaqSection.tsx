@@ -84,12 +84,11 @@ const faqs: { q: string; a: ReactNode }[] = [
     a: (
       <>
         It answers questions about your books in plain English, opens any number
-        down to the facts behind it, rolls plans forward, and compares you to
-        public companies. It also sorts bank lines into accounts, drafts the
-        month&apos;s schedule entries and the group&apos;s consolidating
-        entries, and proposes posting rules. You stay in control at every step:
-        previews of what would post, balanced-entry checks, and nothing posts
-        until a person approves it.
+        down to the facts behind it, and rolls plans forward. It also sorts bank
+        lines into accounts, drafts the month&apos;s schedule entries and the
+        group&apos;s consolidating entries, and proposes posting rules. You stay
+        in control at every step: previews of what would post, balanced-entry
+        checks, and nothing posts until a person approves it.
       </>
     ),
   },
@@ -137,10 +136,9 @@ const faqs: { q: string; a: ReactNode }[] = [
       <>
         Create an account, then create a graph for your books. A graph is paid
         by card from the first month, from $99 a month on the managed platform,
-        and a group&apos;s companies share one graph. Comparing against public
-        companies adds the SEC subscription, $29 or $99 a month after a 14-day
-        trial. Or run it yourself; it&apos;s open source with no outside
-        investors, so you keep the code and the data whatever happens to us.{' '}
+        and a group&apos;s companies share one graph. Or run it yourself;
+        it&apos;s open source with no outside investors, so you keep the code
+        and the data whatever happens to us.{' '}
         <a
           href={`${ROBOSYSTEMS_URL}/pricing`}
           target="_blank"

@@ -50,8 +50,8 @@ const capabilities: { title: string; blurb: string; tools: string[] }[] = [
   {
     title: 'Compare across companies',
     blurb:
-      'Build a fact grid over canonical concepts to line your numbers up against SEC filers on the same taxonomy.',
-    tools: ['build-fact-grid', 'resolve-element'],
+      "Build a fact grid over the group's companies and periods, on the same reporting concepts.",
+    tools: ['build-fact-grid'],
   },
   {
     title: 'Run the graph itself',
