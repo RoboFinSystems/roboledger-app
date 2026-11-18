@@ -10,10 +10,10 @@ export default function PlatformSection() {
             Built on RoboSystems
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Your books and the public filings, read side by side in XBRL&apos;s
-            standard terms, with every number traced to its entries. Your AI
-            queries them in plain English, and the rule engine checks the books
-            before a period closes, for one company or a whole group.
+            Your books in XBRL&apos;s standard terms, with every number traced
+            to its entries. Your AI queries them in plain English, and the rule
+            engine checks the books before a period closes, for one company or a
+            whole group.
           </p>
         </div>
 
@@ -38,23 +38,6 @@ export default function PlatformSection() {
                     <li>• Chart of accounts</li>
                     <li>• Journal entries</li>
                     <li>• Transaction data</li>
-                  </ul>
-                </div>
-
-                <div className="border-secondary-500/30 from-secondary-500/10 rounded-lg border bg-gradient-to-br to-pink-500/10 p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <div className="bg-secondary-600 flex h-8 w-8 items-center justify-center rounded-lg">
-                      <span className="text-xs font-bold text-white">SEC</span>
-                    </div>
-                    <div>
-                      <div className="font-semibold text-white">SEC EDGAR</div>
-                      <div className="text-xs text-gray-400">Regulatory</div>
-                    </div>
-                  </div>
-                  <ul className="space-y-1 text-xs text-gray-400">
-                    <li>• 10-K/10-Q filings</li>
-                    <li>• XBRL standards</li>
-                    <li>• Taxonomy data</li>
                   </ul>
                 </div>
 
@@ -299,8 +282,7 @@ export default function PlatformSection() {
             </h3>
             <p className="text-sm text-gray-400">
               Each company&apos;s books and the group&apos;s statements in one
-              ledger, read beside the public filings in XBRL&apos;s standard
-              terms
+              ledger, in XBRL&apos;s standard terms
             </p>
           </div>
 

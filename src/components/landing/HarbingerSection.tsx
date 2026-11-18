@@ -20,7 +20,7 @@ const points = [
   },
   {
     title: 'Three working workflows',
-    body: 'Variance explanation, a close checklist, and your numbers beside public companies you choose (from the SEC repository, $29 or $99 a month, 14-day trial), in your MCP client.',
+    body: 'Variance explanation, a close checklist and a peer benchmark, in your MCP client.',
   },
   {
     title: 'Your deployment, your keys',

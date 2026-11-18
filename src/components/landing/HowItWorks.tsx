@@ -17,7 +17,7 @@ const steps = [
     number: '02',
     title: 'Ask, share, plan',
     description:
-      'Ask why a number moved and open it down to the account register. Send the board a statement that ties, roll a plan forward from your actuals, and add the SEC filings beside your books to see where you stand against public companies.',
+      'Ask why a number moved and open it down to the account register. Send the board a statement that ties, and roll a plan forward from your actuals.',
     tags: ['Live Statements', 'Explorer', 'Plan'],
     color: 'purple',
   },

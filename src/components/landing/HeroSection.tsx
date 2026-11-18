@@ -48,8 +48,7 @@ export default function HeroSection() {
             can reason over: close, consolidation, schedules, bank feeds and
             reconciliations, with statements that tie and every number traced to
             the entry. Start from your QuickBooks or keep the books here, for
-            one company or a whole group, with your numbers beside public
-            companies&apos;.{' '}
+            one company or a whole group.{' '}
             <span className="text-white">
               Nothing writes back until you post an entry.
             </span>
