@@ -7,7 +7,7 @@ export default function PlatformSection() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-16 text-center">
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-            Powered by RoboSystems
+            Built on RoboSystems
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
             Your books and the public filings, read side by side in XBRL&apos;s
@@ -220,7 +220,7 @@ export default function PlatformSection() {
                     <div className="font-semibold text-white">MCP Tools</div>
                   </div>
                   <p className="text-xs text-gray-400">
-                    Ask, plan, and close from Claude, ChatGPT, or any MCP client
+                    Ask, plan, and close from Claude, ChatGPT or any MCP client
                   </p>
                 </div>
 
@@ -298,8 +298,9 @@ export default function PlatformSection() {
               One model of the group
             </h3>
             <p className="text-sm text-gray-400">
-              Each company&apos;s books, the group&apos;s statements and the
-              public filings, in XBRL&apos;s standard terms
+              Each company&apos;s books and the group&apos;s statements in one
+              ledger, read beside the public filings in XBRL&apos;s standard
+              terms
             </p>
           </div>
 
@@ -320,11 +321,10 @@ export default function PlatformSection() {
               </svg>
             </div>
             <h3 className="mb-2 text-lg font-semibold text-white">
-              Graph Database Performance
+              Every number traced
             </h3>
             <p className="text-sm text-gray-400">
-              Fast, interactive queries on complex accounting relationships
-              powered by knowledge graph technology
+              Open any figure down to the accounts and entries behind it
             </p>
           </div>
         </div>

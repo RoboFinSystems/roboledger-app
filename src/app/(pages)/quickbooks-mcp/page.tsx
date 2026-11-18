@@ -116,18 +116,18 @@ export default function QuickBooksMcpPage() {
             <Code wrap>{MCP_URL}</Code>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               {/* A plain <a>: /book redirects to the scheduler on another site. */}
-              <a
-                href={BOOK_PATH}
-                className="from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 rounded-lg bg-linear-to-r px-6 py-3 text-center font-medium text-white shadow-lg transition-all"
-              >
-                Book 20 minutes
-              </a>
               <Link
                 href={REGISTER_PATH}
-                className="rounded-lg border border-gray-600 px-6 py-3 text-center font-medium text-white transition-all hover:border-gray-500 hover:bg-white/5"
+                className="from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 rounded-lg bg-linear-to-r px-6 py-3 text-center font-medium text-white shadow-lg transition-all"
               >
                 Create an account
               </Link>
+              <a
+                href={BOOK_PATH}
+                className="rounded-lg border border-gray-600 px-6 py-3 text-center font-medium text-white transition-all hover:border-gray-500 hover:bg-white/5"
+              >
+                Book 20 minutes
+              </a>
               <Link
                 href={page.docsPath}
                 className="rounded-lg border border-gray-600 px-6 py-3 text-center font-medium text-white transition-all hover:border-gray-500 hover:bg-white/5"

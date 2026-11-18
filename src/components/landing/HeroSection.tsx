@@ -43,7 +43,7 @@ export default function HeroSection() {
           <p className="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-gray-300 sm:text-lg md:mt-8 md:text-2xl">
             A general ledger{' '}
             <strong className="text-primary-400">
-              Claude, ChatGPT, or any MCP client
+              Claude, ChatGPT or any MCP client
             </strong>{' '}
             can reason over: close, consolidation, schedules, bank feeds and
             reconciliations, with statements that tie and every number traced to

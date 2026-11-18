@@ -9,7 +9,7 @@ const steps = [
     number: '01',
     title: 'Connect your books',
     description:
-      'Link QuickBooks with one-click OAuth, then add one MCP address to Claude, ChatGPT, or any MCP client and sign in. For a group, add each company with the share the parent holds, with a bank feed and an opening balance sheet.',
+      'Link QuickBooks with one-click OAuth, then add one MCP address to Claude, ChatGPT or any MCP client and sign in. For a group, add each company with the share the parent holds, with a bank feed and an opening balance sheet.',
     tags: ['QuickBooks', 'MCP', 'Bank feeds'],
     color: 'violet',
   },

@@ -255,7 +255,7 @@ const HomePageContent: FC = function () {
             ? `Welcome back to ${currentGraph.graphName}`
             : 'Welcome to RoboLedger'
         }
-        subtitle="Your AI-powered financial reporting platform"
+        subtitle="The general ledger built on RoboSystems"
       />
 
       {hasQualifyingGraph ? (
@@ -464,13 +464,14 @@ const HomePageContent: FC = function () {
                   <HiLink className="text-primary-600 dark:text-primary-400 h-6 w-6" />
                 </div>
                 <h3 className="font-heading text-xl font-bold text-gray-900 dark:text-white">
-                  Connect QuickBooks to Get Started
+                  Create a graph for your books
                 </h3>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                RoboLedger connects to your QuickBooks account to import your
-                chart of accounts, journal entries, and financial data. Create a
-                graph to get started.
+                A graph holds one company or one group, from $99 a month, by
+                card. Then connect QuickBooks to bring in your chart of accounts
+                and entries, or bring another ledger in through the API or a
+                file.
               </p>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 <li className="flex items-start gap-2">
@@ -489,7 +490,8 @@ const HomePageContent: FC = function () {
                 <li className="flex items-start gap-2">
                   <span className="text-green-500">&#10003;</span>
                   <span>
-                    Map accounts to US-GAAP taxonomy elements for XBRL reporting
+                    Map accounts to standard reporting concepts, drawn from US
+                    GAAP
                   </span>
                 </li>
                 <li className="flex items-start gap-2">

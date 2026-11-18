@@ -31,7 +31,7 @@ const points = [
     body: 'Nobody from Harbinger posts, approves or closes a period on your books, or signs in to them. The AI drafts. Your people approve.',
   },
   {
-    title: 'Our own books run on it',
+    title: 'Proof',
     body: "Our own companies' books are kept on it.",
   },
   {
