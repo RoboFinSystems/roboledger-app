@@ -98,6 +98,10 @@ interface ConnectionProviderInfo {
    *  the provider takes a pasted token in place of OAuth (Mercury on
    *  self-hosted deployments). */
   optional_config?: string[]
+  /** Setup fields the provider cannot connect without — `api_key` here
+   *  means a pasted token is the only route (Mercury on a deployment with
+   *  no Mercury OAuth client). */
+  required_config?: string[]
 }
 
 const AUTH_TYPE_LABELS: Record<string, string> = {
@@ -128,6 +132,7 @@ export default function ModernConnectionsContent() {
     ConnectionProviderInfo[]
   >([])
   const [providersLoading, setProvidersLoading] = useState(false)
+  const mercuryOption = availableProviders.find((p) => p.provider === 'mercury')
   // Which provider setup form to show (null = provider list)
   const [setupProvider, setSetupProvider] = useState<string | null>(null)
   const { showError, showSuccess, ToastContainer } = useToast()
@@ -673,9 +678,10 @@ export default function ModernConnectionsContent() {
               />
             ) : setupProvider === 'mercury' ? (
               <MercurySetupForm
-                apiKeyMode={availableProviders
-                  .find((p) => p.provider === 'mercury')
-                  ?.optional_config?.includes('api_key')}
+                apiKeyMode={mercuryOption?.optional_config?.includes('api_key')}
+                tokenRequired={mercuryOption?.required_config?.includes(
+                  'api_key'
+                )}
                 onCancel={() => setSetupProvider(null)}
                 onConnected={handleSetupSuccess}
                 parentKept={parentKept}

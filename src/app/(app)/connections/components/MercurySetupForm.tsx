@@ -26,6 +26,9 @@ interface MercurySetupFormProps {
    *  directly (`optional_config` carries `api_key`); hosted production never
    *  does — there the only route is OAuth. */
   apiKeyMode?: boolean
+  /** The deployment has no Mercury OAuth client, so a pasted token is the
+   *  only way to connect. */
+  tokenRequired?: boolean
   onCancel: () => void
   /** Called when an API-token connection is live (no browser round-trip). */
   onConnected?: () => void
@@ -65,6 +68,7 @@ const toMessage = (err: unknown, fallback: string): string => {
 // company's chart, or one is added.
 export default function MercurySetupForm({
   apiKeyMode = false,
+  tokenRequired = false,
   onCancel,
   onConnected,
   parentKept = false,
@@ -82,7 +86,8 @@ export default function MercurySetupForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const usingApiKey = apiKeyMode && apiKey.trim().length > 0
+  const showTokenField = apiKeyMode || tokenRequired
+  const usingApiKey = showTokenField && apiKey.trim().length > 0
 
   // The entity list arrives after the first render; a pick that is no longer
   // one the server would take (or never was) falls back to the default.
@@ -93,9 +98,10 @@ export default function MercurySetupForm({
   }, [entities, entityId, parentKept, focused?.id])
 
   const canConnect =
-    entities.length === 0
+    (entities.length === 0
       ? !parentKept
-      : feedEntityAllowed(entities, entityId, parentKept)
+      : feedEntityAllowed(entities, entityId, parentKept)) &&
+    (!tokenRequired || usingApiKey)
 
   const handleConnect = async () => {
     if (!currentGraphId) {
@@ -241,10 +247,12 @@ export default function MercurySetupForm({
           />
         </div>
 
-        {apiKeyMode && (
+        {showTokenField && (
           <div className="mt-4">
             <Label htmlFor="mercury-api-key">
-              Personal API token (read-only) — optional
+              {tokenRequired
+                ? 'Mercury API token for this company (read-only)'
+                : 'Mercury API token for this company (read-only) — optional'}
             </Label>
             <TextInput
               id="mercury-api-key"
@@ -253,12 +261,18 @@ export default function MercurySetupForm({
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               disabled={loading}
-              placeholder="Leave empty to sign in with Mercury"
+              placeholder={
+                tokenRequired
+                  ? 'Paste a read-only token'
+                  : 'Leave empty to sign in with Mercury'
+              }
             />
             <p className="mt-1 text-xs text-gray-500">
-              This deployment allows a personal token in place of the Mercury
-              sign-in. Create a read-only token in Mercury under Settings → API
-              tokens.
+              {tokenRequired
+                ? 'This deployment connects Mercury with a token. '
+                : 'This deployment allows a token in place of the Mercury sign-in. '}
+              Each company connects with its own: create a read-only token in
+              that company&rsquo;s Mercury account under Settings → API tokens.
             </p>
           </div>
         )}
@@ -285,7 +299,9 @@ export default function MercurySetupForm({
               onClick={handleConnect}
               disabled={!canConnect}
             >
-              {usingApiKey ? 'Connect with API token' : 'Sign in with Mercury'}
+              {usingApiKey || tokenRequired
+                ? 'Connect with API token'
+                : 'Sign in with Mercury'}
             </Button>
           )}
         </div>
