@@ -16,7 +16,7 @@ import FloatingElementsVariant from './FloatingElementsVariant'
 const points = [
   {
     title: 'The knowledge graph we build',
-    body: 'Your ledger, mapped so every number traces to its entry, with workspaces beside the books where your agents add their own structure. Data from your other systems can be modelled from your own schema as a graph of its own, quoted separately.',
+    body: 'Your ledger, mapped so every number traces to its entry, with workspaces beside the books where your agents add their own structure. At the top of the price range, one data source from another of your systems is modelled from your own schema as a graph of its own.',
   },
   {
     title: 'Three working workflows',
