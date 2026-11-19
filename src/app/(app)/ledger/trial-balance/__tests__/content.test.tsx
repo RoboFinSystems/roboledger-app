@@ -215,17 +215,22 @@ describe('TrialBalanceContent', () => {
           )
         )
 
-    expect(accountOrder()).toEqual(['Cash', 'Savings', 'Receivables', 'TOTALS'])
+    // The page can reload its rows after the first paint (the scope and the
+    // dates settle in effects), so each order is waited for, never read once.
+    const showsOrder = (order: string[]) =>
+      waitFor(() => expect(accountOrder()).toEqual(order))
+
+    await showsOrder(['Cash', 'Savings', 'Receivables', 'TOTALS'])
 
     // A balance column opens largest-first.
     fireEvent.click(screen.getByRole('button', { name: 'Net Balance' }))
-    expect(accountOrder()).toEqual(['Savings', 'Receivables', 'Cash', 'TOTALS'])
+    await showsOrder(['Savings', 'Receivables', 'Cash', 'TOTALS'])
 
     // …reverses, then returns to the chart-of-accounts order.
     fireEvent.click(screen.getByRole('button', { name: 'Net Balance' }))
-    expect(accountOrder()).toEqual(['Cash', 'Receivables', 'Savings', 'TOTALS'])
+    await showsOrder(['Cash', 'Receivables', 'Savings', 'TOTALS'])
     fireEvent.click(screen.getByRole('button', { name: 'Net Balance' }))
-    expect(accountOrder()).toEqual(['Cash', 'Savings', 'Receivables', 'TOTALS'])
+    await showsOrder(['Cash', 'Savings', 'Receivables', 'TOTALS'])
   })
 
   it('uses this graph‘s mapping for the US-GAAP view', async () => {
