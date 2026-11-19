@@ -102,6 +102,10 @@ const WRITE_POLICY_HELP: Record<string, string> = {
     'No external ledger — closing posts entries locally. This is what severing leaves; it is not a choice on a live connection.',
 }
 
+/** What a mirrored ledger means for the books, in the words the docs use. */
+const MIRRORED_LEDGER_HELP =
+  'The books are kept in this ledger. Its entries arrive from the integration and land posted; nothing posts here, nothing is written back, and closing a period stamps it without posting.'
+
 interface ConnectionCardProps {
   connection: ConnectionData
   status: ConnectionStatus
@@ -123,8 +127,8 @@ interface ConnectionCardProps {
    */
   feedEntities?: FeedEntity[]
   /**
-   * The entity whose books a QuickBooks connection keeps; `entityId` is null
-   * for the group parent.
+   * The entity whose books a QuickBooks connection or an external ledger
+   * keeps; `entityId` is null for the group parent.
    */
   keptEntity?: FeedEntity | null
   /**
@@ -211,12 +215,18 @@ export default function ConnectionCard({
     provider === 'quickbooks'
       ? [keptEntity ?? { entityId: null, name: 'the company' }]
       : feedEntities
+  // An external source that keeps an entity's books: a ledger kept
+  // elsewhere, mirrored here read-only. The integration runs its own sync.
+  const mirroredLedger =
+    provider === 'external' && connection.keeps_books === true
   const subtitle =
-    provider === 'plaid' && connection.metadata?.institution_name
-      ? `Bank: ${connection.metadata.institution_name}`
-      : connection.metadata?.entity_name
-        ? `${provider === 'mercury' ? 'Organization' : 'Company'}: ${connection.metadata.entity_name}`
-        : null
+    provider === 'external' && connection.metadata?.source_name
+      ? `Source: ${connection.metadata.source_name}`
+      : provider === 'plaid' && connection.metadata?.institution_name
+        ? `Bank: ${connection.metadata.institution_name}`
+        : connection.metadata?.entity_name
+          ? `${provider === 'mercury' ? 'Organization' : 'Company'}: ${connection.metadata.entity_name}`
+          : null
 
   return (
     <Card>
@@ -354,6 +364,23 @@ export default function ConnectionCard({
               </div>
             )}
 
+            {mirroredLedger && (
+              <div className="mt-3 border-t border-gray-100 pt-3 dark:border-gray-700">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Keeps the books of {keptEntity?.name ?? 'the company'},
+                  read-only
+                </p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {MIRRORED_LEDGER_HELP}
+                </p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {connection.last_sync
+                    ? `Last reported run: ${new Date(connection.last_sync).toLocaleString()}`
+                    : 'The integration has not reported a run yet.'}
+                </p>
+              </div>
+            )}
+
             {provider === 'mercury' && <PoweredByMercury className="mt-3" />}
           </div>
         </div>
@@ -369,7 +396,7 @@ export default function ConnectionCard({
               <HiExternalLink className="mr-2 h-4 w-4" />
               {needsReauth ? 'Reconnect' : 'Continue sign-in'}
             </Button>
-          ) : (
+          ) : provider === 'external' ? null : (
             <Button
               size="sm"
               color="primary"

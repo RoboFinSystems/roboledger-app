@@ -11,11 +11,13 @@ export interface ActionableEntry {
 }
 
 /**
- * How QuickBooks relates to this ledger. `synced`: a connection syncs down
- * and RoboLedger writes nothing back. `writeback`: close also publishes
- * RoboLedger's own entries to QuickBooks (`qb_authoritative` / `hybrid`).
+ * How a ledger kept elsewhere relates to this one. `synced`: QuickBooks
+ * syncs down and RoboLedger writes nothing back. `writeback`: close also
+ * publishes RoboLedger's own entries to QuickBooks (`qb_authoritative` /
+ * `hybrid`). `mirrored`: an external ledger keeps the books and sends its
+ * own entries; nothing posts here.
  */
-export type QuickBooksMode = 'none' | 'synced' | 'writeback'
+export type QuickBooksMode = 'none' | 'synced' | 'writeback' | 'mirrored'
 
 const WRITEBACK_POLICIES = new Set(['qb_authoritative', 'hybrid'])
 
@@ -35,8 +37,13 @@ export interface LedgerScope {
   parentId: string | null
 }
 
+const isQuickBooks = (c: LedgerConnection): boolean =>
+  c.provider?.toLowerCase() === 'quickbooks'
+
 const keepsTheBooksOf = (c: LedgerConnection, scope: LedgerScope): boolean => {
-  if (c.provider?.toLowerCase() !== 'quickbooks' || c.keeps_books === false)
+  // QuickBooks keeps books unless the API says otherwise (a row from before
+  // the field); any other connection keeps them only when the API says so.
+  if (isQuickBooks(c) ? c.keeps_books === false : c.keeps_books !== true)
     return false
   const kept = c.entity_id ?? scope.parentId
   // Until the parent's id is known, a page on the parent takes any
@@ -59,6 +66,7 @@ export const quickBooksMode = (
   scope: LedgerScope = { entityId: null, parentId: null }
 ): QuickBooksMode => {
   const keepers = connections.filter((c) => keepsTheBooksOf(c, scope))
+  if (keepers.some((c) => !isQuickBooks(c))) return 'mirrored'
   if (keepers.some((c) => WRITEBACK_POLICIES.has(c.write_policy ?? '')))
     return 'writeback'
   return keepers.length > 0 ? 'synced' : 'none'
@@ -119,6 +127,12 @@ export const entryActions = (
     return ctx.contextFailed
       ? { ...NONE, note: 'Could not check this ledger. Reload to reverse.' }
       : NONE
+  }
+  if (ctx.quickBooks === 'mirrored') {
+    return {
+      ...NONE,
+      note: 'Mirrored from the ledger that keeps these books. Correct it there.',
+    }
   }
   if (ctx.quickBooks === 'writeback') {
     return { ...NONE, note: 'QuickBooks keeps these books. Reverse it there.' }

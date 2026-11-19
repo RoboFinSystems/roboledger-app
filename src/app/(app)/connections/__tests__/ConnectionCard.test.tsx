@@ -205,6 +205,48 @@ describe('ConnectionCard', () => {
     expect(screen.queryByText('Disconnect')).toBeNull()
   })
 
+  it('an external ledger says whose books it keeps, read-only, and runs its own sync', () => {
+    render(
+      <ConnectionCard
+        connection={connection({
+          provider: 'external',
+          keeps_books: true,
+          write_policy: 'shadow',
+          last_sync: '2026-11-19T21:00:00Z',
+          metadata: { source_name: 'netsuite-uk' },
+        })}
+        status={{ status: 'connected', message: 'Connected' }}
+        onSync={() => {}}
+        onDelete={() => {}}
+        keptEntity={{ entityId: 'ent_sub', name: 'Maple Court LLC' }}
+      />
+    )
+    expect(screen.getByText('Source: netsuite-uk')).toBeTruthy()
+    expect(
+      screen.getByText(/Keeps the books of Maple Court LLC,\s+read-only/)
+    ).toBeTruthy()
+    expect(screen.getByText(/Last reported run:/)).toBeTruthy()
+    expect(screen.queryByText('Sync Now')).toBeNull()
+    expect(screen.queryByText('Write-back policy')).toBeNull()
+  })
+
+  it('an external source that keeps no books is a plain source', () => {
+    render(
+      <ConnectionCard
+        connection={connection({
+          provider: 'external',
+          keeps_books: false,
+          metadata: { source_name: 'billing' },
+        })}
+        status={{ status: 'connected', message: 'Connected' }}
+        onSync={() => {}}
+        onDelete={() => {}}
+      />
+    )
+    expect(screen.getByText('Source: billing')).toBeTruthy()
+    expect(screen.queryByText(/Keeps the books of/)).toBeNull()
+  })
+
   it('a feed names, and checks the calendar of, each entity its accounts book to', () => {
     render(
       <ConnectionCard
