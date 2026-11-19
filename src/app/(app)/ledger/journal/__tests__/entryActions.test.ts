@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { quickBooksMode } from '../entryActions'
+import { entryActions, quickBooksMode } from '../entryActions'
 
 describe('quickBooksMode', () => {
   it('is none without a QuickBooks connection', () => {
@@ -50,6 +50,26 @@ describe('quickBooksMode', () => {
     )
   })
 
+  it('is mirrored when an external ledger keeps the entity in scope', () => {
+    const connections = [
+      {
+        provider: 'external',
+        write_policy: 'shadow',
+        entity_id: 'ent_sub',
+        keeps_books: true,
+      },
+      { provider: 'external', write_policy: 'native', keeps_books: false },
+    ]
+    expect(
+      quickBooksMode(connections, { entityId: 'ent_sub', parentId: 'ent_p' })
+    ).toBe('mirrored')
+    expect(
+      quickBooksMode(connections, { entityId: null, parentId: 'ent_p' })
+    ).toBe('none')
+    // An external source with no word from the API keeps nobody's books.
+    expect(quickBooksMode([{ provider: 'external' }])).toBe('none')
+  })
+
   it('skips a connection the API says no longer keeps the books', () => {
     const scope = { entityId: null, parentId: 'ent_parent' }
     expect(
@@ -71,5 +91,28 @@ describe('quickBooksMode', () => {
         scope
       )
     ).toBe('synced')
+  })
+})
+
+describe('entryActions on mirrored books', () => {
+  const ctx = { closedThrough: null, calendarLoaded: true }
+  const posted = {
+    status: 'posted',
+    postingDate: '2026-09-15',
+    provenance: 'source_sync',
+  }
+
+  it('offers no reversal: the ledger that keeps the books corrects it', () => {
+    const actions = entryActions(posted, { ...ctx, quickBooks: 'mirrored' })
+    expect(actions.reverse).toBe(false)
+    expect(actions.note).toMatch(/Correct it there/)
+  })
+
+  it('still lets an authored draft be edited', () => {
+    const actions = entryActions(
+      { ...posted, status: 'draft', provenance: 'manual_entry' },
+      { ...ctx, quickBooks: 'mirrored' }
+    )
+    expect(actions.edit).toBe(true)
   })
 })
