@@ -47,10 +47,10 @@ export default function HeroSection() {
             </strong>{' '}
             can reason over: close, consolidation, schedules, bank feeds and
             reconciliations, with statements that tie and every number traced to
-            the entry. Start from your QuickBooks or keep the books here, for
-            one company or a whole group.{' '}
+            the entry. Keep your books in QuickBooks or your ERP and read them
+            here, or keep them here, for one company or a whole group.{' '}
             <span className="text-white">
-              Nothing writes back until you post an entry.
+              Either way, your AI works from a knowledge graph of them.
             </span>
           </p>
 

@@ -4,9 +4,9 @@
 // the page, where the story puts it.
 const stats = [
   {
-    stat: 'Nothing writes back',
+    stat: 'Your ledger or ours',
     label:
-      'Nothing reaches QuickBooks until you post an entry. Read, analyze and plan without changing a thing.',
+      'Run RoboLedger beside the ledger you close in today, or keep the books here. An ERP is only ever read, and nothing reaches QuickBooks until you post an entry.',
   },
   {
     stat: 'Consolidated, not combined',
