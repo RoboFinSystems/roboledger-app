@@ -335,5 +335,21 @@ describe('Inbox page', () => {
       expect(screen.getByText('TXN-BARE')).toBeInTheDocument()
       expect(screen.queryByText('TXN-GUSTO')).toBeNull()
     })
+
+    it('offers only the suggestion sources the server writes', async () => {
+      mockListEventBlocks.mockResolvedValueOnce(rows())
+      render(<InboxContent />)
+      await screen.findByText('TXN-GUSTO')
+      const options = Array.from(
+        (screen.getByLabelText('Suggestion') as HTMLSelectElement).options
+      ).map((o) => o.value)
+      expect(options).toEqual([
+        '',
+        'open_item',
+        'agent_default',
+        'tier0',
+        'none',
+      ])
+    })
   })
 })
