@@ -546,6 +546,9 @@ const ReportViewerContent: FC = function () {
     (pkg.generationStatus === 'complete' ||
       pkg.generationStatus === 'published')
   const hasLifecycleAction = canArchive || canUnarchive || canDelete
+  // Sharing is the author's alone; revoking a share is the author's or a
+  // graph admin's, so either may manage them.
+  const canManageShares = isAuthor || (!pkg.sourceGraphId && isAdmin)
 
   return (
     <PageLayout>
@@ -601,28 +604,31 @@ const ReportViewerContent: FC = function () {
                 )}
                 {!pkg.sourceGraphId ? (
                   <>
-                    {pkg.generationStatus === 'published' && (
-                      <>
-                        <DropdownDivider />
-                        <DropdownItem
-                          icon={HiShare}
-                          onClick={() => {
-                            setShareResult(null)
-                            setSelectedListId(null)
-                            loadPublishLists()
-                            setShowShareModal(true)
-                          }}
-                        >
-                          Share
-                        </DropdownItem>
-                        <DropdownItem
-                          icon={HiCog}
-                          onClick={() => setShowSharesModal(true)}
-                        >
-                          Manage shares
-                        </DropdownItem>
-                      </>
-                    )}
+                    {pkg.generationStatus === 'published' &&
+                      canManageShares && (
+                        <>
+                          <DropdownDivider />
+                          {isAuthor && (
+                            <DropdownItem
+                              icon={HiShare}
+                              onClick={() => {
+                                setShareResult(null)
+                                setSelectedListId(null)
+                                loadPublishLists()
+                                setShowShareModal(true)
+                              }}
+                            >
+                              Share
+                            </DropdownItem>
+                          )}
+                          <DropdownItem
+                            icon={HiCog}
+                            onClick={() => setShowSharesModal(true)}
+                          >
+                            Manage shares
+                          </DropdownItem>
+                        </>
+                      )}
                     {hasLifecycleAction && (
                       <>
                         {pkg.generationStatus === 'published' && (

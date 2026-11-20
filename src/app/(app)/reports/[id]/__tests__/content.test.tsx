@@ -76,7 +76,8 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams('graph=kg_mine'),
 }))
 vi.mock('next/link', () => ({ default: ({ children }: any) => children }))
-vi.mock('@/lib/graph-role', () => ({ isGraphAdmin: () => false }))
+const role = vi.hoisted(() => ({ admin: false }))
+vi.mock('@/lib/graph-role', () => ({ isGraphAdmin: () => role.admin }))
 vi.mock('@/lib/reports/chat', () => ({
   reportAnchorNote: () => '',
   reportExampleQuestions: () => [],
@@ -231,6 +232,33 @@ describe('Report filing actions', () => {
     await renderWith({ filingStatus: 'filed', createdBy: 'usr_other' })
     expect(screen.queryByRole('button', { name: 'Archive' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Delete report' })).toBeNull()
+  })
+
+  it('offers Share and Manage shares to the author', async () => {
+    await renderWith({ filingStatus: 'filed' })
+    expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Manage shares' })
+    ).toBeInTheDocument()
+  })
+
+  it('offers no share controls to a member who is not the author', async () => {
+    await renderWith({ filingStatus: 'filed', createdBy: 'usr_other' })
+    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Manage shares' })).toBeNull()
+  })
+
+  it('lets a graph admin manage, but not make, shares of a report they did not author', async () => {
+    role.admin = true
+    try {
+      await renderWith({ filingStatus: 'filed', createdBy: 'usr_other' })
+      expect(screen.queryByRole('button', { name: 'Share' })).toBeNull()
+      expect(
+        screen.getByRole('button', { name: 'Manage shares' })
+      ).toBeInTheDocument()
+    } finally {
+      role.admin = false
+    }
   })
 
   it('shows no draft actions to someone who is not the author', async () => {
