@@ -90,7 +90,30 @@ describe('quickBooksMode', () => {
         ],
         scope
       )
-    ).toBe('synced')
+    ).toBe('shadow')
+  })
+
+  it('is shadow when QuickBooks keeps the books and close posts nothing here', () => {
+    expect(
+      quickBooksMode([{ provider: 'quickbooks', write_policy: 'shadow' }])
+    ).toBe('shadow')
+  })
+})
+
+describe('entryActions on shadow books', () => {
+  const ctx = { closedThrough: null, calendarLoaded: true }
+
+  it('offers no reversal: a reversal would post here, and nothing does', () => {
+    const actions = entryActions(
+      {
+        status: 'posted',
+        postingDate: '2026-09-15',
+        provenance: 'manual_entry',
+      },
+      { ...ctx, quickBooks: 'shadow' }
+    )
+    expect(actions.reverse).toBe(false)
+    expect(actions.note).toMatch(/Reverse it there/)
   })
 })
 
