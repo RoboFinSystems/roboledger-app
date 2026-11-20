@@ -106,6 +106,11 @@ interface ConnectionProviderInfo {
   required_config?: string[]
 }
 
+/** Where an external integration learns to register itself: it has no
+ *  setup form here, because the integration calls the API on its own. */
+const INTEGRATION_GUIDE_URL =
+  'https://robosystems.ai/docs/technical/Build-a-Ledger-Integration'
+
 const AUTH_TYPE_LABELS: Record<string, string> = {
   oauth: 'OAuth',
   link: 'Link',
@@ -787,11 +792,29 @@ function ProviderRow({ provider, onConnect }: ProviderRowProps) {
             <MercuryDisclosure asterisk className="mt-1" />
           </>
         )}
+        {provider.provider === 'external' && (
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            There is nothing to connect from here: the integration registers
+            itself through the API with its own API key.
+          </p>
+        )}
       </div>
       <div className="ml-4 shrink-0">
-        <Button size="sm" color="primary" onClick={onConnect}>
-          Connect
-        </Button>
+        {provider.provider === 'external' ? (
+          <a
+            href={INTEGRATION_GUIDE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-600 dark:text-primary-400 text-sm font-medium whitespace-nowrap underline"
+          >
+            Integration guide →
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
+        ) : (
+          <Button size="sm" color="primary" onClick={onConnect}>
+            Connect
+          </Button>
+        )}
       </div>
     </div>
   )
