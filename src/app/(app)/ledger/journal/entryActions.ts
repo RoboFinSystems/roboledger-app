@@ -12,9 +12,10 @@ export interface ActionableEntry {
 
 /**
  * How a ledger kept elsewhere relates to this one. `synced`: QuickBooks
- * syncs down and RoboLedger writes nothing back. `writeback`: close also
- * publishes RoboLedger's own entries to QuickBooks (`qb_authoritative` /
- * `hybrid`). `mirrored`: an external ledger keeps the books and sends its
+ * syncs down and RoboLedger writes nothing back. `shadow`: QuickBooks keeps
+ * the books and close posts nothing here, so a reversal cannot post either.
+ * `writeback`: close also publishes RoboLedger's own entries to QuickBooks
+ * (`qb_authoritative` / `hybrid`). `mirrored`: an external ledger keeps the books and sends its
  * own entries; nothing posts here.
  */
 export type QuickBooksMode =

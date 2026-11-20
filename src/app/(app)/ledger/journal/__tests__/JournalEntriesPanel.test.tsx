@@ -80,6 +80,7 @@ vi.mock('../ReverseEntryModal', () => ({
     entry ? <div>Reversing {entry.id}</div> : null,
 }))
 
+import type { QuickBooksMode } from '../entryActions'
 import { JournalEntriesPanel } from '../JournalEntriesPanel'
 
 const STANDALONE_ENTRY = {
@@ -116,7 +117,7 @@ const STANDALONE_ENTRY = {
 
 const renderPanel = (
   context: {
-    quickBooks?: 'none' | 'synced' | 'writeback' | null
+    quickBooks?: QuickBooksMode | null
     closedThrough?: string | null
     calendarLoaded?: boolean
     contextFailed?: boolean
@@ -383,6 +384,16 @@ describe('JournalEntriesPanel', () => {
       // Under write-back, close publishes RoboLedger's own entries too; a
       // reversal here would never reach QuickBooks.
       renderPanel({ quickBooks: 'writeback' })
+      expect(
+        await screen.findByText(
+          'QuickBooks keeps these books. Reverse it there.'
+        )
+      ).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /^Reverse/ })).toBeNull()
+    })
+
+    it('holds every reversal back on books QuickBooks keeps in shadow', async () => {
+      renderPanel({ quickBooks: 'shadow' })
       expect(
         await screen.findByText(
           'QuickBooks keeps these books. Reverse it there.'
