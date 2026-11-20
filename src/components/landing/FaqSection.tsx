@@ -35,10 +35,12 @@ const faqs: { q: string; a: ReactNode }[] = [
     ),
   },
   {
-    q: 'Do I have to leave QuickBooks?',
+    q: 'Do I have to leave QuickBooks or my ERP?',
     a: (
       <>
-        No. RoboLedger syncs the group parent&apos;s{' '}
+        No. RoboLedger runs beside the ledger you close in today. An ERP or
+        another ledger sends its entries through the API and is never written
+        to. RoboLedger syncs the group parent&apos;s{' '}
         <a
           href={QUICKBOOKS_AFFILIATE_URL}
           target="_blank"
