@@ -12,12 +12,14 @@ export interface ActionableEntry {
 
 /**
  * How a ledger kept elsewhere relates to this one. `synced`: QuickBooks
- * syncs down and RoboLedger writes nothing back. `writeback`: close also
- * publishes RoboLedger's own entries to QuickBooks (`qb_authoritative` /
- * `hybrid`). `mirrored`: an external ledger keeps the books and sends its
+ * syncs down and RoboLedger writes nothing back. `shadow`: QuickBooks keeps
+ * the books and close posts nothing here, so a reversal cannot post either.
+ * `writeback`: close also publishes RoboLedger's own entries to QuickBooks
+ * (`qb_authoritative` / `hybrid`). `mirrored`: an external ledger keeps the books and sends its
  * own entries; nothing posts here.
  */
-export type QuickBooksMode = 'none' | 'synced' | 'writeback' | 'mirrored'
+export type QuickBooksMode =
+  'none' | 'synced' | 'shadow' | 'writeback' | 'mirrored'
 
 const WRITEBACK_POLICIES = new Set(['qb_authoritative', 'hybrid'])
 
@@ -69,6 +71,8 @@ export const quickBooksMode = (
   if (keepers.some((c) => !isQuickBooks(c))) return 'mirrored'
   if (keepers.some((c) => WRITEBACK_POLICIES.has(c.write_policy ?? '')))
     return 'writeback'
+  // Under shadow, close posts nothing here, and neither may a reversal.
+  if (keepers.some((c) => c.write_policy === 'shadow')) return 'shadow'
   return keepers.length > 0 ? 'synced' : 'none'
 }
 
@@ -134,7 +138,7 @@ export const entryActions = (
       note: 'Mirrored from the ledger that keeps these books. Correct it there.',
     }
   }
-  if (ctx.quickBooks === 'writeback') {
+  if (ctx.quickBooks === 'writeback' || ctx.quickBooks === 'shadow') {
     return { ...NONE, note: 'QuickBooks keeps these books. Reverse it there.' }
   }
   if (ctx.quickBooks === 'synced' && entry.provenance === 'source_sync') {
