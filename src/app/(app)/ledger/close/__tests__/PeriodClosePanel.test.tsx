@@ -477,6 +477,22 @@ describe('PeriodClosePanel — blockers name what is holding the close', () => {
     expect(await screen.findByText(/hasn't synced through/)).toBeInTheDocument()
     expect(screen.queryByText(/affected/)).not.toBeInTheDocument()
   })
+
+  it('names the stale-sync override as its checkbox is labelled', async () => {
+    mockGetFiscalCalendar.mockResolvedValue({
+      ...CALENDAR,
+      closeableNow: false,
+      blockers: ['sync_stale'],
+    })
+    render(<PeriodClosePanel graphId="kg1" />)
+
+    const message = await screen.findByText(/hasn't synced through/)
+    const checkbox = await screen.findByRole('checkbox', {
+      name: 'Allow stale sync',
+    })
+    expect(checkbox).toBeInTheDocument()
+    expect(message.textContent).toContain('"Allow stale sync"')
+  })
 })
 
 describe('PeriodClosePanel — close overrides', () => {

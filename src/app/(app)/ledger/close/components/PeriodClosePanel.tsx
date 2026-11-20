@@ -66,7 +66,7 @@ const BLOCKER_MESSAGES: Record<string, string> = {
   period_incomplete:
     "Period hasn't ended yet — wait until the last day of the month to close.",
   sync_stale:
-    'QuickBooks hasn\'t synced through this period — run a sync before closing (or use "Close with stale sync").',
+    'QuickBooks hasn\'t synced through this period — run a sync before closing (or tick "Allow stale sync").',
   calendar_not_initialized: 'Fiscal calendar not initialized for this graph.',
   period_already_closed: 'This period is already closed.',
   pending_obligations:

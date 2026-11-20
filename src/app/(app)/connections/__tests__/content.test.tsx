@@ -8,6 +8,7 @@ const mockSetWritePolicy = vi.fn()
 const mockShowError = vi.fn()
 const mockShowSuccess = vi.fn()
 const mockListBankAccounts = vi.fn()
+const mockGetConnectionOptions = vi.fn()
 let writePolicyResult: Promise<unknown> | null = null
 
 vi.mock('@/lib/entity-scope', () => ({
@@ -36,7 +37,7 @@ vi.mock('@robosystems/core', async () => {
       syncConnection: (...a: any[]) => mockSyncConnection(...a),
       deleteConnection: (...a: any[]) => mockDeleteConnection(...a),
       setConnectionWritePolicy: (...a: any[]) => mockSetWritePolicy(...a),
-      getConnectionOptions: vi.fn(),
+      getConnectionOptions: (...a: any[]) => mockGetConnectionOptions(...a),
       initOAuth: vi.fn(),
     },
     unwrapSdk: errors.unwrapSdk,
@@ -51,7 +52,12 @@ vi.mock('@robosystems/core', async () => {
       ToastContainer: () => null,
     }),
     PageLayout: ({ children }: any) => <div>{children}</div>,
-    PageHeader: ({ title }: any) => <h1>{title}</h1>,
+    PageHeader: ({ title, actions }: any) => (
+      <div>
+        <h1>{title}</h1>
+        {actions}
+      </div>
+    ),
     EmptyState: ({ title }: any) => <div>{title}</div>,
   }
 })
@@ -311,5 +317,58 @@ describe('Connections error handling', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+describe('Connection Marketplace', () => {
+  const provider = (overrides: Record<string, unknown>) => ({
+    display_name: 'Provider',
+    description: '',
+    auth_type: 'none',
+    data_types: [],
+    ...overrides,
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockListConnections.mockResolvedValue({
+      data: [CONNECTION],
+      response: { status: 200 },
+    })
+    mockListBankAccounts.mockResolvedValue({ total: 0, accounts: [] })
+    mockGetConnectionOptions.mockResolvedValue({
+      data: {
+        providers: [
+          provider({
+            provider: 'quickbooks',
+            display_name: 'QuickBooks',
+            auth_type: 'oauth',
+          }),
+          provider({
+            provider: 'external',
+            display_name: 'External Integration',
+          }),
+        ],
+      },
+      response: { status: 200 },
+    })
+  })
+
+  it('points an external integration at the guide instead of a Connect that does nothing', async () => {
+    await renderLoaded()
+    fireEvent.click(screen.getByRole('button', { name: 'Add Connection' }))
+    await screen.findByText('External Integration')
+
+    // QuickBooks has a setup form; the external integration has none.
+    expect(screen.getAllByRole('button', { name: 'Connect' })).toHaveLength(1)
+    const guide = screen.getByRole('link', { name: /Integration guide/ })
+    expect(guide).toHaveAttribute(
+      'href',
+      'https://robosystems.ai/docs/technical/Build-a-Ledger-Integration'
+    )
+    expect(guide).toHaveAttribute('target', '_blank')
+    expect(
+      screen.getByText(/registers itself through the API/)
+    ).toBeInTheDocument()
   })
 })

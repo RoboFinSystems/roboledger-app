@@ -245,6 +245,63 @@ describe('remapping a mapped account', () => {
   })
 })
 
+describe('mapping confidence', () => {
+  const account = (id: string, code: string, name: string) => ({
+    id,
+    code,
+    name,
+    trait: 'liability',
+    balanceType: 'credit',
+    depth: 0,
+    isActive: true,
+  })
+  const arc = (from: string, toName: string, confidence: number | null) => ({
+    id: `assoc_${from}`,
+    fromElementId: from,
+    toElementId: `to_${from}`,
+    toElementName: toName,
+    toElementQname: `rs-gaap:${toName.replace(/ /g, '')}`,
+    confidence,
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockScope.mockReturnValue({ entityId: null, parent: { id: 'ent_parent' } })
+    mockListTaxonomies.mockResolvedValue([])
+    mockGetAccountTree.mockResolvedValue({
+      roots: [
+        account('el_flagged', '2110', 'Card'),
+        account('el_sure', '2120', 'Payroll due'),
+        account('el_hand', '2130', 'Deposits'),
+      ],
+    })
+    mockListMappings.mockResolvedValue([{ id: 'map_1', name: 'Book mapping' }])
+    mockGetMapping.mockResolvedValue({
+      associations: [
+        arc('el_flagged', 'Short-term debt', 0.78),
+        arc('el_sure', 'Accrued payroll', 0.95),
+        arc('el_hand', 'Customer deposits', null),
+      ],
+    })
+    mockGetMappingCandidates.mockResolvedValue([])
+  })
+
+  it('marks only the match the auto-map flagged for review', async () => {
+    render(<ChartOfAccountsContent />)
+    fireEvent.click(await screen.findByText('Show mappings'))
+    await screen.findByText('Short-term debt')
+
+    const markers = screen.getAllByText('Review')
+    expect(markers).toHaveLength(1)
+    expect(
+      screen.getByTitle('Auto-mapped at 78% confidence. Check this match.')
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Short-term debt').closest('button')
+    ).toContainElement(markers[0])
+  })
+})
+
 describe('describeReclassification', () => {
   it('spans the months oldest to newest', () => {
     expect(

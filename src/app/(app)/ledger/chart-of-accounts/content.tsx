@@ -58,6 +58,7 @@ import {
 } from './chartEditing'
 import AccountEditorModal from './components/AccountEditorModal'
 import { ChartTemplatePicker } from './components/ChartTemplatePicker'
+import { needsMappingReview } from './mappingReview'
 
 const ELEMENTS_PAGE = 1000
 
@@ -167,7 +168,7 @@ interface TreeNode {
 interface GaapMapping {
   gaapName: string
   gaapQname: string
-  confidence: number
+  confidence: number | null
   associationId: string
   fromElementId: string
   toElementId: string
@@ -708,7 +709,7 @@ const ChartOfAccountsContent: FC = function () {
       const mapping: GaapMapping = {
         gaapName: assoc.toElementName ?? '',
         gaapQname: assoc.toElementQname ?? '',
-        confidence: assoc.confidence ?? 0,
+        confidence: assoc.confidence ?? null,
         associationId: assoc.id,
         fromElementId: fromId,
         toElementId: assoc.toElementId,
@@ -1205,11 +1206,27 @@ const ChartOfAccountsContent: FC = function () {
                               <div className="flex max-w-md min-w-0 flex-col">
                                 {accountMappings?.rsGaap ? (
                                   <>
-                                    <span
-                                      className="text-secondary-500 dark:text-secondary-400 truncate text-sm font-medium"
-                                      title={accountMappings.rsGaap.gaapName}
-                                    >
-                                      {accountMappings.rsGaap.gaapName}
+                                    <span className="flex min-w-0 items-center gap-2">
+                                      <span
+                                        className="text-secondary-500 dark:text-secondary-400 truncate text-sm font-medium"
+                                        title={accountMappings.rsGaap.gaapName}
+                                      >
+                                        {accountMappings.rsGaap.gaapName}
+                                      </span>
+                                      {needsMappingReview(
+                                        accountMappings.rsGaap.confidence
+                                      ) && (
+                                        <span
+                                          title={`Auto-mapped at ${Math.round(
+                                            accountMappings.rsGaap.confidence *
+                                              100
+                                          )}% confidence. Check this match.`}
+                                        >
+                                          <Badge color="warning" size="sm">
+                                            Review
+                                          </Badge>
+                                        </span>
+                                      )}
                                     </span>
                                     <span
                                       className="truncate font-mono text-xs text-gray-500 dark:text-gray-400"
