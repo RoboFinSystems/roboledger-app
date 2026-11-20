@@ -40,8 +40,8 @@
   "//scripts": "The vitest scripts turn off Node's Web Storage: Node 25+ defines `localStorage` on globalThis, undefined until a --localstorage-file is given, and vitest's jsdom environment does not replace a global the runtime already owns, so tests would read undefined. Accepted on Node 22, 24 and 26.",
   "dependencies": {
     "@aws-sdk/client-sns": "^3.1145.0",
-    "@robosystems/client": "^2.41.1",
-    "@robosystems/core": "^0.21.6",
+    "@robosystems/client": "^2.42.0",
+    "@robosystems/core": "^0.21.7",
     "@robosystems/report-components": "^0.13.2",
     "lru-cache": "^11.5.3",
     "next": "^16.4.6",
