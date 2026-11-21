@@ -1,5 +1,5 @@
-// Product pages: one page per query whose search results are the product itself (repos,
-// directories, vendor pages) rather than articles. Each page's metadata, structured data,
+// Product pages: one permanent page per query a buyer searches for the product itself
+// (vault: gtm/content/pages). Each page's metadata, structured data,
 // sitemap entry, llms.txt line and footer link come from this registry, so a page cannot
 // ship half-wired; __tests__/product-pages.test.ts checks every entry against the SEO rules.
 
@@ -44,6 +44,34 @@ export const PRODUCT_PAGES: ProductPage[] = [
       'Sync QuickBooks into a ledger your AI can query. Nothing writes back until you post.',
     docsPath: '/docs/connect-your-books',
     updated: '2026-09-29',
+  },
+  {
+    path: '/financial-consolidation-software',
+    query: 'financial consolidation software',
+    title: 'Financial Consolidation Software for Groups | RoboLedger',
+    description:
+      'Financial consolidation software for a group: each company keeps its own books, the eliminations are drafted every month, and every number opens to its entries.',
+    h1: 'Financial consolidation software for a group of companies',
+    navLabel: 'Financial consolidation',
+    ogEyebrow: 'Financial consolidation',
+    ogSubtitle:
+      'Each company on its own books. The consolidating entries drafted every month, for you to review and post.',
+    docsPath: '/docs/consolidate-a-group',
+    updated: '2026-11-21',
+  },
+  {
+    path: '/open-source-accounting-software',
+    query: 'open source accounting software',
+    title: 'Open Source Accounting Software You Keep | RoboLedger',
+    description:
+      'Open source accounting software built as a knowledge graph: a general ledger your AI reads, on code and data you keep. Run it yourself or let us run it.',
+    h1: 'Open source accounting software, built as a knowledge graph',
+    navLabel: 'Open source accounting',
+    ogEyebrow: 'Open source accounting',
+    ogSubtitle:
+      'A general ledger your AI reads, on code and data you keep, whatever happens to any vendor, including us.',
+    docsPath: '/docs/your-books-and-your-data',
+    updated: '2026-11-21',
   },
 ]
 
