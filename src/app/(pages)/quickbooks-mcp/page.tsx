@@ -1,5 +1,13 @@
-import FinalCTA from '@/components/landing/FinalCTA'
 import { BOOK_PATH, REGISTER_PATH } from '@/components/landing/constants'
+import FinalCTA from '@/components/landing/FinalCTA'
+import {
+  CardGrid,
+  Code,
+  JsonLd,
+  OUTLINE_BUTTON_CLASS,
+  PRIMARY_BUTTON_CLASS,
+  Section,
+} from '@/components/product-pages/parts'
 import {
   getProductPage,
   productPageJsonLd,
@@ -61,42 +69,10 @@ const capabilities = [
   },
 ]
 
-// `wrap` breaks a lone URL across lines on a phone rather than hiding its end.
-function Code({ children, wrap }: { children: string; wrap?: boolean }) {
-  return (
-    <pre
-      className={`rounded-lg border border-gray-800 bg-zinc-950 px-4 py-3 text-sm text-gray-200 ${wrap ? 'break-all whitespace-pre-wrap' : 'overflow-x-auto'}`}
-    >
-      <code>{children}</code>
-    </pre>
-  )
-}
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="border-t border-gray-900 py-14">
-      <h2 className="font-heading mb-6 text-3xl font-bold text-white">
-        {title}
-      </h2>
-      <div className="space-y-4 text-lg leading-relaxed text-gray-300">
-        {children}
-      </div>
-    </section>
-  )
-}
-
 export default function QuickBooksMcpPage() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(productPageJsonLd(page)).replace(
-            /</g,
-            '\\u003c'
-          ),
-        }}
-      />
+      <JsonLd data={productPageJsonLd(page)} />
       <article>
         <div className="relative">
           <div className="from-primary-900/20 via-secondary-900/20 to-accent-900/20 absolute inset-0 bg-linear-to-br"></div>
@@ -116,22 +92,13 @@ export default function QuickBooksMcpPage() {
             <Code wrap>{MCP_URL}</Code>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               {/* A plain <a>: /book redirects to the scheduler on another site. */}
-              <Link
-                href={REGISTER_PATH}
-                className="from-primary-500 to-secondary-500 shadow-primary-500/25 hover:shadow-primary-500/40 rounded-lg bg-linear-to-r px-6 py-3 text-center font-medium text-white shadow-lg transition-all"
-              >
+              <Link href={REGISTER_PATH} className={PRIMARY_BUTTON_CLASS}>
                 Create an account
               </Link>
-              <a
-                href={BOOK_PATH}
-                className="rounded-lg border border-gray-600 px-6 py-3 text-center font-medium text-white transition-all hover:border-gray-500 hover:bg-white/5"
-              >
+              <a href={BOOK_PATH} className={OUTLINE_BUTTON_CLASS}>
                 Book 20 minutes
               </a>
-              <Link
-                href={page.docsPath}
-                className="rounded-lg border border-gray-600 px-6 py-3 text-center font-medium text-white transition-all hover:border-gray-500 hover:bg-white/5"
-              >
+              <Link href={page.docsPath} className={OUTLINE_BUTTON_CLASS}>
                 Read the setup guide
               </Link>
             </div>
@@ -178,17 +145,7 @@ export default function QuickBooksMcpPage() {
           </Section>
 
           <Section title="What your AI can do with QuickBooks data">
-            <dl className="grid gap-6 sm:grid-cols-2">
-              {capabilities.map((c) => (
-                <div
-                  key={c.title}
-                  className="rounded-xl border border-gray-800 bg-zinc-950/60 p-5"
-                >
-                  <dt className="mb-2 font-semibold text-white">{c.title}</dt>
-                  <dd className="text-base text-gray-400">{c.body}</dd>
-                </div>
-              ))}
-            </dl>
+            <CardGrid items={capabilities} />
           </Section>
 
           <Section title="RoboLedger vs Intuit's QuickBooks MCP server and Claude connector">
