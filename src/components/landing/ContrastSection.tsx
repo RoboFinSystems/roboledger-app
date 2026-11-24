@@ -1,5 +1,5 @@
+import { Dust, GraphGalaxies } from '@robosystems/core/graph-stage'
 import { LiveDemo } from '@robosystems/core/ui-components'
-import FloatingElementsVariant from './FloatingElementsVariant'
 
 // The contrast is a snapshot against a live ledger: an export keeps the numbers and loses
 // the accounting behind them, so every board pack is out of date the day it ships. The demo
@@ -7,11 +7,9 @@ import FloatingElementsVariant from './FloatingElementsVariant'
 
 export default function ContrastSection() {
   return (
-    <section
-      id="why"
-      className="relative bg-linear-to-b from-zinc-900 to-black py-16 sm:py-24"
-    >
-      <FloatingElementsVariant variant="features" />
+    <section id="why" className="relative bg-black py-16 sm:py-24">
+      <Dust />
+      <GraphGalaxies count={2} />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12 text-center">
           <div className="bg-primary-500/20 text-primary-400 mb-4 inline-block rounded-full px-4 py-1 text-sm font-semibold">

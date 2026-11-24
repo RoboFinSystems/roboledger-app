@@ -1,4 +1,4 @@
-import FloatingElementsVariant from './FloatingElementsVariant'
+import { GraphGalaxies, GraphOrb } from '@robosystems/core/graph-stage'
 
 // Three steps from QuickBooks to a ledger your AI can read: connect, ask, approve. A group
 // is optional at each step. Only the group parent's QuickBooks company connects (gtm/plan.md
@@ -31,25 +31,16 @@ const steps = [
   },
 ]
 
-const colorClasses: Record<
-  string,
-  { border: string; bg: string; number: string; tag: string }
-> = {
+const colorClasses: Record<string, { number: string; tag: string }> = {
   violet: {
-    border: 'border-primary-500/30',
-    bg: 'from-primary-500/10',
     number: 'text-primary-400',
     tag: 'bg-primary-950/50 text-primary-300',
   },
   purple: {
-    border: 'border-secondary-500/30',
-    bg: 'from-secondary-500/10',
     number: 'text-secondary-400',
     tag: 'bg-secondary-950/50 text-secondary-300',
   },
   pink: {
-    border: 'border-pink-500/30',
-    bg: 'from-pink-500/10',
     number: 'text-pink-400',
     tag: 'bg-pink-950/50 text-pink-300',
   },
@@ -57,11 +48,9 @@ const colorClasses: Record<
 
 export default function HowItWorks() {
   return (
-    <section
-      id="how-it-works"
-      className="relative bg-linear-to-b from-black to-zinc-900 py-16 sm:py-24"
-    >
-      <FloatingElementsVariant variant="features" />
+    <section id="how-it-works" className="relative bg-black py-16 sm:py-24">
+      <GraphOrb side="left" count={2} />
+      <GraphGalaxies count={2} keepClear="left" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12 text-center">
           <div className="bg-primary-500/20 text-primary-400 mb-4 inline-block rounded-full px-4 py-1 text-sm font-semibold">
@@ -77,13 +66,19 @@ export default function HowItWorks() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
-          {steps.map((step) => {
+          {steps.map((step, idx) => {
             const c = colorClasses[step.color]
             return (
               <div
                 key={step.number}
-                className={`rounded-2xl border ${c.border} bg-linear-to-br ${c.bg} to-zinc-900 p-6`}
+                className="node-card rounded-2xl border border-gray-800 bg-zinc-900/50 p-6 transition-all duration-300 hover:border-gray-700"
               >
+                {/* each step is linked to the next */}
+                {idx < steps.length - 1 && (
+                  <span aria-hidden="true" className="node-link node-link-lg">
+                    <i />
+                  </span>
+                )}
                 <div
                   className={`mb-1 text-4xl font-extrabold ${c.number} opacity-40`}
                 >

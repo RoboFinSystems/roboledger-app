@@ -1,6 +1,6 @@
+import { GraphOrb } from '@robosystems/core/graph-stage'
 import { BOOK_PATH, HARBINGER_URL } from './constants'
 import FindATime from './FindATime'
-import FloatingElementsVariant from './FloatingElementsVariant'
 
 // Harbinger FinLab runs the Finance AI Deployment (renamed from "Pilot" on 2026-11-16, which
 // read as both a proof of concept and a copilot): RoboSystems where the customer chooses, on
@@ -46,8 +46,7 @@ export default function HarbingerSection() {
       id="harbinger"
       className="relative overflow-hidden bg-black py-16 sm:py-24"
     >
-      <div className="from-secondary-900/20 via-primary-900/10 absolute inset-0 bg-linear-to-br to-black"></div>
-      <FloatingElementsVariant variant="platform" />
+      <GraphOrb side="right" count={1} />
       <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-gray-800 bg-linear-to-br from-zinc-900 to-black p-8 sm:p-12">
           <div className="grid gap-10 lg:grid-cols-2 lg:items-center">

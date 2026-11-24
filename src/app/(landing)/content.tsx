@@ -13,10 +13,12 @@ import OpenSourceStrip from '@/components/landing/OpenSourceStrip'
 import PlatformSection from '@/components/landing/PlatformSection'
 import ProofBand from '@/components/landing/ProofBand'
 import Spotlights from '@/components/landing/Spotlights'
+import { NodeGlow } from '@robosystems/core/graph-stage'
 
 export default function LandingPageContent() {
   return (
     <div className="min-h-screen bg-black">
+      <NodeGlow />
       <Header />
 
       <main>

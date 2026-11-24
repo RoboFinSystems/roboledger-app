@@ -1,3 +1,4 @@
+import { GraphOrb } from '@robosystems/core/graph-stage'
 import { GITHUB_URL, HARBINGER_URL } from './constants'
 
 const points = [
@@ -42,6 +43,7 @@ const points = [
 export default function OpenSourceStrip() {
   return (
     <section className="relative bg-zinc-950 py-16 sm:py-20">
+      <GraphOrb side="left" count={1} />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 text-center">
           <h2 className="font-heading mb-3 text-2xl font-bold text-white sm:text-3xl">
@@ -56,9 +58,9 @@ export default function OpenSourceStrip() {
           {points.map((p) => (
             <div
               key={p.title}
-              className="rounded-2xl border border-gray-800 bg-linear-to-br from-zinc-900 to-black p-6"
+              className="node-card rounded-2xl border border-gray-800 bg-linear-to-br from-zinc-900 to-black p-6 transition-all hover:border-gray-700"
             >
-              <div className="bg-primary-500/15 mb-4 flex h-11 w-11 items-center justify-center rounded-lg">
+              <div className="node-icon mb-4 flex h-11 w-11 items-center justify-center">
                 <svg
                   className="text-primary-400 h-5 w-5"
                   fill="none"

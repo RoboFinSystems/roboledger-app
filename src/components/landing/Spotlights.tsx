@@ -1,5 +1,5 @@
+import { Dust, GraphGalaxies } from '@robosystems/core/graph-stage'
 import { LiveDemo } from '@robosystems/core/ui-components'
-import FloatingElementsVariant from './FloatingElementsVariant'
 import ProductShot from './ProductShot'
 
 interface Spotlight {
@@ -137,7 +137,8 @@ const spotlights: Spotlight[] = [
 export default function Spotlights() {
   return (
     <section id="features" className="relative bg-black py-16 sm:py-24">
-      <FloatingElementsVariant variant="ai-reporting" />
+      <Dust />
+      <GraphGalaxies count={5} />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-16 text-center">
           <div className="bg-primary-500/20 text-primary-400 mb-4 inline-block rounded-full px-4 py-1 text-sm font-semibold">
