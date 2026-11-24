@@ -239,6 +239,75 @@ describe('EntityInfoPageContent', () => {
     })
   })
 
+  it('starts a new search from empty after a pick, and highlights by arrow key', async () => {
+    const user = userEvent.setup()
+    render(<EntityInfoPageContent />)
+    await user.click(await screen.findByText('Edit'))
+    const input = screen.getByLabelText('Industry')
+    await user.type(input, 'soft')
+    await user.click(await screen.findByRole('option', { name: /Software/ }))
+    expect(input).toHaveValue('Technology › Software')
+
+    // Focus never left: typing replaces the shown path instead of appending.
+    await user.keyboard('tech')
+    expect(input).toHaveValue('tech')
+    await user.keyboard('{ArrowDown}')
+    const active = input.getAttribute('aria-activedescendant')
+    expect(active).toBeTruthy()
+    expect(document.getElementById(active!)).toHaveAttribute(
+      'aria-selected',
+      'true'
+    )
+    await user.keyboard('{Enter}')
+    expect(input).toHaveValue('Technology')
+  })
+
+  it('offers nothing focusable inside the list, so Tab leaves the field', async () => {
+    const user = userEvent.setup()
+    render(<EntityInfoPageContent />)
+    await user.click(await screen.findByText('Edit'))
+    await user.click(screen.getByLabelText('Industry'))
+    const list = await screen.findByRole('listbox')
+    expect(list.querySelector('button, a, [tabindex]')).toBeNull()
+  })
+
+  it('says the list is loading until it arrives, and failed only when it fails', async () => {
+    const user = userEvent.setup()
+    let arrive: (rows: typeof INDUSTRIES) => void = () => {}
+    mockListIndustries.mockReturnValue(
+      new Promise((resolve) => {
+        arrive = resolve
+      })
+    )
+    const { unmount } = render(<EntityInfoPageContent />)
+    await user.click(await screen.findByText('Edit'))
+    expect(screen.getByText('Loading industries…')).toBeInTheDocument()
+    expect(screen.getByLabelText('Industry')).toBeDisabled()
+    arrive(INDUSTRIES)
+    await waitFor(() => expect(screen.getByLabelText('Industry')).toBeEnabled())
+    unmount()
+
+    mockListIndustries.mockRejectedValue(new Error('unknown field'))
+    render(<EntityInfoPageContent />)
+    await user.click(await screen.findByText('Edit'))
+    expect(
+      await screen.findByText('The industry list could not be loaded.')
+    ).toBeInTheDocument()
+  })
+
+  it('shows an entity’s SIC code without offering to edit it', async () => {
+    const user = userEvent.setup()
+    mockGetEntity.mockResolvedValue({
+      ...entityFor('kg_a'),
+      sic: '3674',
+      sicDescription: 'Semiconductors',
+    })
+    render(<EntityInfoPageContent />)
+    expect(await screen.findByText('3674 · Semiconductors')).toBeInTheDocument()
+    await user.click(screen.getByText('Edit'))
+    expect(screen.queryByDisplayValue('3674')).not.toBeInTheDocument()
+  })
+
   it('keeps an industry from before the list unless one is chosen', async () => {
     const user = userEvent.setup()
     mockGetEntity.mockResolvedValue({

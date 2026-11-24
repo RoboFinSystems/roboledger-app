@@ -45,15 +45,20 @@ const EntityInfoPageContent: FC = function () {
   // The industry classification is one list for every graph; null until it
   // loads, and left null when it cannot be read.
   const [industries, setIndustries] = useState<LedgerIndustry[] | null>(null)
+  const [industriesFailed, setIndustriesFailed] = useState(false)
   useEffect(() => {
     if (!graphId) return
     let cancelled = false
+    setIndustriesFailed(false)
     clients.ledger
       .listIndustries(graphId)
       .then((loaded) => {
         if (!cancelled) setIndustries(loaded)
       })
-      .catch((err) => console.error('Error loading industries:', err))
+      .catch((err) => {
+        console.error('Error loading industries:', err)
+        if (!cancelled) setIndustriesFailed(true)
+      })
     return () => {
       cancelled = true
     }
@@ -355,6 +360,7 @@ const EntityInfoPageContent: FC = function () {
                   selected={formData.industry || ''}
                   onChange={(id) => updateField('industry', id)}
                   industries={industries}
+                  failed={industriesFailed}
                 />
                 <div>
                   <dt className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -615,6 +621,20 @@ const EntityInfoPageContent: FC = function () {
                   formData={formData}
                   onChange={updateField}
                 />
+                {/* The SEC's own code, shown where an entity carries one; the
+                    industry above is what is chosen and edited. */}
+                {entity.sic && (
+                  <EditableField
+                    label="SIC"
+                    value={[entity.sic, entity.sicDescription]
+                      .filter(Boolean)
+                      .join(' · ')}
+                    field="sic"
+                    editing={false}
+                    formData={formData}
+                    onChange={updateField}
+                  />
+                )}
               </div>
             </Card>
 
