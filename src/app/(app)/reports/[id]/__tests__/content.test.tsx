@@ -8,6 +8,7 @@ const mockDeleteReport = vi.fn()
 const mockFileReport = vi.fn()
 const mockRegenerateReport = vi.fn()
 const mockListPublishLists = vi.fn()
+const mockGetReportDownloadUrl = vi.fn()
 const mockPush = vi.fn()
 // How many times the holon view mounted: it loads its own copy once per mount.
 const holon = { mounts: 0 }
@@ -22,7 +23,8 @@ vi.mock('@robosystems/core', () => ({
       fileReport: (...args: any[]) => mockFileReport(...args),
       regenerateReport: (...args: any[]) => mockRegenerateReport(...args),
       listPublishLists: (...args: any[]) => mockListPublishLists(...args),
-      getReportDownloadUrl: vi.fn(),
+      getReportDownloadUrl: (...args: any[]) =>
+        mockGetReportDownloadUrl(...args),
       shareReport: vi.fn(),
     },
   },
@@ -565,6 +567,60 @@ describe('Report filing actions', () => {
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
     expect(screen.getByText('Filed')).toBeInTheDocument()
+  })
+})
+
+describe('Report downloads', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    holon.mounts = 0
+    globalThis.IntersectionObserver = class {
+      observe() {}
+      disconnect() {}
+    } as any
+  })
+
+  it('offers the DataBook beside the other formats and asks for it by its format', async () => {
+    // "Report not found" ends the handler before it navigates to the link.
+    mockGetReportDownloadUrl.mockResolvedValue(null)
+    await renderWith()
+    for (const name of [
+      'Tavi (JSON)',
+      'Holon (JSON-LD)',
+      'Holon with lineage (JSON-LD)',
+      'DataBook (Markdown)',
+      'XBRL 2.1 package',
+    ]) {
+      expect(screen.getByRole('button', { name })).toBeInTheDocument()
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: 'DataBook (Markdown)' }))
+    await waitFor(() =>
+      expect(mockGetReportDownloadUrl).toHaveBeenCalledWith(
+        'kg_mine',
+        'rpt_1',
+        {
+          format: 'DATABOOK',
+        }
+      )
+    )
+  })
+
+  it('offers a received report its DataBook, and no lineage', async () => {
+    await renderWith({ sourceGraphId: 'kg_sender' })
+    expect(
+      screen.getByRole('button', { name: 'DataBook (Markdown)' })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Holon with lineage (JSON-LD)' })
+    ).toBeNull()
+  })
+
+  it('offers no download for a report that is not published', async () => {
+    await renderWith({ generationStatus: 'generating', filingStatus: 'draft' })
+    expect(
+      screen.queryByRole('button', { name: 'DataBook (Markdown)' })
+    ).toBeNull()
   })
 })
 
