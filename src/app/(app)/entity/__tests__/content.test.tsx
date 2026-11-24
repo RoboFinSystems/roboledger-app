@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockGetEntity = vi.fn()
 const mockUpdateEntity = vi.fn()
+const mockListIndustries = vi.fn()
 const mockRecordAcquisition = vi.fn()
 const mockScope = vi.fn()
 const mockRefresh = vi.fn()
@@ -39,6 +40,7 @@ vi.mock('@robosystems/core', () => ({
     ledger: {
       getEntity: (...args: any[]) => mockGetEntity(...args),
       updateEntity: (...args: any[]) => mockUpdateEntity(...args),
+      listIndustries: (...args: any[]) => mockListIndustries(...args),
       recordAcquisition: (...args: any[]) => mockRecordAcquisition(...args),
       recordOwnershipChange: vi.fn(),
       recordDeconsolidation: vi.fn(),
@@ -109,6 +111,25 @@ const entityFor = (graphId: string) => ({
   leftOn: null,
 })
 
+const node = (id: string, label: string, path: string[], level: string) => ({
+  id,
+  parentId: id.includes('/') ? id.slice(0, id.lastIndexOf('/')) : null,
+  level,
+  label,
+  path,
+  carried: false,
+  replacedBy: null,
+})
+const INDUSTRIES = [
+  node('technology', 'Technology', ['Technology'], 'sector'),
+  node(
+    'technology/software',
+    'Software',
+    ['Technology', 'Software'],
+    'subsector'
+  ),
+]
+
 function setGraph(graphId: string) {
   mockUseGraphContext.mockReturnValue({
     state: { currentGraphId: graphId, graphs: [] },
@@ -133,6 +154,7 @@ describe('EntityInfoPageContent', () => {
     mockGetEntity.mockImplementation((graphId: string) =>
       Promise.resolve(entityFor(graphId))
     )
+    mockListIndustries.mockResolvedValue(INDUSTRIES)
     mockUpdateEntity.mockImplementation((graphId: string) =>
       Promise.resolve(entityFor(graphId))
     )
@@ -200,6 +222,59 @@ describe('EntityInfoPageContent', () => {
       expect.objectContaining({ name: 'New name' })
     )
   })
+  it('picks an industry from the list and saves its id', async () => {
+    const user = userEvent.setup()
+    render(<EntityInfoPageContent />)
+    await user.click(await screen.findByText('Edit'))
+    await user.type(screen.getByLabelText('Industry'), 'soft')
+    await user.click(await screen.findByRole('option', { name: /Software/ }))
+    expect(screen.getByLabelText('Industry')).toHaveValue(
+      'Technology › Software'
+    )
+    await user.click(screen.getByText('Save'))
+
+    await waitFor(() => expect(mockUpdateEntity).toHaveBeenCalledTimes(1))
+    expect(mockUpdateEntity).toHaveBeenCalledWith('kg_a', {
+      industry: 'technology/software',
+    })
+  })
+
+  it('keeps an industry from before the list unless one is chosen', async () => {
+    const user = userEvent.setup()
+    mockGetEntity.mockResolvedValue({
+      ...entityFor('kg_a'),
+      industry: 'Industrial robotics',
+    })
+    render(<EntityInfoPageContent />)
+    expect(await screen.findByText('Industrial robotics')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Edit'))
+    expect(screen.getByText(/Currently “Industrial robotics”/)).toBeVisible()
+    const nameInput = await screen.findByDisplayValue('Entity kg_a')
+    await user.type(nameInput, ' Two')
+    await user.click(screen.getByText('Save'))
+
+    await waitFor(() => expect(mockUpdateEntity).toHaveBeenCalledTimes(1))
+    expect(mockUpdateEntity).toHaveBeenCalledWith('kg_a', {
+      name: 'Entity kg_a Two',
+    })
+  })
+
+  it('clears a chosen industry', async () => {
+    const user = userEvent.setup()
+    mockGetEntity.mockResolvedValue({
+      ...entityFor('kg_a'),
+      industry: 'technology',
+    })
+    render(<EntityInfoPageContent />)
+    await user.click(await screen.findByText('Edit'))
+    await user.click(screen.getByText('Clear'))
+    await user.click(screen.getByText('Save'))
+
+    await waitFor(() => expect(mockUpdateEntity).toHaveBeenCalledTimes(1))
+    expect(mockUpdateEntity).toHaveBeenCalledWith('kg_a', { industry: null })
+  })
+
   it('reads and writes the subsidiary in scope, then re-reads the group', async () => {
     const user = userEvent.setup()
     const sub = {

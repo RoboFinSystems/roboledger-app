@@ -3,7 +3,7 @@
 import { useEntityScope } from '@/lib/entity-scope'
 import { friendlyError } from '@/lib/ledger/errors'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
-import type { LedgerEntity } from '@robosystems/client/clients'
+import type { LedgerEntity, LedgerIndustry } from '@robosystems/client/clients'
 import type { UpdateEntityRequest } from '@robosystems/client/types'
 import { clients, PageHeader, PageLayout } from '@robosystems/core'
 import {
@@ -19,6 +19,7 @@ import {
 import { type FC, useEffect, useRef, useState } from 'react'
 import { HiOfficeBuilding, HiPencil, HiSave, HiX } from 'react-icons/hi'
 import GroupLifecycleCard from './components/GroupLifecycleCard'
+import IndustryField from './components/IndustryField'
 import OpeningBalanceCard from './components/OpeningBalanceCard'
 
 const TREATMENT_LABELS: Record<string, string> = {
@@ -41,6 +42,22 @@ const EntityInfoPageContent: FC = function () {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
+  // The industry classification is one list for every graph; null until it
+  // loads, and left null when it cannot be read.
+  const [industries, setIndustries] = useState<LedgerIndustry[] | null>(null)
+  useEffect(() => {
+    if (!graphId) return
+    let cancelled = false
+    clients.ledger
+      .listIndustries(graphId)
+      .then((loaded) => {
+        if (!cancelled) setIndustries(loaded)
+      })
+      .catch((err) => console.error('Error loading industries:', err))
+    return () => {
+      cancelled = true
+    }
+  }, [graphId])
 
   // Tracks the graph and entity a request was issued for, so a response that
   // arrives after the selection moved on can be discarded instead of applied
@@ -122,8 +139,6 @@ const EntityInfoPageContent: FC = function () {
       ticker: entity.ticker || '',
       exchange: entity.exchange || '',
       cik: entity.cik || '',
-      sic: entity.sic || '',
-      sic_description: entity.sicDescription || '',
       address_line1: entity.addressLine1 || '',
       address_city: entity.addressCity || '',
       address_state: entity.addressState || '',
@@ -158,8 +173,6 @@ const EntityInfoPageContent: FC = function () {
     ticker: 'ticker',
     exchange: 'exchange',
     cik: 'cik',
-    sic: 'sic',
-    sic_description: 'sicDescription',
     address_line1: 'addressLine1',
     address_city: 'addressCity',
     address_state: 'addressState',
@@ -336,13 +349,12 @@ const EntityInfoPageContent: FC = function () {
                   onChange={updateField}
                   placeholder="e.g., corporation, llc, partnership"
                 />
-                <EditableField
-                  label="Industry"
+                <IndustryField
                   value={entity.industry}
-                  field="industry"
                   editing={editing}
-                  formData={formData}
-                  onChange={updateField}
+                  selected={formData.industry || ''}
+                  onChange={(id) => updateField('industry', id)}
+                  industries={industries}
                 />
                 <div>
                   <dt className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -602,23 +614,6 @@ const EntityInfoPageContent: FC = function () {
                   editing={editing}
                   formData={formData}
                   onChange={updateField}
-                />
-                <EditableField
-                  label="SIC Code"
-                  value={entity.sic}
-                  field="sic"
-                  editing={editing}
-                  formData={formData}
-                  onChange={updateField}
-                />
-                <EditableField
-                  label="SIC Description"
-                  value={entity.sicDescription}
-                  field="sic_description"
-                  editing={editing}
-                  formData={formData}
-                  onChange={updateField}
-                  className="sm:col-span-2"
                 />
               </div>
             </Card>
