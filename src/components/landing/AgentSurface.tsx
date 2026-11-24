@@ -1,6 +1,6 @@
 import { McpLogo } from '@/components/mcp/McpLogo'
+import { GraphGalaxies, GraphOrb } from '@robosystems/core/graph-stage'
 import { LiveDemo } from '@robosystems/core/ui-components'
-import FloatingElementsVariant from './FloatingElementsVariant'
 
 /**
  * The agent-first section: capabilities that ship through MCP before they
@@ -67,7 +67,8 @@ export default function AgentSurface() {
       id="agent-surface"
       className="relative border-t border-gray-800/60 bg-black py-16 sm:py-24"
     >
-      <FloatingElementsVariant variant="platform" />
+      <GraphOrb side="right" count={2} />
+      <GraphGalaxies count={2} keepClear="right" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-14 text-center">
           <div className="bg-secondary-500/20 text-secondary-300 mb-4 inline-block rounded-full px-4 py-1 text-sm font-semibold">
@@ -102,7 +103,7 @@ export default function AgentSurface() {
           {capabilities.map((c) => (
             <div
               key={c.title}
-              className="hover:border-secondary-500/40 flex flex-col rounded-xl border border-gray-800 bg-linear-to-br from-zinc-900 to-black p-5 transition-all"
+              className="node-card flex flex-col rounded-xl border border-gray-800 bg-linear-to-br from-zinc-900 to-black p-5 transition-all hover:border-gray-700"
             >
               <h3 className="mb-2 text-base font-semibold text-white">
                 {c.title}

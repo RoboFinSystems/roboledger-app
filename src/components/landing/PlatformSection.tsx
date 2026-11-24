@@ -1,9 +1,10 @@
-import FloatingElementsVariant from './FloatingElementsVariant'
+import { Dust, GraphGalaxies } from '@robosystems/core/graph-stage'
 
 export default function PlatformSection() {
   return (
     <section id="platform" className="relative bg-black py-16 sm:py-24">
-      <FloatingElementsVariant variant="platform" />
+      <Dust />
+      <GraphGalaxies count={3} />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-16 text-center">
           <h2 className="font-heading mb-6 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
@@ -236,8 +237,8 @@ export default function PlatformSection() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
-          <div className="group from-primary-500/10 hover:border-primary-500/50 rounded-xl border border-gray-800 bg-gradient-to-br to-zinc-900 p-6 transition-all">
-            <div className="from-primary-500 to-secondary-500 mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br">
+          <div className="node-card group rounded-xl border border-gray-800 bg-zinc-900/50 p-6 transition-all hover:border-gray-700">
+            <div className="node-icon mb-4 flex h-12 w-12 items-center justify-center">
               <svg
                 className="h-6 w-6 text-white"
                 fill="none"
@@ -261,8 +262,8 @@ export default function PlatformSection() {
             </p>
           </div>
 
-          <div className="group from-secondary-500/10 hover:border-secondary-500/50 rounded-xl border border-gray-800 bg-gradient-to-br to-zinc-900 p-6 transition-all">
-            <div className="from-secondary-500 mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br to-pink-500">
+          <div className="node-card group rounded-xl border border-gray-800 bg-zinc-900/50 p-6 transition-all hover:border-gray-700">
+            <div className="node-icon mb-4 flex h-12 w-12 items-center justify-center">
               <svg
                 className="h-6 w-6 text-white"
                 fill="none"
@@ -286,8 +287,8 @@ export default function PlatformSection() {
             </p>
           </div>
 
-          <div className="group rounded-xl border border-gray-800 bg-gradient-to-br from-green-500/10 to-zinc-900 p-6 transition-all hover:border-green-500/50">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-emerald-500">
+          <div className="node-card group rounded-xl border border-gray-800 bg-zinc-900/50 p-6 transition-all hover:border-gray-700">
+            <div className="node-icon mb-4 flex h-12 w-12 items-center justify-center">
               <svg
                 className="h-6 w-6 text-white"
                 fill="none"

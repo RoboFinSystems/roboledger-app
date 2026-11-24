@@ -1,3 +1,4 @@
+import { GridFloor } from '@robosystems/core/graph-stage'
 import Link from 'next/link'
 import {
   BOOK_PATH,
@@ -7,13 +8,12 @@ import {
   ROBOSYSTEMS_URL,
 } from './constants'
 import FindATime from './FindATime'
-import FloatingElementsVariant from './FloatingElementsVariant'
 
 export default function FinalCTA() {
   return (
-    <section className="relative overflow-hidden bg-black py-24">
-      <div className="from-primary-900/20 via-secondary-900/20 to-accent-900/20 absolute inset-0 bg-linear-to-br"></div>
-      <FloatingElementsVariant variant="final" />
+    <section className="relative overflow-hidden bg-black pt-24 pb-48">
+      {/* The brand film's floor: a ledger grid running to the horizon. */}
+      <GridFloor />
       <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
         <h2 className="font-heading mb-6 text-4xl font-bold text-white md:text-5xl">
           See it on your own books
