@@ -2,7 +2,7 @@
 
 import type { LedgerIndustry } from '@robosystems/client/clients'
 import { Label, TextInput } from '@robosystems/core/ui'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 const MAX_RESULTS = 50
 const SEPARATOR = ' › '
@@ -47,6 +47,7 @@ export default function IndustryField({
   selected,
   onChange,
   industries,
+  failed = false,
 }: {
   /** The stored industry: a node id, text from before the list, or empty. */
   value?: string | null
@@ -54,8 +55,10 @@ export default function IndustryField({
   /** The form's current choice while editing. */
   selected: string
   onChange: (id: string) => void
-  /** The classification, or null when it could not be loaded. */
+  /** The classification; null while it loads and when it could not be read. */
   industries: LedgerIndustry[] | null
+  /** The classification could not be read, as against not having arrived yet. */
+  failed?: boolean
 }) {
   const byId = useMemo(
     () => new Map((industries ?? []).map((node) => [node.id, node])),
@@ -63,6 +66,14 @@ export default function IndustryField({
   )
   const [query, setQuery] = useState<string | null>(null)
   const [activeIndex, setActiveIndex] = useState(-1)
+  const listRef = useRef<HTMLUListElement>(null)
+  // Keep the highlighted option in view as the arrow keys move it.
+  useEffect(() => {
+    if (activeIndex < 0) return
+    const option = listRef.current?.children[activeIndex] as
+      HTMLElement | undefined
+    option?.scrollIntoView?.({ block: 'nearest' })
+  }, [activeIndex])
 
   const labelClass = 'mb-1 text-sm font-medium text-gray-500 dark:text-gray-400'
   const display = (stored?: string | null) => {
@@ -97,7 +108,9 @@ export default function IndustryField({
           readOnly
         />
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          The industry list could not be loaded.
+          {failed
+            ? 'The industry list could not be loaded.'
+            : 'Loading industries…'}
         </p>
       </div>
     )
@@ -108,6 +121,7 @@ export default function IndustryField({
   const legacy = selected && !chosen ? selected : null
   const open = query !== null
   const results = open ? searchIndustries(industries, query) : []
+  const optionId = (index: number) => `industry-option-${index}`
 
   const close = () => {
     setQuery(null)
@@ -123,7 +137,15 @@ export default function IndustryField({
       close()
       return
     }
-    if (!open || results.length === 0) {
+    // Closed with focus still here (after a pick or Escape): the box shows the
+    // chosen path, so a search starts from empty, not from that text.
+    if (!open) {
+      const typing = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey
+      if (typing || e.key === 'ArrowDown' || e.key === 'Backspace') setQuery('')
+      if (e.key === 'ArrowDown' || e.key === 'Backspace') e.preventDefault()
+      return
+    }
+    if (results.length === 0) {
       if (e.key === 'Enter') e.preventDefault()
       return
     }
@@ -155,15 +177,25 @@ export default function IndustryField({
             setActiveIndex(-1)
           }}
           onFocus={() => setQuery('')}
+          onClick={() => {
+            if (!open) setQuery('')
+          }}
           onBlur={close}
           onKeyDown={handleKeyDown}
           role="combobox"
+          aria-autocomplete="list"
           aria-expanded={open && results.length > 0}
-          aria-controls="industry-options"
+          aria-controls={
+            open && results.length > 0 ? 'industry-options' : undefined
+          }
+          aria-activedescendant={
+            open && activeIndex >= 0 ? optionId(activeIndex) : undefined
+          }
           autoComplete="off"
         />
         {open && results.length > 0 && (
           <ul
+            ref={listRef}
             id="industry-options"
             role="listbox"
             aria-label="Industries"
@@ -172,6 +204,7 @@ export default function IndustryField({
             {results.map((node, index) => (
               <li
                 key={node.id}
+                id={optionId(index)}
                 role="option"
                 aria-selected={index === activeIndex}
                 // onMouseDown so the pick wins over the input's blur.
@@ -180,9 +213,10 @@ export default function IndustryField({
                   pick(node)
                 }}
               >
-                <button
-                  type="button"
-                  className={`w-full px-3 py-1.5 text-left text-sm ${
+                {/* Not a button: the option is picked from the input, and a
+                    focusable child would take Tab and vanish with the list. */}
+                <div
+                  className={`w-full cursor-pointer px-3 py-1.5 text-left text-sm ${
                     index === activeIndex
                       ? 'bg-gray-100 dark:bg-gray-700'
                       : 'hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -196,9 +230,17 @@ export default function IndustryField({
                       {node.path.slice(0, -1).join(SEPARATOR)}
                     </span>
                   )}
-                </button>
+                </div>
               </li>
             ))}
+            {results.length === MAX_RESULTS && (
+              <li
+                role="presentation"
+                className="px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400"
+              >
+                Showing the first {MAX_RESULTS}. Keep typing to narrow.
+              </li>
+            )}
           </ul>
         )}
         {open && query.trim() !== '' && results.length === 0 && (
