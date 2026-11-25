@@ -1,5 +1,6 @@
 'use client'
 
+import { ENTITY_TYPES } from '@/lib/entity-types'
 import { friendlyError } from '@/lib/ledger/errors'
 import type {
   LedgerEntity,
@@ -21,14 +22,9 @@ import {
 } from '@robosystems/core/ui'
 import { type FC, type FormEvent, useEffect, useMemo, useState } from 'react'
 
-/** Legal forms the server maps to a Reporting Style and a chart's equity rows. */
-export const ENTITY_TYPES: ReadonlyArray<{ value: string; label: string }> = [
+const LEGAL_FORM_OPTIONS = [
   { value: '', label: 'Not recorded' },
-  { value: 'corporation', label: 'Corporation' },
-  { value: 'llc', label: 'LLC' },
-  { value: 'partnership', label: 'Partnership' },
-  { value: 'sole_proprietorship', label: 'Sole proprietorship' },
-  { value: 'non_profit', label: 'Non-profit' },
+  ...ENTITY_TYPES,
 ]
 
 interface NewEntityModalProps {
@@ -202,7 +198,7 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
                   value={entityType}
                   onChange={(e) => setEntityType(e.target.value)}
                 >
-                  {ENTITY_TYPES.map((t) => (
+                  {LEGAL_FORM_OPTIONS.map((t) => (
                     <option key={t.value} value={t.value}>
                       {t.label}
                     </option>
