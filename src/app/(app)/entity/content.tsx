@@ -2,6 +2,13 @@
 
 import { useEntityScope } from '@/lib/entity-scope'
 import { friendlyError } from '@/lib/ledger/errors'
+import {
+  COUNTRIES,
+  einHint,
+  formatFiscalYearEnd,
+  identifierError,
+  US_STATES,
+} from '@/lib/regions'
 import { useLedgerGraph } from '@/lib/useLedgerGraph'
 import type { LedgerEntity, LedgerIndustry } from '@robosystems/client/clients'
 import type { UpdateEntityRequest } from '@robosystems/client/types'
@@ -21,6 +28,7 @@ import { HiOfficeBuilding, HiPencil, HiSave, HiX } from 'react-icons/hi'
 import EntityTypeField from './components/EntityTypeField'
 import GroupLifecycleCard from './components/GroupLifecycleCard'
 import IndustryField from './components/IndustryField'
+import ListField from './components/ListField'
 import OpeningBalanceCard from './components/OpeningBalanceCard'
 
 const TREATMENT_LABELS: Record<string, string> = {
@@ -139,7 +147,6 @@ const EntityInfoPageContent: FC = function () {
       industry: entity.industry || '',
       entity_type: entity.entityType || '',
       state_of_incorporation: entity.stateOfIncorporation || '',
-      fiscal_year_end: entity.fiscalYearEnd || '',
       tax_id: entity.taxId || '',
       lei: entity.lei || '',
       ticker: entity.ticker || '',
@@ -173,7 +180,6 @@ const EntityInfoPageContent: FC = function () {
     industry: 'industry',
     entity_type: 'entityType',
     state_of_incorporation: 'stateOfIncorporation',
-    fiscal_year_end: 'fiscalYearEnd',
     tax_id: 'taxId',
     lei: 'lei',
     ticker: 'ticker',
@@ -241,6 +247,16 @@ const EntityInfoPageContent: FC = function () {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  // A blank country is the server's default, the US.
+  const country = editing ? formData.address_country : entity?.addressCountry
+  const isUS = !country || country === 'US'
+  const invalidIdentifier =
+    editing &&
+    Boolean(
+      identifierError('lei', formData.lei || '') ||
+      identifierError('cik', formData.cik || '')
+    )
+
   return (
     <PageLayout>
       <PageHeader
@@ -306,7 +322,7 @@ const EntityInfoPageContent: FC = function () {
                     color="success"
                     size="sm"
                     onClick={handleSave}
-                    disabled={saving}
+                    disabled={saving || invalidIdentifier}
                   >
                     <HiSave className="mr-1 h-4 w-4" />
                     {saving ? 'Saving...' : 'Save'}
@@ -527,14 +543,26 @@ const EntityInfoPageContent: FC = function () {
                   formData={formData}
                   onChange={updateField}
                 />
-                <EditableField
-                  label="State"
-                  value={entity.addressState}
-                  field="address_state"
-                  editing={editing}
-                  formData={formData}
-                  onChange={updateField}
-                />
+                {isUS ? (
+                  <ListField
+                    label="State"
+                    field="address_state"
+                    options={US_STATES}
+                    value={entity.addressState}
+                    editing={editing}
+                    selected={formData.address_state || ''}
+                    onChange={(v) => updateField('address_state', v)}
+                  />
+                ) : (
+                  <EditableField
+                    label="State / Region"
+                    value={entity.addressState}
+                    field="address_state"
+                    editing={editing}
+                    formData={formData}
+                    onChange={updateField}
+                  />
+                )}
                 <EditableField
                   label="Postal Code"
                   value={entity.addressPostalCode}
@@ -543,13 +571,14 @@ const EntityInfoPageContent: FC = function () {
                   formData={formData}
                   onChange={updateField}
                 />
-                <EditableField
+                <ListField
                   label="Country"
-                  value={entity.addressCountry}
                   field="address_country"
+                  options={COUNTRIES}
+                  value={entity.addressCountry}
                   editing={editing}
-                  formData={formData}
-                  onChange={updateField}
+                  selected={formData.address_country || ''}
+                  onChange={(v) => updateField('address_country', v)}
                 />
               </div>
             </Card>
@@ -562,23 +591,44 @@ const EntityInfoPageContent: FC = function () {
                 </h2>
               </div>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <EditableField
-                  label="State of Incorporation"
-                  value={entity.stateOfIncorporation}
-                  field="state_of_incorporation"
-                  editing={editing}
-                  formData={formData}
-                  onChange={updateField}
-                />
-                <EditableField
-                  label="Fiscal Year End"
-                  value={entity.fiscalYearEnd}
-                  field="fiscal_year_end"
-                  editing={editing}
-                  formData={formData}
-                  onChange={updateField}
-                  placeholder="e.g., 1231"
-                />
+                {isUS ? (
+                  <ListField
+                    label="State of Incorporation"
+                    field="state_of_incorporation"
+                    options={US_STATES}
+                    value={entity.stateOfIncorporation}
+                    editing={editing}
+                    selected={formData.state_of_incorporation || ''}
+                    onChange={(v) => updateField('state_of_incorporation', v)}
+                  />
+                ) : (
+                  <EditableField
+                    label="Jurisdiction of Incorporation"
+                    value={entity.stateOfIncorporation}
+                    field="state_of_incorporation"
+                    editing={editing}
+                    formData={formData}
+                    onChange={updateField}
+                  />
+                )}
+                {/* Read from the fiscal calendar, which is where it changes. */}
+                <div>
+                  <dt className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Fiscal Year End
+                  </dt>
+                  <dd className="text-base text-gray-900 dark:text-white">
+                    {formatFiscalYearEnd(entity.fiscalYearEnd) || (
+                      <span className="text-gray-400 dark:text-gray-500">
+                        --
+                      </span>
+                    )}
+                  </dd>
+                  {editing && (
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Set by the fiscal calendar.
+                    </p>
+                  )}
+                </div>
                 <EditableField
                   label="Tax ID"
                   value={entity.taxId}
@@ -586,6 +636,7 @@ const EntityInfoPageContent: FC = function () {
                   editing={editing}
                   formData={formData}
                   onChange={updateField}
+                  hint={isUS ? einHint(formData.tax_id || '') : undefined}
                 />
                 <EditableField
                   label="LEI"
@@ -594,6 +645,7 @@ const EntityInfoPageContent: FC = function () {
                   editing={editing}
                   formData={formData}
                   onChange={updateField}
+                  error={identifierError('lei', formData.lei || '')}
                 />
                 <EditableField
                   label="Ticker"
@@ -603,22 +655,29 @@ const EntityInfoPageContent: FC = function () {
                   formData={formData}
                   onChange={updateField}
                 />
-                <EditableField
-                  label="Exchange"
-                  value={entity.exchange}
-                  field="exchange"
-                  editing={editing}
-                  formData={formData}
-                  onChange={updateField}
-                />
-                <EditableField
-                  label="CIK"
-                  value={entity.cik}
-                  field="cik"
-                  editing={editing}
-                  formData={formData}
-                  onChange={updateField}
-                />
+                {/* Exchange and CIK belong to a public filer: shown only
+                    where an entity carries one. */}
+                {entity.exchange && (
+                  <EditableField
+                    label="Exchange"
+                    value={entity.exchange}
+                    field="exchange"
+                    editing={editing}
+                    formData={formData}
+                    onChange={updateField}
+                  />
+                )}
+                {entity.cik && (
+                  <EditableField
+                    label="CIK"
+                    value={entity.cik}
+                    field="cik"
+                    editing={editing}
+                    formData={formData}
+                    onChange={updateField}
+                    error={identifierError('cik', formData.cik || '')}
+                  />
+                )}
                 {/* The SEC's own code, shown where an entity carries one; the
                     industry above is what is chosen and edited. */}
                 {entity.sic && (
@@ -717,6 +776,7 @@ function EditableField({
   placeholder,
   type,
   hint,
+  error,
   className,
 }: {
   label: string
@@ -728,6 +788,8 @@ function EditableField({
   placeholder?: string
   type?: 'date'
   hint?: string
+  /** A problem with the value; shown in place of the hint. */
+  error?: string
   className?: string
 }) {
   if (editing) {
@@ -747,10 +809,14 @@ function EditableField({
           placeholder={placeholder || `Enter ${label.toLowerCase()}`}
           sizing="sm"
         />
-        {hint && (
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {hint}
-          </p>
+        {error ? (
+          <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>
+        ) : (
+          hint && (
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {hint}
+            </p>
+          )
         )}
       </div>
     )
