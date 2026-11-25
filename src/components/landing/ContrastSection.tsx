@@ -49,8 +49,7 @@ export default function ContrastSection() {
                 d="M13 10V3L4 14h7v7l9-11h-7z"
               />
             </svg>
-            Every entry checked before a period closes, and nothing writes back
-            until you post an entry
+            Every entry checked before a period closes
           </div>
         </div>
       </div>

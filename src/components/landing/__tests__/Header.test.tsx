@@ -85,7 +85,7 @@ describe('Header', () => {
     mockUseOptionalAuth.mockReturnValue(signedOut)
     render(<Header />)
 
-    expect(hrefsOf('The deployment')).toEqual(['/#harbinger'])
+    expect(hrefsOf('Deployment')).toEqual(['/#harbinger'])
   })
 
   it('sends Login and Register in the server HTML even for a signed-in session', () => {

@@ -25,7 +25,7 @@ const steps = [
     number: '03',
     title: 'Approve the close',
     description:
-      'Bank lines arrive with a suggested account, schedules draft their entries, and the close waits on the reconciliations you choose. For a group, your AI then drafts the consolidating entries and the group close posts them. Nothing writes back to QuickBooks until you post an entry.',
+      'Bank lines arrive with a suggested account, schedules draft their entries, and the close waits on the reconciliations you choose. For a group, your AI then drafts the consolidating entries and the group close posts them.',
     tags: ['Inbox', 'Reconciliations', 'Group close'],
     color: 'pink',
   },
