@@ -1,4 +1,6 @@
+import { MERCURY_DISCLOSURE } from '@/app/(app)/connections/components/MercuryDisclosure'
 import { Dust, GraphGalaxies } from '@robosystems/core/graph-stage'
+import { MERCURY_PARTNER_URL } from './constants'
 
 // The section reads left to right as one flow: what comes in, what it becomes,
 // what gets done to it, and where it is reached from. The second column is the
@@ -24,6 +26,11 @@ const SOURCES = [
     ],
   },
   {
+    name: 'Your other systems',
+    kind: 'Integrations',
+    lines: ['Metrics and KPIs, a fact per period', 'Through the public API'],
+  },
+  {
     name: 'Native entries',
     kind: 'Written in RoboLedger',
     lines: [
@@ -45,9 +52,14 @@ const JOBS = [
     ],
   },
   {
-    job: 'Map',
-    does: 'Each account is tied to a standard reporting concept.',
-    tools: ['Initialize Chart of Accounts', 'Auto-Map Elements via AI'],
+    job: 'Taxonomy',
+    does: 'Your chart and its mapping to standard reporting concepts, kept as one taxonomy block.',
+    tools: ['Create Taxonomy Block', 'Auto-Map Elements via AI'],
+  },
+  {
+    job: 'Measure',
+    does: 'Metrics and forecasts as information blocks, checked by their rules.',
+    tools: ['Create Information Block', 'Assert Metrics', 'Compute Metrics'],
   },
   {
     job: 'Close',
@@ -85,24 +97,36 @@ const ACCESS: {
     line: 'The same tools from Claude, ChatGPT or any MCP client',
   },
   {
+    name: 'AI Operators',
+    line: 'The AI behind the AI Console and the background work, Claude through AWS Bedrock, paid in credits. MCP and the API use none',
+  },
+  {
     name: 'API',
     line: 'GraphQL and REST, with Python and TypeScript clients',
   },
   {
     name: 'Report files',
     line: 'Each report downloads as a file you keep and can open without us',
-    formats: ['Holon (RDF)', 'XBRL 2.1', 'Tavi JSON'],
+    formats: ['Holon (RDF)', 'DataBook', 'Tavi JSON', 'XBRL 2.1'],
     link: {
       label: 'Open one in the xbrlkit viewer',
       href: 'https://xbrlkit.com',
     },
+  },
+  {
+    name: 'Graph backup',
+    line: 'The whole graph, backed up nightly, downloads as a LadybugDB file to open in G.V() or query from Python',
+    formats: ['LadybugDB (.lbdb)'],
   },
 ]
 
 type Tone = 1 | 2 | 3
 const tone = (n: Tone, alpha = 1) => `rgb(var(--graph-${n}) / ${alpha})`
 
-// The schema graph's nodes, on a 420 x 520 canvas.
+// The ledger's graph as the schema has it (robosystems/schemas/extensions/roboledger.py and
+// base.py: Event, Agent, Entry, LineItem, Element, Fact, Report), named for a reader; the
+// account and the reporting concept are both elements, joined by the mapping. On a 420 x
+// 520 canvas.
 const NODES: {
   id: string
   label: string
@@ -113,18 +137,19 @@ const NODES: {
 }[] = [
   { id: 'event', label: 'Event', sub: 'what happened', x: 95, y: 84, tone: 1 },
   {
-    id: 'party',
-    label: 'Counterparty',
-    sub: 'who with',
+    id: 'agent',
+    label: 'Agent',
+    sub: 'the counterparty',
     x: 305,
     y: 84,
     tone: 1,
   },
+  { id: 'entry', label: 'Entry', sub: 'one posting', x: 95, y: 190, tone: 2 },
   {
-    id: 'entry',
-    label: 'Entry',
-    sub: 'debits and credits',
-    x: 95,
+    id: 'line',
+    label: 'Line item',
+    sub: 'one debit or credit',
+    x: 305,
     y: 190,
     tone: 2,
   },
@@ -133,21 +158,21 @@ const NODES: {
     label: 'Account',
     sub: 'your chart',
     x: 305,
-    y: 190,
+    y: 296,
     tone: 2,
   },
   {
     id: 'concept',
     label: 'Reporting concept',
     sub: 'the standard term',
-    x: 305,
+    x: 95,
     y: 296,
     tone: 3,
   },
   {
-    id: 'statement',
-    label: 'Statement',
-    sub: 'live from the books',
+    id: 'fact',
+    label: 'Fact',
+    sub: 'one value, one period',
     x: 95,
     y: 402,
     tone: 3,
@@ -169,12 +194,13 @@ const EDGES: {
   dx?: number
   dy?: number
 }[] = [
-  { from: 'event', to: 'party', label: 'involves', dy: -8 },
+  { from: 'event', to: 'agent', label: 'involves', dy: -8 },
   { from: 'event', to: 'entry', label: 'posts as', dx: 34, dy: 4 },
-  { from: 'entry', to: 'account', label: 'hits', dy: -8 },
-  { from: 'account', to: 'concept', label: 'maps to', dx: -32, dy: 4 },
-  { from: 'concept', to: 'statement', label: 'rolls up to', dx: -6, dy: -12 },
-  { from: 'statement', to: 'report', label: 'saved as', dy: -8 },
+  { from: 'entry', to: 'line', label: 'has', dy: -8 },
+  { from: 'line', to: 'account', label: 'hits', dx: -22, dy: 4 },
+  { from: 'account', to: 'concept', label: 'maps to', dy: -8 },
+  { from: 'fact', to: 'concept', label: 'measures', dx: 38, dy: 4 },
+  { from: 'report', to: 'fact', label: 'holds', dy: -8 },
 ]
 
 const NODE_W = 150
@@ -189,7 +215,7 @@ function SchemaGraph() {
     <svg
       viewBox="0 0 420 520"
       role="img"
-      aria-label="The ledger's schema, one per company: an event involves a counterparty and posts as an entry; the entry hits an account; the account maps to a reporting concept; the concept rolls up to a statement; the statement is saved as a report. A group holds one of these per company and consolidates them."
+      aria-label="The ledger's graph, one per company, with the node types it really has: an event involves an agent, the counterparty, and posts as an entry; the entry has line items, each a debit or credit that hits an account; the account maps to a reporting concept; a fact measures that concept for one period; a report holds the facts. A group holds one of these per company and consolidates them."
       className="mx-auto h-auto w-full max-w-md"
     >
       <defs>
@@ -340,9 +366,11 @@ export default function PlatformSection() {
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
             Your books in XBRL&apos;s standard terms, with every number traced
-            to its entries. Your AI queries them in plain English, and the rule
-            engine checks the books before a period closes, for one company or a
-            whole group.
+            to its entries, on the same reporting concepts as 8,000+ public
+            companies&apos; SEC filings, so your numbers and theirs compare line
+            for line. Your AI queries them in plain English, and the rule engine
+            checks the books before a period closes, for one company or a whole
+            group.
           </p>
         </div>
 
@@ -366,6 +394,37 @@ export default function PlatformSection() {
                         <li key={line}>{line}</li>
                       ))}
                     </ul>
+                    {source.name === 'Bank feeds' && (
+                      <div className="mt-2 flex items-center gap-2 text-xs">
+                        <a
+                          href={MERCURY_PARTNER_URL}
+                          target="_blank"
+                          rel="sponsored noopener noreferrer"
+                          className="text-primary-300 hover:text-primary-200"
+                        >
+                          Need a Mercury account? →
+                        </a>
+                        {/* Mercury's required not-a-bank disclosure, verbatim (the app's
+                            MercuryDisclosure). Shown on hover, focus and tap. */}
+                        <span className="group/disclosure relative inline-flex">
+                          <button
+                            type="button"
+                            aria-describedby="mercury-disclosure"
+                            className="flex h-4 w-4 items-center justify-center rounded-full border border-gray-600 text-[10px] text-gray-400 hover:border-gray-400 hover:text-white focus:border-gray-400 focus:text-white focus:outline-none"
+                          >
+                            <span aria-hidden="true">i</span>
+                            <span className="sr-only">Mercury disclosure</span>
+                          </button>
+                          <span
+                            id="mercury-disclosure"
+                            role="tooltip"
+                            className="pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-60 -translate-x-1/2 rounded-lg border border-gray-700 bg-zinc-900 p-3 text-xs leading-relaxed text-gray-300 opacity-0 shadow-xl transition-opacity duration-150 group-focus-within/disclosure:visible group-focus-within/disclosure:opacity-100 group-hover/disclosure:visible group-hover/disclosure:opacity-100"
+                          >
+                            {MERCURY_DISCLOSURE}
+                          </span>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

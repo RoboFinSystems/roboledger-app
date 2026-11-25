@@ -55,7 +55,8 @@ export default function HarbingerSection() {
                 The Finance AI Deployment
               </div>
               <h2 className="font-heading mb-4 text-3xl font-bold text-white sm:text-4xl">
-                Finance AI that ties to your books, in two to three weeks
+                Your books as a knowledge graph your AI works from, in two to
+                three weeks
               </h2>
               <p className="mb-4 text-base leading-relaxed text-gray-300">
                 <strong className="text-white">Harbinger FinLab</strong> runs
@@ -65,7 +66,8 @@ export default function HarbingerSection() {
                 agent workflows, in two to three weeks, at a fixed fee.
                 It&apos;s for the person who owns the numbers (a CFO, a
                 controller or an owner) and the person who wires AI to them.
-                Built by an inactive CPA and ex-Workiva knowledge engineer.
+                Built by an ex-Workiva principal financial knowledge engineer
+                and inactive CPA.
               </p>
               <p className="mb-4 text-sm leading-relaxed text-gray-400">
                 $7,500 to $10,000, fixed by scope: half up front, half at

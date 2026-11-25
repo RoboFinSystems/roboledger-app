@@ -64,8 +64,8 @@ const faqs: { q: string; a: ReactNode }[] = [
         Dedicated Deployment RoboSystems runs, or on your own infrastructure:
         RoboSystems is open source (Apache 2.0 and MIT), so you can run it in
         your cloud or on your own server. You keep the code and the data
-        whatever happens to any vendor, including us. Your data trains no
-        one&apos;s model.
+        whatever happens to any vendor, including us. The app&apos;s own AI runs
+        Claude through AWS Bedrock, and your data trains no one&apos;s model.
       </>
     ),
   },
@@ -121,14 +121,13 @@ const faqs: { q: string; a: ReactNode }[] = [
     ),
   },
   {
-    q: 'I look after several clients. Can I see them all here?',
+    q: 'I own several businesses with separate books. Can I see them all here?',
     a: (
       <>
-        Yes. Each client gets its own isolated graph (a client with several
-        companies keeps them together in one), and you switch between them from
-        one account. In your AI chat, add the RoboLedger connector once per
-        graph and ask across all of them. It&apos;s built for fractional CFOs,
-        controllers, and firms who look after more than one company.
+        Yes. Each set of books gets its own isolated graph (a group keeps its
+        companies together in one, and consolidates them), and you switch
+        between them from one account. In your AI chat, add the RoboLedger
+        connector once per graph and ask across all of them.
       </>
     ),
   },
@@ -156,10 +155,9 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: 'Who runs it day to day?',
     a: (
       <>
-        Your own finance people. The controller or CFO who owns the numbers, or
-        the fractional CFO or CPA firm you work with, approves what the AI
-        drafts, from the AI chat they already use. To put AI workflows on your
-        books with your team,{' '}
+        Your own finance people. The controller or CFO who owns the numbers
+        approves what the AI drafts, from the AI chat they already use. To put
+        AI workflows on your books with your team,{' '}
         <a
           href={HARBINGER_URL}
           target="_blank"

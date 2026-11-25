@@ -10,7 +10,8 @@
 
 export const SITE_NAME = 'RoboLedger'
 
-export const SITE_TITLE = 'RoboLedger: AI accounting software you own'
+export const SITE_TITLE =
+  'RoboLedger: AI accounting software, built as a knowledge graph'
 
 export const SITE_DESCRIPTION =
-  'The general ledger built on RoboSystems. Sync QuickBooks, close and consolidate from Claude, ChatGPT or any MCP client. Nothing writes back until you post.'
+  'The general ledger built on RoboSystems, the open-source knowledge graph for finance: every number traced to its entries, one graph for the whole group.'

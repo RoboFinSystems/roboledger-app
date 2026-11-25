@@ -90,8 +90,8 @@ export default function OpenSourceAccountingSoftwarePage() {
               the platform and this app, MIT for the clients.
             </p>
             <p className="text-base text-gray-400">
-              Built by an inactive CPA and ex-Workiva knowledge engineer. Our
-              own companies&apos; books are kept on it.
+              Built by an ex-Workiva principal financial knowledge engineer and
+              inactive CPA. Our own companies&apos; books are kept on it.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Link href={REGISTER_PATH} className={PRIMARY_BUTTON_CLASS}>

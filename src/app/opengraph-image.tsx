@@ -8,7 +8,7 @@ export const alt = SITE_TITLE
 export default function Image() {
   return renderOgImage({
     eyebrow: 'RoboLedger',
-    title: 'AI accounting software you own',
+    title: 'AI accounting system, built as a knowledge graph',
     subtitle:
       'The general ledger built on RoboSystems. Every number opens to the entries behind it.',
   })

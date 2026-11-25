@@ -15,7 +15,7 @@ const points = [
     ),
   },
   {
-    title: 'You own your data',
+    title: 'Your data stays yours',
     body: 'Your books, your graph. Nothing locked in a vendor black box.',
     icon: (
       <path

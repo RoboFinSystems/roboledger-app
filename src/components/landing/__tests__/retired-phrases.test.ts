@@ -54,6 +54,13 @@ const RETIRED = [
   'trains your staff',
   'get your team trained',
   'trains them',
+  // 2026-11-24: the hero H1 moved to the 11-18 lock, and the firm buyer (out of outbound
+  // since 11-18) left the FAQ and the agent surface.
+  'ai accounting software you own',
+  'fractional cfo',
+  'cpa firm',
+  'client you look after',
+  'finance ai that ties to your books',
 ]
 
 // Retired from what a visitor reads, but fair to name in a comment that explains the

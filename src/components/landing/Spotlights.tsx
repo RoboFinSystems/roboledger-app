@@ -15,26 +15,42 @@ interface Spotlight {
   demoLabel: string
 }
 
-// Ordered for the finance lead, not the bookkeeper: read the numbers, then the group's
-// statements built from them, question them, plan from them, ask in plain English; the
-// close and the inbox, where the team does the entries and the lead approves them, come
-// last. Every bullet can be shown on the Driftline demo account.
+// Ordered for the finance lead, not the bookkeeper: read the numbers, then the event
+// ledger they come from (2026-11-24: the inbox moved up from last, because events before
+// entries is what sets this ledger apart), the group's statements, question them, plan
+// from them, ask in plain English; the period close follows them. Every bullet can be shown on the Driftline demo account.
 const spotlights: Spotlight[] = [
   {
     id: 'reporting',
     label: 'Reporting & XBRL',
     title: 'Live statements, and every figure opens',
     description:
-      'See the balance sheet and income statement straight from the ledger on any day of the month, no close required, for one company or the whole group. Click a figure to see the accounts it was summed from. When it is time to send, generate a validated report package.',
+      'See the balance sheet and income statement straight from the ledger on any day of the month, no close required, for one company or the whole group. Click a figure to see the accounts it was summed from. When it is time to send, freeze it into a report and download it as a file you keep.',
     bullets: [
       "Drill from a statement, the trial balance or the journal into an account's register",
       'Income statement columns by department, class, location or project, and CSV on every statement',
-      'Tavi and XBRL 2.1 report packages, shared with your board, lenders and investors through publish lists',
+      'Reports as a holon (RDF), a DataBook, Tavi JSON or XBRL 2.1, shared with your board, lenders and investors through publish lists',
     ],
     caption: 'Ledger › Statements',
     demo: 'statements',
     demoLabel:
-      'A balance sheet and income statement rendered live from the ledger, then a report package moving from draft to published.',
+      'A balance sheet and income statement rendered live from the ledger, a report moving from draft to filed, then the report page’s download menu: Tavi, the holon, the holon with lineage, the DataBook and the XBRL 2.1 package.',
+  },
+  {
+    id: 'inbox',
+    label: 'Event-driven ledger',
+    title: 'An inbox for your books',
+    description:
+      'Every QuickBooks transaction and bank line lands as a typed business event: captured, classified, then committed. Bank lines arrive with a suggested account and where it came from; you set the rules, and nothing posts without a decision.',
+    bullets: [
+      "Suggestions from the counterparty's learned default, the bank's category or AI, each labelled, and the learned ones approved in bulk",
+      'Posting Rules: a rule your AI proposes books nothing until a person approves it',
+      'Settle a bill from the line it paid, and see receivables and payables aged by days past due',
+    ],
+    caption: 'Ledger › Inbox',
+    demo: 'inbox',
+    demoLabel:
+      'A customer payment arriving in the inbox, classified by AI, previewed as a balanced entry, and committed by a person.',
   },
   {
     id: 'groups',
@@ -116,22 +132,6 @@ const spotlights: Spotlight[] = [
     demoLabel:
       'Schedule entries drafting, every close check passing, and the period closing after a person approves.',
   },
-  {
-    id: 'inbox',
-    label: 'Event-driven ledger',
-    title: 'An inbox for your books',
-    description:
-      'Every QuickBooks transaction and bank line lands as a typed business event: captured, classified, then committed. Bank lines arrive with a suggested account and where it came from; you set the rules, and nothing posts without a decision.',
-    bullets: [
-      "Suggestions from the counterparty's learned default, the bank's category or AI, each labelled, and the learned ones approved in bulk",
-      'Posting Rules: a rule your AI proposes books nothing until a person approves it',
-      'Settle a bill from the line it paid, and see receivables and payables aged by days past due',
-    ],
-    caption: 'Ledger › Inbox',
-    demo: 'inbox',
-    demoLabel:
-      'A customer payment arriving in the inbox, classified by AI, previewed as a balanced entry, and committed by a person.',
-  },
 ]
 
 export default function Spotlights() {
@@ -148,9 +148,10 @@ export default function Spotlights() {
             From the first question to the close
           </h2>
           <p className="mx-auto max-w-3xl text-base text-gray-300 sm:text-lg md:text-xl">
-            Seven views of the same live books. Read the statements, for one
-            company or a whole group, open any number, plan forward, and ask in
-            plain English. The close and the inbox run on the same books.
+            Seven views of the same live books. Read the statements, see the
+            events every entry came from, consolidate a whole group, open any
+            number, plan forward and ask in plain English. The close runs on the
+            same books.
           </p>
         </div>
 

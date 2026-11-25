@@ -192,7 +192,7 @@ const html = `
 <div class="bg"></div><div class="gridbg"></div>
 
 <div class="scene" id="s1"><div class="center">
-  <div class="eyebrow" id="eb">CFO · Fractional CFO · Controller</div>
+  <div class="eyebrow" id="eb">CFO · Controller · Owner</div>
   <div class="big" style="margin-top:34px"><span class="wd" id="w1">You</span> <span class="wd" id="w2">own</span> <span class="wd" id="w3">the</span> <span class="wd grad" id="w4">numbers.</span></div>
 </div></div>
 

@@ -14,12 +14,14 @@ import {
 
 // Section links carry the root path so they resolve from the blog and docs too, where the
 // header also renders. Five links on purpose: eight crowded the row and wrapped their
-// labels below about 1200px. Features, Platform and FAQ stay reachable from the homepage
-// and the footer's Product column.
+// labels below about 1200px. Short labels a finance reader knows (2026-11-24): not
+// "Platform", which is RoboSystems, and not "Graph", which means little to someone who
+// hasn't met one. The graph flow sits one scroll below How it works; the agent tools and
+// the FAQ stay reachable from the homepage and the footer's Product column.
 const NAV_LINKS = [
+  { href: '/#features', label: 'Features' },
   { href: '/#how-it-works', label: 'How it works' },
-  { href: '/#agent-surface', label: 'Agent tools' },
-  { href: '/#harbinger', label: 'The deployment' },
+  { href: '/#harbinger', label: 'Deployment' },
   { href: '/docs', label: 'Docs' },
   { href: '/blog', label: 'Blog' },
 ]

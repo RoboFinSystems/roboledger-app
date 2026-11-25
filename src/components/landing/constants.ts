@@ -30,3 +30,7 @@ export const APP_HOME_PATH = '/home'
 // Redirects to the Zoom scheduler (next.config.js), so link it with a plain <a>,
 // not <Link>: the destination is another site.
 export const BOOK_PATH = '/book'
+
+// RoboSystems' Mercury partner page, the referral link from the OAuth partnership (the
+// same address as MercurySetupForm's). Marked rel="sponsored" wherever it is linked.
+export const MERCURY_PARTNER_URL = 'https://mercury.com/partner/robosystems'

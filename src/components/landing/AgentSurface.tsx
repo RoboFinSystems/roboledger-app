@@ -93,9 +93,9 @@ export default function AgentSurface() {
           />
           <p className="mt-4 text-center text-sm text-gray-400">
             One connector per set of books, side by side in the same chat. A
-            group&apos;s companies share one; each client gets its own. Your AI
-            reads each one and answers across all of them. Driftline, Cadence
-            Labs and Cascade Advisory are demo companies.
+            group&apos;s companies share one; separate businesses get one each.
+            Your AI reads each one and answers across all of them. Driftline,
+            Cadence Labs and Cascade Advisory are demo companies.
           </p>
         </div>
 
@@ -137,7 +137,7 @@ export default function AgentSurface() {
               <p className="text-sm leading-relaxed text-gray-400">
                 Add this address as a connector in Claude, ChatGPT, or any MCP
                 client, sign in, and choose the books. One connector covers a
-                whole group; add it again for each client you look after. It can
+                whole group; add it again for each separate set of books. It can
                 read your books and drive these tools directly, with you
                 approving each write. No install, no key to paste. The same
                 tools back the in-app AI Console, so nothing is locked behind a
