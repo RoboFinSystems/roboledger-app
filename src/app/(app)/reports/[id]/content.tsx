@@ -134,8 +134,8 @@ const ReportViewerContent: FC = function () {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('rendered')
-  // Comparison spike: 'envelope' = in-app BlockView (current), 'holon' =
-  // shared @robosystems/report-components ReportView fed a holon JSON-LD.
+  // 'envelope' = the package as in-app BlockViews; 'holon' = the published
+  // holon through the shared @robosystems/report-components ReportView.
   const [renderer, setRenderer] = useState<'envelope' | 'holon'>('envelope')
   const [activeFactSetId, setActiveFactSetId] = useState<string | null>(null)
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map())
@@ -846,7 +846,7 @@ const ReportViewerContent: FC = function () {
       ) : null}
 
       {/* Package items — sidebar + stacked BlockViews, one per FactSet.
-          The 'holon' renderer swaps in the shared ReportView for comparison. */}
+          The 'holon' renderer swaps in the shared ReportView. */}
       {renderer === 'holon' ? (
         <Card>
           <HolonReportView
