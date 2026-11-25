@@ -110,7 +110,8 @@ const NewEntityModal: FC<NewEntityModalProps> = ({
     const body: CreateEntityRequest = {
       name: name.trim(),
       legal_name: legalName.trim() || null,
-      entity_type: entityType || null,
+      // The select offers only the server's five forms (ENTITY_TYPES).
+      entity_type: (entityType || null) as CreateEntityRequest['entity_type'],
       ticker: ticker.trim() || null,
     }
     if (!isFirstEntity && consolidationEntity) {

@@ -589,6 +589,7 @@ describe('Report downloads', () => {
       'Holon (JSON-LD)',
       'Holon with lineage (JSON-LD)',
       'DataBook (Markdown)',
+      'Workbook (Excel)',
       'XBRL 2.1 package',
     ]) {
       expect(screen.getByRole('button', { name })).toBeInTheDocument()
@@ -606,10 +607,28 @@ describe('Report downloads', () => {
     )
   })
 
+  it('asks for the workbook by its format', async () => {
+    mockGetReportDownloadUrl.mockResolvedValue(null)
+    await renderWith()
+    fireEvent.click(screen.getByRole('button', { name: 'Workbook (Excel)' }))
+    await waitFor(() =>
+      expect(mockGetReportDownloadUrl).toHaveBeenCalledWith(
+        'kg_mine',
+        'rpt_1',
+        {
+          format: 'WORKBOOK',
+        }
+      )
+    )
+  })
+
   it('offers a received report its DataBook, and no lineage', async () => {
     await renderWith({ sourceGraphId: 'kg_sender' })
     expect(
       screen.getByRole('button', { name: 'DataBook (Markdown)' })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Workbook (Excel)' })
     ).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Holon with lineage (JSON-LD)' })

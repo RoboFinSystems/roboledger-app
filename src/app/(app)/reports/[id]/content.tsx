@@ -207,8 +207,9 @@ const ReportViewerContent: FC = function () {
   // `reportDownloadUrl` read: the holon (dataset-form JSON-LD) is stamped at
   // publish; the Tavi compiled model and the XBRL 2.1 package are derived
   // from the report's bundle + cached server-side on first request, and the
-  // DataBook (the holon as a Markdown document to read) from the stored holon,
-  // so a received report has one too. The holon with lineage carries the
+  // DataBook (the holon as a Markdown document to read) and the workbook (the
+  // holon as an Excel file, a sheet per section) from the stored holon, so a
+  // received report has them too. The holon with lineage carries the
   // ledger behind the frozen figures and is offered only for this graph's own
   // reports: a copy shared in from another graph has none.
   // window.location.href (not <a download>) because the URL is cross-origin —
@@ -600,6 +601,9 @@ const ReportViewerContent: FC = function () {
                     )}
                     <DropdownItem onClick={() => handleDownload('DATABOOK')}>
                       DataBook (Markdown)
+                    </DropdownItem>
+                    <DropdownItem onClick={() => handleDownload('WORKBOOK')}>
+                      Workbook (Excel)
                     </DropdownItem>
                     <DropdownItem onClick={() => handleDownload('XBRL_2_1')}>
                       XBRL 2.1 package
