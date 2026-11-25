@@ -40,11 +40,9 @@ const NODES = [
 ]
 
 describe('searchIndustries', () => {
-  it('offers the sectors before anything is typed', () => {
-    expect(searchIndustries(NODES, '').map((n) => n.id)).toEqual([
-      'technology',
-      'health-care',
-    ])
+  it('offers nothing before anything is typed', () => {
+    expect(searchIndustries(NODES, '')).toEqual([])
+    expect(searchIndustries(NODES, '   ')).toEqual([])
   })
 
   it('ranks a name that starts with the query over one that contains it', () => {
