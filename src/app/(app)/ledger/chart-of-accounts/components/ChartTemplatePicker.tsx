@@ -1,5 +1,6 @@
 'use client'
 
+import { ENTITY_TYPES } from '@/lib/entity-types'
 import type { FriendlyError } from '@/lib/ledger/errors'
 import { friendlyError } from '@/lib/ledger/errors'
 import type {
@@ -25,11 +26,10 @@ interface ChartTemplatePickerProps {
 }
 
 /** Legal forms the templates map equity for. '' = use the entity's own. */
-const ENTITY_TYPES: ReadonlyArray<{ value: string; label: string }> = [
+const TEMPLATE_FORMS = new Set(['corporation', 'llc', 'partnership'])
+const EQUITY_MAPPING_OPTIONS = [
   { value: '', label: "Use this entity's legal form" },
-  { value: 'corporation', label: 'Corporation' },
-  { value: 'llc', label: 'Limited liability company' },
-  { value: 'partnership', label: 'Partnership' },
+  ...ENTITY_TYPES.filter((t) => TEMPLATE_FORMS.has(t.value)),
 ]
 
 const toFriendly = (err: unknown, fallback: string): FriendlyError =>
@@ -183,7 +183,7 @@ export const ChartTemplatePicker: FC<ChartTemplatePickerProps> = ({
                   onChange={(e) => setEntityType(e.target.value)}
                   disabled={initializing}
                 >
-                  {ENTITY_TYPES.map((option) => (
+                  {EQUITY_MAPPING_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>

@@ -18,6 +18,7 @@ import {
 } from '@robosystems/core/ui'
 import { type FC, useEffect, useRef, useState } from 'react'
 import { HiOfficeBuilding, HiPencil, HiSave, HiX } from 'react-icons/hi'
+import EntityTypeField from './components/EntityTypeField'
 import GroupLifecycleCard from './components/GroupLifecycleCard'
 import IndustryField from './components/IndustryField'
 import OpeningBalanceCard from './components/OpeningBalanceCard'
@@ -345,14 +346,11 @@ const EntityInfoPageContent: FC = function () {
                   formData={formData}
                   onChange={updateField}
                 />
-                <EditableField
-                  label="Entity Type"
+                <EntityTypeField
                   value={entity.entityType}
-                  field="entity_type"
                   editing={editing}
-                  formData={formData}
-                  onChange={updateField}
-                  placeholder="e.g., corporation, llc, partnership"
+                  selected={formData.entity_type || ''}
+                  onChange={(value) => updateField('entity_type', value)}
                 />
                 <IndustryField
                   value={entity.industry}
