@@ -222,6 +222,79 @@ describe('EntityInfoPageContent', () => {
       expect.objectContaining({ name: 'New name' })
     )
   })
+  it('shows the fiscal year end from the calendar, never as an input', async () => {
+    const user = userEvent.setup()
+    mockGetEntity.mockResolvedValue({
+      ...entityFor('kg_a'),
+      fiscalYearEnd: '06-30',
+    })
+    render(<EntityInfoPageContent />)
+    expect(await screen.findByText('June 30')).toBeInTheDocument()
+    await user.click(screen.getByText('Edit'))
+    expect(screen.getByText('June 30')).toBeInTheDocument()
+    expect(screen.getByText('Set by the fiscal calendar.')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Fiscal Year End')).toBeNull()
+  })
+
+  it('chooses the country and a US state from lists, stored as codes', async () => {
+    const user = userEvent.setup()
+    render(<EntityInfoPageContent />)
+    await user.click(await screen.findByText('Edit'))
+    await user.selectOptions(screen.getByLabelText('Country'), 'US')
+    await user.selectOptions(screen.getByLabelText('State'), 'WA')
+    await user.selectOptions(
+      screen.getByLabelText('State of Incorporation'),
+      'DE'
+    )
+    await user.click(screen.getByText('Save'))
+
+    await waitFor(() => expect(mockUpdateEntity).toHaveBeenCalledTimes(1))
+    expect(mockUpdateEntity).toHaveBeenCalledWith(
+      'kg_a',
+      expect.objectContaining({
+        address_country: 'US',
+        address_state: 'WA',
+        state_of_incorporation: 'DE',
+      })
+    )
+  })
+
+  it('takes a state as text outside the US', async () => {
+    const user = userEvent.setup()
+    render(<EntityInfoPageContent />)
+    await user.click(await screen.findByText('Edit'))
+    await user.selectOptions(screen.getByLabelText('Country'), 'CA')
+    expect(screen.getByLabelText('State / Region').tagName).toBe('INPUT')
+  })
+
+  it('holds the save while an LEI has the wrong shape', async () => {
+    const user = userEvent.setup()
+    render(<EntityInfoPageContent />)
+    await user.click(await screen.findByText('Edit'))
+    await user.type(screen.getByLabelText('LEI'), 'ABC123')
+    expect(
+      screen.getByText(/An LEI is 20 letters and digits/)
+    ).toBeInTheDocument()
+    expect(screen.getByText('Save').closest('button')).toBeDisabled()
+  })
+
+  it('shows Exchange and CIK only for an entity that has them', async () => {
+    const { unmount } = render(<EntityInfoPageContent />)
+    await screen.findByText('Entity kg_a')
+    expect(screen.queryByText('Exchange')).toBeNull()
+    expect(screen.queryByText('CIK')).toBeNull()
+    unmount()
+
+    mockGetEntity.mockResolvedValue({
+      ...entityFor('kg_a'),
+      exchange: 'NASDAQ',
+      cik: '0000320193',
+    })
+    render(<EntityInfoPageContent />)
+    expect(await screen.findByText('NASDAQ')).toBeInTheDocument()
+    expect(screen.getByText('0000320193')).toBeInTheDocument()
+  })
+
   it('picks an industry from the list and saves its id', async () => {
     const user = userEvent.setup()
     render(<EntityInfoPageContent />)
