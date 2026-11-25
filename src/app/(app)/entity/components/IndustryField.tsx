@@ -12,15 +12,15 @@ const pathText = (node: LedgerIndustry) => node.path.join(SEPARATOR)
 /**
  * The nodes a query finds, best first: a name that starts with the query, then
  * a name that contains it, then one whose path does. Retired nodes are never
- * offered.
+ * offered, and nothing is offered until something is typed.
  */
 export function searchIndustries(
   industries: LedgerIndustry[],
   query: string
 ): LedgerIndustry[] {
   const q = query.trim().toLowerCase()
+  if (!q) return []
   const active = industries.filter((node) => !node.replacedBy && !node.carried)
-  if (!q) return active.filter((node) => node.level === 'sector')
   const rank = (node: LedgerIndustry) => {
     const label = node.label.toLowerCase()
     if (label.startsWith(q)) return 0
@@ -243,9 +243,11 @@ export default function IndustryField({
             )}
           </ul>
         )}
-        {open && query.trim() !== '' && results.length === 0 && (
+        {open && results.length === 0 && (
           <p className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-500 shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-            No industry matches.
+            {query.trim() === ''
+              ? 'Type to search, e.g. software, restaurants, banks.'
+              : 'No industry matches.'}
           </p>
         )}
       </div>

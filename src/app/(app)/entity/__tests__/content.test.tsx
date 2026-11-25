@@ -266,9 +266,18 @@ describe('EntityInfoPageContent', () => {
     const user = userEvent.setup()
     render(<EntityInfoPageContent />)
     await user.click(await screen.findByText('Edit'))
-    await user.click(screen.getByLabelText('Industry'))
+    await user.type(screen.getByLabelText('Industry'), 'tech')
     const list = await screen.findByRole('listbox')
     expect(list.querySelector('button, a, [tabindex]')).toBeNull()
+  })
+
+  it('asks for a search on focus instead of listing anything', async () => {
+    const user = userEvent.setup()
+    render(<EntityInfoPageContent />)
+    await user.click(await screen.findByText('Edit'))
+    await user.click(screen.getByLabelText('Industry'))
+    expect(screen.getByText(/Type to search/)).toBeInTheDocument()
+    expect(screen.queryByRole('listbox')).toBeNull()
   })
 
   it('says the list is loading until it arrives, and failed only when it fails', async () => {
