@@ -970,7 +970,7 @@ const ReportViewerContent: FC = function () {
                 <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
                   No publish lists yet.
                 </p>
-                <Link href="/reports/publish-lists">
+                <Link href="/reports/publish-lists" className="inline-block">
                   <Button size="sm" color="purple">
                     Create a Publish List
                   </Button>

@@ -49,6 +49,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </p>
             <Button
               color="gray"
+              className="mx-auto"
               onClick={() => {
                 this.setState({ hasError: false, error: null })
                 window.location.reload()
