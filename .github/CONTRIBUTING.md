@@ -13,6 +13,7 @@ Thank you for your interest in contributing to RoboLedger App! This is the accou
 - [Getting Started](#getting-started)
 - [Development Process](#development-process)
 - [How to Contribute](#how-to-contribute)
+- [Licensing and Certification](#licensing-and-certification)
 - [Development Setup](#development-setup)
 - [Coding Standards](#coding-standards)
 - [Testing](#testing)
@@ -108,6 +109,24 @@ Before creating a bug report, check existing issues to avoid duplicates. Include
 ### First-Time Contributors
 
 Look for issues labeled `good first issue` or `help wanted`. These are great starting points for new contributors.
+
+## Licensing and Certification
+
+### Licensing
+
+This repository is licensed under Apache 2.0 and will stay that way. Contributions are accepted under the same license — as Apache 2.0 section 5 puts it, any contribution you intentionally submit for inclusion is licensed under those terms unless you state otherwise. Inbound equals outbound.
+
+There is no contributor license agreement to sign and we do not ask you to assign copyright. You keep it.
+
+### Certification
+
+The pull request template carries a certification checkbox. Tick it when you open the PR:
+
+> I have the right to submit this work under the Apache 2.0 license, and do so. Where any part of it is owned by my employer, I have their permission.
+
+That is an assertion about **provenance** — that the work is yours to give — not a transfer of rights. If part of what you are contributing is owned by your employer, or came from a project under a different license, resolve that before opening the PR rather than after.
+
+We ask for this once per pull request rather than as a `Signed-off-by` trailer on every commit. The obligation is identical; the ceremony is lighter, and it does not send you back through a rebase to satisfy a bot.
 
 ## Development Setup
 

@@ -28,3 +28,9 @@ None
 <!-- How the change was verified. Run `npm run test:all` before opening. Note that it does NOT
      build — run `npm run build` too if this touches routing, layouts, 'use client' boundaries,
      or config. State what you actually ran; "Not run" is a valid answer. -->
+
+## Certification
+
+<!-- See CONTRIBUTING.md, "Licensing and Certification". Asserts provenance, not a transfer of rights. -->
+
+- [ ] I have the right to submit this work under the Apache 2.0 license, and do so. Where any part of it is owned by my employer, I have their permission.
