@@ -296,6 +296,7 @@ export default function MercurySetupForm({
           ) : (
             <Button
               color="primary"
+              className="mx-auto"
               onClick={handleConnect}
               disabled={!canConnect}
             >
