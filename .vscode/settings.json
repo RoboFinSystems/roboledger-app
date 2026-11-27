@@ -4,6 +4,7 @@
   },
   "files.exclude": {
     "node_modules/**": true,
+    "**/.playwright-mcp/**": true,
     "**/.git/**": true,
     "__mocks__/**": true,
     ".next/**": true,

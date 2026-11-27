@@ -92,12 +92,6 @@
       "problemMatcher": []
     },
     {
-      "label": "Setup GitHub Actions",
-      "type": "shell",
-      "command": "npm run setup:gha",
-      "problemMatcher": []
-    },
-    {
       "label": "Claude Code",
       "type": "shell",
       "command": "claude",
@@ -158,13 +152,6 @@
       "description": "Update dependencies after creating branch:",
       "default": "no",
       "options": ["yes", "no"]
-    },
-    {
-      "id": "claudeModel",
-      "type": "pickString",
-      "description": "Choose model:",
-      "default": "opus",
-      "options": ["opus", "sonnet"]
     },
     {
       "id": "environment",
