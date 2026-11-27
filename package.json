@@ -41,7 +41,7 @@
   "dependencies": {
     "@aws-sdk/client-sns": "^3.1145.0",
     "@robosystems/client": "^2.47.1",
-    "@robosystems/core": "^0.22.4",
+    "@robosystems/core": "^0.22.6",
     "@robosystems/report-components": "^0.13.3",
     "lru-cache": "^11.5.3",
     "next": "^16.4.6",
